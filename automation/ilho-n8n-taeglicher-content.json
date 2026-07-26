@@ -1,0 +1,86 @@
+{
+  "name": "smile2go — Täglicher Content & Push (07:00)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 7 * * *" }] },
+        "options": { "timezone": "Europe/Berlin" }
+      },
+      "name": "Cron 07:00 Berlin",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-20250514\",\n  \"max_tokens\": 600,\n  \"system\": \"Du bist ilho, dein warmer KI-Assistent in der App smile2go für Frauen 30-50 (Persönlichkeitsentwicklung, Spiritualität). Antworte NUR mit validem JSON, ohne Markdown: {\\\"spruch\\\": \\\"...\\\", \\\"motivation_titel\\\": \\\"...\\\", \\\"motivation_text\\\": \\\"...\\\", \\\"push_text\\\": \\\"...\\\"}. Deutsch, Du-Form, liebevoll, max 2 Sätze pro Feld. Push max 90 Zeichen.\",\n  \"messages\": [{ \"role\": \"user\", \"content\": \"Erstelle Spruch des Tages, Tagesmotivation und Push-Text für heute, den {{ $now.format('dd.MM.yyyy') }}. Mondphase und Jahreszeit dürfen einfließen.\" }]\n}"
+      },
+      "name": "Claude: Tagescontent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.content.filter(b => b.type === 'text').map(b => b.text).join('');\nconst clean = raw.replace(/```json|```/g, '').trim();\nconst c = JSON.parse(clean);\nreturn [{ json: { datum: new Date().toISOString().slice(0,10), spruch: c.spruch, motivation_titel: c.motivation_titel, motivation_text: c.motivation_text, push_text: c.push_text } }];"
+      },
+      "name": "JSON parsen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "daily_content",
+        "dataToSend": "autoMapInputData"
+      },
+      "name": "Supabase: daily_content",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [960, 200],
+      "credentials": { "supabaseApi": { "name": "Supabase i.l.h.o (EU)" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.onesignal.com/notifications",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Basic {{ $env.ONESIGNAL_API_KEY }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"{{ $env.ONESIGNAL_APP_ID }}\",\n  \"included_segments\": [\"Subscribed Users\"],\n  \"headings\": { \"de\": \"🌅 Dein Impuls von smile2go\" },\n  \"contents\": { \"de\": \"{{ $json.push_text }}\" },\n  \"url\": \"https://app.smile2go.de\"\n}"
+      },
+      "name": "OneSignal: Web-Push 07:00",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 400]
+    }
+  ],
+  "connections": {
+    "Cron 07:00 Berlin": { "main": [[{ "node": "Claude: Tagescontent", "type": "main", "index": 0 }]] },
+    "Claude: Tagescontent": { "main": [[{ "node": "JSON parsen", "type": "main", "index": 0 }]] },
+    "JSON parsen": { "main": [[
+      { "node": "Supabase: daily_content", "type": "main", "index": 0 },
+      { "node": "OneSignal: Web-Push 07:00", "type": "main", "index": 0 }
+    ]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
