@@ -3,7 +3,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import MediaBanner from "./MediaBanner";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO } from "./media";
-import { supabase } from "./supabase";
+import { supabase, ladeAppState, speichereAppState } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -5846,49 +5846,52 @@ export default function IlhoApp() {
 
   const anzeigeName = anon ? "" : (alias.trim() || name);
 
-  // Persistenz (localStorage) — Daten überleben den Reload; wird später durch Supabase ersetzt.
+  // Ein Zustand, viele Setter: von localStorage UND von Supabase genutzt, damit beide
+  // Wege (offline lokal / echt in der Cloud) exakt dieselbe Struktur wiederherstellen.
+  const anwendenState = (s) => {
+    if (!s) return;
+    if (s.user !== undefined) setUser(s.user);
+    if (s.entries) setEntries(s.entries);
+    if (s.ziele) setZiele(s.ziele);
+    if (s.aufgaben) setAufgaben(s.aufgaben);
+    if (s.energie !== undefined) setEnergie(s.energie);
+    if (s.ch369) setCh369(s.ch369);
+    if (s.briefe) setBriefe(s.briefe);
+    if (s.mm) setMm(s.mm);
+    if (typeof s.punkte === "number") setPunkte(s.punkte);
+    if (s.ritual) setRitual(s.ritual);
+    if (typeof s.alias === "string") setAlias(s.alias);
+    if (typeof s.anon === "boolean") setAnon(s.anon);
+    if (s.kursWahl) setKursWahl(s.kursWahl);
+    if (s.prefs) setPrefs(s.prefs);
+    if (s.meinZeichen) setMeinZeichen(s.meinZeichen);
+    if (s.drawn) setDrawn(s.drawn);
+    if (s.horo) setHoro(s.horo);
+    if (s.akarte) setAkarte(s.akarte);
+    if (s.coachMsgs) setCoachMsgs(s.coachMsgs);
+    if (s.termine) setTermine(s.termine);
+    if (s.lumaMsgs) setLumaMsgs(s.lumaMsgs);
+    if (s.intake) setIntake(s.intake);
+    if (s.checkins) setCheckins(s.checkins);
+    if (typeof s.ilhoAktiv === "boolean") setIlhoAktiv(s.ilhoAktiv);
+    if (s.archetyp) setArchetyp(s.archetyp);
+    if (s.traeume) setTraeume(s.traeume);
+    if (s.zyklus) setZyklus(s.zyklus);
+    if (s.flamme) setFlamme(s.flamme);
+    if (s.zkMsgs) setZkMsgs(s.zkMsgs);
+    if (s.kreis) setKreis(s.kreis);
+    if (s.mondrit) setMondrit(s.mondrit);
+    if (s.caches) setCaches(s.caches);
+    if (s.intu) setIntu(s.intu);
+    if (s.reisen) setReisen(s.reisen);
+    if (s.feste) setFeste(s.feste);
+    if (s.leere) setLeere(s.leere);
+    if (s.wo) setWo(s.wo);
+  };
+
+  // Persistenz (localStorage) — Daten überleben den Reload, auch ohne Login/Supabase.
   useEffect(() => {
-    try {
-      const s = JSON.parse(localStorage.getItem("s2g_state") || "null");
-      if (!s) return;
-      if (s.user !== undefined) setUser(s.user);
-      if (s.entries) setEntries(s.entries);
-      if (s.ziele) setZiele(s.ziele);
-      if (s.aufgaben) setAufgaben(s.aufgaben);
-      if (s.energie !== undefined) setEnergie(s.energie);
-      if (s.ch369) setCh369(s.ch369);
-      if (s.briefe) setBriefe(s.briefe);
-      if (s.mm) setMm(s.mm);
-      if (typeof s.punkte === "number") setPunkte(s.punkte);
-      if (s.ritual) setRitual(s.ritual);
-      if (typeof s.alias === "string") setAlias(s.alias);
-      if (typeof s.anon === "boolean") setAnon(s.anon);
-      if (s.kursWahl) setKursWahl(s.kursWahl);
-      if (s.prefs) setPrefs(s.prefs);
-      if (s.meinZeichen) setMeinZeichen(s.meinZeichen);
-      if (s.drawn) setDrawn(s.drawn);
-      if (s.horo) setHoro(s.horo);
-      if (s.akarte) setAkarte(s.akarte);
-      if (s.coachMsgs) setCoachMsgs(s.coachMsgs);
-      if (s.termine) setTermine(s.termine);
-      if (s.lumaMsgs) setLumaMsgs(s.lumaMsgs);
-      if (s.intake) setIntake(s.intake);
-      if (s.checkins) setCheckins(s.checkins);
-      if (typeof s.ilhoAktiv === "boolean") setIlhoAktiv(s.ilhoAktiv);
-      if (s.archetyp) setArchetyp(s.archetyp);
-      if (s.traeume) setTraeume(s.traeume);
-      if (s.zyklus) setZyklus(s.zyklus);
-      if (s.flamme) setFlamme(s.flamme);
-      if (s.zkMsgs) setZkMsgs(s.zkMsgs);
-      if (s.kreis) setKreis(s.kreis);
-      if (s.mondrit) setMondrit(s.mondrit);
-      if (s.caches) setCaches(s.caches);
-      if (s.intu) setIntu(s.intu);
-      if (s.reisen) setReisen(s.reisen);
-      if (s.feste) setFeste(s.feste);
-      if (s.leere) setLeere(s.leere);
-      if (s.wo) setWo(s.wo);
-    } catch (e) {}
+    try { anwendenState(JSON.parse(localStorage.getItem("s2g_state") || "null")); } catch (e) {}
   }, []);
   useEffect(() => {
     try {
@@ -5910,6 +5913,28 @@ export default function IlhoApp() {
     });
     return () => sub?.subscription?.unsubscribe();
   }, []);
+
+  // Echte Cloud-Persistenz: sobald eine echte Supabase-Nutzerin eingeloggt ist, wird ihr
+  // gesamter App-Zustand (Journal, Mood, Challenge, Streak, ...) geräteübergreifend geladen
+  // und gespeichert — nicht mehr nur im Browser-localStorage. Fällt Supabase aus (kein .env,
+  // kein Login), läuft die App unverändert im lokalen Modus weiter.
+  const [cloudBereit, setCloudBereit] = useState(false);
+  useEffect(() => {
+    if (!supabase || !user) return;
+    let aktiv = true;
+    ladeAppState().then((s) => {
+      if (aktiv && s) anwendenState(s);
+      if (aktiv) setCloudBereit(true);
+    });
+    return () => { aktiv = false; };
+  }, [supabase, user]);
+
+  useEffect(() => {
+    if (!supabase || !user || !cloudBereit) return; // nichts speichern, bevor der Cloud-Stand geladen (oder als leer bestätigt) wurde
+    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
+    const timer = setTimeout(() => { speichereAppState(state); }, 1200); // debounced, kein Schreiben bei jeder Mikro-Änderung
+    return () => clearTimeout(timer);
+  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
   const go = (next) => {
     setStack([...stack, tab]);
