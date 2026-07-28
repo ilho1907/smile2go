@@ -29,8 +29,46 @@ const C = {
 };
 
 const MOTIVATION = [
-  // Platzhalter — wird mit 33 neuen Sätzen ersetzt.
-  { t: "Heute darfst du sanft mit dir sein.", s: "Nimm dir 5 Minuten nur für dich — ohne Ziel, ohne Druck." },
+  // Selbstliebe
+  { t: "Ich muss nicht erst heilen, leisten oder anders werden, um meiner eigenen Liebe würdig zu sein.", s: "· Selbstliebe" },
+  { t: "Ich spreche heute mit mir so, wie ich mit einem Menschen sprechen würde, den ich von Herzen liebe.", s: "· Selbstliebe" },
+  { t: "Auch die Seiten in mir, die ich lange abgelehnt habe, dürfen nach Hause kommen.", s: "· Selbstliebe" },
+  { t: "Ich verlasse mich nicht länger selbst, nur um von anderen gewählt zu werden.", s: "· Selbstliebe" },
+  { t: "Je tiefer ich mich selbst annehme, desto weniger muss ich mich im Außen beweisen.", s: "· Selbstliebe" },
+  // Wachstum
+  { t: "Wachstum bedeutet nicht, dass mit meinem heutigen Ich etwas falsch ist. Es bedeutet, dass noch mehr von mir sichtbar werden darf.", s: "· Wachstum" },
+  { t: "Ich darf mich verändern, auch wenn andere meine alte Version lieber mochten.", s: "· Wachstum" },
+  { t: "Nicht jeder Umweg war ein Fehler. Manche Wege haben mich zu einer Wahrheit geführt, die ich anders nie erkannt hätte.", s: "· Wachstum" },
+  { t: "Ich muss nicht den ganzen Weg kennen. Mein nächster wahrer Schritt genügt.", s: "· Wachstum" },
+  { t: "Jede bewusste Entscheidung verändert die Richtung meines Lebens.", s: "· Wachstum" },
+  // MoneyMind
+  { t: "Geld darf sich in meinem Leben sicher, leicht und willkommen anfühlen.", s: "· MoneyMind" },
+  { t: "Ich treffe finanzielle Entscheidungen nicht länger aus Angst, sondern aus innerer Klarheit und Selbstführung.", s: "· MoneyMind" },
+  { t: "Mein Kontostand beschreibt einen momentanen Zustand – niemals meinen Wert und niemals meine Möglichkeiten.", s: "· MoneyMind" },
+  { t: "Ich erlaube mir, Geld zu empfangen, zu halten, zu vermehren und mit Freude weiterzugeben.", s: "· MoneyMind" },
+  { t: "Je mehr ich meine eigene Fülle verkörpere, desto weniger jage ich ihr hinterher.", s: "· MoneyMind" },
+  // Beziehung
+  { t: "Ich muss mich nicht kleiner machen, damit eine Beziehung bestehen bleibt.", s: "· Beziehung" },
+  { t: "Wahre Nähe entsteht dort, wo ich mich zeigen darf, ohne mich selbst zu verlieren.", s: "· Beziehung" },
+  { t: "Ich bin bereit für Beziehungen, in denen Liebe, Wahrheit, Respekt und Freiheit gemeinsam existieren.", s: "· Beziehung" },
+  { t: "Ich höre auf, um Liebe zu kämpfen, und beginne, Liebe bewusst zu wählen.", s: "· Beziehung" },
+  { t: "Ich darf Grenzen setzen und trotzdem ein liebevoller Mensch bleiben.", s: "· Beziehung" },
+  // Körper und Gesundheit
+  { t: "Mein Körper ist nicht gegen mich. Er spricht mit mir, schützt mich und trägt meine Geschichte.", s: "· Körper & Gesundheit" },
+  { t: "Ich begegne meinem Körper heute mit Aufmerksamkeit statt mit Bewertung.", s: "· Körper & Gesundheit" },
+  { t: "Heilung darf sanft sein. Ich muss nicht durch Schmerz gehen, um Veränderung zu verdienen.", s: "· Körper & Gesundheit" },
+  { t: "Mit jedem bewussten Atemzug kehre ich tiefer in meinen Körper und zu mir selbst zurück.", s: "· Körper & Gesundheit" },
+  // Mutter Erde und Frieden
+  { t: "Die Erde trägt mich jeden Tag – und ich entscheide mich, ihr mit Dankbarkeit zu begegnen.", s: "· Mutter Erde & Frieden" },
+  { t: "Frieden beginnt dort, wo ich aufhöre, gegen mich selbst zu kämpfen.", s: "· Mutter Erde & Frieden" },
+  { t: "Ich ehre das Leben in allen seinen Formen und erinnere mich daran, dass wir miteinander verbunden sind.", s: "· Mutter Erde & Frieden" },
+  { t: "Jeder liebevolle Gedanke, jedes bewusste Wort und jede friedvolle Handlung verändert das Feld dieser Welt.", s: "· Mutter Erde & Frieden" },
+  // Fülle
+  { t: "Fülle beginnt nicht mit dem, was ich bekomme, sondern mit dem, was ich bereits erkennen und empfangen kann.", s: "· Fülle" },
+  { t: "Ich richte meinen Blick nicht länger auf das Fehlende. Ich öffne mich für das, was bereits zu mir unterwegs ist.", s: "· Fülle" },
+  { t: "Das Leben darf mich überraschen und mir mehr schenken, als mein Verstand bisher für möglich hielt.", s: "· Fülle" },
+  { t: "Ich bin bereit, Liebe, Möglichkeiten, Unterstützung, Freude und Wohlstand vollständig zu empfangen.", s: "· Fülle" },
+  { t: "Ich warte nicht länger auf Fülle. Ich entscheide mich, sie heute zu fühlen, zu sehen und zu verkörpern.", s: "· Fülle" },
 ];
 
 const SPRUECHE = [
