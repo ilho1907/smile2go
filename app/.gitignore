@@ -5,3 +5,4 @@ dist
 public/media/orakel/
 public/begruessung.mp4
 public/media/video/*.mp4
+.vercel

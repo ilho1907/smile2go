@@ -2,7 +2,8 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
 import MediaBanner from "./MediaBanner";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO } from "./media";
+import { supabase } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -28,13 +29,8 @@ const C = {
 };
 
 const MOTIVATION = [
+  // Platzhalter — wird mit 33 neuen Sätzen ersetzt.
   { t: "Heute darfst du sanft mit dir sein.", s: "Nimm dir 5 Minuten nur für dich — ohne Ziel, ohne Druck." },
-  { t: "Du bist weiter, als du denkst.", s: "Schau kurz zurück: Was kannst du heute, was vor einem Jahr schwer war?" },
-  { t: "Klarheit kommt durch Tun.", s: "Wähle eine kleine Sache und bring sie heute zu Ende." },
-  { t: "Dein Tempo ist das richtige Tempo.", s: "Vergleiche dich heute nur mit dem gestrigen Ich." },
-  { t: "Fülle beginnt im Blick.", s: "Zähle heute drei Dinge, die schon da sind — bevor du an Fehlendes denkst." },
-  { t: "Du darfst empfangen.", s: "Sag heute einmal bewusst „Danke, ja gern“ statt „Ach, das wäre nicht nötig“." },
-  { t: "Kleine Rituale, große Wirkung.", s: "Eine Kerze, drei tiefe Atemzüge — mehr braucht ein Neuanfang nicht." },
 ];
 
 const SPRUECHE = [
@@ -287,8 +283,42 @@ const kalenderwoche = () => {
   return Math.ceil(((d - start) / 864e5 + start.getDay() + 1) / 7);
 };
 
-/* Wetter — im Prototyp simuliert (Produktion: Open-Meteo API, kostenlos & ohne Key) */
-const WETTER_DEMO = { stadt: "München", temp: 21, icon: "⛅", txt: "leicht bewölkt" };
+/* Wetter — echte Daten via Open-Meteo (kostenlos, kein API-Key nötig) */
+const WETTER_FALLBACK_ORT = { lat: 48.137, lon: 11.575, stadt: "München" }; // falls Standort nicht freigegeben wird
+function wmoIcon(code) {
+  if (code === 0) return { icon: "☀️", txt: "klarer Himmel" };
+  if (code <= 2) return { icon: "🌤️", txt: "leicht bewölkt" };
+  if (code === 3) return { icon: "☁️", txt: "bedeckt" };
+  if (code <= 48) return { icon: "🌫️", txt: "neblig" };
+  if (code <= 57) return { icon: "🌦️", txt: "Nieselregen" };
+  if (code <= 67) return { icon: "🌧️", txt: "Regen" };
+  if (code <= 77) return { icon: "🌨️", txt: "Schnee" };
+  if (code <= 82) return { icon: "🌧️", txt: "Schauer" };
+  if (code <= 86) return { icon: "🌨️", txt: "Schneeschauer" };
+  if (code >= 95) return { icon: "⛈️", txt: "Gewitter" };
+  return { icon: "🌤️", txt: "wechselhaft" };
+}
+async function ladeWetter(setWetter) {
+  const holen = async (lat, lon, stadt) => {
+    try {
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+      const data = await res.json();
+      const cw = data?.current_weather;
+      if (!cw) return;
+      const { icon, txt } = wmoIcon(cw.weathercode);
+      setWetter({ stadt, temp: Math.round(cw.temperature), icon, txt });
+    } catch { /* Wetter bleibt einfach leer — keine erfundenen Werte */ }
+  };
+  if (typeof navigator !== "undefined" && navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (p) => holen(p.coords.latitude.toFixed(3), p.coords.longitude.toFixed(3), "Dein Standort"),
+      () => holen(WETTER_FALLBACK_ORT.lat, WETTER_FALLBACK_ORT.lon, WETTER_FALLBACK_ORT.stadt),
+      { timeout: 4000 }
+    );
+  } else {
+    holen(WETTER_FALLBACK_ORT.lat, WETTER_FALLBACK_ORT.lon, WETTER_FALLBACK_ORT.stadt);
+  }
+}
 
 /* Mondphase — lokal berechnet (synodischer Monat 29,53 Tage) */
 const mondphase = () => {
@@ -330,7 +360,8 @@ async function askLuma(messages, system) {
 }
 
 const ILHO_SYSTEM = `Du bist ilho, dein einfühlsamer KI-Assistent und Begleiter in der App smile2go für Frauen zwischen 30 und 50, die sich für Persönlichkeitsentwicklung, Spiritualität und Energiearbeit interessieren.
-Regeln: Sprich Deutsch in der Du-Form. Sei warm, ruhig, ermutigend — wie eine weise Freundin. Antworte kurz (2–5 Sätze), stelle gern eine sanfte Rückfrage. Keine medizinischen oder therapeutischen Diagnosen; bei ernsten Krisen empfiehl liebevoll professionelle Hilfe. Nutze gelegentlich passende Natur- und Lichtmetaphern, aber sparsam.
+Regeln: Sprich Deutsch in der Du-Form. Sei warm, ruhig, ermutigend — wie eine weise Freundin. Antworte kurz (2–5 Sätze), stelle gern eine sanfte Rückfrage. Nutze gelegentlich passende Natur- und Lichtmetaphern, aber sparsam.
+WICHTIG — psychische Belastung: Sobald die Nutzerin Anzeichen von psychischer Belastung, Krise, starker Verzweiflung, Selbstverletzung oder anhaltend schwerem seelischen Leid zeigt, MUSST du klar und einfühlsam benennen, dass du eine künstliche Intelligenz bist — keine Psychologin, kein Therapeut — und dass du eine echte Fachperson nicht ersetzen kannst. Ermutige liebevoll, sich professionelle Hilfe zu suchen (z. B. Hausärztin, Therapeutin, bei akuter Krise die TelefonSeelsorge 0800 111 0 111 oder den Notruf 112). Stelle niemals medizinische oder therapeutische Diagnosen. Diesen Hinweis gibst du bei jedem Gespräch, in dem solche Anzeichen erneut auftauchen — nicht nur einmalig.
 Du kennst die App und darfst passende Funktionen empfehlen: Tageskarte & Göttinnen-Orakel, Horoskop, Mystik (Tarot, Traumdeutung), Tagebuch mit Tages-Intention, Dankbarkeits-Challenge (3-6-9, 21 Tage), Rituale & Mondphase, Zukunftsbrief an dein zukünftiges Ich, Fülle, Meditationen, Kurse, Termin-Buchung bei der Coachin, Coach-Chat und Lichtpunkte sammeln.`;
 
 /* ── Basis-Bausteine ── */
@@ -395,6 +426,9 @@ function Auth({ onLogin }) {
   const [ilhoOn, setIlhoOn] = useState(true);
   const [optin, setOptin] = useState(false);
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const echterBackend = !!supabase;
 
   const input = {
     width: "100%", padding: "15px 16px", fontSize: 16,
@@ -403,13 +437,62 @@ function Auth({ onLogin }) {
     background: C.card, color: C.espresso, marginBottom: 12, outline: "none",
   };
 
-  const submit = () => {
+  const submit = async () => {
     setErr("");
     if (!email.includes("@")) return setErr("Bitte gib eine gültige E-Mail-Adresse ein.");
     if (pw.length < 8) return setErr("Dein Passwort braucht mindestens 8 Zeichen.");
     if (mode === "register" && !dsgvo) return setErr("Bitte stimme der Datenschutzerklärung zu.");
-    if (mode === "register") return setOptin(true);
-    onLogin(email);
+
+    // Prototyp-Modus (kein Supabase konfiguriert): altes Simulationsverhalten, unverändert.
+    if (!echterBackend) {
+      if (mode === "register") return setOptin(true);
+      onLogin(email);
+      return;
+    }
+
+    // Echter Supabase-Auth-Modus:
+    setBusy(true);
+    try {
+      if (mode === "register") {
+        const { data, error } = await supabase.auth.signUp({
+          email, password: pw,
+          options: { data: { geburtsdatum: geburt, ilho_aktiv: ilhoOn } },
+        });
+        if (error) { setErr(error.message); setBusy(false); return; }
+        if (data?.session) {
+          onLogin(email, sternzeichenAusDatum(geburt), ilhoOn);
+        } else {
+          setOptin(true);
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+        if (error) { setErr(error.message === "Invalid login credentials" ? "E-Mail oder Passwort ist falsch." : error.message); setBusy(false); return; }
+        onLogin(email);
+      }
+    } catch (e) {
+      setErr("Verbindung fehlgeschlagen — bitte versuch es gleich noch einmal.");
+    }
+    setBusy(false);
+  };
+
+  const googleLogin = async () => {
+    if (!echterBackend) { onLogin("google.nutzerin@gmail.com"); return; }
+    setErr("");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) setErr("Google-Login ist gerade nicht verfügbar. Bitte melde dich mit E-Mail an.");
+  };
+
+  // Nach echter Registrierung: prüft per Klick, ob die E-Mail-Bestätigung schon erfolgt ist.
+  const nachBestaetigungPruefen = async () => {
+    if (!echterBackend) { onLogin(email, sternzeichenAusDatum(geburt), ilhoOn); return; }
+    setBusy(true); setErr("");
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+    setBusy(false);
+    if (error) { setErr("Noch nicht bestätigt — bitte klicke zuerst den Link in deiner E-Mail."); return; }
+    if (data?.session) onLogin(email, sternzeichenAusDatum(geburt), ilhoOn);
   };
 
   if (optin)
@@ -420,8 +503,9 @@ function Auth({ onLogin }) {
         <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 28 }}>
           Wir haben dir eine E-Mail an <strong>{email}</strong> geschickt. Bitte bestätige deine Anmeldung (Double-Opt-in).
         </p>
-        <Btn full onClick={() => onLogin(email, sternzeichenAusDatum(geburt), ilhoOn)}>Ich habe bestätigt → Weiter</Btn>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 16 }}>(Prototyp: Bestätigung wird simuliert)</p>
+        {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>}
+        <Btn full onClick={nachBestaetigungPruefen}>{busy ? "Prüfe …" : "Ich habe bestätigt → Weiter"}</Btn>
+        {!echterBackend && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 16 }}>(Prototyp: Bestätigung wird simuliert)</p>}
       </div>
     );
 
@@ -439,7 +523,7 @@ function Auth({ onLogin }) {
 
       {/* Google-Login */}
       <button
-        onClick={() => onLogin("google.nutzerin@gmail.com")}
+        onClick={googleLogin}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
           padding: "14px 20px", borderRadius: 14, border: `1.5px solid ${C.line}`,
@@ -503,7 +587,7 @@ function Auth({ onLogin }) {
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>
       )}
 
-      <Btn full onClick={submit}>{mode === "login" ? "Anmelden" : "Konto erstellen"}</Btn>
+      <Btn full onClick={submit} disabled={busy}>{busy ? "Einen Moment …" : mode === "login" ? "Anmelden" : "Konto erstellen"}</Btn>
 
       <p style={{ textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 20, lineHeight: 1.6 }}>
         🇪🇺 Hosting in der EU · DSGVO-konform · Jederzeit kündbar
@@ -570,9 +654,12 @@ function EnergieKompass({ energie, setEnergie, addPunkte }) {
 
 function HeuteWidget({ termine, setTermine }) {
   const [neu, setNeu] = useState("");
+  const [wetter, setWetter] = useState(null);
   const bt = besondererTag();
   const kw = kalenderwoche();
   const datum = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  useEffect(() => { ladeWetter(setWetter); }, []);
 
   const add = () => {
     if (!neu.trim()) return;
@@ -585,7 +672,14 @@ function HeuteWidget({ termine, setTermine }) {
       {/* Datum */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: `linear-gradient(135deg, ${C.goldPale}, ${C.card})` }}>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, fontWeight: 600 }}>{datum}</div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold }}>KW {kw}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {wetter && (
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.espresso, display: "flex", alignItems: "center", gap: 4 }} title={`${wetter.stadt} · ${wetter.txt}`}>
+              <span>{wetter.icon}</span><span>{wetter.temp}°C</span>
+            </div>
+          )}
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold }}>KW {kw}</div>
+        </div>
       </div>
     </Card>
   );
@@ -780,7 +874,7 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
                     try {
                       const recentMsgs = newMsgs.slice(-6);
                       const recentEntries = entries?.slice(-3)?.map((e) => e.text?.slice(0, 100)).join(" | ") || "keine neulich";
-                      const ctx = `Du bist ilho, KI-Assistent. Kurz, warm, empathisch. Nutzerin: ${name}. Streak: ${streak}d. Journal (letzte 3): ${recentEntries}`;
+                      const ctx = `${ILHO_SYSTEM}\n(Kontext: Nutzerin ${name}, Streak ${streak}d. Journal (letzte 3): ${recentEntries})`;
                       const reply = await askLuma(recentMsgs, ctx);
                       setIlhoMsgs((prev) => [...prev, { role: "assistant", content: reply }]);
                     } catch (err) {
@@ -2236,18 +2330,23 @@ function coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 }) {
   const taskDone = tasks.length ? (tasks.filter((a) => a.erledigt).length / tasks.length) * 100 : 50;
   const journalScore = Math.min(100, (entries?.length || 0) * 20 + 20);
   const streakScore = Math.min(100, (streak || 0) * 12);
+  // Dankbarkeits-Challenge zählt bewusst stärker als die anderen Faktoren:
+  // sie ist die einzige Übung, die täglich UND kumulativ (Tag 1→21) wächst,
+  // und ist damit der verlässlichste Indikator für echtes Dranbleiben.
+  const dankbarkeitHeute = ch369?.letzterTag === new Date().toDateString();
   const challengeScore = ch369?.tag ? Math.min(100, (ch369.tag / 21) * 100) : 0;
-  const index = Math.round(0.30 * energieScore + 0.25 * streakScore + 0.20 * taskDone + 0.15 * journalScore + 0.10 * challengeScore);
+  const index = Math.round(0.25 * energieScore + 0.15 * streakScore + 0.20 * taskDone + 0.15 * journalScore + 0.25 * challengeScore);
   const offen = tasks.filter((a) => !a.erledigt).length;
   const erledigt = tasks.filter((a) => a.erledigt).length;
   const warnungen = [];
   if (energie && energie.v <= 2) warnungen.push(`Energie heute niedrig (${energie.v}/5)`);
   if (offen >= 3) warnungen.push(`${offen} offene Aufgaben stauen sich`);
   if ((streak || 0) === 0) warnungen.push("Streak unterbrochen — Reaktivierung sinnvoll");
+  if (ch369?.tag && !dankbarkeitHeute) warnungen.push(`Dankbarkeits-Challenge heute noch nicht gemacht (Tag ${ch369.tag}/21)`);
   const briefing = `Wohlbefindens-Index ${index}/100. ` +
     (energie ? `Energie heute ${energie.v}/5. ` : "") +
     `Streak ${streak || 0} Tage · Aufgaben ${erledigt}/${tasks.length}` +
-    (ch369?.tag ? ` · Dankbarkeits-Challenge Tag ${ch369.tag}/21` : "") + ". " +
+    (ch369?.tag ? ` · Dankbarkeits-Challenge Tag ${ch369.tag}/21 (heute ${dankbarkeitHeute ? "erledigt" : "offen"})` : "") + ". " +
     (warnungen.length ? "⚠ " + warnungen.join("; ") + "." : "Keine Auffälligkeiten.");
   const comps = [
     ["Energie", energieScore, "eine Atemübung oder Meditation"],
@@ -2255,7 +2354,7 @@ function coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 }) {
     ["Aufgaben", taskDone, "eine offene Aufgabe abschließen"],
     ["Journal", journalScore, "einen kurzen Tagebuch-Eintrag"],
   ].sort((a, b) => a[1] - b[1]);
-  return { index, warnungen, briefing, empfehlung: comps[0][2], schwaechster: comps[0][0], offen };
+  return { index, warnungen, briefing, empfehlung: comps[0][2], schwaechster: comps[0][0], offen, dankbarkeitHeute };
 }
 
 /* ── Coach-Dashboard: tägliche Aufgaben-Erledigung je Klientin (Demo · Einzelnutzer-Prototyp) ── */
@@ -2282,6 +2381,22 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
         <Eyebrow color={C.goldPale}>Wohlbefindens-Index</Eyebrow>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 44, color: "#FFF8F0" }}>{ci.index}<span style={{ fontSize: 18 }}>/100</span></div>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: "#FFF3F0" }}>🔥 {streak} Tage Serie</div>
+      </Card>
+
+      {/* Dankbarkeits-Challenge: eigene, hervorgehobene Karte — zählt stärker als andere Aufgaben
+          und ihr Status muss dem Coach auf einen Blick auffallen, nicht in der Liste untergehen. */}
+      <Card style={{
+        marginBottom: 14, display: "flex", alignItems: "center", gap: 12,
+        background: ci.dankbarkeitHeute ? "#F2F8F0" : "#FBF2E4",
+        border: `1.5px solid ${ci.dankbarkeitHeute ? C.sage : C.gold || "#E0B24C"}`,
+      }}>
+        <span style={{ fontSize: 26 }}>🏆</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.plum }}>Dankbarkeits-Challenge</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, color: C.espresso, marginTop: 2 }}>
+            {ch369?.tag ? `Tag ${ch369.tag}/21 · heute ${ci.dankbarkeitHeute ? "erledigt ✓" : "noch offen"}` : "Noch nicht gestartet"}
+          </div>
+        </div>
       </Card>
 
       <Card style={{ marginBottom: 14 }}>
@@ -2854,6 +2969,8 @@ function Office({ office, setOffice, addPunkte }) {
   const [mail, setMail] = useState("");
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState("");
+  const [hoerend, setHoerend] = useState(false);
+  const recognitionRef = useRef(null);
 
   const speichernBk = () => {
     if (!setup.firma.trim()) return;
@@ -2862,9 +2979,31 @@ function Office({ office, setOffice, addPunkte }) {
   };
 
   const sprachEingabe = () => {
-    setWunsch("1:1 Coaching-Paket „Innere Klarheit“: 4 Sessions à 60 Minuten innerhalb von 8 Wochen, inkl. Workbook und WhatsApp-Begleitung zwischen den Terminen.");
-    setInfo("🎤 Sprachnachricht erkannt und übernommen (Prototyp-Simulation)");
-    setTimeout(() => setInfo(""), 2600);
+    const SR = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SR) {
+      setInfo("🎤 Sprach-Erkennung wird von diesem Browser nicht unterstützt — bitte Chrome/Safari nutzen oder direkt tippen.");
+      setTimeout(() => setInfo(""), 3400);
+      return;
+    }
+    if (hoerend) { recognitionRef.current?.stop(); return; }
+    const rec = new SR();
+    rec.lang = "de-DE";
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.onstart = () => { setHoerend(true); setInfo("🎤 Ich höre zu …"); };
+    rec.onresult = (e) => {
+      const gesagt = Array.from(e.results).map((r) => r[0].transcript).join(" ").trim();
+      setWunsch((prev) => (prev.trim() ? `${prev.trim()} ${gesagt}` : gesagt));
+      setInfo("✓ Übernommen");
+      setTimeout(() => setInfo(""), 2000);
+    };
+    rec.onerror = () => {
+      setInfo("Konnte dich gerade nicht verstehen — versuch es noch einmal oder tippe direkt.");
+      setTimeout(() => setInfo(""), 3000);
+    };
+    rec.onend = () => setHoerend(false);
+    recognitionRef.current = rec;
+    rec.start();
   };
 
   const erstellen = async () => {
@@ -3014,7 +3153,7 @@ function Office({ office, setOffice, addPunkte }) {
 
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
             <textarea style={{ ...input, flex: 1, resize: "vertical" }} rows={2} placeholder="Sag ilho, was wichtig ist (Ton, Details) — oder nutze 🎤" value={wunsch} onChange={(e) => setWunsch(e.target.value)} />
-            <button onClick={sprachEingabe} style={{ width: 46, height: 46, borderRadius: "50%", border: `1.5px solid ${C.rose}`, background: C.roseSoft, fontSize: 18, cursor: "pointer", flexShrink: 0 }}>🎤</button>
+            <button onClick={sprachEingabe} style={{ width: 46, height: 46, borderRadius: "50%", border: `1.5px solid ${C.rose}`, background: hoerend ? C.rose : C.roseSoft, fontSize: 18, cursor: "pointer", flexShrink: 0, boxShadow: hoerend ? `0 0 0 4px ${C.roseSoft}` : "none", transition: "box-shadow .3s" }}>🎤</button>
           </div>
 
           <Btn full onClick={erstellen} disabled={busy}>{busy ? "✨ ilho schreibt dein Dokument …" : `✨ ilho, erstelle mein ${typ}`}</Btn>
@@ -3895,7 +4034,6 @@ function Mehr({ go }) {
       { icon: "🛤️", t: "Transformations-Reisen", s: "21 & 40 Tage zu einem Thema", tab: "reisen" },
       { icon: "🌳", t: "Dein Garten", s: "Was du pflegst, wächst sichtbar", tab: "garten" },
       { icon: "🔮", t: "Intuitions-Training", s: "Trainiere dein Gefühl · Trefferquote", tab: "intuition" },
-      { icon: "📍", t: "Orakel-Geocaching", s: "Botschaften an echten Orten", tab: "geocaching" },
       { icon: "📖", t: "Jahres-Rückblick", s: "Dein Jahr in Karten & Worten", tab: "rueckblick" },
     ] },
     { g: "Community", items: [
@@ -4017,6 +4155,9 @@ function Schattenspiegel({ addPunkte }) {
   const [text, setText] = useState("");
   const [burning, setBurning] = useState(false);
   const [done, setDone] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
+  const videoRef = useRef(null);
+  const BURN_MS = 4800; // an die Länge des Feuer-Videos angepasst
   const verbrennen = () => {
     if (!text.trim() || burning) return;
     setBurning(true);
@@ -4026,7 +4167,12 @@ function Schattenspiegel({ addPunkte }) {
       setDone(true);
       addPunkte(2, "Losgelassen");
       setTimeout(() => setDone(false), 3400);
-    }, 2400);
+    }, BURN_MS);
+  };
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    if (videoRef.current) videoRef.current.muted = !next;
   };
   return (
     <div style={{ padding: "26px 20px" }}>
@@ -4040,11 +4186,37 @@ function Schattenspiegel({ addPunkte }) {
         Hier darfst du alles aussprechen, was du nie jemandem zeigen würdest — Wut, Angst, dunkle Gedanken.
         Danach wird dein Text zeremoniell verbrannt.
       </p>
-      <Card style={{ background: "#2E2320", border: "1px solid #4A3A30" }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: "#C9A98C", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700, marginBottom: 10 }}>
-          🖤 Nichts wird gespeichert · keine KI liest mit · kein Backup
+      <Card style={{ background: "#2E2320", border: "1px solid #4A3A30", position: "relative", overflow: "hidden" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: "#C9A98C", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>
+            🖤 Nichts wird gespeichert · keine KI liest mit · kein Backup
+          </div>
+          <button
+            onClick={toggleSound}
+            title={soundOn ? "Ton aus" : "Ton an"}
+            style={{
+              flexShrink: 0, marginLeft: 10, width: 30, height: 30, borderRadius: 9, border: "1px solid #4A3A30",
+              background: "rgba(255,255,255,.06)", color: "#F0E4D6", fontSize: 14, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            {soundOn ? "🔊" : "🔇"}
+          </button>
         </div>
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+          {burning && (
+            <video
+              ref={videoRef}
+              src={FEUER_VIDEO}
+              muted={!soundOn}
+              playsInline
+              autoPlay
+              style={{
+                position: "absolute", inset: 0, width: "100%", height: "100%",
+                objectFit: "cover", mixBlendMode: "screen", pointerEvents: "none",
+              }}
+            />
+          )}
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -4054,13 +4226,13 @@ function Schattenspiegel({ addPunkte }) {
             style={{
               width: "100%", boxSizing: "border-box", background: "transparent", border: "none", outline: "none",
               color: "#F0E4D6", fontFamily: "Georgia, serif", fontSize: 16, lineHeight: 1.7, resize: "vertical",
-              animation: burning ? "burnAway 2.4s ease forwards" : "none",
+              animation: burning ? "burnAway 2.4s ease forwards" : "none", position: "relative",
             }}
           />
           {burning && (
             <div style={{ position: "absolute", inset: 0, pointerEvents: "none", display: "flex", justifyContent: "space-around", alignItems: "flex-end" }}>
-              {["🔥", "✨", "🔥", "🌫️", "🔥", "✨"].map((e, i) => (
-                <span key={i} style={{ fontSize: 22, animation: `ashRise ${1.4 + i * 0.25}s ease-out ${i * 0.15}s forwards`, opacity: 0 }}>{e}</span>
+              {["✨", "🌫️", "✨"].map((e, i) => (
+                <span key={i} style={{ fontSize: 20, animation: `ashRise ${1.4 + i * 0.25}s ease-out ${i * 0.15}s forwards`, opacity: 0 }}>{e}</span>
               ))}
             </div>
           )}
@@ -4343,29 +4515,71 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
   );
 }
 
-/* ── Archetypen-Test — Welche innere Kraft leitet dich? ── */
+/* ── Der 36-Fragen-Archetypen-Test — 12 Archetypen, je 3 Aussagen, Likert-Skala 1–5 ── */
 const ARCHETYPEN = {
-  weise: { name: "Die Weise", icon: "🦉", farbe: "#5C7A99", satz: "Ich vertraue dem, was ich erkenne.", text: "Du suchst Tiefe statt Lärm. Deine Kraft ist Klarheit: Du siehst Zusammenhänge, wo andere nur Chaos sehen. Dein Wachstum: dem Herzen so viel Stimme geben wie dem Kopf." },
-  kriegerin: { name: "Die Kriegerin", icon: "🔥", farbe: "#B0503C", satz: "Ich stehe für mich ein.", text: "Du gehst voran, auch wenn es unbequem wird. Deine Kraft ist Mut und Klartext. Dein Wachstum: Weichheit nicht mit Schwäche verwechseln." },
-  liebende: { name: "Die Liebende", icon: "🌹", farbe: "#D96E8B", satz: "Ich öffne mein Herz — zuerst für mich.", text: "Du fühlst tief und verbindest Menschen. Deine Kraft ist Empathie. Dein Wachstum: Grenzen setzen, ohne dich schuldig zu fühlen." },
+  herrscherin: { name: "Die Herrscherin", icon: "👑", farbe: "#8A6D3B", satz: "Ich übernehme Verantwortung und schaffe Ordnung.", text: "Du fühlst dich wohl, wenn du die Fäden in der Hand hältst. Deine Kraft ist Struktur und Führung. Dein Wachstum: Kontrolle auch mal loslassen können, ohne dass alles zusammenbricht." },
   schoepferin: { name: "Die Schöpferin", icon: "🎨", farbe: "#C9963C", satz: "Ich bringe Neues in die Welt.", text: "Ideen fliegen dir zu, und du machst daraus etwas Echtes. Deine Kraft ist Ausdruck. Dein Wachstum: fertig machen statt nur anfangen — und dein Werk zeigen." },
-  hueterin: { name: "Die Hüterin", icon: "🌿", farbe: "#6E8B6A", satz: "Ich halte Raum — auch für mich.", text: "Bei dir finden andere Halt und Wärme. Deine Kraft ist Fürsorge. Dein Wachstum: dich selbst genauso liebevoll zu halten wie alle anderen." },
-  freie: { name: "Die Freie", icon: "🦋", farbe: "#8E4A63", satz: "Ich folge meinem eigenen Weg.", text: "Enge macht dich krank, Weite macht dich lebendig. Deine Kraft ist Unabhängigkeit. Dein Wachstum: Bindung als Freiheit begreifen, nicht als Käfig." },
+  fuersorgliche: { name: "Die Fürsorgliche", icon: "🌿", farbe: "#6E8B6A", satz: "Ich halte Raum — auch für mich.", text: "Bei dir finden andere Halt und Wärme. Deine Kraft ist Fürsorge. Dein Wachstum: dich selbst genauso liebevoll zu halten wie alle anderen." },
+  bodenstaendige: { name: "Die Bodenständige", icon: "🏡", farbe: "#9C8465", satz: "Ich gehöre dazu, ohne mich zu verstellen.", text: "Du bist echt, fair und nahbar — das gibt anderen Halt. Deine Kraft ist Verlässlichkeit. Dein Wachstum: dir erlauben, auch mal aufzufallen." },
+  liebende: { name: "Die Liebende", icon: "🌹", farbe: "#D96E8B", satz: "Ich öffne mein Herz — zuerst für mich.", text: "Du fühlst tief und verbindest Menschen. Deine Kraft ist Empathie. Dein Wachstum: Grenzen setzen, ohne dich schuldig zu fühlen." },
+  frohnatur: { name: "Die Frohnatur", icon: "🎭", farbe: "#E0A23C", satz: "Ich nehme das Leben leicht.", text: "Du bringst Humor in ernste Momente und lebst im Hier und Jetzt. Deine Kraft ist Leichtigkeit. Dein Wachstum: auch schwere Gefühle dalassen, statt sie wegzulachen." },
+  heldin: { name: "Die Heldin", icon: "🔥", farbe: "#B0503C", satz: "Ich kämpfe für das, was mir wichtig ist.", text: "Du gehst voran, auch wenn es unbequem wird. Deine Kraft ist Mut. Dein Wachstum: nicht jeden Kampf allein austragen zu müssen." },
+  rebellin: { name: "Die Rebellin", icon: "⚡", farbe: "#A6483C", satz: "Ich stelle infrage, was längst überholt ist.", text: "Regeln sind für dich Diskussionsgrundlage, nicht Gesetz. Deine Kraft ist Veränderung. Dein Wachstum: Provokation gezielt einsetzen statt aus Reflex." },
+  magierin: { name: "Die Magierin", icon: "✨", farbe: "#6A5399", satz: "Ich verwandle, was ist, in das, was sein könnte.", text: "Du spürst die unsichtbaren Zusammenhänge hinter den Dingen. Deine Kraft ist Transformation. Dein Wachstum: Bodenhaftung behalten bei aller Vision." },
+  unschuldige: { name: "Die Unschuldige", icon: "🕊️", farbe: "#D9C79E", satz: "Ich glaube an das Gute — das ist meine Kraft, kein Makel.", text: "Dein Optimismus trägt dich und andere durch schwierige Zeiten. Deine Kraft ist Vertrauen. Dein Wachstum: Enttäuschungen aushalten, ohne den Glauben zu verlieren." },
+  entdeckerin: { name: "Die Entdeckerin", icon: "🧭", farbe: "#8E4A63", satz: "Ich folge meiner Neugier, wohin sie auch führt.", text: "Enge macht dich unruhig, Weite macht dich lebendig. Deine Kraft ist Unabhängigkeit. Dein Wachstum: Bindung als Abenteuer begreifen, nicht als Käfig." },
+  weise: { name: "Die Weise", icon: "🦉", farbe: "#5C7A99", satz: "Ich vertraue dem, was ich erkenne.", text: "Du suchst Tiefe statt Lärm und siehst Zusammenhänge, wo andere nur Chaos sehen. Deine Kraft ist Klarheit. Dein Wachstum: dem Herzen so viel Stimme geben wie dem Kopf." },
 };
+const ARCHETYP_BLOCKS = ["Sicherheit & Stabilität", "Zugehörigkeit & Verbindung", "Veränderung & Risiko", "Unabhängigkeit & Erkenntnis"];
 const ARCHETYP_FRAGEN = [
-  { f: "Ein freier Sonntag. Was ruft dich?", o: [["Ein gutes Buch & Stille", "weise"], ["Raus, Bewegung, etwas erleben", "freie"], ["Zeit mit Menschen, die ich liebe", "liebende"]] },
-  { f: "Im Konflikt bin ich meistens die, die …", o: [["… klar ausspricht, was schiefläuft", "kriegerin"], ["… vermittelt und alle zusammenhält", "hueterin"], ["… erst mal in Ruhe durchdenkt", "weise"]] },
-  { f: "Was gibt dir am meisten Energie?", o: [["Etwas Eigenes erschaffen", "schoepferin"], ["Für jemanden da sein", "hueterin"], ["Neues entdecken, unterwegs sein", "freie"]] },
-  { f: "Wovor hast du insgeheim am meisten Respekt?", o: [["Mich festzulegen und gebunden zu sein", "freie"], ["Nicht gebraucht zu werden", "liebende"], ["Mittelmaß und Stillstand", "kriegerin"]] },
-  { f: "Dein Umfeld beschreibt dich als …", o: [["… kreativ und voller Ideen", "schoepferin"], ["… weise und besonnen", "weise"], ["… stark und direkt", "kriegerin"]] },
-  { f: "Was fällt dir am schwersten?", o: [["Nein sagen", "liebende"], ["Um Hilfe bitten", "kriegerin"], ["Dinge zu Ende bringen", "schoepferin"]] },
-  { f: "Dein schönstes Kompliment wäre:", o: [["„Bei dir fühle ich mich sicher.“", "hueterin"], ["„Du inspirierst mich.“", "schoepferin"], ["„Du bist so herrlich frei.“", "freie"]] },
+  // Block 1: Sicherheit & Stabilität
+  { f: "Ich übernehme in Gruppen gerne die Verantwortung und organisiere das Geschehen.", key: "herrscherin" },
+  { f: "Es ist mir wichtig, Ordnung, Struktur und klare Regeln um mich herum zu schaffen.", key: "herrscherin" },
+  { f: "Ich fühle mich am wohlsten, wenn ich die Kontrolle über meine Lebensumstände habe.", key: "herrscherin" },
+  { f: "Ich habe ein starkes Bedürfnis, Dinge, Projekte oder Kunstwerke von bleibendem Wert zu erschaffen.", key: "schoepferin" },
+  { f: "Ich verliere mich oft in meiner Fantasie und stelle mir neue, kreative Welten vor.", key: "schoepferin" },
+  { f: "Für mich ist Innovation und das Erschaffen von Neuem wichtiger als das Bewahren von Altem.", key: "schoepferin" },
+  { f: "Es erfüllt mich zutiefst, anderen Menschen zu helfen und sie zu unterstützen.", key: "fuersorgliche" },
+  { f: "Ich stelle die Bedürfnisse von Freunden oder der Familie oft über meine eigenen Bedürfnisse.", key: "fuersorgliche" },
+  { f: "Ich möchte für andere ein sicherer Hafen sein und sie vor Gefahren beschützen.", key: "fuersorgliche" },
+  // Block 2: Zugehörigkeit & Verbindung
+  { f: "Ich bin bodenständig und passe mich gerne an die Gemeinschaft an, ohne aufzufallen.", key: "bodenstaendige" },
+  { f: "Mir ist es wichtig, dass alle Menschen gleich und fair auf Augenhöhe behandelt werden.", key: "bodenstaendige" },
+  { f: "Ich mag keine künstliche Statussymbole; ich schätze das einfache, ehrliche Leben.", key: "bodenstaendige" },
+  { f: "Tiefe emotionale Bindungen und Leidenschaft sind das Wichtigste in meinem Leben.", key: "liebende" },
+  { f: "Ich umgebe mich gerne mit schönen Dingen, Harmonie und einer liebevollen Atmosphäre.", key: "liebende" },
+  { f: "Ich habe große Angst davor, von den Menschen, die ich liebe, abgelehnt zu werden.", key: "liebende" },
+  { f: "Ich versuche immer, Humor und Leichtigkeit in ernste Situationen zu bringen.", key: "frohnatur" },
+  { f: "Das Leben ist für mich ein Spiel, das man im Hier und Jetzt genießen sollte.", key: "frohnatur" },
+  { f: "Ich breche gerne das Eis mit Witzen und nehme das Leben selten zu ernst.", key: "frohnatur" },
+  // Block 3: Veränderung & Risiko
+  { f: "Wenn ich mir ein Ziel gesetzt habe, kämpfe ich mit maximalem Einsatz dafür.", key: "heldin" },
+  { f: "Ich stelle mich Herausforderungen und Konkurrenzkämpfen, um meine Stärke zu beweisen.", key: "heldin" },
+  { f: "Ich kann Ungerechtigkeit nicht ertragen und verteidige Schwächere mit Mut.", key: "heldin" },
+  { f: "Regeln sind für mich da, um hinterfragt, verändert oder gebrochen zu werden.", key: "rebellin" },
+  { f: "Ich fühle mich oft als Außenseiterin, die gegen den Strom der Masse schwimmt.", key: "rebellin" },
+  { f: "Ich liebe die Provokation, um verkrustete Strukturen in der Gesellschaft aufzubrechen.", key: "rebellin" },
+  { f: "Ich glaube fest daran, dass Gedanken die Realität verändern und Wunder möglich sind.", key: "magierin" },
+  { f: "Ich suche nach den tieferen, unsichtbaren Gesetzen des Universums und der Natur.", key: "magierin" },
+  { f: "Menschen sagen über mich, dass ich eine transformierende oder magische Ausstrahlung habe.", key: "magierin" },
+  // Block 4: Unabhängigkeit & Erkenntnis
+  { f: "Ich glaube fest an das Gute im Menschen und behalte immer meinen Optimismus.", key: "unschuldige" },
+  { f: "Ich sehne mich nach einem einfachen, reinen und perfekt harmonischen Leben.", key: "unschuldige" },
+  { f: "Ich versuche stets, alles richtig zu machen und moralisch fehlerfrei zu handeln.", key: "unschuldige" },
+  { f: "Freiheit und Unabhängigkeit sind mir wichtiger als finanzielle oder soziale Sicherheit.", key: "entdeckerin" },
+  { f: "Ich liebe es, neue Orte, Kulturen und Ideen ganz auf eigene Faust zu entdecken.", key: "entdeckerin" },
+  { f: "Ich langweile mich schnell, wenn mein Leben in eine alltägliche Routine verfällt.", key: "entdeckerin" },
+  { f: "Ich suche ununterbrochen nach Wissen, Wahrheit und den logischen Zusammenhängen der Welt.", key: "weise" },
+  { f: "Bevor ich eine Entscheidung treffe, analysiere ich alle Fakten sehr gründlich.", key: "weise" },
+  { f: "Es treibt mich an, die Welt durch den Verstand und durch Weisheit zu begreifen.", key: "weise" },
 ];
+const LIKERT = [["1", "trifft nicht zu"], ["2", ""], ["3", "teils/teils"], ["4", ""], ["5", "trifft völlig zu"]];
 function ArchetypTest({ archetyp, setArchetyp, addPunkte }) {
   const [schritt, setSchritt] = useState(archetyp ? -1 : 0);
   const [punkteMap, setPunkteMap] = useState({});
-  const antworte = (key) => {
-    const neu = { ...punkteMap, [key]: (punkteMap[key] || 0) + 1 };
+  const antworte = (wert) => {
+    const key = ARCHETYP_FRAGEN[schritt].key;
+    const neu = { ...punkteMap, [key]: (punkteMap[key] || 0) + wert };
     setPunkteMap(neu);
     if (schritt + 1 < ARCHETYP_FRAGEN.length) { setSchritt(schritt + 1); return; }
     const best = Object.entries(neu).sort((a, b) => b[1] - a[1])[0][0];
@@ -4394,26 +4608,33 @@ function ArchetypTest({ archetyp, setArchetyp, addPunkte }) {
     );
   }
   const frage = ARCHETYP_FRAGEN[schritt];
+  const blockIdx = Math.floor(schritt / 9);
   return (
     <div style={{ padding: "26px 20px" }}>
-      <Eyebrow color={C.plum}>Archetypen-Test</Eyebrow>
+      <Eyebrow color={C.plum}>Der 36-Fragen-Archetypen-Test</Eyebrow>
       <H size={25}>Welche innere Kraft leitet dich?</H>
-      <div style={{ display: "flex", gap: 5, margin: "14px 0 18px" }}>
-        {ARCHETYP_FRAGEN.map((_, i) => (
-          <div key={i} style={{ flex: 1, height: 4, borderRadius: 3, background: i <= schritt ? C.gold : C.line }} />
-        ))}
+      <div style={{ height: 5, borderRadius: 3, background: C.line, margin: "14px 0 6px", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${((schritt + 1) / ARCHETYP_FRAGEN.length) * 100}%`, background: C.gold, borderRadius: 3, transition: "width .2s" }} />
+      </div>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, marginBottom: 18 }}>
+        Frage {schritt + 1}/{ARCHETYP_FRAGEN.length} · Block {blockIdx + 1}: {ARCHETYP_BLOCKS[blockIdx]}
       </div>
       <Card>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 16, lineHeight: 1.5 }}>
-          {schritt + 1}/{ARCHETYP_FRAGEN.length} · {frage.f}
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 18, lineHeight: 1.5 }}>
+          {frage.f}
         </div>
-        {frage.o.map(([txt, key]) => (
-          <button key={txt} onClick={() => antworte(key)} style={{
-            display: "block", width: "100%", textAlign: "left", marginBottom: 10, padding: "14px 16px",
-            borderRadius: 14, border: `1.5px solid ${C.line}`, background: C.cream, cursor: "pointer",
-            fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.5,
-          }}>{txt}</button>
-        ))}
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-between" }}>
+          {LIKERT.map(([num]) => (
+            <button key={num} onClick={() => antworte(Number(num))} style={{
+              flex: 1, padding: "12px 0", borderRadius: 12, border: `1.5px solid ${C.line}`, background: C.cream, cursor: "pointer",
+              fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: C.espresso,
+            }}>{num}</button>
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>trifft nicht zu</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>trifft völlig zu</span>
+        </div>
       </Card>
     </div>
   );
@@ -5076,95 +5297,6 @@ function Mondrituale({ mondrit, setMondrit, addPunkte }) {
   );
 }
 
-/* ── Orakel-Geocaching — Botschaften an realen Orten ── */
-function Geocaching({ caches, setCaches, addPunkte }) {
-  const [ort, setOrt] = useState(null);
-  const [status, setStatus] = useState("");
-  const [text, setText] = useState("");
-  const [gefunden, setGefunden] = useState(null);
-  const orten = () => {
-    if (!navigator.geolocation) { setStatus("Dein Gerät teilt keinen Standort."); return; }
-    setStatus("Ich suche deinen Ort …");
-    navigator.geolocation.getCurrentPosition(
-      (p) => { setOrt({ lat: p.coords.latitude, lon: p.coords.longitude }); setStatus(""); },
-      () => setStatus("Standort nicht freigegeben — du kannst ihn in den Browser-Einstellungen erlauben."),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-  const dist = (a, b) => {
-    const R = 6371e3, t1 = a.lat * Math.PI / 180, t2 = b.lat * Math.PI / 180;
-    const dt = (b.lat - a.lat) * Math.PI / 180, dl = (b.lon - a.lon) * Math.PI / 180;
-    const x = Math.sin(dt / 2) ** 2 + Math.cos(t1) * Math.cos(t2) * Math.sin(dl / 2) ** 2;
-    return Math.round(R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
-  };
-  const hinterlegen = () => {
-    if (!ort || !text.trim()) return;
-    setCaches([{ ...ort, text: text.trim(), datum: new Date().toLocaleDateString("de-DE") }, ...(caches || [])]);
-    setText("");
-    addPunkte(8, "Botschaft hinterlegt");
-  };
-  const suchen = () => {
-    if (!ort) return;
-    const nah = (caches || []).map((c) => ({ ...c, d: dist(ort, c) })).filter((c) => c.d <= 150).sort((a, b) => a.d - b.d);
-    setGefunden(nah.length ? nah[0] : "leer");
-    if (nah.length) addPunkte(5, "Botschaft gefunden");
-  };
-  return (
-    <div style={{ padding: "26px 20px" }}>
-      <Eyebrow color={C.plum}>Orakel-Geocaching</Eyebrow>
-      <H size={25}>Botschaften an echten Orten</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
-        Lass an deinem Lieblingsplatz eine Botschaft zurück — für dich später oder für jemanden, der zufällig vorbeikommt.
-      </p>
-      <Card style={{ marginBottom: 14 }}>
-        {!ort ? (
-          <>
-            <Btn full onClick={orten}>📍 Meinen Ort bestimmen</Btn>
-            {status && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 10 }}>{status}</div>}
-          </>
-        ) : (
-          <>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 10 }}>📍 Du bist hier: {ort.lat.toFixed(4)}, {ort.lon.toFixed(4)}</div>
-            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="Deine Botschaft für diesen Ort …"
-              style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 15, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso }} />
-            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-              <Btn full onClick={hinterlegen} disabled={!text.trim()}>✨ Hier hinterlegen</Btn>
-              <Btn full ghost onClick={suchen}>🔍 Hier suchen</Btn>
-            </div>
-          </>
-        )}
-      </Card>
-      {gefunden && (
-        <Card style={{ marginBottom: 14, background: gefunden === "leer" ? C.card : C.goldPale }}>
-          {gefunden === "leer" ? (
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6 }}>An diesem Ort wartet noch nichts auf dich. Magst du die Erste sein, die hier etwas zurücklässt?</div>
-          ) : (
-            <>
-              <Eyebrow color={C.espresso}>Jemand hat hier etwas für dich gelassen</Eyebrow>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.6 }}>„{gefunden.text}“</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 8 }}>{gefunden.d} m entfernt · hinterlegt am {gefunden.datum}</div>
-            </>
-          )}
-        </Card>
-      )}
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6 }}>
-        Dein Standort bleibt auf deinem Gerät. Der Austausch mit anderen Frauen startet mit dem Server-Update — bis dahin findest du deine eigenen Botschaften wieder.
-      </div>
-      {(caches || []).length > 0 && (
-        <Card style={{ marginTop: 14 }}>
-          <Eyebrow color={C.espresso}>Deine Orte ({caches.length})</Eyebrow>
-          {caches.map((c, i) => (
-            <div key={i} style={{ padding: "8px 0", borderBottom: i < caches.length - 1 ? `1px solid ${C.line}` : "none" }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso }}>{c.text}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>{c.datum} · {c.lat.toFixed(3)}, {c.lon.toFixed(3)}</div>
-            </div>
-          ))}
-        </Card>
-      )}
-    </div>
-  );
-}
-
 /* ── Intuitions-Training ── */
 const INTU_KARTEN = [
   { s: "🌙", n: "Mond" }, { s: "☀️", n: "Sonne" }, { s: "⭐", n: "Stern" },
@@ -5764,6 +5896,21 @@ export default function IlhoApp() {
     } catch (e) {}
   }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
+  // Echte Supabase-Session: stellt Login nach Reload/Google-Redirect wieder her.
+  // Ohne konfiguriertes Supabase (kein .env) bleibt supabase === null und hier passiert nichts —
+  // die App läuft dann unverändert im Prototyp-Modus (localStorage-Login von oben).
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => {
+      const sUser = data?.session?.user;
+      if (sUser?.email) setUser(sUser.email);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email) setUser(session.user.email);
+    });
+    return () => sub?.subscription?.unsubscribe();
+  }, []);
+
   const go = (next) => {
     setStack([...stack, tab]);
     setTab(next);
@@ -5863,7 +6010,7 @@ export default function IlhoApp() {
               {tab === "fortschritt" && <><MediaBanner video={S2GVID.fortschritt} poster={S2GIMG.fortschritt} title="Mein Fortschritt" subtitle="Du wächst" height={190} /><Fortschritt streak={streak} entries={entries} punkte={punkte} energie={energie} aufgaben={aufgaben} ch369={ch369} checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} /></>}
               {tab === "fragebogen" && <><MediaBanner video={S2GVID.fragebogen} poster={S2GIMG.fragebogen} title="Fragebogen" subtitle="Lerne dich kennen" height={190} /><Fragebogen intake={intake} setIntake={setIntake} addPunkte={addPunkte} /></>}
               {tab === "pakete" && <><MediaBanner video={S2GVID.pakete} poster={S2GIMG.pakete} title="Pakete" subtitle="Wähle dein Geschenk an dich" height={190} /><Pakete addPunkte={addPunkte} go={go} /></>}
-              {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} onLogout={() => { setUser(null); setStack([]); setTab("heute"); }} /></>}
+              {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
               {tab === "coachdash" && <CoachDashboard name={anzeigeName} streak={streak} entries={entries} ch369={ch369} drawn={drawn} horo={horo} energie={energie} aufgaben={aufgaben} checkins={checkins} />}
               {tab === "schatten" && <Schattenspiegel addPunkte={addPunkte} />}
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
@@ -5873,7 +6020,6 @@ export default function IlhoApp() {
               {tab === "zyklus" && <ZyklusSpiegel zyklus={zyklus} setZyklus={setZyklus} addPunkte={addPunkte} drawn={drawn} entries={entries} />}
               {tab === "kreis" && <FreundinnenKreis kreis={kreis} setKreis={setKreis} streak={streak} addPunkte={addPunkte} />}
               {tab === "mondrituale" && <Mondrituale mondrit={mondrit} setMondrit={setMondrit} addPunkte={addPunkte} />}
-              {tab === "geocaching" && <Geocaching caches={caches} setCaches={setCaches} addPunkte={addPunkte} />}
               {tab === "intuition" && <Intuition intu={intu} setIntu={setIntu} addPunkte={addPunkte} />}
               {tab === "reisen" && <Reisen reisen={reisen} setReisen={setReisen} addPunkte={addPunkte} />}
               {tab === "jahreskreis" && <Jahreskreis feste={feste} setFeste={setFeste} addPunkte={addPunkte} />}

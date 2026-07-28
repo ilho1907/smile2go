@@ -5,6 +5,9 @@
 // nach /public/media/video/ legen, dann Pfade unten auf /media/video/... ändern.
 const HF = "https://d8j0ntlcm91z4.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7";
 
+// Schattenspiegel — Verbrennungs-Ritual: Higgsfield-Video (Seedance 2.0, 4K, 2160×3840, 9:16, mit nativem Ton)
+export const FEUER_VIDEO = `${HF}/hf_20260728_162308_09b35acf-3ce7-4e67-a8bb-59f77eefd3c8.mp4`;
+
 // Orakel-Kartenbilder (Higgsfield · nano_banana_pro, 4K, 3:4) — 44-Karten-Göttinnen-Deck, einheitlicher 8K-3D-HD-Kartenstil
 export const KARTEN = {
   "Die Göttin der lebendigen Schöpfung": `${HF}/hf_20260724_170623_1a9c6d58-26e3-4bb7-95a1-ead35c42d451.png`,
