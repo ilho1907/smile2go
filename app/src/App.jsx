@@ -3,7 +3,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import MediaBanner from "./MediaBanner";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO } from "./media";
-import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent } from "./supabase";
+import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, ladeInhaltsUebersicht } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -419,6 +419,38 @@ const Card = ({ children, style, onClick }) => (
     {children}
   </div>
 );
+
+/* Wiederverwendbarer Mikrofon-Knopf — echte Web-Speech-API (Browser-Diktat), an jedem Textfeld
+   nutzbar. Füllt den Text per Callback ein statt automatisch zu senden — Nutzerin behält Kontrolle. */
+const Mikro = ({ onText, size = 36 }) => {
+  const [an, setAn] = useState(false);
+  const recRef = useRef(null);
+  const SR = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
+  if (!SR) return null;
+  const toggle = () => {
+    if (an) { recRef.current?.stop(); return; }
+    const r = new SR();
+    r.lang = "de-DE"; r.interimResults = false; r.continuous = false;
+    r.onstart = () => setAn(true);
+    r.onresult = (e) => {
+      const text = Array.from(e.results).map((x) => x[0].transcript).join(" ").trim();
+      if (text) onText(text);
+    };
+    r.onerror = () => setAn(false);
+    r.onend = () => setAn(false);
+    recRef.current = r;
+    r.start();
+  };
+  return (
+    <button type="button" onClick={toggle} aria-label="Diktieren" title="Diktieren (Spracherkennung)"
+      style={{
+        width: size, height: size, borderRadius: "50%", border: `1.5px solid ${C.rose}`, flexShrink: 0,
+        background: an ? C.rose : C.roseSoft, fontSize: size * 0.42, cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: an ? `0 0 0 4px ${C.roseSoft}` : "none", transition: "box-shadow .3s",
+      }}>🎤</button>
+  );
+};
 
 const Eyebrow = ({ children, color = C.gold }) => (
   <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2.5, textTransform: "uppercase", color, fontWeight: 600, marginBottom: 6 }}>
@@ -927,6 +959,10 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
                 border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none",
               }}
             />
+            <Mikro size={40} onText={(t) => {
+              const inp = document.getElementById("ilho-input");
+              if (inp) { inp.value = (inp.value ? inp.value + " " : "") + t; inp.focus(); }
+            }} />
             <button onClick={() => {
               const inp = document.getElementById("ilho-input");
               if (inp && inp.value.trim()) inp.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", code: "Enter" }));
@@ -1850,12 +1886,15 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.85 }}>
               Sprich diesen Satz heute ein paar Mal langsam aus — morgen wartet ein neuer.
             </div>
-            <input
-              style={{ ...input, marginTop: 12, marginBottom: 0, background: "#fff" }}
-              placeholder="Deine eigene Intention für heute (optional) …"
-              value={intention}
-              onChange={(e) => setIntention(e.target.value)}
-            />
+            <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center" }}>
+              <input
+                style={{ ...input, margin: 0, background: "#fff", flex: 1 }}
+                placeholder="Deine eigene Intention für heute (optional) …"
+                value={intention}
+                onChange={(e) => setIntention(e.target.value)}
+              />
+              <Mikro size={38} onText={(t) => setIntention((prev) => (prev ? prev + " " : "") + t)} />
+            </div>
           </Card>
         );
       })()}
@@ -2423,6 +2462,282 @@ const COACH_TWIN_FRAGEN = [
   { f: "Was ist ein Satz, den du oft am Ende einer Session sagst?", k: "abschlusssatz" },
   { f: "Wenn eine Klientin sich zurückzieht/still wird, wie sprichst du sie an?", k: "rueckzug_ansprache" },
 ];
+
+/* ── Knowledge Brain (Katman 1 · Baustein 6) ──
+   Suche über die EIGENEN Inhalte der Coachin. Harte Regel im Prompt:
+   Ohne Treffer wird NICHTS erfunden — die Antwort lautet dann "nichts gefunden". */
+const WISSEN_SYSTEM = `Du beantwortest die Frage einer Coachin AUSSCHLIESSLICH auf Basis der mitgelieferten Auszüge aus ihren eigenen Inhalten.
+STRIKTE REGELN:
+1. Nutze NUR die gelieferten Auszüge. Kein Allgemeinwissen, keine Ergänzung, keine Vermutung.
+2. Nenne bei jeder Aussage den Titel des Auszugs, aus dem sie stammt — in der Form (Quelle: Titel).
+3. Wenn die Auszüge die Frage nicht beantworten, sage genau das: dass du dazu nichts in ihren Inhalten findest. Erfinde NIEMALS etwas.
+4. Deutsch, Du-Form, kurz (2–5 Sätze).`;
+
+function WissensSuche({ addPunkte }) {
+  const [frage, setFrage] = useState("");
+  const [treffer, setTreffer] = useState(null);
+  const [antwort, setAntwort] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [uebersicht, setUebersicht] = useState([]);
+  const [neuTitel, setNeuTitel] = useState("");
+  const [neuText, setNeuText] = useState("");
+  const [status, setStatus] = useState("");
+
+  useEffect(() => { ladeInhaltsUebersicht().then(setUebersicht); }, []);
+
+  const suchen = async () => {
+    if (busy || !frage.trim()) return;
+    setBusy(true); setAntwort(""); setTreffer(null);
+    const gefunden = await sucheInhalte(frage.trim(), 5);
+    setTreffer(gefunden);
+    if (gefunden.length) {
+      const kontext = gefunden.map((t, i) => `[${i + 1}] Titel: ${t.titel} (${t.quelle})\n${t.chunk}`).join("\n\n");
+      const txt = await askLuma([{ role: "user", content: `Frage: ${frage.trim()}\n\nAuszüge aus meinen Inhalten:\n${kontext}` }], WISSEN_SYSTEM);
+      setAntwort(txt);
+      logEvent("wissenssuche");
+    }
+    setBusy(false);
+  };
+
+  const hinzufuegen = async () => {
+    if (!neuText.trim()) return;
+    setStatus("…");
+    const n = await merkeInhalt({ titel: neuTitel.trim() || "Ohne Titel", text: neuText.trim(), quelle: "upload" });
+    setStatus(n ? `✓ ${n} Abschnitt(e) gemerkt` : "Konnte nicht gespeichert werden");
+    if (n) { setNeuTitel(""); setNeuText(""); ladeInhaltsUebersicht().then(setUebersicht); if (addPunkte) addPunkte(10, "Inhalt archiviert"); }
+    setTimeout(() => setStatus(""), 3000);
+  };
+
+  return (
+    <div style={{ padding: "12px 0" }}>
+      <Eyebrow>Coach-Werkstatt</Eyebrow>
+      <H size={24} style={{ marginBottom: 6 }}>Dein Wissensarchiv</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
+        Alles, was du hier ablegst, findest du später mit einer normalen Frage wieder — z. B. „Was habe ich über Selbstwert gesagt?".
+        Gefunden wird nur, was wirklich da ist; erfunden wird nichts.
+      </p>
+
+      <Card style={{ marginBottom: 14 }}>
+        <Eyebrow color={C.plum}>Frage an dein Archiv</Eyebrow>
+        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+          <input value={frage} onChange={(e) => setFrage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && suchen()}
+            placeholder="z. B. Was habe ich über Grenzen setzen gesagt?"
+            style={{ flex: 1, padding: "12px 14px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none" }} />
+          <button onClick={suchen} disabled={busy} style={{ width: 46, borderRadius: 12, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 17, opacity: busy ? 0.6 : 1 }}>🔍</button>
+        </div>
+      </Card>
+
+      {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, marginBottom: 12 }}>✨ ilho durchsucht dein Archiv …</p>}
+
+      {treffer !== null && !busy && (
+        treffer.length === 0 ? (
+          <Card style={{ marginBottom: 14 }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, lineHeight: 1.55 }}>
+              Dazu finde ich nichts in deinen Inhalten. {uebersicht.length === 0 ? "Dein Archiv ist noch leer — leg unten den ersten Inhalt ab." : "Vielleicht mit anderen Worten suchen?"}
+            </p>
+          </Card>
+        ) : (
+          <>
+            {antwort && (
+              <Card style={{ marginBottom: 12, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Eyebrow color={C.gold}>Antwort aus deinem Archiv</Eyebrow>
+                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>ilho · KI</span>
+                </div>
+                <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{antwort}</p>
+              </Card>
+            )}
+            <Eyebrow color={C.plum}>Fundstellen</Eyebrow>
+            {treffer.map((t) => (
+              <Card key={t.id} style={{ marginTop: 8, marginBottom: 8 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, color: C.plum }}>{t.titel} <span style={{ fontWeight: 400, opacity: 0.7 }}>· {t.quelle}</span></div>
+                <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, lineHeight: 1.55, marginTop: 5 }}>{t.chunk.slice(0, 260)}{t.chunk.length > 260 ? " …" : ""}</p>
+              </Card>
+            ))}
+          </>
+        )
+      )}
+
+      <Card style={{ marginTop: 16, marginBottom: 14 }}>
+        <Eyebrow color={C.plum}>Inhalt ablegen</Eyebrow>
+        <input value={neuTitel} onChange={(e) => setNeuTitel(e.target.value)} placeholder="Titel — z. B. Reel Selbstwert, Mai 2024"
+          style={{ width: "100%", padding: "11px 13px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", margin: "8px 0" }} />
+        <textarea rows={5} value={neuText} onChange={(e) => setNeuText(e.target.value)} placeholder="Text, Transkript oder Notiz einfügen …"
+          style={{ width: "100%", padding: "12px 14px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10, lineHeight: 1.5 }} />
+        <Btn small ghost={!neuText.trim()} onClick={hinzufuegen}>Ins Archiv legen</Btn>
+        {status && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.sage, marginLeft: 10 }}>{status}</span>}
+      </Card>
+
+      {uebersicht.length > 0 && (
+        <Card>
+          <Eyebrow color={C.plum}>Im Archiv · {uebersicht.length} Inhalt(e)</Eyebrow>
+          {uebersicht.slice(0, 12).map((u, i) => (
+            <div key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, padding: "7px 0", borderBottom: i < Math.min(11, uebersicht.length - 1) ? `1px solid ${C.line}` : "none" }}>
+              {u.titel} <span style={{ opacity: 0.6 }}>· {u.quelle} · {u.teile} Abschnitt(e)</span>
+            </div>
+          ))}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/* ── Session Intelligence (Katman 1 · Baustein 5) ──
+   Transkript → strukturierter Notiz-ENTWURF für die Coachin.
+   Zwei harte Regeln aus der Leitplanken-Liste:
+   1) Einwilligungs-Gate VOR der Analyse (Art.-9-Nähe) — ohne Häkchen kein Knopf.
+   2) Freigabe-Prinzip: Der Entwurf erreicht niemanden ohne Freigabe der Coachin.
+   Bewusst NICHT enthalten: Emotions-/Persönlichkeitsanalyse, Risikobewertung der Person,
+   Muster-/Blind-Spot-Deutung (das ist Katman 3). Nur explizit Gesagtes. */
+const SESSION_SYSTEM = `Du strukturierst das Transkript einer Coaching-Session für die Coachin. Antworte AUSSCHLIESSLICH mit gültigem JSON in exakt dieser Form:
+{"kernthemen":["..."],"vereinbarungen":["..."],"aufgaben":["..."],"offene_punkte":["..."]}
+STRIKTE REGELN:
+1. Nimm NUR auf, was im Transkript wörtlich gesagt wurde. Keine Interpretation, keine Vermutung, keine Ergänzung aus Allgemeinwissen.
+2. KEINE Diagnosen, keine psychologische Deutung, keine Bewertung der Klientin, keine Einschätzung ihres Zustands oder Risikos, keine Muster-/Verhaltensanalyse.
+3. "aufgaben" nur, wenn im Gespräch tatsächlich eine Aufgabe/Übung vereinbart wurde.
+4. Sprache: Deutsch, knapp, sachlich. Jeder Punkt max. ein Satz.
+5. Wenn ein Feld leer bleiben muss, gib ein leeres Array zurück. Erfinde nichts.
+6. Kein Text außerhalb des JSON.`;
+
+function SessionIntelligenz({ addPunkte }) {
+  const [titel, setTitel] = useState("");
+  const [transkript, setTranskript] = useState("");
+  const [einwilligung, setEinwilligung] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [entwurf, setEntwurf] = useState(null); // { id?, notiz, notiz_text, freigegeben }
+  const [fehler, setFehler] = useState("");
+  const [hoeren, setHoeren] = useState(false);
+  const recRef = useRef(null);
+
+  const diktieren = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setFehler("Spracherkennung wird von diesem Browser nicht unterstützt."); return; }
+    if (hoeren) { recRef.current?.stop(); setHoeren(false); return; }
+    const r = new SR();
+    r.lang = "de-DE"; r.continuous = true; r.interimResults = false;
+    r.onresult = (e) => {
+      let neu = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) neu += e.results[i][0].transcript + " ";
+      if (neu) setTranskript((t) => (t + " " + neu).trim());
+    };
+    r.onerror = () => setHoeren(false);
+    r.onend = () => setHoeren(false);
+    recRef.current = r; r.start(); setHoeren(true);
+  };
+
+  const analysieren = async () => {
+    if (busy || !einwilligung || transkript.trim().length < 40) return;
+    setBusy(true); setFehler("");
+    const roh = await askLuma([{ role: "user", content: transkript.trim().slice(0, 12000) }], SESSION_SYSTEM);
+    let notiz = null;
+    try { notiz = JSON.parse((roh.match(/\{[\s\S]*\}/) || [roh])[0]); } catch { /* unten abgefangen */ }
+    if (!notiz) { setFehler("Der Entwurf konnte nicht strukturiert werden — bitte noch einmal versuchen."); setBusy(false); return; }
+    const abschnitt = (t, arr) => (arr?.length ? `**${t}**\n${arr.map((x) => `- ${x}`).join("\n")}\n\n` : "");
+    const text =
+      abschnitt("Kernthemen", notiz.kernthemen) +
+      abschnitt("Vereinbarungen", notiz.vereinbarungen) +
+      abschnitt("Aufgaben bis zur nächsten Session", notiz.aufgaben) +
+      abschnitt("Offene Punkte", notiz.offene_punkte);
+    const gespeichert = await speichereSessionNotiz({
+      titel: titel.trim() || `Session ${new Date().toLocaleDateString("de-DE")}`,
+      transkript: transkript.trim(), notiz, notiz_text: text.trim(), einwilligung: true,
+    });
+    setEntwurf({ id: gespeichert?.id, notiz, notiz_text: text.trim(), freigegeben: false });
+    if (addPunkte) addPunkte(15, "Session-Notiz erstellt");
+    logEvent("session_notiz_entwurf");
+    setBusy(false);
+  };
+
+  const freigeben = async () => {
+    if (!entwurf) return;
+    if (entwurf.id) await gibSessionNotizFrei(entwurf.id);
+    // Erst nach Freigabe wandert die Notiz ins Wissensarchiv (Knowledge Brain) —
+    // nie der Rohtranskript, nur der geprüfte Entwurf.
+    if (entwurf.notiz_text) {
+      await merkeInhalt({
+        titel: titel.trim() || `Session ${new Date().toLocaleDateString("de-DE")}`,
+        text: entwurf.notiz_text, quelle: "session_notiz", quelle_id: entwurf.id || null,
+      });
+    }
+    setEntwurf({ ...entwurf, freigegeben: true });
+  };
+
+  return (
+    <div style={{ padding: "12px 0" }}>
+      <Eyebrow>Coach-Werkstatt</Eyebrow>
+      <H size={24} style={{ marginBottom: 6 }}>Session-Notiz</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
+        Sprich oder füge dein Transkript ein — ilho strukturiert daraus einen <strong>Entwurf</strong>: Kernthemen, Vereinbarungen, Aufgaben, offene Punkte.
+        Nur, was tatsächlich gesagt wurde. Keine Deutung, keine Bewertung.
+      </p>
+
+      {!entwurf && (
+        <>
+          <Card style={{ marginBottom: 14 }}>
+            <Eyebrow color={C.plum}>Bezeichnung (ohne Klarnamen)</Eyebrow>
+            <input value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="z. B. Session 12.08. · A."
+              style={{ width: "100%", padding: "11px 13px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginTop: 8 }} />
+          </Card>
+
+          <Card style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <Eyebrow color={C.plum}>Transkript</Eyebrow>
+              <button onClick={diktieren} style={{ border: "none", background: hoeren ? C.rose : C.roseSoft, color: hoeren ? "#fff" : C.plum, borderRadius: 18, padding: "7px 14px", fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
+                {hoeren ? "⏹ Aufnahme stoppen" : "🎙️ Diktieren"}
+              </button>
+            </div>
+            <textarea rows={9} value={transkript} onChange={(e) => setTranskript(e.target.value)} placeholder="Transkript einfügen oder diktieren …"
+              style={{ width: "100%", padding: "12px 14px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.5 }} />
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 6 }}>{transkript.trim().length} Zeichen{transkript.trim().length < 40 ? " · mindestens 40 nötig" : ""}</div>
+          </Card>
+
+          {/* Einwilligungs-Gate — Pflicht vor der Analyse */}
+          <Card style={{ marginBottom: 14, border: `1.5px solid ${einwilligung ? C.sage : "#E7B7A8"}`, background: einwilligung ? "#F2F8F0" : "#FBF6F2" }}>
+            <div onClick={() => setEinwilligung(!einwilligung)} style={{ display: "flex", gap: 11, alignItems: "flex-start", cursor: "pointer" }}>
+              <div style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, marginTop: 1, border: `1.5px solid ${einwilligung ? C.sage : C.line}`, background: einwilligung ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>{einwilligung ? "✓" : ""}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, lineHeight: 1.5 }}>
+                Meine Klientin hat der Verarbeitung dieser Session durch eine KI <strong>ausdrücklich zugestimmt</strong> (Art. 9 DSGVO). Ohne diese Zustimmung darf die Analyse nicht erfolgen.
+              </div>
+            </div>
+          </Card>
+
+          {fehler && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: "#B0492F", marginBottom: 10 }}>{fehler}</p>}
+          <Btn full ghost={!einwilligung || transkript.trim().length < 40} onClick={analysieren} disabled={busy}>
+            {busy ? "✨ ilho strukturiert …" : "Notiz-Entwurf erstellen"}
+          </Btn>
+          {!einwilligung && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, textAlign: "center", marginTop: 8 }}>Ohne bestätigte Einwilligung ist die Analyse gesperrt.</p>}
+        </>
+      )}
+
+      {entwurf && (
+        <>
+          <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Eyebrow color={C.gold}>{entwurf.freigegeben ? "✅ Freigegeben" : "📝 Entwurf — noch nicht freigegeben"}</Eyebrow>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>von ilho · KI-generiert</span>
+            </div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.espresso, lineHeight: 1.65, marginTop: 10, whiteSpace: "pre-wrap" }}>
+              {entwurf.notiz_text || "— keine strukturierten Inhalte gefunden —"}
+            </div>
+          </Card>
+          {!entwurf.freigegeben ? (
+            <>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, marginBottom: 10 }}>
+                Prüfe den Entwurf. Erst nach deiner Freigabe darf er weiterverwendet oder mit deiner Klientin geteilt werden.
+              </p>
+              <Btn full onClick={freigeben}>Entwurf freigeben</Btn>
+            </>
+          ) : (
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, marginBottom: 10 }}>✓ Freigegeben — die Notiz ist jetzt für die weitere Verwendung markiert.</p>
+          )}
+          <div style={{ marginTop: 10 }}>
+            <Btn small ghost onClick={() => { setEntwurf(null); setTranskript(""); setTitel(""); setEinwilligung(false); }}>Neue Session</Btn>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function CoachTwinInterview({ addPunkte }) {
   const [schritt, setSchritt] = useState(0); // -1 = fertig/Übersicht
@@ -3083,6 +3398,8 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon }) {
             { t: "📖 App-Guide", fn: () => go("appguide") },
             { t: "🧑‍⚕️ Coach-Ansicht (Demo)", fn: () => go("coachdash") },
             { t: "🤝 KI Coach Twin (Beta)", fn: () => go("coachtwin") },
+            { t: "📝 Session-Notiz (Coach-Werkstatt)", fn: () => go("sessionnotiz") },
+            { t: "🧠 Wissensarchiv (Coach-Werkstatt)", fn: () => go("wissen") },
             { t: "💬 Support kontaktieren", fn: null },
             { t: "🆘 In Krisen: TelefonSeelsorge 0800 111 0 111 · Notruf 112", fn: null },
             { t: "📄 Datenschutzerklärung", fn: () => go("datenschutz") },
@@ -4690,6 +5007,7 @@ Regeln: Erfinde keine konkreten Fakten über ihr Leben, die oben nicht stehen. S
           placeholder="Frag dein Zukunfts-Ich …"
           style={{ flex: 1, padding: "13px 15px", borderRadius: 14, border: `1.5px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 14.5, outline: "none", background: C.card, color: C.espresso }}
         />
+        <Mikro size={44} onText={(t) => setInput((prev) => (prev ? prev + " " : "") + t)} />
         <Btn onClick={senden} disabled={busy || !input.trim()}>➤</Btn>
       </div>
     </div>
@@ -6405,6 +6723,8 @@ export default function IlhoApp() {
               {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
               {tab === "coachdash" && <CoachDashboard name={anzeigeName} streak={streak} entries={entries} ch369={ch369} drawn={drawn} horo={horo} energie={energie} aufgaben={aufgaben} checkins={checkins} />}
               {tab === "coachtwin" && <CoachTwinInterview addPunkte={addPunkte} />}
+              {tab === "sessionnotiz" && <SessionIntelligenz addPunkte={addPunkte} />}
+              {tab === "wissen" && <WissensSuche addPunkte={addPunkte} />}
               {tab === "schatten" && <Schattenspiegel addPunkte={addPunkte} />}
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
               {tab === "archetyp" && <ArchetypTest archetyp={archetyp} setArchetyp={setArchetyp} addPunkte={addPunkte} />}

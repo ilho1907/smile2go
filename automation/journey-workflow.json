@@ -1,0 +1,131 @@
+{
+  "name": "smile2go · Client Journey Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] }
+      },
+      "id": "trigger-stuendlich",
+      "name": "Stündlich prüfen",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/journey_runs?status=eq.aktiv&naechster_lauf=lte.{{new Date().toISOString()}}&select=id,template_id,user_id,coach_id,aktuelle_position",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "faellige-laeufe",
+      "name": "Fällige Läufe holen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": { "options": {} },
+      "id": "aufteilen",
+      "name": "Je Lauf aufteilen",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/journey_steps?template_id=eq.{{$json.template_id}}&position=eq.{{$json.aktuelle_position + 1}}&select=position,warte_stunden,bedingung,aktion,inhalt",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "naechster-schritt",
+      "name": "Nächsten Schritt laden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// REGELBASIERT — kein LLM. Bedingungen werden hier deterministisch geprüft.\n// Ist kein Schritt mehr da, wird der Lauf beendet.\nconst out = [];\nfor (const item of $input.all()) {\n  const lauf = $('Je Lauf aufteilen').item.json;\n  const schritte = Array.isArray(item.json) ? item.json : [item.json];\n  const schritt = schritte[0];\n\n  if (!schritt || !schritt.aktion) {\n    out.push({ json: { lauf_id: lauf.id, aktion: 'beenden' } });\n    continue;\n  }\n\n  // Bedingungen (Beispiel: nur senden, wenn länger inaktiv). Nicht erfüllte Bedingung =\n  // Schritt wird übersprungen, nicht wiederholt — sonst blockiert die Reise.\n  let erfuellt = true;\n  if (schritt.bedingung && schritt.bedingung.feld === 'letzter_eintrag_aelter_als_tage') {\n    erfuellt = Boolean(lauf.inaktiv_tage === undefined || lauf.inaktiv_tage >= schritt.bedingung.wert);\n  }\n\n  const naechster = new Date(Date.now() + (schritt.warte_stunden || 0) * 3600 * 1000).toISOString();\n  out.push({ json: {\n    lauf_id: lauf.id,\n    user_id: lauf.user_id,\n    coach_id: lauf.coach_id,\n    position: schritt.position,\n    aktion: erfuellt ? schritt.aktion : 'ueberspringen',\n    inhalt: schritt.inhalt,\n    naechster_lauf: naechster,\n  }});\n}\nreturn out;"
+      },
+      "id": "regel-pruefung",
+      "name": "Regeln prüfen (kein LLM)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/journey_runs?id=eq.{{$json.lauf_id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.aktion === 'beenden' ? JSON.stringify({ status: 'beendet' }) : JSON.stringify({ aktuelle_position: $json.position, naechster_lauf: $json.naechster_lauf }) }}",
+        "options": {}
+      },
+      "id": "lauf-fortschreiben",
+      "name": "Lauf fortschreiben",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/app_events",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ user_hash: 'journey', event_type: 'journey_schritt', topic_tag: $json.aktion }) }}",
+        "options": {}
+      },
+      "id": "event-loggen",
+      "name": "Event loggen (anonym)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1520, 300]
+    }
+  ],
+  "connections": {
+    "Stündlich prüfen": { "main": [[{ "node": "Fällige Läufe holen", "type": "main", "index": 0 }]] },
+    "Fällige Läufe holen": { "main": [[{ "node": "Je Lauf aufteilen", "type": "main", "index": 0 }]] },
+    "Je Lauf aufteilen": { "main": [[{ "node": "Nächsten Schritt laden", "type": "main", "index": 0 }]] },
+    "Nächsten Schritt laden": { "main": [[{ "node": "Regeln prüfen (kein LLM)", "type": "main", "index": 0 }]] },
+    "Regeln prüfen (kein LLM)": { "main": [[{ "node": "Lauf fortschreiben", "type": "main", "index": 0 }]] },
+    "Lauf fortschreiben": { "main": [[{ "node": "Event loggen (anonym)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "hinweis": "smile2go Client Journey Automation (Katman 1, Baustein 7). Voraussetzungen: laufende n8n-Instanz (EU-Hosting empfohlen) + Umgebungsvariablen SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY. Der Service-Role-Key umgeht RLS — er gehört ausschliesslich in n8n, niemals ins Frontend. Zustellung (Push/E-Mail) ist bewusst noch nicht angeschlossen: Der Workflow schreibt zunaechst nur den Reisefortschritt fort. Sobald der Zustellkanal steht, wird zwischen 'Regeln pruefen' und 'Lauf fortschreiben' der Versandknoten eingehaengt."
+  }
+}
