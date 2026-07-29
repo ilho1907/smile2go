@@ -3,7 +3,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import MediaBanner from "./MediaBanner";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO } from "./media";
-import { supabase, ladeAppState, speichereAppState } from "./supabase";
+import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -1343,6 +1343,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
     setDrawn({ ...c, tag: heute });
     setFlip(true);
     if (addPunkte && !neu) addPunkte(5, "Tageskarte gezogen");
+    logEvent("karte_gezogen", c.b);
   };
 
   // Ehrliche Ersatz-Deutung, falls die KI nicht erreichbar ist — nie derselbe Text wie auf der Karte.
@@ -1829,6 +1830,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
     }, ...entries]);
     setIntention(""); setDank(["", "", "", "", "", ""]); setStimmung(null);
     if (addPunkte) addPunkte(10, "Tagebuch-Eintrag");
+    logEvent("journal_eintrag");
     setSaved(true); setTimeout(() => setSaved(false), 2500);
   };
 
@@ -2057,6 +2059,7 @@ function DankbarkeitsChallenge({ ch, setCh, addPunkte }) {
     setCh(neu);
     setGefeiert(true);
     if (addPunkte) addPunkte(10 + tag, `Tag ${tag}: ${tag} Dankbarkeiten`);
+    logEvent("challenge_tag", "dankbarkeit");
     setTimeout(() => setGefeiert(false), 4000);
   };
 
@@ -2393,6 +2396,180 @@ function coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 }) {
     ["Journal", journalScore, "einen kurzen Tagebuch-Eintrag"],
   ].sort((a, b) => a[1] - b[1]);
   return { index, warnungen, briefing, empfehlung: comps[0][2], schwaechster: comps[0][0], offen, dankbarkeitHeute };
+}
+
+/* ── AI Coach Twin — Konfigurationsinterview + Methoden-Dossier (Fable-5-Auftrag 6, Phase A) ──
+   18 Fragen in 4 Blöcken, danach synthetisiert Claude AUSSCHLIESSLICH aus den echten Antworten
+   ein strukturiertes Dossier (kein Freitext-Erfinden). Nichts geht ohne Freigabe der Coachin an
+   Klientinnen — deshalb: Entwurf speichern → prüfen/editieren → explizit freigeben. */
+const COACH_TWIN_BLOCKS = ["Methode & Ansatz", "Sprache & Ausdruck", "Grenzen & Tabus", "Typische Situationen"];
+const COACH_TWIN_FRAGEN = [
+  { f: "Wie würdest du deinen Coaching-Ansatz in 2–3 Sätzen beschreiben?", k: "ansatz" },
+  { f: "Mit welcher Methode oder welchem Werkzeug arbeitest du am liebsten?", k: "methode" },
+  { f: "Was unterscheidet deine Arbeit von anderen Coachinnen in deinem Bereich?", k: "unterschied" },
+  { f: "Woran erkennst du, dass eine Klientin einen Durchbruch hatte?", k: "durchbruch" },
+  { f: "Was ist der wichtigste Glaubenssatz, den du deinen Klientinnen vermitteln willst?", k: "kernbotschaft" },
+  { f: "Welche 3–5 Wörter oder Formulierungen verwendest du besonders oft?", k: "lieblingsbegriffe" },
+  { f: "Duzt oder siezt du deine Klientinnen normalerweise?", k: "anrede" },
+  { f: "Bist du eher direkt und klar, oder sanft und zurückhaltend in deiner Ansprache?", k: "ton" },
+  { f: "Gibt es Sätze oder Floskeln, die du NIE benutzen würdest?", k: "verbotene_saetze" },
+  { f: "Wie würdest du deinen Humor/Ton beschreiben — ernst, verspielt, poetisch, nüchtern?", k: "stil" },
+  { f: "Bei welchem Thema verweist du sofort an eine andere Fachperson (z. B. Therapie)?", k: "verweisgrenze" },
+  { f: "Gibt es Heilsversprechen oder Formulierungen, die du bewusst vermeidest?", k: "vermiedene_versprechen" },
+  { f: "Wie reagierst du, wenn eine Klientin über etwas spricht, das dich fachlich überfordert?", k: "ueberforderung" },
+  { f: "Was würdest du niemals versprechen, egal wie sehr eine Klientin es sich wünscht?", k: "nie_versprechen" },
+  { f: "Beschreibe eine typische Klientin, mit der du gerade arbeitest (anonymisiert).", k: "typische_klientin" },
+  { f: "Was ist ein Satz, den du oft zu Beginn einer Session sagst?", k: "eroeffnungssatz" },
+  { f: "Was ist ein Satz, den du oft am Ende einer Session sagst?", k: "abschlusssatz" },
+  { f: "Wenn eine Klientin sich zurückzieht/still wird, wie sprichst du sie an?", k: "rueckzug_ansprache" },
+];
+
+function CoachTwinInterview({ addPunkte }) {
+  const [schritt, setSchritt] = useState(0); // -1 = fertig/Übersicht
+  const [antworten, setAntworten] = useState({});
+  const [eingabe, setEingabe] = useState("");
+  const [erzeuge, setErzeuge] = useState(false);
+  const [dossier, setDossier] = useState(null); // { id, dossier, dossier_text, freigegeben, version }
+  const [fehler, setFehler] = useState("");
+  const [probeMsgs, setProbeMsgs] = useState([]);
+  const [probeText, setProbeText] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const bestehend = await ladeEigenesDossier();
+      if (bestehend) { setDossier(bestehend); setSchritt(-1); }
+    })();
+  }, []);
+
+  const weiter = () => {
+    const frage = COACH_TWIN_FRAGEN[schritt];
+    setAntworten((prev) => ({ ...prev, [frage.k]: eingabe.trim() }));
+    setEingabe("");
+    if (schritt + 1 < COACH_TWIN_FRAGEN.length) setSchritt(schritt + 1);
+    else erzeugeDossier({ ...antworten, [frage.k]: eingabe.trim() });
+  };
+
+  const erzeugeDossier = async (alleAntworten) => {
+    setErzeuge(true);
+    setFehler("");
+    const rohListe = COACH_TWIN_FRAGEN.map((q) => `${q.f}\nAntwort: ${alleAntworten[q.k] || "—"}`).join("\n\n");
+    const sysPrompt = `Du erstellst ein Methoden-Dossier für eine Coachin — AUSSCHLIESSLICH aus den unten gegebenen echten Interview-Antworten. Erfinde NICHTS hinzu, was nicht in den Antworten steht oder sich direkt daraus ableiten lässt. Antworte NUR mit einem JSON-Objekt (kein Fließtext davor/danach) mit genau diesen Feldern: {"ton": "kurze Beschreibung ihres Tonfalls", "anrede": "du oder Sie", "kernbegriffe": ["...", "..."], "tabus": ["...", "..."], "methodeKurz": "1 Satz", "eroeffnungssatz": "...", "abschlusssatz": "...", "grenzenText": "wie sie bei Überforderung/Verweisung reagiert", "rueckzugAnsprache": "..."}`;
+    try {
+      const antwortJson = await askLuma([{ role: "user", content: rohListe }], sysPrompt);
+      let geparst = null;
+      try { geparst = JSON.parse(antwortJson.replace(/```json|```/g, "").trim()); } catch { geparst = null; }
+      const dossierText = geparst
+        ? `# Methoden-Dossier\n\n**Ton:** ${geparst.ton}\n**Anrede:** ${geparst.anrede}\n**Methode:** ${geparst.methodeKurz}\n**Lieblingsbegriffe:** ${(geparst.kernbegriffe || []).join(", ")}\n**Tabus:** ${(geparst.tabus || []).join(", ")}\n**Eröffnungssatz:** „${geparst.eroeffnungssatz}"\n**Abschlusssatz:** „${geparst.abschlusssatz}"\n**Grenzen:** ${geparst.grenzenText}\n**Bei Rückzug:** ${geparst.rueckzugAnsprache}`
+        : antwortJson;
+      const gespeichert = await speichereDossierEntwurf({ antworten: alleAntworten, dossier: geparst, dossier_text: dossierText });
+      if (gespeichert) { setDossier(gespeichert); setSchritt(-1); addPunkte?.(20, "Methoden-Dossier erstellt"); }
+      else setFehler("Konnte das Dossier nicht speichern — bitte gleich noch einmal versuchen.");
+    } catch {
+      setFehler("Gerade nicht erreichbar — versuch es in einem Moment erneut.");
+    } finally {
+      setErzeuge(false);
+    }
+  };
+
+  const freigeben = async () => {
+    if (!dossier?.id) return;
+    const ok = await gibDossierFrei(dossier.id);
+    if (ok) setDossier({ ...dossier, freigegeben: true, freigegeben_am: new Date().toISOString() });
+  };
+
+  const exportieren = () => {
+    const blob = new Blob([dossier?.dossier_text || ""], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "methoden-dossier.md"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const probeSprechen = async () => {
+    if (!probeText.trim()) return;
+    const next = [...probeMsgs, { role: "user", content: probeText }];
+    setProbeMsgs(next); setProbeText("");
+    const ton = dossier?.dossier
+      ? `\n(Sprich im Ton dieser Coachin: ${dossier.dossier.ton}. Anrede: ${dossier.dossier.anrede}. Nutze wenn passend diese Begriffe: ${(dossier.dossier.kernbegriffe || []).join(", ")}. Vermeide: ${(dossier.dossier.tabus || []).join(", ")}.)`
+      : "";
+    const reply = await askLuma(next, ILHO_SYSTEM + ton);
+    setProbeMsgs([...next, { role: "assistant", content: reply }]);
+  };
+
+  // Fertig-Ansicht: Dossier prüfen, freigeben, Probesprechen
+  if (schritt === -1 && dossier) {
+    return (
+      <div style={{ padding: "12px 0" }}>
+        <Eyebrow>KI Coach Twin</Eyebrow>
+        <H size={22} style={{ marginBottom: 4 }}>Dein Methoden-Dossier</H>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginBottom: 14 }}>
+          Version {dossier.version} · {dossier.freigegeben ? "✅ freigegeben — ilho spricht jetzt in deinem Ton" : "Entwurf — noch nicht freigegeben"}
+        </p>
+        <Card style={{ marginBottom: 14, whiteSpace: "pre-wrap", fontFamily: "system-ui, sans-serif", fontSize: 13, lineHeight: 1.6, color: C.espresso }}>
+          {dossier.dossier_text}
+        </Card>
+        <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+          {!dossier.freigegeben && (
+            <button onClick={freigeben} style={{ flex: 1, padding: "12px", borderRadius: 12, border: "none", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontWeight: 700, cursor: "pointer" }}>
+              ✓ Dossier freigeben
+            </button>
+          )}
+          <button onClick={exportieren} style={{ flex: 1, padding: "12px", borderRadius: 12, border: `1px solid ${C.line}`, background: C.card, color: C.espresso, fontWeight: 600, cursor: "pointer" }}>
+            📄 Als Text exportieren
+          </button>
+          <button onClick={() => { setDossier(null); setSchritt(0); setAntworten({}); }} style={{ padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.line}`, background: "transparent", color: C.ink, cursor: "pointer" }}>
+            ↻ Neu
+          </button>
+        </div>
+
+        <Eyebrow>Probesprechen mit „deiner" ilho</Eyebrow>
+        <Card style={{ marginBottom: 10, minHeight: 100 }}>
+          {probeMsgs.length === 0 && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink }}>Schreib etwas, wie es eine Klientin tun würde — ilho antwortet in deinem konfigurierten Ton.</p>}
+          {probeMsgs.map((m, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
+              <div style={{ maxWidth: "82%", padding: "9px 13px", borderRadius: 16, fontFamily: "system-ui, sans-serif", fontSize: 13.5, background: m.role === "user" ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.beige, color: m.role === "user" ? "#fff" : C.espresso }}>{m.content}</div>
+            </div>
+          ))}
+        </Card>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input value={probeText} onChange={(e) => setProbeText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && probeSprechen()} placeholder="Nachricht wie eine Klientin…"
+            style={{ flex: 1, padding: "11px 14px", borderRadius: 12, border: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 14 }} />
+          <button onClick={probeSprechen} style={{ padding: "11px 16px", borderRadius: 12, border: "none", background: C.espresso, color: "#fff", cursor: "pointer" }}>→</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (erzeuge) {
+    return (
+      <div style={{ padding: "40px 0", textAlign: "center" }}>
+        <div style={{ fontSize: 34, marginBottom: 12 }}>✨</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink }}>ilho erstellt dein Methoden-Dossier aus deinen Antworten …</p>
+      </div>
+    );
+  }
+
+  const frage = COACH_TWIN_FRAGEN[schritt];
+  const blockIndex = Math.floor(schritt / (COACH_TWIN_FRAGEN.length / COACH_TWIN_BLOCKS.length));
+  return (
+    <div style={{ padding: "12px 0" }}>
+      <Eyebrow>KI Coach Twin · Konfigurationsinterview</Eyebrow>
+      <H size={22} style={{ marginBottom: 4 }}>Frage {schritt + 1}/{COACH_TWIN_FRAGEN.length}</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, marginBottom: 16 }}>Block: {COACH_TWIN_BLOCKS[Math.min(blockIndex, 3)]}</p>
+      <div style={{ height: 4, background: C.line, borderRadius: 2, marginBottom: 20 }}>
+        <div style={{ height: 4, borderRadius: 2, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})`, width: `${((schritt + 1) / COACH_TWIN_FRAGEN.length) * 100}%`, transition: "width .3s" }} />
+      </div>
+      <Card style={{ marginBottom: 16 }}>
+        <p style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.5 }}>{frage.f}</p>
+      </Card>
+      {fehler && <p style={{ color: C.rose, fontSize: 12.5, marginBottom: 10 }}>{fehler}</p>}
+      <textarea value={eingabe} onChange={(e) => setEingabe(e.target.value)} rows={4} placeholder="Deine Antwort…"
+        style={{ width: "100%", padding: 14, borderRadius: 14, border: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 14.5, marginBottom: 14, resize: "vertical" }} />
+      <button onClick={weiter} disabled={!eingabe.trim()} style={{ width: "100%", padding: 14, borderRadius: 14, border: "none", background: eingabe.trim() ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.line, color: "#fff", fontWeight: 700, fontSize: 15, cursor: eingabe.trim() ? "pointer" : "default" }}>
+        {schritt + 1 < COACH_TWIN_FRAGEN.length ? "Weiter →" : "✨ Dossier erstellen"}
+      </button>
+    </div>
+  );
 }
 
 /* ── Coach-Dashboard: tägliche Aufgaben-Erledigung je Klientin (Demo · Einzelnutzer-Prototyp) ── */
@@ -2754,6 +2931,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon }) {
           {[
             { t: "📖 App-Guide", fn: () => go("appguide") },
             { t: "🧑‍⚕️ Coach-Ansicht (Demo)", fn: () => go("coachdash") },
+            { t: "🤝 KI Coach Twin (Beta)", fn: () => go("coachtwin") },
             { t: "💬 Support kontaktieren", fn: null },
             { t: "🆘 In Krisen: TelefonSeelsorge 0800 111 0 111 · Notruf 112", fn: null },
             { t: "📄 Datenschutzerklärung", fn: () => go("datenschutz") },
@@ -6075,6 +6253,7 @@ export default function IlhoApp() {
               {tab === "pakete" && <><MediaBanner video={S2GVID.pakete} poster={S2GIMG.pakete} title="Pakete" subtitle="Wähle dein Geschenk an dich" height={190} /><Pakete addPunkte={addPunkte} go={go} /></>}
               {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
               {tab === "coachdash" && <CoachDashboard name={anzeigeName} streak={streak} entries={entries} ch369={ch369} drawn={drawn} horo={horo} energie={energie} aufgaben={aufgaben} checkins={checkins} />}
+              {tab === "coachtwin" && <CoachTwinInterview addPunkte={addPunkte} />}
               {tab === "schatten" && <Schattenspiegel addPunkte={addPunkte} />}
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
               {tab === "archetyp" && <ArchetypTest archetyp={archetyp} setArchetyp={setArchetyp} addPunkte={addPunkte} />}
