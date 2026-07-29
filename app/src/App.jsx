@@ -2573,6 +2573,69 @@ function CoachTwinInterview({ addPunkte }) {
 }
 
 /* ── Coach-Dashboard: tägliche Aufgaben-Erledigung je Klientin (Demo · Einzelnutzer-Prototyp) ── */
+/* ── Business Manager Light: „Heute"-Aktionsliste (Katman 1 · Baustein 4) ──
+   REGELBASIERT — kein LLM wählt aus, was wichtig ist. Max. 7 Einträge, jede Zeile eine Handlung.
+   Im Mehrklientinnen-Betrieb speist sich das aus allen verknüpften Klientinnen; im Prototyp aus der Einzelnutzerin. */
+function coachHeuteAktionen({ ci, checkins, entries, streak, ch369 }) {
+  const a = [];
+  const heuteStr = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" });
+  // 1. Kritische Signale zuerst (bestehende Signal-Logik)
+  ci.warnungen.forEach((w) => a.push({ icon: "🔴", t: w, art: "Signal prüfen" }));
+  // 2. Stille Klientin: kein Journal seit >3 Einträgen zurückliegendem Datum bzw. Streak-Riss
+  if (streak === 0 && entries?.length) a.push({ icon: "🕯️", t: "Klientin war zuletzt nicht aktiv — sanft nachfragen?", art: "Kontakt" });
+  // 3. Unbeantwortete Check-in-Notiz (Notiz an Coachin vorhanden)
+  const notiz = (checkins || []).find((c) => c.notiz);
+  if (notiz) a.push({ icon: "💬", t: `Check-in-Notiz vom ${notiz.datum}: „${notiz.notiz}"`, art: "Antworten" });
+  // 4. Challenge-Meilenstein
+  if (ch369?.tag === 21) a.push({ icon: "🏆", t: "Challenge abgeschlossen (Tag 21) — gratulieren!", art: "Feiern" });
+  else if (ch369?.tag >= 1 && !ci.dankbarkeitHeute) a.push({ icon: "🔔", t: `Challenge Tag ${ch369.tag}/21 heute noch offen`, art: "Im Blick behalten" });
+  // 5. Kein Journaleintrag heute
+  if (!entries?.some((e) => e.date === heuteStr)) a.push({ icon: "📔", t: "Heute noch kein Journaleintrag", art: "Beobachten" });
+  // 6. Wochenimpuls fällig (Montag)
+  if (new Date().getDay() === 1) a.push({ icon: "🎙️", t: "Montag: Zeit für deinen Wochenimpuls", art: "Aufnehmen" });
+  return a.slice(0, 7);
+}
+
+/* ── Coach Reflection (Katman 1 · Baustein 3): EINE Frage nach dem Blick aufs Dashboard.
+   Antwort bleibt privat bei der Coachin (Prototyp: localStorage, nie an Klientin/Server). */
+const REFLEXION_SYSTEM = `Du unterstützt eine Coachin bei ihrer eigenen Reflexion. Aus dem folgenden anonymisierten Wochen-Lagebild ihrer Klientin formulierst du GENAU EINE offene, kluge Reflexionsfrage an die Coachin selbst (Deutsch, Du-Form, max. 2 Sätze). Die Frage richtet sich auf IHR coacherisches Handeln oder ihre Wahrnehmung — nie auf eine Diagnose der Klientin. Keine Einleitung, nur die Frage.`;
+
+function CoachReflexion({ ci, checkins, streak }) {
+  const [frage, setFrage] = useState(() => localStorage.getItem("s2g_reflex_frage") || "");
+  const [antwort, setAntwort] = useState(() => localStorage.getItem("s2g_reflex_antwort") || "");
+  const [busy, setBusy] = useState(false);
+  const holen = async () => {
+    if (busy) return;
+    setBusy(true);
+    const lage = `Wohlbefindens-Index: ${ci.index}/100 · Serie: ${streak} Tage · Warnungen: ${ci.warnungen.join("; ") || "keine"} · Schwächster Bereich: ${ci.schwaechster} · Letzter Check-in: ${checkins?.[0] ? `${checkins[0].wert}/5${checkins[0].notiz ? ` — „${checkins[0].notiz}"` : ""}` : "keiner"}`;
+    const f = await askLuma([{ role: "user", content: lage }], REFLEXION_SYSTEM);
+    if (f) { setFrage(f); localStorage.setItem("s2g_reflex_frage", f); logEvent("coach_reflexion"); }
+    setBusy(false);
+  };
+  return (
+    <Card style={{ marginTop: 14, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Eyebrow color={C.gold}>🪞 Deine Reflexion</Eyebrow>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>KI-Frage · Antwort bleibt privat</span>
+      </div>
+      {frage ? (
+        <>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15, color: C.espresso, lineHeight: 1.6, margin: "8px 0 10px" }}>{frage}</p>
+          <textarea rows={3} value={antwort} placeholder="Dein Gedanke dazu — nur für dich …"
+            onChange={(e) => { setAntwort(e.target.value); localStorage.setItem("s2g_reflex_antwort", e.target.value); }}
+            style={{ width: "100%", padding: "11px 13px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }} />
+          <Btn small ghost onClick={holen} disabled={busy}>{busy ? "…" : "Neue Frage"}</Btn>
+        </>
+      ) : (
+        <>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>Nach dem Blick aufs Lagebild: eine Frage an dich selbst. Auch du wächst.</p>
+          <Btn small onClick={holen} disabled={busy}>{busy ? "…" : "Reflexionsfrage erhalten"}</Btn>
+        </>
+      )}
+    </Card>
+  );
+}
+
 function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, aufgaben, checkins }) {
   const ci = coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 });
   const heuteStr = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" });
@@ -2591,6 +2654,26 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginBottom: 16 }}>
         Prototyp — zeigt aktuell nur diese Einzelnutzerin. Für echte Klientinnen-Konten braucht es Login je Nutzerin + Coach-Zuweisung in der Datenbank.
       </p>
+
+      {/* „Heute"-Aktionsliste — regelbasiert, max. 7, jede Zeile eine Handlung (Business Manager Light) */}
+      {(() => {
+        const aktionen = coachHeuteAktionen({ ci, checkins, entries, streak, ch369 });
+        return (
+          <Card style={{ marginBottom: 14, border: `1.5px solid ${C.gold}` }}>
+            <Eyebrow color={C.gold}>☀️ Heute wichtig</Eyebrow>
+            {aktionen.length ? aktionen.map((x, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < aktionen.length - 1 ? `1px solid ${C.line}` : "none" }}>
+                <span style={{ fontSize: 16 }}>{x.icon}</span>
+                <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, lineHeight: 1.4 }}>{x.t}</span>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: C.plum, flexShrink: 0 }}>{x.art}</span>
+              </div>
+            )) : (
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 6 }}>✓ Nichts offen — alles im grünen Bereich.</p>
+            )}
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7, marginTop: 8 }}>Regelbasiert aus den Signalen — keine KI-Auswahl.</div>
+          </Card>
+        );
+      })()}
 
       <Card style={{ marginBottom: 14, textAlign: "center", background: `linear-gradient(150deg, ${C.plum}, ${C.rose} 140%)`, border: "none" }}>
         <Eyebrow color={C.goldPale}>Wohlbefindens-Index</Eyebrow>
@@ -2650,6 +2733,8 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
           <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Noch keine Check-ins.</p>
         )}
       </Card>
+
+      <CoachReflexion ci={ci} checkins={checkins} streak={streak} />
     </div>
   );
 }
@@ -2700,6 +2785,70 @@ function WochenCheckin({ checkins, setCheckins, addPunkte, prefs, setPrefs }) {
   );
 }
 
+/* ── Progress Narrative: „Dein Wochenbild" (Katman 1 · Baustein 2) ──
+   Erzählender Wochenrückblick NUR aus dem, was die Nutzerin selbst geschrieben hat.
+   Harte Sprachregeln (HeilprG-Grenze): paraphrasieren statt bewerten, keine Diagnose-/Messsprache. */
+const WOCHENBILD_SYSTEM = `Du bist ilho, der klar als KI gekennzeichnete Begleiter der App smile2go. Du schreibst „Dein Wochenbild": einen kurzen, warmen Rückblick (4–7 Sätze, Deutsch, Du-Form) für die Nutzerin — ausschließlich aus ihren eigenen Journal-Einträgen, Intentionen und Check-ins der letzten 7 Tage.
+STRIKTE REGELN:
+1. Paraphrasiere NUR, was die Nutzerin selbst geschrieben hat. Beispiel richtig: „Du hast diese Woche dreimal über Druck im Job geschrieben." Beispiel FALSCH: „Dein Stresslevel ist gestiegen."
+2. Keine Diagnosen, keine Bewertungen ihrer Person, keine Mess- oder Punktzahl-Sprache, keine Therapie-Begriffe.
+3. Benenne höchstens EIN wiederkehrendes Thema und EINE beobachtbare Veränderung — mit Bezug auf ihre eigenen Worte.
+4. Schließe mit einer einzigen sanften, offenen Frage für die kommende Woche.
+5. Wenn die Einträge Hinweise auf Krise, Selbstverletzung oder schweres seelisches Leid enthalten: KEIN Wochenbild schreiben, sondern einfühlsam sagen, dass du eine KI bist, und professionelle Hilfe empfehlen (TelefonSeelsorge 0800 111 0 111, Notruf 112).
+6. Wenige oder keine Einträge: ehrlich und liebevoll sagen, dass das Bild diese Woche dünn ist — ohne Vorwurf.`;
+
+function wochenKey() {
+  const d = new Date(); const j = new Date(d.getFullYear(), 0, 1);
+  return `${d.getFullYear()}-W${Math.ceil(((d - j) / 86400000 + j.getDay() + 1) / 7)}`;
+}
+
+function Wochenbild({ entries, checkins, streak, prefs, setPrefs, addPunkte }) {
+  const [busy, setBusy] = useState(false);
+  const key = wochenKey();
+  const gespeichert = prefs?.wochenbild;
+  const aktuell = gespeichert && gespeichert.woche === key ? gespeichert : null;
+
+  const erstellen = async () => {
+    if (busy) return;
+    setBusy(true);
+    const letzte = (entries || []).slice(0, 10).map((e) =>
+      `${e.date}: Intention: ${e.intention || "—"}${e.stimmung ? ` · Selbstauskunft: ${e.stimmung}/10` : ""}${e.items?.length ? ` · ${e.items.join(" | ")}` : ""}`
+    ).join("\n");
+    const ci = (checkins || []).slice(0, 2).map((c) => `${c.datum}: ${c.wert}/5${c.notiz ? ` — „${c.notiz}"` : ""}`).join("\n");
+    const user = `Journal der letzten Tage:\n${letzte || "(keine Einträge)"}\n\nWochen-Check-ins:\n${ci || "(keine)"}\n\nAktive Tage in Folge: ${streak}`;
+    const text = await askLuma([{ role: "user", content: user }], WOCHENBILD_SYSTEM);
+    if (text && setPrefs) {
+      setPrefs({ ...(prefs || {}), wochenbild: { woche: key, datum: new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" }), text } });
+      if (!aktuell && addPunkte) addPunkte(15, "Wochenbild angesehen");
+      logEvent("wochenbild_erstellt");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, ${C.card}, ${C.roseSoft})` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Eyebrow color={C.plum}>🌙 Dein Wochenbild</Eyebrow>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>von ilho · KI</span>
+      </div>
+      {aktuell ? (
+        <>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.65, margin: "8px 0 10px", whiteSpace: "pre-wrap" }}>{aktuell.text}</p>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink }}>Erstellt am {aktuell.datum} · aus deinen eigenen Worten dieser Woche</div>
+          <div style={{ marginTop: 10 }}><Btn small ghost onClick={erstellen} disabled={busy}>{busy ? "✨ entsteht …" : "Neu erstellen"}</Btn></div>
+        </>
+      ) : (
+        <>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>
+            ilho fasst deine Woche in Worte — nur aus dem, was du selbst geschrieben hast. Nichts wird bewertet, nichts gemessen.
+          </p>
+          <Btn small onClick={erstellen} disabled={busy}>{busy ? "✨ ilho liest deine Woche …" : "Wochenbild erstellen"}</Btn>
+        </>
+      )}
+    </Card>
+  );
+}
+
 function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checkins, setCheckins, addPunkte, prefs, setPrefs }) {
   const ci = coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 });
   const week = [3, 2, 4, 1, 3, 2, 4];
@@ -2725,6 +2874,8 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
       </Card>
 
       <WochenCheckin checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} />
+
+      <Wochenbild entries={entries} checkins={checkins} streak={streak} prefs={prefs} setPrefs={setPrefs} addPunkte={addPunkte} />
 
       {/* Frühwarnung (aus der Analyse-Engine) */}
       {ci.warnungen.length > 0 && (
