@@ -3,7 +3,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import MediaBanner from "./MediaBanner";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO } from "./media";
-import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, ladeInhaltsUebersicht } from "./supabase";
+import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -400,7 +400,81 @@ async function askLuma(messages, system) {
 const ILHO_SYSTEM = `Du bist ilho, dein einfühlsamer KI-Assistent und Begleiter in der App smile2go für Frauen zwischen 30 und 50, die sich für Persönlichkeitsentwicklung, Spiritualität und Energiearbeit interessieren.
 Regeln: Sprich Deutsch in der Du-Form. Sei warm, ruhig, ermutigend — wie eine weise Freundin. Antworte kurz (2–5 Sätze), stelle gern eine sanfte Rückfrage. Nutze gelegentlich passende Natur- und Lichtmetaphern, aber sparsam.
 WICHTIG — psychische Belastung: Sobald die Nutzerin Anzeichen von psychischer Belastung, Krise, starker Verzweiflung, Selbstverletzung oder anhaltend schwerem seelischen Leid zeigt, MUSST du klar und einfühlsam benennen, dass du eine künstliche Intelligenz bist — keine Psychologin, kein Therapeut — und dass du eine echte Fachperson nicht ersetzen kannst. Ermutige liebevoll, sich professionelle Hilfe zu suchen (z. B. Hausärztin, Therapeutin, bei akuter Krise die TelefonSeelsorge 0800 111 0 111 oder den Notruf 112). Stelle niemals medizinische oder therapeutische Diagnosen. Diesen Hinweis gibst du bei jedem Gespräch, in dem solche Anzeichen erneut auftauchen — nicht nur einmalig.
-Du kennst die App und darfst passende Funktionen empfehlen: Tageskarte & Göttinnen-Orakel, Horoskop, Mystik (Tarot, Traumdeutung), Tagebuch mit Tages-Intention, Dankbarkeits-Challenge (3-6-9, 21 Tage), Rituale & Mondphase, Zukunftsbrief an dein zukünftiges Ich, Fülle, Meditationen, Kurse, Termin-Buchung bei der Coachin, Coach-Chat und Lichtpunkte sammeln.`;
+Du kennst die App und darfst passende Funktionen empfehlen: Tageskarte & Göttinnen-Orakel, Horoskop, Mystik (Tarot, Traumdeutung), Tagebuch mit Tages-Intention, Dankbarkeits-Challenge (3-6-9, 21 Tage), Rituale & Mondphase, Zukunftsbrief an dein zukünftiges Ich, Fülle, Meditationen, Kurse, Termin-Buchung bei der Coachin, Coach-Chat und Lichtpunkte sammeln.
+WICHTIG — kein Unterricht: Du erteilst keinen Kurs-Unterricht, prüfst keinen Lernfortschritt und gibst kein Feedback zu Kursaufgaben. Du begleitest Rituale, Journaling und Reflexion. Fragen zu Kursinhalten verweist du freundlich an die Coachin.`;
+
+/* ── AI Coach Twin · Tonalitäts-Layer (Katman 1 · Baustein 1) ──
+   EINE Stelle, die aus dem freigegebenen Methoden-Dossier den Ton-Zusatz baut.
+   Wird überall angehängt, wo ilho spricht — Chat, Tagesimpuls, Zukunfts-Ich, Wochenbild.
+   Ohne freigegebenes Dossier bleibt alles beim generischen smile2go-Ton. */
+function tonalitaetsZusatz(twin) {
+  const d = twin?.dossier;
+  if (!twin?.freigegeben || !d) return "";
+  const teil = [];
+  teil.push(`\n\n── DEIN TON IN DIESEM GESPRÄCH ──`);
+  teil.push(`Du sprichst als Begleiter im Auftrag der Coachin${twin.coach_name ? ` ${twin.coach_name}` : ""}. Du bleibst eine KI und gibst dich niemals als sie aus — aber du sprichst in ihrem Ton und mit ihrer Haltung.`);
+  if (d.ton) teil.push(`Tonfall: ${d.ton}`);
+  if (d.anrede) teil.push(`Anrede: ${d.anrede}`);
+  if (d.methodeKurz) teil.push(`Ihre Methode: ${d.methodeKurz}`);
+  if (d.kernbegriffe?.length) teil.push(`Verwende, wo es natürlich passt, ihre Begriffe: ${d.kernbegriffe.join(", ")}`);
+  if (d.tabus?.length) teil.push(`Vermeide strikt: ${d.tabus.join(", ")}`);
+  if (d.eroeffnungssatz) teil.push(`So beginnt sie gern: „${d.eroeffnungssatz}" — nutze das als Gefühl, nicht als Floskel zum Wiederholen.`);
+  if (d.abschlusssatz) teil.push(`So schließt sie gern: „${d.abschlusssatz}"`);
+  if (d.grenzenText) teil.push(`Ihre Grenze: ${d.grenzenText} — bei solchen Themen sagst du klar, dass hier die Coachin selbst gefragt ist, und bietest an, es an sie weiterzugeben.`);
+  if (d.rueckzugAnsprache) teil.push(`Wenn sie sich zurückzieht oder still wird, sprichst du sie so an: ${d.rueckzugAnsprache}`);
+  // Few-Shot: echte Sätze der Coachin wirken stärker als jede Beschreibung ihres Tons.
+  if (d.stilproben?.length) {
+    teil.push(`\nSo klingt sie wirklich — Originalsätze von ihr als Stilvorlage:`);
+    d.stilproben.slice(0, 6).forEach((s) => teil.push(`• „${s}"`));
+    teil.push(`Übernimm Satzbau, Rhythmus und Wortwahl dieser Beispiele — aber nicht ihren Inhalt.`);
+  }
+  teil.push(`Wichtig: Kopiere ihre Sätze nicht wörtlich. Klinge wie sie, aber antworte auf das, was gerade gesagt wurde.`);
+  return teil.join("\n");
+}
+
+/* ── Hörknopf (AI Coach Twin · Voice-Layer) ──
+   Zeigt sich nur, wenn wirklich Audio erzeugt werden kann. Ohne konfigurierten
+   Anbieter bleibt die Stelle leer statt einen toten Knopf anzubieten.
+   Kennzeichnung „KI-Stimme" ist Pflicht (AI Act Art. 50) und steht direkt am Knopf. */
+function Hoerknopf({ text, kategorie = "karte", twin, klein = false }) {
+  const [url, setUrl] = useState(null);
+  const [laedt, setLaedt] = useState(false);
+  const [nichtVerfuegbar, setNichtVerfuegbar] = useState(false);
+  const audioRef = useRef(null);
+
+  if (!text || nichtVerfuegbar) return null;
+
+  const abspielen = async () => {
+    if (url) { audioRef.current?.play(); return; }
+    setLaedt(true);
+    const u = await holeAudio({
+      text: String(text).slice(0, 2000), kategorie,
+      coach_id: twin?.coach_id || null, voice_id: twin?.voice_id || null,
+    });
+    setLaedt(false);
+    if (!u) { setNichtVerfuegbar(true); return; }
+    setUrl(u);
+    setTimeout(() => audioRef.current?.play(), 60);
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: klein ? 6 : 10 }}>
+      <button onClick={abspielen} disabled={laedt} style={{
+        display: "flex", alignItems: "center", gap: 7, border: "none", cursor: "pointer",
+        background: C.roseSoft, color: C.plum, borderRadius: 20,
+        padding: klein ? "6px 12px" : "9px 16px",
+        fontFamily: "system-ui, sans-serif", fontSize: klein ? 12 : 13, fontWeight: 600,
+        opacity: laedt ? 0.6 : 1,
+      }}>
+        {laedt ? "…" : "🔊"} {laedt ? "wird gesprochen" : "Anhören"}
+      </button>
+      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>
+        KI-Stimme{twin?.voice_id ? " deiner Coachin" : ""}
+      </span>
+      {url && <audio ref={audioRef} src={url} preload="none" />}
+    </div>
+  );
+}
 
 /* ── Basis-Bausteine ── */
 
@@ -768,7 +842,7 @@ const TILE_KATALOG = {
   mail: { icon: "📧", t: "Nachrichten", s: "Dein Postfach öffnen", mail: true },
 };
 
-function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs, setPrefs, ch369, meinZeichen, openPunkte, drawn, horo, entries, setJournalSec }) {
+function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs, setPrefs, ch369, meinZeichen, openPunkte, drawn, horo, entries, setJournalSec, twinTon = "" }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [ilhoMsgs, setIlhoMsgs] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ilho_chat_history")) || []; } catch { return []; }
@@ -944,7 +1018,7 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
                     try {
                       const recentMsgs = newMsgs.slice(-6);
                       const recentEntries = entries?.slice(-3)?.map((e) => e.text?.slice(0, 100)).join(" | ") || "keine neulich";
-                      const ctx = `${ILHO_SYSTEM}\n(Kontext: Nutzerin ${name}, Streak ${streak}d. Journal (letzte 3): ${recentEntries})`;
+                      const ctx = `${ILHO_SYSTEM}\n(Kontext: Nutzerin ${name}, Streak ${streak}d. Journal (letzte 3): ${recentEntries})${twinTon}`;
                       const reply = await askLuma(recentMsgs, ctx);
                       setIlhoMsgs((prev) => [...prev, { role: "assistant", content: reply }]);
                     } catch (err) {
@@ -984,7 +1058,7 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
 
 /* ── ilho — KI-Assistent (echte Claude-API) ── */
 
-function Luma({ name, energie, msgs, setMsgs }) {
+function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "" }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
@@ -1000,7 +1074,7 @@ function Luma({ name, energie, msgs, setMsgs }) {
     setBusy(true);
     try {
       const ctx = energie ? `\n(Kontext: Die Nutzerin heißt ${name}, ihre heutige Energie: ${energie.t} ${energie.v}/5.)` : `\n(Kontext: Die Nutzerin heißt ${name}.)`;
-      const reply = await askLuma(next, ILHO_SYSTEM + ctx);
+      const reply = await askLuma(next, ILHO_SYSTEM + ctx + twinTon);
       setMsgs([...next, { role: "assistant", content: reply || "Ich bin hier. Erzähl mir mehr davon. 🤍" }]);
     } catch {
       setMsgs([...next, { role: "assistant", content: "Gerade kann ich dich nicht erreichen — versuch es gleich noch einmal. 🤍" }]);
@@ -1017,7 +1091,9 @@ function Luma({ name, energie, msgs, setMsgs }) {
           <div style={{ width: 46, height: 46, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>✨</div>
           <div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>ilho</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.sage, fontWeight: 600 }}>● Dein KI-Assistent · immer für dich da</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.sage, fontWeight: 600 }}>
+              ● Dein KI-Assistent · {twinTon ? "im Ton deiner Coachin" : "immer für dich da"}
+            </div>
           </div>
         </div>
       </div>
@@ -1356,7 +1432,7 @@ function Mystik({ energie, addPunkte, art, setArt }) {
 
 /* ── Orakel · Göttinnen & weibliche Urkräfte ── */
 
-function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZeichen, meinZeichen, briefkopf, entries, setEntries, archetyp }) {
+function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZeichen, meinZeichen, briefkopf, entries, setEntries, archetyp, twin, twinTon = "" }) {
   const [mode, setMode] = useState("karte");
   const [mystikArt, setMystikArt] = useState("tarot");
   const [flip, setFlip] = useState(!!drawn);
@@ -1402,7 +1478,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
       const jr = j ? ` Ihre letzten Journal-Themen: ${j.slice(0, 300)}.` : "";
       const txt = await askLuma(
         [{ role: "user", content: `Die Nutzerin hat die Göttinnen-Karte „${card.n}" (${card.sub}, Bereich ${card.b}) gezogen. Botschaft der Karte: ${card.txt}${e}${a}${jr}\n\nGib ihr eine persönliche, warme Deutung für ihren heutigen Tag — 3 bis 4 Sätze, Du-Form. WICHTIG: Wiederhole NICHT den Kartentext, sondern übersetze ihn in ihren Alltag und schließe mit einer konkreten kleinen Einladung für heute.` }],
-        ILHO_SYSTEM
+        ILHO_SYSTEM + twinTon
       );
       const sauber = (txt || "").trim();
       // Falls die KI nur die Karte wiederholt: eigene Deutung nutzen.
@@ -1440,7 +1516,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
         Atme tief ein — und zieh deine Tageskarte.
       </p>
 
-      <div style={{ perspective: 1100, margin: "0 auto 22px", width: 240, height: 372 }}>
+      <div style={{ perspective: 1100, margin: "0 auto 22px", width: 240, height: 440 }}>
         <div
           onClick={() => !card && draw()}
           style={{
@@ -1471,7 +1547,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
             display: "flex", flexDirection: "column", padding: 12, gap: 8, overflow: "hidden",
           }} key={card?.n}>
             {card && ((S2GKARTEN[card.n] || KARTEN_BILDER[card.n])
-              ? <img src={S2GKARTEN[card.n] || KARTEN_BILDER[card.n]} alt={card.n} loading="lazy" style={{ width: "100%", height: 196, objectFit: "cover", borderRadius: 12, display: "block", animation: "fadeUp .5s ease" }} />
+              ? <img src={S2GKARTEN[card.n] || KARTEN_BILDER[card.n]} alt={card.n} loading="lazy" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12, display: "block", animation: "fadeUp .5s ease" }} />
               : <KartenArt g={card} />)}
             <div style={{ fontFamily: "Georgia, serif", fontSize: card && card.n.length > 18 ? 16.5 : 23, color: C.espresso, marginTop: 2, lineHeight: 1.2 }}>{card?.n}</div>
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>{card?.sub} · {card?.b}</div>
@@ -1490,6 +1566,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
         <Card style={{ textAlign: "left", marginTop: 18, background: C.roseSoft, border: "none", animation: "fadeUp .5s ease" }}>
           <Eyebrow color={C.plum}>✨ Deine persönliche Deutung</Eyebrow>
           <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15, color: C.espresso, lineHeight: 1.65 }}>{deutung}</p>
+          <Hoerknopf text={deutung} kategorie="karte" twin={twin} />
         </Card>
       )}
 
@@ -2461,6 +2538,8 @@ const COACH_TWIN_FRAGEN = [
   { f: "Was ist ein Satz, den du oft zu Beginn einer Session sagst?", k: "eroeffnungssatz" },
   { f: "Was ist ein Satz, den du oft am Ende einer Session sagst?", k: "abschlusssatz" },
   { f: "Wenn eine Klientin sich zurückzieht/still wird, wie sprichst du sie an?", k: "rueckzug_ansprache" },
+  // Der wichtigste Schritt für die Qualität: echte Textproben schlagen jede Beschreibung.
+  { f: "Füge hier 2–3 eigene Texte ein, die klingen wie du — ein Instagram-Post, eine Sprachnachricht an eine Klientin, ein Absatz aus deinem Newsletter. Roh und ungeschliffen ist besser als poliert.", k: "stilproben_roh" },
 ];
 
 /* ── Knowledge Brain (Katman 1 · Baustein 6) ──
@@ -2739,6 +2818,72 @@ function SessionIntelligenz({ addPunkte }) {
   );
 }
 
+/* ── Stimmprofil: Einwilligung, Widerruf, klare Grenze ──
+   Bewusste Produktentscheidung: Der persönliche Wochenimpuls bleibt ihre echte Stimme.
+   Geklont wird nur, was sie nie selbst einsprechen könnte. */
+function StimmProfil() {
+  const [profil, setProfil] = useState(null);
+  const [zeigen, setZeigen] = useState(false);
+  const [zugestimmt, setZugestimmt] = useState(false);
+  const [voiceId, setVoiceId] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { ladeStimmProfil().then(setProfil); }, []);
+
+  const speichern = async () => {
+    if (!zugestimmt || !voiceId.trim() || busy) return;
+    setBusy(true);
+    const p = await speichereStimmProfil({ anbieter: "extern", voice_id: voiceId.trim() });
+    if (p) { setProfil(p); setZeigen(false); logEvent("stimme_aktiviert"); }
+    setBusy(false);
+  };
+
+  const widerrufen = async () => {
+    if (!confirm("Stimmodell widerrufen? Alle damit erzeugten Audios werden entfernt.")) return;
+    if (await widerrufeStimme()) setProfil(null);
+  };
+
+  return (
+    <Card style={{ marginBottom: 18, background: `linear-gradient(150deg, ${C.card}, ${C.roseSoft})` }}>
+      <Eyebrow color={C.plum}>🔊 Deine Stimme</Eyebrow>
+      {profil ? (
+        <>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, lineHeight: 1.55, margin: "8px 0 10px" }}>
+            ✅ Aktiv seit {new Date(profil.einwilligung_am).toLocaleDateString("de-DE")}. Kartenbotschaften und Rituale
+            werden in deiner Stimme gesprochen — immer sichtbar als KI-Stimme gekennzeichnet.
+          </p>
+          <Btn small ghost onClick={widerrufen}>Widerrufen & löschen</Btn>
+        </>
+      ) : !zeigen ? (
+        <>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>
+            44 Kartenbotschaften, jedes Ritual, jede Meditation — das könntest du nie alles selbst einsprechen.
+            Ein Stimmodell übernimmt genau diesen Teil. <strong>Dein persönlicher Wochenimpuls bleibt deine echte Aufnahme</strong> —
+            das ist der Moment, in dem deine Klientinnen wirklich dich hören sollen.
+          </p>
+          <Btn small onClick={() => setZeigen(true)}>Stimme einrichten</Btn>
+        </>
+      ) : (
+        <>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.espresso, lineHeight: 1.55, background: C.card, borderRadius: 12, padding: 12, margin: "10px 0" }}>
+            {STIMME_EINWILLIGUNG_TEXT}
+          </div>
+          <div onClick={() => setZugestimmt(!zugestimmt)} style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", marginBottom: 10 }}>
+            <div style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, marginTop: 1, border: `1.5px solid ${zugestimmt ? C.sage : C.line}`, background: zugestimmt ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>{zugestimmt ? "✓" : ""}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso }}>Ich stimme dem oben stehenden Text zu.</div>
+          </div>
+          <input value={voiceId} onChange={(e) => setVoiceId(e.target.value)} placeholder="Voice-ID deines Stimmodells"
+            style={{ width: "100%", padding: "11px 13px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginBottom: 10 }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn small ghost={!zugestimmt || !voiceId.trim()} onClick={speichern}>{busy ? "…" : "Aktivieren"}</Btn>
+            <Btn small ghost onClick={() => setZeigen(false)}>Abbrechen</Btn>
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
 function CoachTwinInterview({ addPunkte }) {
   const [schritt, setSchritt] = useState(0); // -1 = fertig/Übersicht
   const [antworten, setAntworten] = useState({});
@@ -2768,13 +2913,14 @@ function CoachTwinInterview({ addPunkte }) {
     setErzeuge(true);
     setFehler("");
     const rohListe = COACH_TWIN_FRAGEN.map((q) => `${q.f}\nAntwort: ${alleAntworten[q.k] || "—"}`).join("\n\n");
-    const sysPrompt = `Du erstellst ein Methoden-Dossier für eine Coachin — AUSSCHLIESSLICH aus den unten gegebenen echten Interview-Antworten. Erfinde NICHTS hinzu, was nicht in den Antworten steht oder sich direkt daraus ableiten lässt. Antworte NUR mit einem JSON-Objekt (kein Fließtext davor/danach) mit genau diesen Feldern: {"ton": "kurze Beschreibung ihres Tonfalls", "anrede": "du oder Sie", "kernbegriffe": ["...", "..."], "tabus": ["...", "..."], "methodeKurz": "1 Satz", "eroeffnungssatz": "...", "abschlusssatz": "...", "grenzenText": "wie sie bei Überforderung/Verweisung reagiert", "rueckzugAnsprache": "..."}`;
+    const sysPrompt = `Du erstellst ein Methoden-Dossier für eine Coachin — AUSSCHLIESSLICH aus den unten gegebenen echten Interview-Antworten. Erfinde NICHTS hinzu, was nicht in den Antworten steht oder sich direkt daraus ableiten lässt. Antworte NUR mit einem JSON-Objekt (kein Fließtext davor/danach) mit genau diesen Feldern: {"ton": "kurze Beschreibung ihres Tonfalls", "anrede": "du oder Sie", "kernbegriffe": ["...", "..."], "tabus": ["...", "..."], "methodeKurz": "1 Satz", "eroeffnungssatz": "...", "abschlusssatz": "...", "grenzenText": "wie sie bei Überforderung/Verweisung reagiert", "rueckzugAnsprache": "...", "stilproben": ["...", "..."]}
+Zu "stilproben": Wähle aus ihren Antworten — vor allem aus den eingefügten eigenen Texten — 4 bis 6 WÖRTLICHE, charakteristische Sätze von ihr aus. Nicht umformulieren, nicht glätten, nicht erfinden. Wenn keine eigenen Texte vorliegen, nimm die prägnantesten Originalsätze aus ihren Interview-Antworten.`;
     try {
       const antwortJson = await askLuma([{ role: "user", content: rohListe }], sysPrompt);
       let geparst = null;
       try { geparst = JSON.parse(antwortJson.replace(/```json|```/g, "").trim()); } catch { geparst = null; }
       const dossierText = geparst
-        ? `# Methoden-Dossier\n\n**Ton:** ${geparst.ton}\n**Anrede:** ${geparst.anrede}\n**Methode:** ${geparst.methodeKurz}\n**Lieblingsbegriffe:** ${(geparst.kernbegriffe || []).join(", ")}\n**Tabus:** ${(geparst.tabus || []).join(", ")}\n**Eröffnungssatz:** „${geparst.eroeffnungssatz}"\n**Abschlusssatz:** „${geparst.abschlusssatz}"\n**Grenzen:** ${geparst.grenzenText}\n**Bei Rückzug:** ${geparst.rueckzugAnsprache}`
+        ? `# Methoden-Dossier\n\n**Ton:** ${geparst.ton}\n**Anrede:** ${geparst.anrede}\n**Methode:** ${geparst.methodeKurz}\n**Lieblingsbegriffe:** ${(geparst.kernbegriffe || []).join(", ")}\n**Tabus:** ${(geparst.tabus || []).join(", ")}\n**Eröffnungssatz:** „${geparst.eroeffnungssatz}"\n**Abschlusssatz:** „${geparst.abschlusssatz}"\n**Grenzen:** ${geparst.grenzenText}\n**Bei Rückzug:** ${geparst.rueckzugAnsprache}${geparst.stilproben?.length ? `\n\n**Deine Stilproben (so klingst du wirklich):**\n${geparst.stilproben.map((s) => `> „${s}"`).join("\n")}` : ""}`
         : antwortJson;
       const gespeichert = await speichereDossierEntwurf({ antworten: alleAntworten, dossier: geparst, dossier_text: dossierText });
       if (gespeichert) { setDossier(gespeichert); setSchritt(-1); addPunkte?.(20, "Methoden-Dossier erstellt"); }
@@ -2804,9 +2950,9 @@ function CoachTwinInterview({ addPunkte }) {
     if (!probeText.trim()) return;
     const next = [...probeMsgs, { role: "user", content: probeText }];
     setProbeMsgs(next); setProbeText("");
-    const ton = dossier?.dossier
-      ? `\n(Sprich im Ton dieser Coachin: ${dossier.dossier.ton}. Anrede: ${dossier.dossier.anrede}. Nutze wenn passend diese Begriffe: ${(dossier.dossier.kernbegriffe || []).join(", ")}. Vermeide: ${(dossier.dossier.tabus || []).join(", ")}.)`
-      : "";
+    // Dieselbe zentrale Ton-Funktion wie im echten ilho — damit die Probe zeigt,
+    // was die Klientin später wirklich hört (Entwurf wird zum Test als freigegeben behandelt).
+    const ton = tonalitaetsZusatz({ ...dossier, freigegeben: true });
     const reply = await askLuma(next, ILHO_SYSTEM + ton);
     setProbeMsgs([...next, { role: "assistant", content: reply }]);
   };
@@ -2836,6 +2982,8 @@ function CoachTwinInterview({ addPunkte }) {
             ↻ Neu
           </button>
         </div>
+
+        <StimmProfil />
 
         <Eyebrow>Probesprechen mit „deiner" ilho</Eyebrow>
         <Card style={{ marginBottom: 10, minHeight: 100 }}>
@@ -3117,7 +3265,7 @@ function wochenKey() {
   return `${d.getFullYear()}-W${Math.ceil(((d - j) / 86400000 + j.getDay() + 1) / 7)}`;
 }
 
-function Wochenbild({ entries, checkins, streak, prefs, setPrefs, addPunkte }) {
+function Wochenbild({ entries, checkins, streak, prefs, setPrefs, addPunkte, twinTon = "" }) {
   const [busy, setBusy] = useState(false);
   const key = wochenKey();
   const gespeichert = prefs?.wochenbild;
@@ -3131,7 +3279,7 @@ function Wochenbild({ entries, checkins, streak, prefs, setPrefs, addPunkte }) {
     ).join("\n");
     const ci = (checkins || []).slice(0, 2).map((c) => `${c.datum}: ${c.wert}/5${c.notiz ? ` — „${c.notiz}"` : ""}`).join("\n");
     const user = `Journal der letzten Tage:\n${letzte || "(keine Einträge)"}\n\nWochen-Check-ins:\n${ci || "(keine)"}\n\nAktive Tage in Folge: ${streak}`;
-    const text = await askLuma([{ role: "user", content: user }], WOCHENBILD_SYSTEM);
+    const text = await askLuma([{ role: "user", content: user }], WOCHENBILD_SYSTEM + twinTon);
     if (text && setPrefs) {
       setPrefs({ ...(prefs || {}), wochenbild: { woche: key, datum: new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" }), text } });
       if (!aktuell && addPunkte) addPunkte(15, "Wochenbild angesehen");
@@ -3164,7 +3312,7 @@ function Wochenbild({ entries, checkins, streak, prefs, setPrefs, addPunkte }) {
   );
 }
 
-function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checkins, setCheckins, addPunkte, prefs, setPrefs }) {
+function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checkins, setCheckins, addPunkte, prefs, setPrefs, twinTon = "" }) {
   const ci = coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 });
   const week = [3, 2, 4, 1, 3, 2, 4];
   const max = Math.max(...week);
@@ -3190,7 +3338,7 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
 
       <WochenCheckin checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} />
 
-      <Wochenbild entries={entries} checkins={checkins} streak={streak} prefs={prefs} setPrefs={setPrefs} addPunkte={addPunkte} />
+      <Wochenbild entries={entries} checkins={checkins} streak={streak} prefs={prefs} setPrefs={setPrefs} addPunkte={addPunkte} twinTon={twinTon} />
 
       {/* Frühwarnung (aus der Analyse-Engine) */}
       {ci.warnungen.length > 0 && (
@@ -6614,6 +6762,19 @@ export default function IlhoApp() {
     return () => { aktiv = false; };
   }, [supabase, user]);
 
+  // ── AI Coach Twin: das freigegebene Methoden-Dossier einmal laden ──
+  // Solange es keine Klientinnen-Coachin-Zuordnung gibt, ist das das eigene Dossier
+  // (die Coachin erlebt ihre eigene ilho). Später kommt hier das Dossier der
+  // verknüpften Coachin her — der Rest des Codes bleibt unverändert.
+  const [twin, setTwin] = useState(null);
+  useEffect(() => {
+    if (!supabase || !user) { setTwin(null); return; }
+    let aktiv = true;
+    ladeEigenesDossier().then((d) => { if (aktiv && d?.freigegeben) setTwin(d); });
+    return () => { aktiv = false; };
+  }, [supabase, user]);
+  const twinTon = tonalitaetsZusatz(twin);
+
   useEffect(() => {
     if (!supabase || !user || !cloudBereit) return; // nichts speichern, bevor der Cloud-Stand geladen (oder als leer bestätigt) wurde
     const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
@@ -6700,8 +6861,8 @@ export default function IlhoApp() {
             )}
 
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 172 : 86, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} /></>}
-              {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} /></>}
+              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} /></>}
               {tab === "impressum" && <Impressum />}
               {tab === "datenschutz" && <Datenschutz />}
@@ -6717,7 +6878,7 @@ export default function IlhoApp() {
               {tab === "meditation" && <MeditationCine addPunkte={addPunkte} />}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
               {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} /></>}
-              {tab === "fortschritt" && <><MediaBanner video={S2GVID.fortschritt} poster={S2GIMG.fortschritt} title="Mein Fortschritt" subtitle="Du wächst" height={190} /><Fortschritt streak={streak} entries={entries} punkte={punkte} energie={energie} aufgaben={aufgaben} ch369={ch369} checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} /></>}
+              {tab === "fortschritt" && <><MediaBanner video={S2GVID.fortschritt} poster={S2GIMG.fortschritt} title="Mein Fortschritt" subtitle="Du wächst" height={190} /><Fortschritt streak={streak} entries={entries} punkte={punkte} energie={energie} aufgaben={aufgaben} ch369={ch369} checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} twinTon={twinTon} /></>}
               {tab === "fragebogen" && <><MediaBanner video={S2GVID.fragebogen} poster={S2GIMG.fragebogen} title="Fragebogen" subtitle="Lerne dich kennen" height={190} /><Fragebogen intake={intake} setIntake={setIntake} addPunkte={addPunkte} /></>}
               {tab === "pakete" && <><MediaBanner video={S2GVID.pakete} poster={S2GIMG.pakete} title="Pakete" subtitle="Wähle dein Geschenk an dich" height={190} /><Pakete addPunkte={addPunkte} go={go} /></>}
               {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
@@ -6815,7 +6976,7 @@ export default function IlhoApp() {
                         <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>✨ ilho · dein Begleiter</div>
                         <button onClick={() => setIlhoOpen(false)} style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "50%", width: 34, height: 34, fontSize: 15, cursor: "pointer", color: C.ink }}>✕</button>
                       </div>
-                      <Luma name={anzeigeName} energie={energie} msgs={lumaMsgs} setMsgs={setLumaMsgs} />
+                      <Luma name={anzeigeName} energie={energie} msgs={lumaMsgs} setMsgs={setLumaMsgs} twin={twin} twinTon={twinTon} />
                     </div>
                   </>
                 )}

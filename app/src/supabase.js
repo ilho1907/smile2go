@@ -178,6 +178,70 @@ export async function ladeInhaltsUebersicht() {
   return [...map.values()];
 }
 
+// ── Stimme (AI Coach Twin · Voice-Layer) ────────────────────────────────────
+// Der persönliche Wochenimpuls bleibt bewusst die echte Stimme der Coachin.
+// Geklont wird nur, was sie nie selbst einsprechen könnte — immer als KI-Stimme gekennzeichnet.
+
+export const STIMME_EINWILLIGUNG_TEXT =
+  "Ich stimme zu, dass smile2go aus meinen Sprachaufnahmen ein Stimmodell erstellt und damit " +
+  "Kartenbotschaften, Ritual- und Meditationstexte für meine Klientinnen vertont. Diese Audios " +
+  "werden immer sichtbar als KI-Stimme gekennzeichnet. Mein persönlicher Wochenimpuls bleibt " +
+  "meine echte Aufnahme. Ich kann diese Einwilligung jederzeit widerrufen; das Stimmodell und " +
+  "alle damit erzeugten Audios werden dann gelöscht.";
+
+export async function ladeStimmProfil() {
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from("stimm_profil_aktiv").select("*").eq("coach_id", user.id).maybeSingle();
+  if (error) { console.warn("ladeStimmProfil:", error.message); return null; }
+  return data;
+}
+
+export async function speichereStimmProfil({ anbieter, voice_id }) {
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  await supabase.from("coaches").upsert({ id: user.id }, { onConflict: "id" });
+  const { data, error } = await supabase.from("stimm_profile").upsert({
+    coach_id: user.id, anbieter, voice_id,
+    einwilligung_am: new Date().toISOString(),
+    einwilligung_text: STIMME_EINWILLIGUNG_TEXT,
+    widerrufen_am: null,
+  }, { onConflict: "coach_id" }).select().single();
+  if (error) { console.warn("speichereStimmProfil:", error.message); return null; }
+  return data;
+}
+
+export async function widerrufeStimme() {
+  if (!supabase) return false;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { error } = await supabase.from("stimm_profile")
+    .update({ widerrufen_am: new Date().toISOString() }).eq("coach_id", user.id);
+  if (error) { console.warn("widerrufeStimme:", error.message); return false; }
+  return true;
+}
+
+// Liefert eine abspielbare URL — oder null, wenn kein Anbieter konfiguriert ist.
+// Die App zeigt den Hörknopf dann einfach nicht an (kein Fehler, kein toter Button).
+export async function holeAudio({ text, kategorie = "karte", coach_id = null, voice_id = null }) {
+  const basis = import.meta.env?.VITE_AI_FUNCTION_URL;
+  if (!basis || !text) return null;
+  const url = basis.replace(/\/ai\/?$/, "/tts");
+  try {
+    const anon = import.meta.env?.VITE_SUPABASE_ANON_KEY || "";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${anon}`, apikey: anon },
+      body: JSON.stringify({ text, kategorie, coach_id, voice_id }),
+    });
+    const d = await res.json();
+    return d?.url || null;
+  } catch { return null; }
+}
+
 // ── Anonymisiertes Event-Logging (Grundlage für spätere Katman-4-Auswertung) ─
 // Bewusst kein Freitext, kein Klarbezug — nur Hash + Typ + Themen-Tag.
 async function sha256Hex(text) {
