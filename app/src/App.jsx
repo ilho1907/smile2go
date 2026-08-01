@@ -13,19 +13,19 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
    ───────────────────────────────────────────── */
 
 const C = {
-  cream: "#FBF6EE",
-  card: "#FFFFFE",
-  beige: "#F5E9DB",
-  line: "#EBD8C6",
-  gold: "#C9963C",
-  goldSoft: "#E6BE6C",
-  goldPale: "#FAEDD2",
-  espresso: "#3A2A22",
-  ink: "#6B5443",
-  sage: "#93B07F",
-  rose: "#D96E8B",
-  roseSoft: "#F8DCE3",
-  plum: "#8E4A63",
+  cream: "#000000",
+  card: "#121212",
+  beige: "#1A1420",
+  line: "#3A2E3C",
+  gold: "#FF007F",
+  goldSoft: "#C77DFF",
+  goldPale: "#2A1428",
+  espresso: "#F5F0F2",
+  ink: "#A89BA3",
+  sage: "#8FB09B",
+  rose: "#E8B4C8",
+  roseSoft: "#2A1428",
+  plum: "#4A2545",
 };
 
 const MOTIVATION = [
