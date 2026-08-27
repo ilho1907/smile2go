@@ -584,3 +584,24 @@ export async function pushDeaktivieren() {
   if (supabase) await supabase.from("push_abos").delete().eq("endpoint", endpoint);
   return true;
 }
+
+// ── Erreichbarkeit der Cloud ───────────────────────────────────────────────
+// Ein pausiertes Supabase-Projekt (Gratis-Tarif schlaeft nach einer Woche ein)
+// ist von aussen nicht einmal per DNS aufloesbar. Ohne diese Pruefung wuerde die
+// App still leerlaufen — mit ihr kann sie es ehrlich sagen.
+export async function cloudErreichbar(timeoutMs = 6000) {
+  const url = import.meta.env?.VITE_SUPABASE_URL;
+  if (!supabase || !url) return false;
+  try {
+    const steuer = new AbortController();
+    const t = setTimeout(() => steuer.abort(), timeoutMs);
+    const res = await fetch(`${url}/auth/v1/health`, {
+      headers: { apikey: import.meta.env?.VITE_SUPABASE_ANON_KEY || "" },
+      signal: steuer.signal,
+    });
+    clearTimeout(t);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

@@ -9,7 +9,7 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   ladeFeed, schreibeBeitrag, herzSetzen, meldeBeitrag, loescheBeitrag,
   ladeMeineDateien, ladeDateiHoch, dateiLink, loescheDatei,
   exportiereMeineDaten, loescheKonto, passwortZuruecksetzen, neuesPasswortSetzen,
-  pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren } from "./supabase";
+  pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren, cloudErreichbar } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -7073,6 +7073,7 @@ const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
   const [bindung, setBindung] = useState(null);
+  const [cloudAus, setCloudAus] = useState(false);
   const [pwReset, setPwReset] = useState(typeof window !== "undefined" && window.location.hash === "#passwort-neu");
   const [tab, setTab] = useState("heute");
   const [stack, setStack] = useState([]);
@@ -7264,6 +7265,14 @@ export default function IlhoApp() {
     return () => clearTimeout(timer);
   }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
+  // Erreichbarkeit der Cloud einmal beim Start pruefen (pausiertes Projekt, Funkloch).
+  useEffect(() => {
+    if (!supabase) return;
+    let aktiv = true;
+    cloudErreichbar().then((ok) => { if (aktiv) setCloudAus(!ok); });
+    return () => { aktiv = false; };
+  }, []);
+
   // Bindung zur Coachin: bestimmt, wohin Nachrichten, Termine und Materialien gehoeren.
   const aufBindung = async () => {
     const b = await ladeMeineBindung();
@@ -7311,6 +7320,18 @@ export default function IlhoApp() {
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
       `}</style>
       <div style={{ width: "100%", maxWidth: 430, background: C.cream, minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
+        {cloudAus && (
+          <div style={{
+            position: "sticky", top: 0, zIndex: 40,
+            background: "#F9EBE2", borderBottom: "1px solid #E5CDBE",
+            padding: "10px 14px", fontFamily: "system-ui, sans-serif",
+            fontSize: 12.5, color: "#A8552F", lineHeight: 1.5,
+          }}>
+            ☁️ Keine Verbindung zur Cloud — Anmeldung, Nachrichten und Termine pausieren.
+            Alles, was du hier eingibst, bleibt auf deinem Gerät und wird später synchronisiert.
+          </div>
+        )}
+
         {pwReset ? (
           <div style={{ animation: "fadeUp .5s ease" }}>
             <PasswortNeu onFertig={() => { window.location.hash = ""; setPwReset(false); }} />
