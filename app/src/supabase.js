@@ -638,3 +638,85 @@ export async function merkeEinladung(code, kanal = "share") {
   if (!user) return;
   await supabase.from("einladungen").insert({ von_user_id: user.id, code, kanal });
 }
+
+// ── Materialien, Angebote, Kursinhalte, Anfragen ───────────────────────────
+
+export async function ladeMaterialien(coachId) {
+  if (!supabase || !coachId) return [];
+  const { data, error } = await supabase
+    .from("materialien")
+    .select("id, titel, beschreibung, kategorie, datei_pfad, extern_url, sichtbar_ab")
+    .eq("coach_id", coachId)
+    .order("sichtbar_ab", { ascending: false });
+  if (error) { console.warn("ladeMaterialien:", error.message); return []; }
+  return data || [];
+}
+
+export async function ladeAngebote(coachId) {
+  if (!supabase || !coachId) return [];
+  const { data, error } = await supabase
+    .from("angebote")
+    .select("id, typ, titel, untertitel, beschreibung, thema, preis_cent, waehrung, einheiten, bild_pfad")
+    .eq("coach_id", coachId)
+    .eq("aktiv", true)
+    .order("reihenfolge", { ascending: true });
+  if (error) { console.warn("ladeAngebote:", error.message); return []; }
+  return data || [];
+}
+
+export async function ladeKursModule(angebotId) {
+  if (!supabase || !angebotId) return [];
+  const { data, error } = await supabase
+    .from("kurs_module")
+    .select("id, nr, titel, typ, text, datei_pfad, dauer_min")
+    .eq("angebot_id", angebotId)
+    .order("nr", { ascending: true });
+  if (error) { console.warn("ladeKursModule:", error.message); return []; }
+  return data || [];
+}
+
+export async function ladeKursFortschritt(klientinId) {
+  if (!supabase || !klientinId) return {};
+  const { data, error } = await supabase
+    .from("kurs_fortschritt")
+    .select("modul_id, erledigt_am")
+    .eq("klientin_id", klientinId);
+  if (error) { console.warn("ladeKursFortschritt:", error.message); return {}; }
+  return Object.fromEntries((data || []).map((z) => [z.modul_id, z.erledigt_am]));
+}
+
+export async function modulErledigt(klientinId, modulId) {
+  if (!supabase || !klientinId) return false;
+  const { error } = await supabase
+    .from("kurs_fortschritt")
+    .upsert({ klientin_id: klientinId, modul_id: modulId }, { onConflict: "klientin_id,modul_id" });
+  return !error;
+}
+
+export async function modulZurueck(klientinId, modulId) {
+  if (!supabase || !klientinId) return false;
+  const { error } = await supabase
+    .from("kurs_fortschritt")
+    .delete()
+    .eq("klientin_id", klientinId)
+    .eq("modul_id", modulId);
+  return !error;
+}
+
+// Kein Kauf, sondern eine Anfrage — sie landet bei der Coachin und zusaetzlich
+// als Nachricht im gemeinsamen Verlauf, damit sie nicht uebersehen wird.
+export async function stelleAnfrage({ klientinId, coachId, angebotId, titel, nachricht }) {
+  const user = await nutzerin();
+  if (!user || !klientinId) return null;
+  const { data, error } = await supabase
+    .from("anfragen")
+    .insert({ klientin_id: klientinId, coach_id: coachId, angebot_id: angebotId, nachricht })
+    .select()
+    .single();
+  if (error) { console.warn("stelleAnfrage:", error.message); return null; }
+  await sendeNachricht({
+    klientinId,
+    text: `Ich interessiere mich für „${titel}".${nachricht ? `\n\n${nachricht}` : ""}`,
+  });
+  return data;
+}

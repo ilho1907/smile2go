@@ -10,7 +10,9 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   ladeMeineDateien, ladeDateiHoch, dateiLink, loescheDatei,
   exportiereMeineDaten, loescheKonto, passwortZuruecksetzen, neuesPasswortSetzen,
   pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren, cloudErreichbar,
-  ladeCoachBeitraege, ladeCoachProfil, merkeEinladung } from "./supabase";
+  ladeCoachBeitraege, ladeCoachProfil, merkeEinladung,
+  ladeMaterialien, ladeAngebote, ladeKursModule, ladeKursFortschritt,
+  modulErledigt, modulZurueck, stelleAnfrage } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -1813,188 +1815,252 @@ function QRCode({ seed }) {
   );
 }
 
-const PLATTFORM_KURSE = [
-  { coach: "Marie L.", t: "Human Design Basics", thema: "Selbsterkenntnis", p: "59 €" },
-  { coach: "Sophia K.", t: "Räuchern & Rituale im Jahreskreis", thema: "Rituale", p: "39 €" },
-  { coach: "Dr. Lena B.", t: "Nervensystem beruhigen", thema: "Stress & Körper", p: "89 €" },
-  { coach: "Aylin T.", t: "Geld & weibliche Fülle", thema: "Money Mindset", p: "69 €" },
-  { coach: "Carla M.", t: "Lenormand für Einsteigerinnen", thema: "Kartenlegen", p: "49 €" },
-  { coach: "Nina W.", t: "Sichtbar auf Instagram als Coachin", thema: "Business", p: "79 €" },
-];
+/* ── Kurse & Angebote: alles aus der Datenbank der eigenen Coachin ──────────
+   Vorher standen hier erfundene Coachinnen und Preise im Code. Jetzt gilt:
+   was die Coachin nicht angelegt hat, wird auch nicht gezeigt. Statt „Kaufen"
+   gibt es eine Anfrage — sie landet bei ihr und im gemeinsamen Nachrichten-
+   verlauf, damit sie nicht untergeht.                                      */
 
-const PRAEVENTION = [
-  { icon: "🧘‍♀️", t: "Stress lösen & innere Ruhe", feld: "Stressbewältigung", einh: "8 Einheiten", p: "120 €" },
-  { icon: "🌬️", t: "Achtsamkeit & Meditation", feld: "Stressbewältigung", einh: "8 Einheiten", p: "120 €" },
-  { icon: "🕉️", t: "Sanftes Yoga für Frauen", feld: "Bewegung", einh: "8 Einheiten", p: "140 €" },
-  { icon: "🌙", t: "Besser schlafen", feld: "Stressbewältigung", einh: "8 Einheiten", p: "110 €" },
-];
+const TYP_TITEL = { kurs: "Kurse", paket: "Coaching-Pakete", retreat: "Retreats", shop: "Weitere Angebote" };
+const TYP_ICON = { kurs: "🎬", paket: "🌸", retreat: "🏔️", shop: "✨" };
+const MODUL_ICON = { video: "🎬", audio: "🎧", text: "📖", aufgabe: "✍️" };
 
-const SHOP = [
-  { icon: "🌹", t: "Kurs: Weibliche Urkraft", s: "8 Module · Video", p: "79 €" },
-  { icon: "🌕", t: "Online-Retreat: Vollmond-Nacht", s: "Live · 3 Std mit Anja", p: "49 €" },
-  { icon: "🏔️", t: "Retreat: Wochenende der Stille", s: "Allgäu · 2 Nächte · all-in", p: "299 €" },
-  { icon: "💫", t: "Masterclass: Sichtbar als Coachin", s: "4 Wochen · Live + Replay", p: "149 €" },
-];
+function preisText(a) {
+  if (a.preis_cent == null) return null;
+  return `${(a.preis_cent / 100).toLocaleString("de-DE", { minimumFractionDigits: 0 })} ${a.waehrung === "EUR" ? "€" : a.waehrung}`;
+}
 
-function Kurse({ kursWahl, setKursWahl, addPunkte }) {
-  const [auswahl, setAuswahl] = useState([]);
-  const [suche, setSuche] = useState("");
-  const treffer = suche.trim()
-    ? PLATTFORM_KURSE.filter((k) => (k.t + k.thema + k.coach).toLowerCase().includes(suche.toLowerCase()))
-    : [];
-  const gewaehlt = kursWahl.length > 0;
+function KursDetail({ angebot, bindung, zurueck, addPunkte }) {
+  const [module, setModule] = useState([]);
+  const [fortschritt, setFortschritt] = useState({});
+  const [offen, setOffen] = useState(null);
+  const [medienUrl, setMedienUrl] = useState(null);
+  const [laedt, setLaedt] = useState(true);
 
-  const toggle = (t) => {
-    if (auswahl.includes(t)) setAuswahl(auswahl.filter((x) => x !== t));
-    else if (auswahl.length < 3) setAuswahl([...auswahl, t]);
+  useEffect(() => {
+    (async () => {
+      const [m, f] = await Promise.all([ladeKursModule(angebot.id), ladeKursFortschritt(bindung?.id)]);
+      setModule(m); setFortschritt(f); setLaedt(false);
+    })();
+  }, [angebot.id, bindung?.id]);
+
+  const oeffnen = async (m) => {
+    setOffen(offen?.id === m.id ? null : m);
+    setMedienUrl(null);
+    if (m.datei_pfad && offen?.id !== m.id) {
+      const url = await dateiLink(m.datei_pfad, "coach-material", 900);
+      setMedienUrl(url);
+    }
   };
 
-  const bestaetigen = () => {
-    if (!auswahl.length) return;
-    setKursWahl(auswahl);
-    if (addPunkte) addPunkte(10, "Kurse gewählt");
+  const umschalten = async (m) => {
+    if (fortschritt[m.id]) {
+      await modulZurueck(bindung.id, m.id);
+      setFortschritt((f) => { const n = { ...f }; delete n[m.id]; return n; });
+    } else {
+      await modulErledigt(bindung.id, m.id);
+      setFortschritt((f) => ({ ...f, [m.id]: new Date().toISOString() }));
+      addPunkte?.(5, "Modul abgeschlossen");
+    }
   };
 
-  if (!gewaehlt)
-    return (
-      <div style={{ padding: "20px 20px" }}>
-        <Eyebrow>Willkommen in deinen Kursen</Eyebrow>
-        <H size={24} style={{ marginBottom: 8 }}>Wähle deine 3 Kurse</H>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
-          In deinem <strong>Pro-Paket</strong> sind 3 Video-Kurse deiner Coachin enthalten — wähle, womit du beginnen möchtest. Wechseln kannst du später jederzeit.
-        </p>
-        {KURSE.map((k) => {
-          const aktiv = auswahl.includes(k.t);
-          return (
-            <Card key={k.t} onClick={() => toggle(k.t)} style={{ marginBottom: 12, display: "flex", gap: 14, alignItems: "center", borderColor: aktiv ? C.rose : C.line, background: aktiv ? C.roseSoft : C.card }}>
-              <div style={{ width: 52, height: 52, borderRadius: 14, background: aktiv ? "#fff" : C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 25, flexShrink: 0 }}>{k.icon}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{k.t}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3 }}>{k.d} · {k.len}</div>
-              </div>
-              <div style={{ fontSize: 20, color: aktiv ? C.rose : C.line }}>{aktiv ? "✓" : "○"}</div>
-            </Card>
-          );
-        })}
-        <div style={{ margin: "16px 0 8px" }}>
-          <Btn full onClick={bestaetigen} disabled={!auswahl.length}>
-            {auswahl.length}/3 gewählt — Los geht's ✨
-          </Btn>
-        </div>
-      </div>
-    );
+  const fertig = module.filter((m) => fortschritt[m.id]).length;
+  const pct = module.length ? Math.round((fertig / module.length) * 100) : 0;
 
   return (
     <div style={{ padding: "20px 20px" }}>
-      <Eyebrow>Meine Kurse</Eyebrow>
-      <H size={24} style={{ marginBottom: 6 }}>Weiter, wo du warst</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginBottom: 16 }}>
-        Setze fort, wo du warst — deine Kurs-Videos deiner Coachin.
-      </p>
-
-      {kursWahl.map((t, i) => {
-        const k = KURSE.find((x) => x.t === t);
-        const fortschritt = [40, 15, 0][i] ?? 0;
-        return (
-          <Card key={t} style={{ marginBottom: 12, display: "flex", gap: 14, alignItems: "center" }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{k?.icon} {t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, margin: "3px 0 7px" }}>{k?.d}</div>
-              <div style={{ height: 7, borderRadius: 6, background: C.beige, overflow: "hidden", marginBottom: 7 }}>
-                <div style={{ width: `${fortschritt}%`, height: "100%", borderRadius: 6, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})` }} />
-              </div>
-              <Btn small>{fortschritt > 0 ? `▶ Weiter bei ${fortschritt} %` : "▶ Jetzt starten"}</Btn>
-            </div>
-          </Card>
-        );
-      })}
-      <button onClick={() => { setKursWahl([]); }} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 600, cursor: "pointer", padding: "4px 0 18px", textDecoration: "underline" }}>
-        Kurse wechseln
+      <button onClick={zurueck} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, cursor: "pointer", padding: "0 0 12px" }}>
+        ← Alle Angebote
       </button>
 
-      <Eyebrow>Challenges</Eyebrow>
-      <H size={20} style={{ margin: "6px 0 14px" }}>Deine Programme</H>
-      {CHALLENGES.map((c) => {
-        const pct = Math.round((c.done / c.days) * 100);
+      <Eyebrow>{TYP_TITEL[angebot.typ] || "Angebot"}</Eyebrow>
+      <H size={24} style={{ marginBottom: 6 }}>{angebot.titel}</H>
+      {angebot.untertitel && (
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 10 }}>{angebot.untertitel}</p>
+      )}
+      {angebot.beschreibung && (
+        <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.espresso, lineHeight: 1.65, marginBottom: 16 }}>{angebot.beschreibung}</p>
+      )}
+
+      {module.length > 0 && (
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.espresso }}>Dein Fortschritt</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, fontWeight: 700 }}>{fertig}/{module.length}</span>
+          </div>
+          <div style={{ height: 8, borderRadius: 6, background: C.beige, overflow: "hidden" }}>
+            <div style={{ width: `${pct}%`, height: "100%", borderRadius: 6, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})`, transition: "width .4s ease" }} />
+          </div>
+        </Card>
+      )}
+
+      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Lade Inhalte …</p>}
+
+      {!laedt && module.length === 0 && (
+        <Card>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            Für dieses Angebot sind noch keine Inhalte hinterlegt. Frag gern im Chat nach — deine Coachin schaltet sie dir frei.
+          </p>
+        </Card>
+      )}
+
+      {module.map((m) => {
+        const auf = offen?.id === m.id;
+        const erledigt = !!fortschritt[m.id];
         return (
-          <Card key={c.t} style={{ marginBottom: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{c.icon} {c.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.rose, fontWeight: 600 }}>
-                {c.done > 0 ? `Tag ${c.done}/${c.days}` : "Starten"}
+          <Card key={m.id} style={{ marginBottom: 10, borderColor: erledigt ? C.sage : C.line }}>
+            <div onClick={() => oeffnen(m)} style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, flexShrink: 0 }}>
+                {MODUL_ICON[m.typ] || "📖"}
               </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{m.nr}. {m.titel}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: erledigt ? C.sage : C.ink, marginTop: 2, fontWeight: erledigt ? 700 : 400 }}>
+                  {erledigt ? "✓ abgeschlossen" : m.dauer_min ? `${m.dauer_min} Min` : "offen"}
+                </div>
+              </div>
+              <span style={{ color: C.gold, fontSize: 18 }}>{auf ? "▾" : "›"}</span>
             </div>
-            <div style={{ height: 8, borderRadius: 6, background: C.beige, overflow: "hidden" }}>
-              <div style={{ width: `${pct}%`, height: "100%", borderRadius: 6, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})` }} />
-            </div>
+
+            {auf && (
+              <div style={{ marginTop: 12, animation: "fadeUp .3s ease" }}>
+                {m.text && (
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{m.text}</p>
+                )}
+                {m.datei_pfad && !medienUrl && (
+                  <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink }}>Lade Medien …</p>
+                )}
+                {medienUrl && m.typ === "video" && (
+                  <video controls playsInline src={medienUrl} style={{ width: "100%", borderRadius: 12, background: C.espresso, maxHeight: 320 }} />
+                )}
+                {medienUrl && m.typ === "audio" && (
+                  <audio controls src={medienUrl} style={{ width: "100%" }} />
+                )}
+                {medienUrl && m.typ !== "video" && m.typ !== "audio" && (
+                  <a href={medienUrl} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.plum }}>↗ Datei öffnen</a>
+                )}
+                <div style={{ marginTop: 12 }}>
+                  <Btn small ghost={erledigt} onClick={() => umschalten(m)}>
+                    {erledigt ? "↺ Doch noch offen" : "✓ Als erledigt markieren"}
+                  </Btn>
+                </div>
+              </div>
+            )}
           </Card>
         );
       })}
+    </div>
+  );
+}
 
-      <Eyebrow>🔍 Plattform — Kurse anderer Coaches</Eyebrow>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, margin: "6px 0 10px" }}>
-        Entdecke Kurse von Coaches auf der smile2go-Plattform — such nach Thema, Titel oder Name.
-      </p>
-      <input
-        value={suche}
-        onChange={(e) => setSuche(e.target.value)}
-        placeholder="z. B. Human Design, Rituale, Money …"
-        style={{ width: "100%", padding: "13px 15px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, outline: "none", marginBottom: 12 }}
-      />
-      {suche.trim() && (
-        <div style={{ marginBottom: 18 }}>
-          {treffer.length === 0 && (
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, textAlign: "center", padding: "8px 0" }}>Keine Treffer — probier ein anderes Stichwort.</p>
-          )}
-          {treffer.map((k) => (
-            <Card key={k.t} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center", padding: 13, animation: "fadeUp .3s ease" }}>
-              <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${C.goldSoft}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#fff", fontFamily: "system-ui, sans-serif", fontWeight: 700, flexShrink: 0 }}>{k.coach[0]}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{k.t}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>{k.coach} · {k.thema}</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.plum, marginBottom: 4 }}>{k.p}</div>
-                <Btn small ghost>Ansehen</Btn>
-              </div>
-            </Card>
-          ))}
-        </div>
+function Kurse({ bindung, aufBindung, addPunkte }) {
+  const [angebote, setAngebote] = useState([]);
+  const [laedt, setLaedt] = useState(true);
+  const [detail, setDetail] = useState(null);
+  const [anfrageFuer, setAnfrageFuer] = useState(null);
+  const [anfrageText, setAnfrageText] = useState("");
+  const [hinweis, setHinweis] = useState("");
+
+  useEffect(() => {
+    if (!bindung?.coach_id) { setLaedt(false); return; }
+    ladeAngebote(bindung.coach_id).then((a) => { setAngebote(a); setLaedt(false); });
+  }, [bindung?.coach_id]);
+
+  const anfragen = async (a) => {
+    const erg = await stelleAnfrage({
+      klientinId: bindung.id, coachId: bindung.coach_id, angebotId: a.id,
+      titel: a.titel, nachricht: anfrageText.trim() || null,
+    });
+    setAnfrageFuer(null); setAnfrageText("");
+    setHinweis(erg
+      ? `✓ Deine Anfrage zu „${a.titel}" ist bei ${bindung.coach_name || "deiner Coachin"} — sie meldet sich im Chat.`
+      : "Anfrage konnte nicht gesendet werden.");
+    setTimeout(() => setHinweis(""), 5000);
+  };
+
+  if (!bindung?.coach_id)
+    return (
+      <div style={{ padding: "20px 20px" }}>
+        <Eyebrow>Kurse & Angebote</Eyebrow>
+        <H size={24} style={{ marginBottom: 10 }}>Hier erscheinen die Angebote deiner Coachin</H>
+        <CoachVerbinden onVerbunden={aufBindung} />
+      </div>
+    );
+
+  if (detail)
+    return <KursDetail angebot={detail} bindung={bindung} addPunkte={addPunkte} zurueck={() => setDetail(null)} />;
+
+  const gruppen = ["kurs", "paket", "retreat", "shop"].filter((t) => angebote.some((a) => a.typ === t));
+
+  return (
+    <div style={{ padding: "20px 20px" }}>
+      <Eyebrow>Kurse & Angebote</Eyebrow>
+      <H size={24} style={{ marginBottom: 8 }}>Von {bindung.coach_name || "deiner Coachin"}</H>
+
+      {hinweis && (
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "11px 14px", marginBottom: 14, lineHeight: 1.5 }}>{hinweis}</div>
       )}
 
-      <Eyebrow color={C.sage}>🌿 Kurse für dein Wohlbefinden</Eyebrow>
-      <H size={20} style={{ margin: "6px 0 14px" }}>Stress lösen, Kraft tanken</H>
-      {PRAEVENTION.map((k) => (
-        <Card key={k.t} style={{ marginBottom: 11, display: "flex", gap: 13, alignItems: "center" }}>
-          <div style={{ width: 48, height: 48, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, flexShrink: 0 }}>{k.icon}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{k.t}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>{k.feld} · {k.einh}</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.plum, marginBottom: 5 }}>{k.p}</div>
-            <Btn small ghost>Details</Btn>
-          </div>
+      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Lade Angebote …</p>}
+
+      {!laedt && angebote.length === 0 && (
+        <Card style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 30, marginBottom: 8 }}>🌱</div>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            {bindung.coach_name || "Deine Coachin"} hat hier noch keine Kurse oder Pakete eingestellt.
+            Sobald sie etwas anlegt, findest du es hier.
+          </p>
         </Card>
+      )}
+
+      {gruppen.map((typ) => (
+        <div key={typ} style={{ marginBottom: 22 }}>
+          <Eyebrow color={C.plum}>{TYP_ICON[typ]} {TYP_TITEL[typ]}</Eyebrow>
+          <div style={{ marginTop: 8 }}>
+            {angebote.filter((a) => a.typ === typ).map((a) => (
+              <Card key={a.id} style={{ marginBottom: 11 }}>
+                <div style={{ display: "flex", gap: 13, alignItems: "center" }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, flexShrink: 0 }}>{TYP_ICON[typ]}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{a.titel}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>
+                      {[a.untertitel, a.einheiten, a.thema].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                  {preisText(a) && (
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.plum, whiteSpace: "nowrap" }}>{preisText(a)}</div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: 9, marginTop: 12 }}>
+                  {typ === "kurs" && (
+                    <Btn small onClick={() => setDetail(a)}>Inhalte ansehen</Btn>
+                  )}
+                  <Btn small ghost onClick={() => { setAnfrageFuer(anfrageFuer === a.id ? null : a.id); setAnfrageText(""); }}>
+                    {anfrageFuer === a.id ? "Abbrechen" : "Ich hab Interesse"}
+                  </Btn>
+                </div>
+
+                {anfrageFuer === a.id && (
+                  <div style={{ marginTop: 12, animation: "fadeUp .3s ease" }}>
+                    <textarea
+                      value={anfrageText}
+                      onChange={(e) => setAnfrageText(e.target.value)}
+                      rows={3}
+                      placeholder="Magst du kurz schreiben, was dich daran anspricht? (optional)"
+                      style={{ width: "100%", padding: "11px 13px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }}
+                    />
+                    <Btn small full onClick={() => anfragen(a)}>Anfrage senden</Btn>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        </div>
       ))}
 
-      <Eyebrow>🛒 Neu für dich</Eyebrow>
-      <H size={20} style={{ margin: "6px 0 14px" }}>Kurse</H>
-      {SHOP.map((s) => (
-        <Card key={s.t} style={{ marginBottom: 11, display: "flex", gap: 13, alignItems: "center" }}>
-          <div style={{ width: 48, height: 48, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, flexShrink: 0 }}>{s.icon}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{s.t}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>{s.s}</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.plum, marginBottom: 5 }}>{s.p}</div>
-            <Btn small ghost>Kaufen</Btn>
-          </div>
-        </Card>
-      ))}
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, opacity: 0.8, textAlign: "center", marginTop: 4 }}>
-        Mit Lichtpunkten sparst du — z. B. 30 % Rabatt ab 300 ✨
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 6 }}>
+        Bezahlung läuft noch nicht über die App: deine Anfrage geht direkt an deine Coachin, ihr klärt alles Weitere im Chat.
       </p>
     </div>
   );
@@ -3890,7 +3956,7 @@ function CoachVerbinden({ onVerbunden, kompakt = false }) {
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           onKeyDown={(e) => e.key === "Enter" && einloesen()}
-          placeholder="z. B. ANJA-2026"
+          placeholder="z. B. S2G-2026"
           style={{ flex: 1, padding: "13px 14px", fontSize: 15, letterSpacing: 1, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }}
         />
         <Btn small onClick={einloesen} disabled={busy}>{busy ? "…" : "Verbinden"}</Btn>
@@ -4510,31 +4576,6 @@ function Office({ office, setOffice, addPunkte }) {
 
 /* ── Mediathek · Downloads, Uploads, Hilfe ── */
 
-const DOWNLOADS = [
-  { icon: "📕", t: "Workbook „Innere Mitte“", s: "PDF · 24 Seiten" },
-  { icon: "🎧", t: "Meditation „Herzöffnung“", s: "Audio · 12 Min" },
-  { icon: "🌙", t: "Mondkalender des Monats", s: "PDF · 2 Seiten" },
-  { icon: "🌹", t: "Göttinnen-Karten zum Drucken", s: "PDF · 11 Karten" },
-];
-
-const COACH_DOKUMENTE = [
-  { icon: "📕", t: "Workbook „Innere Klarheit“ · Woche 1", s: "PDF · 8 Seiten", neu: true },
-  { icon: "📝", t: "Aufgabe: Werte-Reflexion", s: "Arbeitsblatt · PDF", neu: true },
-  { icon: "🎧", t: "Meditation für deinen Abend", s: "Audio · 10 Min", neu: false },
-  { icon: "📄", t: "Zusammenfassung letzte Session", s: "PDF · 2 Seiten", neu: false },
-];
-
-const RESSOURCEN = [
-  { icon: "📕", t: "E-Book: Innere Führung", kat: "E-Books", s: "PDF · 48 Seiten" },
-  { icon: "📕", t: "E-Book: Vom Herzen führen", kat: "E-Books", s: "PDF · 36 Seiten" },
-  { icon: "📰", t: "Artikel: EU AI Act für Coaches", kat: "Artikel", s: "5 Min Lesezeit" },
-  { icon: "📰", t: "Artikel: Grenzen setzen als Coachin", kat: "Artikel", s: "4 Min Lesezeit" },
-  { icon: "🎬", t: "Video: Atemtechniken für Sessions", kat: "Videos", s: "12 Min" },
-  { icon: "🎬", t: "Video: Dein erstes Coaching-Paket", kat: "Videos", s: "18 Min" },
-  { icon: "🎧", t: "Audio: Selbstvertrauen stärken", kat: "Audio", s: "15 Min" },
-  { icon: "📊", t: "Case Study: Vom Hobby zum Business", kat: "Artikel", s: "8 Min Lesezeit" },
-];
-
 const TOOLS_KATALOG = [
   { k: "gcal", icon: "🗓️", t: "Google Kalender", s: "Termine automatisch im Heute-Widget" },
   { k: "health", icon: "💗", t: "Apple Health / Fitness", s: "Bewegung & Achtsamkeit verbinden" },
@@ -4544,11 +4585,28 @@ const TOOLS_KATALOG = [
   { k: "whatsapp", icon: "💬", t: "WhatsApp", s: "Support & Erinnerungen" },
 ];
 
-function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice }) {
+const KAT_ICON = { Artikel: "📄", "E-Books": "📕", Videos: "🎬", Audio: "🎧", Aufgabe: "✍️" };
+
+function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice, bindung }) {
   const [kat, setKat] = useState("Alle");
   const [hinweis, setHinweis] = useState("");
-  const kats = ["Alle", "Artikel", "E-Books", "Videos", "Audio"];
-  const liste = kat === "Alle" ? RESSOURCEN : RESSOURCEN.filter((r) => r.kat === kat);
+  const [materialien, setMaterialien] = useState([]);
+  const [matLaedt, setMatLaedt] = useState(true);
+  const kats = ["Alle", "Artikel", "E-Books", "Videos", "Audio", "Aufgabe"];
+  const liste = kat === "Alle" ? materialien : materialien.filter((m) => m.kategorie === kat);
+
+  // Materialien der eigenen Coachin — nichts Erfundenes mehr im Code.
+  useEffect(() => {
+    if (!bindung?.coach_id) { setMatLaedt(false); return; }
+    ladeMaterialien(bindung.coach_id).then((m) => { setMaterialien(m); setMatLaedt(false); });
+  }, [bindung?.coach_id]);
+
+  const materialOeffnen = async (m) => {
+    if (m.extern_url) { window.open(m.extern_url, "_blank", "noopener"); return; }
+    const url = await dateiLink(m.datei_pfad, "coach-material", 900);
+    if (url) window.open(url, "_blank", "noopener");
+    else setHinweis("Diese Datei lässt sich gerade nicht öffnen.");
+  };
   const typIcon = (name) => {
     const n = name.toLowerCase();
     if (n.match(/\.(jpg|jpeg|png|gif|webp|heic)$/)) return "🖼️";
@@ -4631,27 +4689,9 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice }) 
 
       <Eyebrow color={C.plum}>🌿 Von deiner Coachin</Eyebrow>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, margin: "6px 0 10px" }}>
-        Materialien, PDFs und Aufgaben, die Anja dir geschickt hat — sicher an einem Ort (DSGVO, EU).
+        Materialien, PDFs und Aufgaben, die {bindung?.coach_name || "deine Coachin"} für dich hinterlegt hat — sicher in der EU, nur für dich.
       </p>
-      <div style={{ marginBottom: 22 }}>
-        {COACH_DOKUMENTE.map((d) => (
-          <Card key={d.t} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center", padding: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: C.goldPale, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21, flexShrink: 0 }}>{d.icon}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{d.t}</span>
-                {d.neu && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 9.5, fontWeight: 700, color: "#fff", background: C.rose, borderRadius: 10, padding: "2px 7px" }}>NEU</span>}
-              </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>{d.s}</div>
-            </div>
-            <Btn small ghost>↓</Btn>
-          </Card>
-        ))}
-      </div>
 
-      <div style={{ margin: "0 -20px 8px" }}><Musik /></div>
-
-      <Eyebrow color={C.plum}>📚 Ressourcen-Bibliothek</Eyebrow>
       <div style={{ display: "flex", gap: 7, margin: "8px 0 12px", flexWrap: "wrap" }}>
         {kats.map((c) => (
           <button key={c} onClick={() => setKat(c)} style={{
@@ -4663,39 +4703,48 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice }) 
           }}>{c}</button>
         ))}
       </div>
-      <div style={{ marginBottom: 20 }}>
-        {liste.map((r) => (
-          <Card key={r.t} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center", padding: 14 }}>
-            <span style={{ fontSize: 21 }}>{r.icon}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{r.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>{r.kat} · {r.s}</div>
+
+      <div style={{ marginBottom: 22 }}>
+        {matLaedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Lade Materialien …</p>}
+
+        {!matLaedt && liste.length === 0 && (
+          <Card>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+              {bindung?.coach_id
+                ? "Hier ist noch nichts hinterlegt. Sobald deine Coachin dir etwas schickt, findest du es an dieser Stelle."
+                : "Sobald du mit deiner Coachin verbunden bist, erscheinen ihre Materialien hier."}
+            </p>
+          </Card>
+        )}
+
+        {liste.map((m) => (
+          <Card key={m.id} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center", padding: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: C.goldPale, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21, flexShrink: 0 }}>
+              {KAT_ICON[m.kategorie] || "📄"}
             </div>
-            <div style={{ color: C.gold, fontSize: 18 }}>›</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{m.titel}</span>
+                {Date.now() - new Date(m.sichtbar_ab).getTime() < 7 * 864e5 && (
+                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 9.5, fontWeight: 700, color: "#fff", background: C.rose, borderRadius: 10, padding: "2px 7px" }}>NEU</span>
+                )}
+              </div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>
+                {[m.kategorie, m.beschreibung].filter(Boolean).join(" · ")}
+              </div>
+            </div>
+            <Btn small ghost onClick={() => materialOeffnen(m)}>↗</Btn>
           </Card>
         ))}
       </div>
 
-
-      <Eyebrow color={C.plum}>📥 Downloads</Eyebrow>
-      <div style={{ marginTop: 8, marginBottom: 20 }}>
-        {DOWNLOADS.map((d) => (
-          <Card key={d.t} style={{ marginBottom: 10, display: "flex", gap: 13, alignItems: "center" }}>
-            <div style={{ width: 46, height: 46, borderRadius: 12, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{d.icon}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{d.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>{d.s}</div>
-            </div>
-            <Btn small ghost>↓</Btn>
-          </Card>
-        ))}
-      </div>
+      <div style={{ margin: "0 -20px 8px" }}><Musik /></div>
 
       {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "10px 14px", marginBottom: 12, animation: "fadeUp .3s ease" }}>{hinweis}</div>}
 
       <Eyebrow color={C.plum}>📤 Eigene Medien hochladen</Eyebrow>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, lineHeight: 1.5, margin: "6px 0 8px" }}>
-        Was passiert mit deinen Uploads? Sie liegen verschlüsselt in deinem privaten Bereich in der EU (Supabase Storage) — nur du kommst heran, Links sind zeitlich begrenzt. Fotos kannst du zusätzlich als <strong>Briefkopf-Logo</strong> für Angebote & Rechnungen nutzen.
+        Was passiert mit deinen Uploads? Sie liegen in deinem privaten Bereich in der EU (Supabase Storage, Verschlüsselung im Ruhezustand) — nur du kommst heran, Links sind zeitlich begrenzt. Fotos kannst du zusätzlich als <strong>Briefkopf-Logo</strong> für Angebote & Rechnungen nutzen.
       </p>
       <Card style={{ marginTop: 8, marginBottom: 12, textAlign: "center", border: `2px dashed ${C.goldSoft}`, background: C.goldPale }}>
         <label style={{ cursor: "pointer", display: "block", padding: "10px 0" }}>
@@ -7575,10 +7624,10 @@ export default function IlhoApp() {
               {tab === "ziele" && <><MediaBanner video={S2GVID.ziele} poster={S2GIMG.ziele} title="Ziele" subtitle="Deine Richtung, dein Nordstern" height={190} /><Ziele ziele={ziele} setZiele={setZiele} addPunkte={addPunkte} /></>}
               {tab === "aufgaben" && <><MediaBanner video={S2GVID.aufgaben} poster={S2GIMG.aufgaben} title="Aufgaben" subtitle="Schritt für Schritt" height={190} /><Aufgaben aufgaben={aufgaben} setAufgaben={setAufgaben} addPunkte={addPunkte} go={go} /></>}
               {tab === "appguide" && <><MediaBanner video={S2GVID.appguide} poster={S2GIMG.appguide} title="App-Guide" subtitle="Dein Wegweiser" height={190} /><AppGuide /></>}
-              {tab === "kurse" && <><MediaBanner video={S2GVID.kurse} poster={S2GIMG.kurse} title="Deine Kurse" subtitle="Weiterlernen, wo du warst" height={200} /><Kurse kursWahl={kursWahl} setKursWahl={setKursWahl} addPunkte={addPunkte} /></>}
+              {tab === "kurse" && <><MediaBanner video={S2GVID.kurse} poster={S2GIMG.kurse} title="Deine Kurse" subtitle="Weiterlernen, wo du warst" height={200} /><Kurse bindung={bindung} aufBindung={aufBindung} addPunkte={addPunkte} /></>}
               {tab === "buchen" && <><MediaBanner video={S2GVID.buchen} poster={S2GIMG.buchen} title="Termin buchen" subtitle="Zeit für dich" height={190} /><Buchen bindung={bindung} aufBindung={aufBindung} termine={termine} setTermine={setTermine} /></>}
               {tab === "coach" && <><MediaBanner video={S2GVID.coach} poster={S2GIMG.coach} title="Coach-Chat" subtitle="Du wirst gehört" height={190} /><CoachChat bindung={bindung} aufBindung={aufBindung} /></>}
-              {tab === "media" && <><MediaBanner video={S2GVID.mediathek} poster={S2GIMG.mediathek} title="Mediathek" subtitle="Deine Inhalte, dein Raum" height={200} /><Mediathek uploads={uploads} setUploads={setUploads} tools={tools} setTools={setTools} office={office} setOffice={setOffice} /></>}
+              {tab === "media" && <><MediaBanner video={S2GVID.mediathek} poster={S2GIMG.mediathek} title="Mediathek" subtitle="Deine Inhalte, dein Raum" height={200} /><Mediathek uploads={uploads} setUploads={setUploads} tools={tools} setTools={setTools} office={office} setOffice={setOffice} bindung={bindung} /></>}
               {tab === "meditation" && <MeditationCine addPunkte={addPunkte} />}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
               {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} alias={alias} anon={anon} bindung={bindung} /></>}

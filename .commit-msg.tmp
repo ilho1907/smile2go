@@ -1,0 +1,22 @@
+Materialien, Kurse und Angebote aus der Datenbank statt aus dem Code
+
+Im Code standen erfundene Coachinnen, Kurse und Preise ("Marie L. · Human
+Design Basics · 59 EUR") sowie Dokumentenlisten, die nirgends hinfuehrten.
+Fuer eine Ansicht, die live gehen soll, ist das nicht nur Demo, sondern
+irrefuehrend. Jetzt gilt: was die Coachin nicht angelegt hat, wird nicht
+gezeigt.
+
+- Migration 20260827c: materialien (auch einzelnen Klientinnen zuweisbar),
+  angebote (kurs/paket/retreat/shop, Preis als Cent-Betrag fuer spaeter),
+  kurs_module + kurs_fortschritt, anfragen - alles mit RLS
+- Kurse: Angebote der eigenen Coachin, Kursdetail mit Modulen, echtem
+  Fortschritt und Medien aus dem privaten Bucket
+- Statt "Kaufen" eine Anfrage: sie landet in der Tabelle UND als Nachricht
+  im gemeinsamen Verlauf, damit sie nicht untergeht
+- Mediathek: "Von deiner Coachin" kommt aus materialien, mit Kategorie-
+  Filter und ehrlichem Leerzustand
+- Entfernt: DOWNLOADS, COACH_DOKUMENTE, RESSOURCEN, PLATTFORM_KURSE,
+  PRAEVENTION, SHOP
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01GnQhrtrNZcoAubCoJqC5Dx
