@@ -605,3 +605,36 @@ export async function cloudErreichbar(timeoutMs = 6000) {
     return false;
   }
 }
+
+// ── Beiträge der Coachin + Profil-Links ────────────────────────────────────
+
+export async function ladeCoachBeitraege(coachId, limit = 20) {
+  if (!supabase || !coachId) return [];
+  const { data, error } = await supabase
+    .from("coach_beitraege")
+    .select("id, titel, text, bild_pfad, quelle, extern_url, veroeffentlicht_am")
+    .eq("coach_id", coachId)
+    .eq("sichtbar", true)
+    .order("veroeffentlicht_am", { ascending: false })
+    .limit(limit);
+  if (error) { console.warn("ladeCoachBeitraege:", error.message); return []; }
+  return data || [];
+}
+
+export async function ladeCoachProfil(coachId) {
+  if (!supabase || !coachId) return null;
+  const { data, error } = await supabase
+    .from("coaches")
+    .select("id, name, instagram, youtube, pinterest, website")
+    .eq("id", coachId)
+    .maybeSingle();
+  if (error) { console.warn("ladeCoachProfil:", error.message); return null; }
+  return data;
+}
+
+// Nur ein Zähler für die Einladende — die Eingeladene landet in keiner Liste.
+export async function merkeEinladung(code, kanal = "share") {
+  const user = await nutzerin();
+  if (!user) return;
+  await supabase.from("einladungen").insert({ von_user_id: user.id, code, kanal });
+}

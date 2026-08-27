@@ -9,7 +9,8 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   ladeFeed, schreibeBeitrag, herzSetzen, meldeBeitrag, loescheBeitrag,
   ladeMeineDateien, ladeDateiHoch, dateiLink, loescheDatei,
   exportiereMeineDaten, loescheKonto, passwortZuruecksetzen, neuesPasswortSetzen,
-  pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren, cloudErreichbar } from "./supabase";
+  pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren, cloudErreichbar,
+  ladeCoachBeitraege, ladeCoachProfil, merkeEinladung } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -531,6 +532,111 @@ const Mikro = ({ onText, size = 36 }) => {
       }}>🎤</button>
   );
 };
+
+/* ── Teilen: aus einem Moment wird ein Bild fürs Handy ──────────────────────
+   Kein Netzwerk, keine API, kein Konto: die Karte wird lokal auf ein Canvas
+   gezeichnet und an das Teilen-Menü des Geräts übergeben (Instagram-Story,
+   WhatsApp, Fotos …). Wo das nicht geht, wird sie heruntergeladen.        */
+
+function textUmbrechen(x, text, breite, zeilenHoehe, startY, mitte) {
+  const woerter = String(text).split(/\s+/);
+  let zeile = "";
+  let y = startY;
+  const zeilen = [];
+  woerter.forEach((w) => {
+    const test = zeile ? `${zeile} ${w}` : w;
+    if (x.measureText(test).width > breite && zeile) { zeilen.push(zeile); zeile = w; }
+    else zeile = test;
+  });
+  if (zeile) zeilen.push(zeile);
+  zeilen.forEach((z) => { x.fillText(z, mitte, y); y += zeilenHoehe; });
+  return y;
+}
+
+async function erzeugeTeilbild({ eyebrow, titel, text, fuss = "smile2go" }) {
+  const B = 1080, H = 1920, M = B / 2;
+  const c = document.createElement("canvas");
+  c.width = B; c.height = H;
+  const x = c.getContext("2d");
+
+  const g = x.createLinearGradient(0, 0, B, H);
+  g.addColorStop(0, "#FBF6EE"); g.addColorStop(0.55, "#F7E7DC"); g.addColorStop(1, "#EEDCC6");
+  x.fillStyle = g; x.fillRect(0, 0, B, H);
+
+  // heller Kartenkörper
+  x.fillStyle = "rgba(255,253,250,.92)";
+  const kx = 90, ky = 430, kb = B - 180, kh = 1060, r = 48;
+  x.beginPath();
+  x.moveTo(kx + r, ky);
+  x.arcTo(kx + kb, ky, kx + kb, ky + kh, r);
+  x.arcTo(kx + kb, ky + kh, kx, ky + kh, r);
+  x.arcTo(kx, ky + kh, kx, ky, r);
+  x.arcTo(kx, ky, kx + kb, ky, r);
+  x.closePath(); x.fill();
+
+  x.textAlign = "center";
+
+  x.fillStyle = "#C9963C";
+  x.font = "600 30px system-ui, sans-serif";
+  x.fillText(String(eyebrow || "").toUpperCase(), M, ky + 110);
+
+  x.fillStyle = "#3A2A22";
+  x.font = "italic 76px Georgia, serif";
+  let y = textUmbrechen(x, titel, kb - 140, 90, ky + 240, M);
+
+  if (text) {
+    x.fillStyle = "#6E5A4E";
+    x.font = "34px system-ui, sans-serif";
+    textUmbrechen(x, text, kb - 160, 52, y + 60, M);
+  }
+
+  x.fillStyle = "#8E4A63";
+  x.font = "italic 46px Georgia, serif";
+  x.fillText(fuss, M, ky + kh - 70);
+
+  return new Promise((res) => c.toBlob(res, "image/png"));
+}
+
+function TeilenBtn({ eyebrow, titel, text, klein = true, beschriftung = "Teilen" }) {
+  const [busy, setBusy] = useState(false);
+  const [hinweis, setHinweis] = useState("");
+
+  const teilen = async () => {
+    setBusy(true); setHinweis("");
+    try {
+      const blob = await erzeugeTeilbild({ eyebrow, titel, text });
+      const datei = new File([blob], "smile2go.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [datei] })) {
+        await navigator.share({ files: [datei], text: `${titel} · smile2go` });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "smile2go.png"; a.click();
+        URL.revokeObjectURL(url);
+        setHinweis("Bild gespeichert — du findest es in deinen Downloads.");
+        setTimeout(() => setHinweis(""), 4000);
+      }
+    } catch (e) {
+      if (e?.name !== "AbortError") setHinweis("Teilen hat gerade nicht geklappt.");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <>
+      <button onClick={teilen} disabled={busy} style={{
+        display: "inline-flex", alignItems: "center", gap: 7,
+        background: "none", border: `1.5px solid ${C.line}`, borderRadius: 20,
+        padding: klein ? "9px 15px" : "12px 20px", cursor: "pointer", minHeight: 44,
+        fontFamily: "system-ui, sans-serif", fontSize: klein ? 13 : 14.5,
+        fontWeight: 700, color: C.plum, opacity: busy ? 0.6 : 1,
+      }}>
+        <span style={{ fontSize: 15 }}>↗</span> {busy ? "einen Moment …" : beschriftung}
+      </button>
+      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 6 }}>{hinweis}</div>}
+    </>
+  );
+}
 
 const Eyebrow = ({ children, color = C.gold }) => (
   <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2.5, textTransform: "uppercase", color, fontWeight: 600, marginBottom: 6 }}>
@@ -1593,6 +1699,12 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
       </div>
 
       {!card && <Btn onClick={() => draw(false)}>Karte ziehen ✨</Btn>}
+
+      {card && (
+        <div style={{ marginTop: 14 }}>
+          <TeilenBtn eyebrow="Meine Tageskarte" titel={card.n} text={card.txt} beschriftung="Karte teilen" />
+        </div>
+      )}
 
       {card && !deutung && (
         <Btn onClick={deuten} disabled={busy}>{busy ? "✨ ilho deutet deine Karte …" : "✨ Was bedeutet sie für mich?"}</Btn>
@@ -3372,6 +3484,17 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
         </p>
       </Card>
 
+      {streak > 0 && (
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <TeilenBtn
+            eyebrow="Mein Weg"
+            titel={`${streak} Tage am Stück`}
+            text="Jeden Tag ein kleiner Schritt für mich."
+            beschriftung="Meinen Streak teilen"
+          />
+        </div>
+      )}
+
       <WochenCheckin checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} />
 
       <Wochenbild entries={entries} checkins={checkins} streak={streak} prefs={prefs} setPrefs={setPrefs} addPunkte={addPunkte} twinTon={twinTon} />
@@ -3533,14 +3656,34 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
   ];
 
   const nameShown = anon ? "Anonym" : (alias.trim() || (email ? email.split("@")[0].replace(/[._\d]/g, " ").trim() : "Mein Profil"));
+  // Echte Links aus dem Profil der Coachin — kein Platzhalter, der nirgends hinführt.
+  const [coachProfil, setCoachProfil] = useState(null);
+  useEffect(() => {
+    if (bindung?.coach_id) ladeCoachProfil(bindung.coach_id).then(setCoachProfil);
+  }, [bindung?.coach_id]);
+
+  const cName = coachProfil?.name || bindung?.coach_name || "deine Coachin";
   const connect = [
-    { icon: "📸", t: "Anja auf Instagram" },
-    { icon: "📌", t: "Anja auf Pinterest" },
-    { icon: "▶️", t: "Anja auf YouTube" },
-    { icon: "💗", t: "Gruppe · Frauen unterstützen Frauen" },
-    { icon: "🌸", t: "Community-Treffen" },
-    { icon: "📅", t: "Events & Retreats" },
-  ];
+    { icon: "📸", t: `${cName} auf Instagram`, url: coachProfil?.instagram },
+    { icon: "📌", t: `${cName} auf Pinterest`, url: coachProfil?.pinterest },
+    { icon: "▶️", t: `${cName} auf YouTube`, url: coachProfil?.youtube },
+    { icon: "🌐", t: "Website", url: coachProfil?.website },
+  ].filter((c) => c.url);
+
+  // Einladung: die Freundin registriert sich selbst — niemand wird eingetragen.
+  const einladen = async () => {
+    const code = bindung?.id ? "S2G" : "S2G";
+    const text = `Ich nutze smile2go für meine Tageskarte, mein Journal und meine Coaching-Termine. Magst du reinschauen? ${window.location.origin}`;
+    try {
+      if (navigator.share) await navigator.share({ text });
+      else {
+        await navigator.clipboard.writeText(text);
+        setDsgvoHinweis("✓ Einladungstext kopiert — füg ihn einfach in WhatsApp ein.");
+        setTimeout(() => setDsgvoHinweis(""), 4000);
+      }
+      merkeEinladung(code, navigator.share ? "share" : "kopiert");
+    } catch (e) { /* Abbruch durch die Nutzerin ist kein Fehler */ }
+  };
 
   return (
     <div>
@@ -3614,17 +3757,31 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
           </div>
         </Card>
 
-        {/* Community & Connect */}
-        <Eyebrow color={C.plum}>Community & Connect</Eyebrow>
-        <Card style={{ marginTop: 8, marginBottom: 16, paddingTop: 4, paddingBottom: 4 }}>
-          {connect.map((c, i) => (
-            <div key={c.t} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: i < connect.length - 1 ? `1px solid ${C.line}` : "none", cursor: "pointer" }}>
-              <span style={{ fontSize: 18 }}>{c.icon}</span>
-              <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.espresso }}>{c.t}</span>
-              <span style={{ color: C.gold, fontSize: 18 }}>›</span>
-            </div>
-          ))}
+        {/* Einladen */}
+        <Eyebrow color={C.plum}>Weitersagen</Eyebrow>
+        <Card style={{ marginTop: 8, marginBottom: 16, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, marginBottom: 4 }}>Eine Freundin einladen</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+            Schick ihr den Link — sie meldet sich selbst an. Wir schreiben ihr nichts, solange sie das nicht ausdrücklich möchte.
+          </p>
+          <Btn small onClick={einladen}>↗ Einladung teilen</Btn>
         </Card>
+
+        {/* Community & Connect — nur echte Links der eigenen Coachin */}
+        {connect.length > 0 && (
+          <>
+            <Eyebrow color={C.plum}>Community & Connect</Eyebrow>
+            <Card style={{ marginTop: 8, marginBottom: 16, paddingTop: 4, paddingBottom: 4 }}>
+              {connect.map((c, i) => (
+                <a key={c.t} href={c.url} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: i < connect.length - 1 ? `1px solid ${C.line}` : "none", textDecoration: "none" }}>
+                  <span style={{ fontSize: 18 }}>{c.icon}</span>
+                  <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.espresso }}>{c.t}</span>
+                  <span style={{ color: C.gold, fontSize: 18 }}>›</span>
+                </a>
+              ))}
+            </Card>
+          </>
+        )}
 
         {/* Abo & Käufe */}
         <Eyebrow color={C.plum}>Abo & Käufe</Eyebrow>
@@ -4804,7 +4961,8 @@ function Meditation({ addPunkte }) {
 
 /* ── Community-Feed · echte Beiträge aus der Datenbank, mit Meldefunktion ── */
 
-function Community({ addPunkte, alias, anon }) {
+function Community({ addPunkte, alias, anon, bindung }) {
+  const [coachPosts, setCoachPosts] = useState([]);
   const [posts, setPosts] = useState([]);
   const [neu, setNeu] = useState("");
   const [geherzt, setGeherzt] = useState({});
@@ -4820,6 +4978,11 @@ function Community({ addPunkte, alias, anon }) {
     setLaedt(false);
   };
   useEffect(() => { laden(); }, []);
+
+  // „Neu von deiner Coachin" — ihre Inhalte landen in der App, nicht nur auf Instagram.
+  useEffect(() => {
+    if (bindung?.coach_id) ladeCoachBeitraege(bindung.coach_id, 5).then(setCoachPosts);
+  }, [bindung?.coach_id]);
 
   const teilen = async () => {
     const text = neu.trim();
@@ -4877,6 +5040,30 @@ function Community({ addPunkte, alias, anon }) {
       </div>
 
       {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "10px 14px", marginBottom: 12 }}>{hinweis}</div>}
+
+      {coachPosts.length > 0 && (
+        <div style={{ marginBottom: 22 }}>
+          <Eyebrow color={C.plum}>Neu von {bindung?.coach_name || "deiner Coachin"}</Eyebrow>
+          <div style={{ marginTop: 8 }}>
+            {coachPosts.map((b) => (
+              <Card key={b.id} style={{ marginBottom: 10, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+                {b.titel && <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, marginBottom: 4 }}>{b.titel}</div>}
+                <p style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6, margin: "0 0 8px", whiteSpace: "pre-wrap" }}>{b.text}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink }}>
+                    {new Date(b.veroeffentlicht_am).toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
+                  </span>
+                  {b.extern_url && (
+                    <a href={b.extern_url} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, color: C.plum, textDecoration: "underline" }}>
+                      {b.quelle === "instagram" ? "Auf Instagram ansehen" : b.quelle === "youtube" ? "Auf YouTube ansehen" : "Ansehen"} ↗
+                    </a>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Lade Beiträge …</p>}
 
@@ -7394,7 +7581,7 @@ export default function IlhoApp() {
               {tab === "media" && <><MediaBanner video={S2GVID.mediathek} poster={S2GIMG.mediathek} title="Mediathek" subtitle="Deine Inhalte, dein Raum" height={200} /><Mediathek uploads={uploads} setUploads={setUploads} tools={tools} setTools={setTools} office={office} setOffice={setOffice} /></>}
               {tab === "meditation" && <MeditationCine addPunkte={addPunkte} />}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
-              {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} alias={alias} anon={anon} /></>}
+              {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} alias={alias} anon={anon} bindung={bindung} /></>}
               {tab === "fortschritt" && <><MediaBanner video={S2GVID.fortschritt} poster={S2GIMG.fortschritt} title="Mein Fortschritt" subtitle="Du wächst" height={190} /><Fortschritt streak={streak} entries={entries} punkte={punkte} energie={energie} aufgaben={aufgaben} ch369={ch369} checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} twinTon={twinTon} /></>}
               {tab === "fragebogen" && <><MediaBanner video={S2GVID.fragebogen} poster={S2GIMG.fragebogen} title="Fragebogen" subtitle="Lerne dich kennen" height={190} /><Fragebogen intake={intake} setIntake={setIntake} addPunkte={addPunkte} /></>}
               {tab === "pakete" && <><MediaBanner video={S2GVID.pakete} poster={S2GIMG.pakete} title="Pakete" subtitle="Wähle dein Geschenk an dich" height={190} /><Pakete addPunkte={addPunkte} go={go} /></>}
