@@ -720,3 +720,273 @@ export async function stelleAnfrage({ klientinId, coachId, angebotId, titel, nac
   });
   return data;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Coach-Seite: Gegenstelle zu allem, was die Klientin sieht.
+// Ohne diese Funktionen bleibt die Klientinnen-Seite eine Einbahnstraße.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Sorgt dafür, dass es eine coaches-Zeile gibt (Fremdschlüssel für alles Weitere).
+export async function coachProfilSichern(name = null) {
+  const user = await nutzerin();
+  if (!user) return null;
+  const { error } = await supabase.from("coaches").upsert(
+    name ? { id: user.id, name } : { id: user.id },
+    { onConflict: "id" },
+  );
+  if (error) { console.warn("coachProfilSichern:", error.message); return null; }
+  return user.id;
+}
+
+export async function ladeCoachProfilSelbst() {
+  const user = await nutzerin();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("coaches")
+    .select("id, name, instagram, youtube, pinterest, website")
+    .eq("id", user.id)
+    .maybeSingle();
+  return data || { id: user.id, name: null };
+}
+
+export async function coachProfilSpeichern(felder) {
+  const user = await nutzerin();
+  if (!user) return false;
+  const { error } = await supabase.from("coaches").upsert({ id: user.id, ...felder }, { onConflict: "id" });
+  return !error;
+}
+
+// ── Klientinnen & Einladungscodes ──────────────────────────────────────────
+
+export async function ladeMeineKlientinnen() {
+  const user = await nutzerin();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from("klientinnen")
+    .select("id, user_id, anzeigename, status, verbunden_am")
+    .eq("coach_id", user.id)
+    .order("verbunden_am", { ascending: false });
+  if (error) { console.warn("ladeMeineKlientinnen:", error.message); return []; }
+  return data || [];
+}
+
+export async function klientinStatus(klientinId, status) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("klientinnen").update({ status }).eq("id", klientinId);
+  return !error;
+}
+
+export async function ladeEinladungscodes() {
+  const user = await nutzerin();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("coach_einladungen")
+    .select("code, aktiv, nutzungen, max_nutzungen, created_at")
+    .eq("coach_id", user.id)
+    .order("created_at", { ascending: false });
+  return data || [];
+}
+
+export async function erzeugeEinladungscode(code, maxNutzungen = null) {
+  const user = await nutzerin();
+  if (!user) throw new Error("Nicht angemeldet");
+  await coachProfilSichern();
+  const { error } = await supabase.from("coach_einladungen").insert({
+    code: code.trim().toUpperCase(), coach_id: user.id, max_nutzungen: maxNutzungen,
+  });
+  if (error) throw new Error(error.code === "23505" ? "Diesen Code gibt es schon." : error.message);
+  return true;
+}
+
+export async function codeUmschalten(code, aktiv) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("coach_einladungen").update({ aktiv }).eq("code", code);
+  return !error;
+}
+
+// ── Nachrichten aus Coach-Sicht ────────────────────────────────────────────
+
+export async function sendeNachrichtAlsCoach({ klientinId, text }) {
+  const user = await nutzerin();
+  if (!user || !klientinId) return null;
+  const { data, error } = await supabase
+    .from("nachrichten")
+    .insert({ klientin_id: klientinId, absender: "coach", absender_id: user.id, text })
+    .select()
+    .single();
+  if (error) { console.warn("sendeNachrichtAlsCoach:", error.message); return null; }
+  return data;
+}
+
+// Wie viele ungelesene Nachrichten liegen pro Klientin?
+export async function ladeUngelesen() {
+  const user = await nutzerin();
+  if (!user) return {};
+  const { data } = await supabase
+    .from("nachrichten")
+    .select("klientin_id")
+    .eq("absender", "klientin")
+    .is("gelesen_am", null);
+  const zaehler = {};
+  (data || []).forEach((n) => { zaehler[n.klientin_id] = (zaehler[n.klientin_id] || 0) + 1; });
+  return zaehler;
+}
+
+export async function markiereGelesenAlsCoach(klientinId) {
+  if (!supabase || !klientinId) return;
+  await supabase.from("nachrichten")
+    .update({ gelesen_am: new Date().toISOString() })
+    .eq("klientin_id", klientinId)
+    .eq("absender", "klientin")
+    .is("gelesen_am", null);
+}
+
+// ── Zeitfenster & Termine aus Coach-Sicht ──────────────────────────────────
+
+export async function ladeAlleSlots() {
+  const user = await nutzerin();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("coach_slots")
+    .select("id, beginn, dauer_min, kanal, aktiv")
+    .eq("coach_id", user.id)
+    .gte("beginn", new Date(Date.now() - 864e5).toISOString())
+    .order("beginn", { ascending: true });
+  return data || [];
+}
+
+export async function slotAnlegen({ beginn, dauerMin = 50, kanal = "video" }) {
+  const user = await nutzerin();
+  if (!user) throw new Error("Nicht angemeldet");
+  await coachProfilSichern();
+  const { error } = await supabase.from("coach_slots").insert({
+    coach_id: user.id, beginn, dauer_min: dauerMin, kanal,
+  });
+  if (error) throw new Error(error.code === "23505" ? "Für diese Zeit gibt es schon ein Fenster." : error.message);
+  return true;
+}
+
+export async function slotLoeschen(id) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("coach_slots").delete().eq("id", id);
+  return !error;
+}
+
+export async function ladeTermineCoach() {
+  const user = await nutzerin();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("termine")
+    .select("id, beginn, dauer_min, kanal, titel, video_url, status, klientin_id, klientinnen(anzeigename)")
+    .eq("coach_id", user.id)
+    .order("beginn", { ascending: true });
+  return (data || []).map((t) => ({ ...t, klientin_name: t.klientinnen?.anzeigename || "Klientin" }));
+}
+
+export async function terminVideoLink(terminId, url) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("termine").update({ video_url: url }).eq("id", terminId);
+  return !error;
+}
+
+// ── Material, Angebote, Module, Beiträge, Anfragen ─────────────────────────
+
+export async function materialHochladen(datei) {
+  const user = await nutzerin();
+  if (!user || !datei) return null;
+  const sauber = datei.name.replace(/[^\w.\-]+/g, "_");
+  const pfad = `${user.id}/${Date.now()}-${sauber}`;
+  const { error } = await supabase.storage.from("coach-material").upload(pfad, datei, { upsert: false });
+  if (error) { console.warn("materialHochladen:", error.message); return null; }
+  return pfad;
+}
+
+export async function materialAnlegen({ titel, beschreibung, kategorie, dateiPfad, externUrl, klientinId = null }) {
+  const user = await nutzerin();
+  if (!user) return null;
+  await coachProfilSichern();
+  const { data, error } = await supabase.from("materialien").insert({
+    coach_id: user.id, klientin_id: klientinId, titel, beschreibung,
+    kategorie, datei_pfad: dateiPfad || null, extern_url: externUrl || null,
+  }).select().single();
+  if (error) { console.warn("materialAnlegen:", error.message); return null; }
+  return data;
+}
+
+export async function materialLoeschen(id) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("materialien").delete().eq("id", id);
+  return !error;
+}
+
+export async function angebotAnlegen(felder) {
+  const user = await nutzerin();
+  if (!user) return null;
+  await coachProfilSichern();
+  const { data, error } = await supabase.from("angebote").insert({ coach_id: user.id, ...felder }).select().single();
+  if (error) { console.warn("angebotAnlegen:", error.message); return null; }
+  return data;
+}
+
+export async function angebotAendern(id, felder) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("angebote").update(felder).eq("id", id);
+  return !error;
+}
+
+export async function angebotLoeschen(id) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("angebote").delete().eq("id", id);
+  return !error;
+}
+
+export async function modulAnlegen({ angebotId, nr, titel, typ = "text", text = null, dateiPfad = null, dauerMin = null }) {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("kurs_module").insert({
+    angebot_id: angebotId, nr, titel, typ, text, datei_pfad: dateiPfad, dauer_min: dauerMin,
+  }).select().single();
+  if (error) { console.warn("modulAnlegen:", error.message); return null; }
+  return data;
+}
+
+export async function modulLoeschen(id) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("kurs_module").delete().eq("id", id);
+  return !error;
+}
+
+export async function beitragAnlegen({ titel, text, quelle = "app", externUrl = null }) {
+  const user = await nutzerin();
+  if (!user) return null;
+  await coachProfilSichern();
+  const { data, error } = await supabase.from("coach_beitraege").insert({
+    coach_id: user.id, titel, text, quelle, extern_url: externUrl,
+  }).select().single();
+  if (error) { console.warn("beitragAnlegen:", error.message); return null; }
+  return data;
+}
+
+export async function beitragLoeschen(id) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("coach_beitraege").delete().eq("id", id);
+  return !error;
+}
+
+export async function ladeAnfragenCoach() {
+  const user = await nutzerin();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("anfragen")
+    .select("id, nachricht, status, created_at, angebote(titel), klientinnen(anzeigename)")
+    .eq("coach_id", user.id)
+    .order("created_at", { ascending: false });
+  return (data || []).map((a) => ({
+    ...a, angebot_titel: a.angebote?.titel || "—", klientin_name: a.klientinnen?.anzeigename || "Klientin",
+  }));
+}
+
+export async function anfrageStatus(id, status) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("anfragen").update({ status }).eq("id", id);
+  return !error;
+}

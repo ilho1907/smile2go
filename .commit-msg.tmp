@@ -1,0 +1,25 @@
+Coach-Panel: die fehlende Gegenstelle zur Klientinnen-App
+
+Bisher schrieb die Klientinnen-Seite in Tabellen, die niemand auf der anderen
+Seite lesen oder fuellen konnte - eine Einbahnstrasse. Admin.jsx ist ein
+Plattform-Dashboard mit Demo-Zahlen und war dafuer nie gedacht.
+
+Neu: app/src/Coach.jsx unter #coach, ausschliesslich echte Daten.
+- Klientinnen: Einladungscodes anlegen, sperren, kopieren; verbundene
+  Klientinnen mit Ungelesen-Zaehler; pausieren/aktivieren
+- Nachrichten: echter Verlauf je Klientin mit Realtime, Sprachnachrichten
+  ueber signierte Links, Antworten als Coachin, Lesebestaetigung
+- Termine: freie Zeitfenster einzeln oder fuer eine ganze Woche anlegen,
+  gebuchte Sessions mit Videolink
+- Material: Datei in den privaten Bucket oder Link, Kategorie, wahlweise
+  fuer alle oder eine einzelne Klientin
+- Angebote: Kurse/Pakete/Retreats samt Kursmodulen; eingegangene Anfragen
+- Beitraege: Inhalte fuer "Neu von deiner Coachin", optional mit Link zum
+  Original auf Instagram oder YouTube
+- Profil: Anzeigename und Social-Links, die in der App erscheinen
+
+supabase.js: Coach-seitige API-Schicht fuer all das.
+main.jsx: #coach neben #admin.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01GnQhrtrNZcoAubCoJqC5Dx
