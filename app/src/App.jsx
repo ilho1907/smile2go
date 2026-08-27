@@ -5512,12 +5512,16 @@ function Mehr({ go }) {
       { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index & Trend", tab: "fortschritt" },
       { icon: "🎓", t: "Kurse", s: "Deine Kurse · Shop", tab: "kurse" },
     ] },
+    { g: "Üben & Ankommen", items: [
+      { icon: "🌿", t: "Qigong", s: "Die Acht Brokate · zehn ruhige Minuten", tab: "qigong" },
+      { icon: "🖐️", t: "Achtsamkeit", s: "Atem, Sinne & Körperreise für zwischendurch", tab: "achtsamkeit" },
+      { icon: "🤍", t: "Dankbarkeit", s: "Drei Dinge am Tag · dein Rückblick", tab: "dankbarkeit" },
+      { icon: "🕊️", t: "Loslassen", s: "Was darf gehen? · ablegen & freigeben", tab: "loslassen" },
+    ] },
     { g: "Seele & Rituale", items: [
       { icon: "🦋", t: "Archetypen-Test", s: "Welche innere Kraft leitet dich?", tab: "archetyp" },
       { icon: "🕰️", t: "Zukunfts-Ich", s: "Sprich mit dir in 10 Jahren", tab: "zukunftsich" },
       { icon: "🖤", t: "Schattenspiegel", s: "Schreiben & verbrennen — nichts wird gespeichert", tab: "schatten" },
-      { icon: "🌙", t: "Traumbibliothek", s: "Deine Traumsymbole & Muster", tab: "traum" },
-      { icon: "🌗", t: "Körper & Zyklus", s: "20-Sekunden-Check · dein Zyklus-Spiegel", tab: "zyklus" },
       { icon: "🕯️", t: "Gemeinsame Flamme", s: "Das Licht, das uns allen gehört", tab: "flamme" },
       { icon: "🌕", t: "Mondrituale", s: "Loslassen & manifestieren im Mondrhythmus", tab: "mondrituale" },
       { icon: "🎡", t: "Jahreskreis", s: "Die acht Feste des Jahres", tab: "jahreskreis" },
@@ -5526,7 +5530,6 @@ function Mehr({ go }) {
     ] },
     { g: "Wachsen & Spielen", items: [
       { icon: "🛤️", t: "Transformations-Reisen", s: "21 & 40 Tage zu einem Thema", tab: "reisen" },
-      { icon: "🌳", t: "Dein Garten", s: "Was du pflegst, wächst sichtbar", tab: "garten" },
       { icon: "🔮", t: "Intuitions-Training", s: "Trainiere dein Gefühl · Trefferquote", tab: "intuition" },
       { icon: "📖", t: "Jahres-Rückblick", s: "Dein Jahr in Karten & Worten", tab: "rueckblick" },
     ] },
@@ -6179,460 +6182,6 @@ function Flamme({ flamme, setFlamme, addPunkte }) {
   );
 }
 
-/* ── Traumbibliothek — deine Traumsymbole & Muster ── */
-const TRAUM_SYMBOLE = [
-  { key: "wasser", w: ["wasser", "meer", "ozean", "fluss", "see", "regen", "welle"], icon: "🌊", deut: "Gefühle & das Unbewusste — wie bewegt ist dein Innenleben gerade?" },
-  { key: "fliegen", w: ["flieg", "schweb", "flug"], icon: "🕊️", deut: "Freiheit & Perspektive — der Wunsch, über den Dingen zu stehen." },
-  { key: "fallen", w: ["fall", "stürz", "abgrund"], icon: "🌀", deut: "Kontrollverlust oder Loslassen — wo darfst du dich fangen lassen?" },
-  { key: "zaehne", w: ["zahn", "zähne"], icon: "🦷", deut: "Sorge um Ausstrahlung & Kraft — klassisches Symbol für Verunsicherung." },
-  { key: "haus", w: ["haus", "wohnung", "zimmer", "tür", "keller", "dachboden"], icon: "🏠", deut: "Dein Selbst — jedes Zimmer ein Anteil von dir." },
-  { key: "verfolgung", w: ["verfolg", "gejagt", "flucht", "weglauf", "rennen"], icon: "🏃‍♀️", deut: "Etwas will angeschaut werden, dem du ausweichst." },
-  { key: "tiere", w: ["katze", "hund", "vogel", "pferd", "wolf", "tier"], icon: "🦊", deut: "Instinkte & Urkräfte — welche Seite von dir zeigt sich?" },
-  { key: "schlange", w: ["schlange"], icon: "🐍", deut: "Wandlung & Heilung — Häutung steht bevor." },
-  { key: "tod", w: ["tod", "sterb", "beerdigung", "grab"], icon: "🥀", deut: "Selten wörtlich: ein Kapitel endet, damit ein neues beginnt." },
-  { key: "baby", w: ["baby", "kind", "geburt", "schwanger"], icon: "👶", deut: "Etwas Neues wird in dir geboren — eine Idee, ein Lebensabschnitt." },
-  { key: "pruefung", w: ["prüfung", "test", "schule", "zu spät", "verpass"], icon: "📝", deut: "Angst, nicht zu genügen — wer prüft dich da wirklich?" },
-  { key: "feuer", w: ["feuer", "brenn", "flamme"], icon: "🔥", deut: "Leidenschaft oder Zorn — Energie, die einen Ausdruck sucht." },
-  { key: "licht", w: ["licht", "sonne", "stern", "mond"], icon: "✨", deut: "Hoffnung, Führung, Bewusstwerdung." },
-  { key: "auto", w: ["auto", "fahren", "zug", "bus", "reise", "weg"], icon: "🛤️", deut: "Deine Lebensrichtung — wer sitzt am Steuer?" },
-];
-function findeSymbole(text) {
-  const t = text.toLowerCase();
-  return TRAUM_SYMBOLE.filter((s) => s.w.some((w) => t.includes(w)));
-}
-function Traumbibliothek({ traeume, setTraeume, addPunkte }) {
-  const [text, setText] = useState("");
-  const speichern = () => {
-    if (!text.trim()) return;
-    const symbole = findeSymbole(text).map((s) => s.key);
-    setTraeume([{ datum: new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" }), text: text.trim(), symbole }, ...(traeume || [])]);
-    setText("");
-    addPunkte(5, "Traum festgehalten");
-  };
-  const alle = traeume || [];
-  const counts = {};
-  alle.forEach((tr) => (tr.symbole || []).forEach((k) => { counts[k] = (counts[k] || 0) + 1; }));
-  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  return (
-    <div style={{ padding: "26px 20px" }}>
-      <Eyebrow color={C.plum}>Traumbibliothek</Eyebrow>
-      <H size={25}>Was hat dir die Nacht erzählt?</H>
-      <Card style={{ margin: "16px 0 14px" }}>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={4}
-          placeholder="Stichworte reichen: „Wasser, altes Haus, ich konnte fliegen …“"
-          style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 15, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso }}
-        />
-        <div style={{ marginTop: 10 }}>
-          <Btn full onClick={speichern} disabled={!text.trim()}>🌙 Traum festhalten</Btn>
-        </div>
-      </Card>
-      {top.length > 0 && (
-        <Card style={{ marginBottom: 14, background: C.goldPale }}>
-          <Eyebrow color={C.espresso}>Deine wiederkehrenden Symbole</Eyebrow>
-          {top.map(([k, n]) => {
-            const s = TRAUM_SYMBOLE.find((x) => x.key === k);
-            return (
-              <div key={k} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
-                <span style={{ fontSize: 22 }}>{s.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{k.charAt(0).toUpperCase() + k.slice(1)} · {n}×</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5 }}>{s.deut}</div>
-                </div>
-              </div>
-            );
-          })}
-        </Card>
-      )}
-      {alle.length === 0 && (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.7 }}>
-          Halte deine Träume gleich morgens fest — schon Stichworte genügen. Mit der Zeit erkennt deine Bibliothek, welche Symbole immer wiederkehren.
-        </p>
-      )}
-      {alle.map((tr, i) => (
-        <Card key={i} style={{ marginBottom: 10 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginBottom: 6 }}>{tr.datum}</div>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6 }}>{tr.text}</div>
-          {(tr.symbole || []).length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-              {tr.symbole.map((k) => {
-                const s = TRAUM_SYMBOLE.find((x) => x.key === k);
-                return <span key={k} style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, background: C.beige, borderRadius: 10, padding: "4px 10px", color: C.espresso }}>{s?.icon} {k}</span>;
-              })}
-            </div>
-          )}
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-/* ── Körper-Check & Zyklus-Spiegel ── */
-const ZYKLUS_PHASEN = [
-  { n: "Menstruation", k: "winter", von: 1, bis: 6, icon: "🌑", jz: "Innerer Winter", tipp: "Rückzug & Ruhe sind produktiv. Weniger Termine, mehr Decke.", kraft: "Klarheit über das, was wirklich zählt", brauch: "Wärme, Schlaf, Alleinsein" },
-  { n: "Follikelphase", k: "fruehling", von: 7, bis: 13, icon: "🌱", jz: "Innerer Frühling", tipp: "Aufbruchsenergie — gute Zeit für Neues und Mut.", kraft: "Neugier, Ideen, Tatendrang", brauch: "Bewegung, Pläne, frische Luft" },
-  { n: "Eisprung-Zeit", k: "sommer", von: 14, bis: 17, icon: "🌕", jz: "Innerer Sommer", tipp: "Strahlkraft — Gespräche & Sichtbarkeit fallen leicht.", kraft: "Ausdruck, Verbindung, Charme", brauch: "Menschen, Bühne, Austausch" },
-  { n: "Lutealphase", k: "herbst", von: 18, bis: 35, icon: "🌗", jz: "Innerer Herbst", tipp: "Fokus nach innen — sortieren, abschließen, für dich sorgen.", kraft: "Ehrlichkeit, Struktur, Grenzen", brauch: "Ruhe, klare Absagen, gutes Essen" },
-];
-const KOERPER_SIGNALE = [
-  { k: "kopf", icon: "🤕", n: "Kopf" }, { k: "bauch", icon: "🌀", n: "Bauch" },
-  { k: "ruecken", icon: "🪢", n: "Rücken" }, { k: "schlaf", icon: "😴", n: "Schlaf" },
-  { k: "haut", icon: "✨", n: "Haut" }, { k: "verspannt", icon: "🧊", n: "Verspannt" },
-  { k: "leicht", icon: "🕊️", n: "Leicht" }, { k: "hunger", icon: "🍫", n: "Heißhunger" },
-];
-const STIMMUNGEN = [
-  { k: "ruhig", icon: "🌊", n: "Ruhig" }, { k: "kraftvoll", icon: "🔥", n: "Kraftvoll" },
-  { k: "traurig", icon: "🌧️", n: "Traurig" }, { k: "gereizt", icon: "⚡", n: "Gereizt" },
-  { k: "verletzlich", icon: "🕯️", n: "Verletzlich" }, { k: "klar", icon: "💎", n: "Klar" },
-  { k: "erschoepft", icon: "🥀", n: "Erschöpft" }, { k: "freudig", icon: "🌻", n: "Freudig" },
-];
-function ZyklusSpiegel({ zyklus, setZyklus, addPunkte, drawn, entries }) {
-  const heute = new Date().toDateString();
-  const alle = zyklus || [];
-  const heutiger = alle.find((c) => c.tag === heute);
-  const [koerper, setKoerper] = useState(3);
-  const [energie, setEnergie] = useState(3);
-  const [schlaf, setSchlaf] = useState(3);
-  const [zTag, setZTag] = useState("");
-  const [signale, setSignale] = useState([]);
-  const [stimmung, setStimmung] = useState([]);
-  const [notiz, setNotiz] = useState("");
-  const [ansicht, setAnsicht] = useState("check");
-  const [zyklusStart, setZyklusStart] = useState(null);
-
-  const phaseVon = (zt) => ZYKLUS_PHASEN.find((p) => zt >= p.von && zt <= p.bis);
-  // Automatische Zyklustag-Schätzung aus dem letzten "Tag 1"-Eintrag
-  const letzterStart = alle.filter((c) => c.zyklustag === 1).sort((a, b) => new Date(b.tag) - new Date(a.tag))[0];
-  const autoTag = letzterStart ? Math.round((new Date(heute) - new Date(letzterStart.tag)) / 864e5) + 1 : null;
-  const effektiverTag = zTag ? parseInt(zTag, 10) : (autoTag && autoTag <= 40 ? autoTag : null);
-  const phase = effektiverTag ? phaseVon(effektiverTag) : null;
-
-  const toggle = (arr, setArr, k) => setArr(arr.includes(k) ? arr.filter((x) => x !== k) : [...arr, k]);
-  const speichern = () => {
-    if (heutiger) return;
-    setZyklus([{
-      tag: heute, ts: Date.now(), datum: new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" }),
-      koerper, energie, schlaf, signale, stimmung, notiz: notiz.trim(),
-      zyklustag: effektiverTag || null, wochentag: new Date().getDay(),
-      karte: drawn?.name || drawn?.titel || null, mond: mondphase().n,
-    }, ...alle]);
-    addPunkte(5, "Körper-Check");
-    setSignale([]); setStimmung([]); setNotiz(""); setZTag("");
-  };
-  const periodeStarten = () => {
-    if (heutiger) return;
-    setZTag("1");
-  };
-
-  // ── Auswertung ──
-  const avg = (arr, f) => arr.length ? arr.reduce((s, x) => s + f(x), 0) / arr.length : 0;
-  const wtNamen = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-  const genug = alle.length >= 5;
-  const viel = alle.length >= 12;
-  let A = null;
-  if (genug) {
-    const byWt = {}; alle.forEach((c) => { (byWt[c.wochentag] = byWt[c.wochentag] || []).push(c); });
-    const wtAvg = Object.entries(byWt).filter(([, v]) => v.length >= 2)
-      .map(([wt, v]) => ({ n: wtNamen[wt], e: avg(v, (x) => x.energie), k: avg(v, (x) => x.koerper), n2: v.length })).sort((a, b) => b.e - a.e);
-    const mitZ = alle.filter((c) => c.zyklustag);
-    const byPhase = {};
-    mitZ.forEach((c) => { const p = phaseVon(c.zyklustag); if (p) (byPhase[p.k] = byPhase[p.k] || []).push(c); });
-    const phasen = ZYKLUS_PHASEN.map((p) => ({ ...p, daten: byPhase[p.k] || [] })).filter((p) => p.daten.length >= 2)
-      .map((p) => ({ ...p, e: avg(p.daten, (x) => x.energie), koe: avg(p.daten, (x) => x.koerper), s: avg(p.daten, (x) => x.schlaf || 3) }));
-    // Signal- und Stimmungshäufigkeit je Phase
-    const sigCount = {}; const stimCount = {};
-    alle.forEach((c) => {
-      (c.signale || []).forEach((s) => { sigCount[s] = (sigCount[s] || 0) + 1; });
-      (c.stimmung || []).forEach((s) => { stimCount[s] = (stimCount[s] || 0) + 1; });
-    });
-    const topSig = Object.entries(sigCount).sort((a, b) => b[1] - a[1]).slice(0, 4);
-    const topStim = Object.entries(stimCount).sort((a, b) => b[1] - a[1]).slice(0, 4);
-    // Korrelation Schlaf ↔ Energie (Pearson, nur bei genug Daten)
-    let korrSchlaf = null;
-    const mitS = alle.filter((c) => c.schlaf);
-    if (mitS.length >= 8) {
-      const mx = avg(mitS, (x) => x.schlaf), my = avg(mitS, (x) => x.energie);
-      const num = mitS.reduce((s, x) => s + (x.schlaf - mx) * (x.energie - my), 0);
-      const den = Math.sqrt(mitS.reduce((s, x) => s + (x.schlaf - mx) ** 2, 0) * mitS.reduce((s, x) => s + (x.energie - my) ** 2, 0));
-      if (den > 0) korrSchlaf = num / den;
-    }
-    // Zykluslänge aus den Tag-1-Einträgen
-    const starts = alle.filter((c) => c.zyklustag === 1).map((c) => new Date(c.tag)).sort((a, b) => a - b);
-    const laengen = starts.slice(1).map((d, i) => Math.round((d - starts[i]) / 864e5)).filter((l) => l > 15 && l < 60);
-    A = { wtAvg, phasen, topSig, topStim, korrSchlaf, laengen, gesamtE: avg(alle, (x) => x.energie), gesamtK: avg(alle, (x) => x.koerper), gesamtS: avg(alle.filter((x) => x.schlaf), (x) => x.schlaf) };
-  }
-
-  const skala = ["😞", "😕", "😐", "🙂", "🌟"];
-  const schlafSkala = ["😵", "😪", "😐", "😌", "💤"];
-  const Waehler = ({ wert, setWert, label, icons }) => (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 8 }}>{label}</div>
-      <div style={{ display: "flex", gap: 7 }}>
-        {icons.map((e, i) => (
-          <button key={i} onClick={() => setWert(i + 1)} style={{
-            flex: 1, fontSize: 21, padding: "10px 0", borderRadius: 12, cursor: "pointer",
-            border: wert === i + 1 ? `2px solid ${C.gold}` : `1.5px solid ${C.line}`,
-            background: wert === i + 1 ? C.goldPale : C.card,
-          }}>{e}</button>
-        ))}
-      </div>
-    </div>
-  );
-  const Chips = ({ liste, aktiv, setAktiv, label }) => (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 8 }}>{label}</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-        {liste.map((s) => (
-          <button key={s.k} onClick={() => toggle(aktiv, setAktiv, s.k)} style={{
-            padding: "8px 12px", borderRadius: 20, cursor: "pointer",
-            border: aktiv.includes(s.k) ? `2px solid ${C.gold}` : `1.5px solid ${C.line}`,
-            background: aktiv.includes(s.k) ? C.goldPale : C.card,
-            fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso,
-          }}>{s.icon} {s.n}</button>
-        ))}
-      </div>
-    </div>
-  );
-  const Balken = ({ wert, max = 5, farbe = C.gold }) => (
-    <div style={{ height: 7, borderRadius: 4, background: C.beige, overflow: "hidden", minWidth: 70, flex: 1 }}>
-      <div style={{ width: `${(wert / max) * 100}%`, height: "100%", background: farbe }} />
-    </div>
-  );
-
-  return (
-    <div style={{ padding: "26px 20px" }}>
-      <Eyebrow color={C.plum}>Körper & Zyklus</Eyebrow>
-      <H size={25}>Dein Körper spricht mit dir</H>
-
-      {/* Phasen-Kompass */}
-      {phase && (
-        <Card style={{ margin: "16px 0 14px", background: C.goldPale }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ fontSize: 34 }}>{phase.icon}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>{phase.jz}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink }}>{phase.n} · Tag {effektiverTag}{!zTag && autoTag ? " (geschätzt)" : ""}</div>
-            </div>
-          </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, lineHeight: 1.7, marginTop: 10 }}>{phase.tipp}</div>
-          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, background: C.card, borderRadius: 10, padding: "5px 10px", color: C.espresso }}>💪 Deine Kraft: {phase.kraft}</span>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, background: C.card, borderRadius: 10, padding: "5px 10px", color: C.espresso }}>🤍 Du brauchst: {phase.brauch}</span>
-          </div>
-        </Card>
-      )}
-
-      {/* Umschalter */}
-      <div style={{ display: "flex", gap: 6, margin: "0 0 14px" }}>
-        {[["check", "Check-in"], ["muster", "Muster"], ["verlauf", "Verlauf"]].map(([k, t]) => (
-          <button key={k} onClick={() => setAnsicht(k)} style={{
-            flex: 1, padding: "10px 0", borderRadius: 12, cursor: "pointer",
-            border: ansicht === k ? "none" : `1.5px solid ${C.line}`,
-            background: ansicht === k ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.card,
-            color: ansicht === k ? "#fff" : C.ink, fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700,
-          }}>{t}</button>
-        ))}
-      </div>
-
-      {ansicht === "check" && (!heutiger ? (
-        <Card>
-          <Waehler wert={koerper} setWert={setKoerper} label="Wie fühlt sich dein Körper heute an?" icons={skala} />
-          <Waehler wert={energie} setWert={setEnergie} label="Wie viel Energie hast du?" icons={skala} />
-          <Waehler wert={schlaf} setWert={setSchlaf} label="Wie hast du geschlafen?" icons={schlafSkala} />
-          <Chips liste={KOERPER_SIGNALE} aktiv={signale} setAktiv={setSignale} label="Körper-Signale (mehrere möglich)" />
-          <Chips liste={STIMMUNGEN} aktiv={stimmung} setAktiv={setStimmung} label="Wie ist deine Stimmung?" />
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 8 }}>Zyklustag</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <input value={zTag} onChange={(e) => setZTag(e.target.value.replace(/\D/g, "").slice(0, 2))}
-                placeholder={autoTag ? String(autoTag) : "z. B. 14"} inputMode="numeric"
-                style={{ width: 90, padding: "11px 13px", borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 14.5, outline: "none", background: C.cream, color: C.espresso }} />
-              <button onClick={periodeStarten} style={{ padding: "11px 14px", borderRadius: 12, border: `1.5px solid ${C.rose}`, background: C.roseSoft, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, fontWeight: 700 }}>
-                🌑 Periode beginnt heute
-              </button>
-            </div>
-            {autoTag && !zTag && (
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 8 }}>
-                Geschätzt aus deinem letzten Zyklusstart: Tag {autoTag}. Du kannst korrigieren.
-              </div>
-            )}
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 8 }}>Ein Satz für heute (optional)</div>
-            <textarea value={notiz} onChange={(e) => setNotiz(e.target.value)} rows={2} placeholder="Was möchtest du dir merken?"
-              style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 15, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso }} />
-          </div>
-          <Btn full onClick={speichern}>Check speichern (+5 ✨)</Btn>
-        </Card>
-      ) : (
-        <Card style={{ textAlign: "center", background: C.goldPale }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso }}>Heute schon eingecheckt 🤍</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 6, lineHeight: 1.8 }}>
-            Körper {skala[heutiger.koerper - 1]} · Energie {skala[heutiger.energie - 1]}{heutiger.schlaf ? ` · Schlaf ${schlafSkala[heutiger.schlaf - 1]}` : ""}<br />
-            {heutiger.zyklustag ? `Zyklustag ${heutiger.zyklustag}` : ""}
-          </div>
-          {(heutiger.signale || []).length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 10 }}>
-              {heutiger.signale.map((k) => { const s = KOERPER_SIGNALE.find((x) => x.k === k); return <span key={k} style={{ fontSize: 12, background: C.card, borderRadius: 10, padding: "4px 9px", fontFamily: "system-ui, sans-serif", color: C.espresso }}>{s?.icon} {s?.n}</span>; })}
-            </div>
-          )}
-          {heutiger.notiz && <div style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, marginTop: 10, lineHeight: 1.6 }}>„{heutiger.notiz}“</div>}
-        </Card>
-      ))}
-
-      {ansicht === "muster" && (
-        !genug ? (
-          <Card>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.7 }}>
-              Noch <b>{5 - alle.length} Check-ins</b>, dann zeigen sich hier deine ersten echten Muster.
-            </div>
-            <div style={{ display: "flex", gap: 4, marginTop: 12 }}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} style={{ flex: 1, height: 8, borderRadius: 4, background: i < alle.length ? C.gold : C.beige }} />
-              ))}
-            </div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.75, marginTop: 12, lineHeight: 1.6 }}>
-              Alles hier wird ausschließlich aus deinen eigenen Eingaben berechnet — nichts wird geschätzt oder erfunden.
-            </div>
-          </Card>
-        ) : (
-          <>
-            <Card style={{ marginBottom: 12 }}>
-              <Eyebrow color={C.espresso}>Deine Durchschnitte ({alle.length} Check-ins)</Eyebrow>
-              {[["Energie", A.gesamtE, C.gold], ["Körpergefühl", A.gesamtK, C.rose], ...(A.gesamtS ? [["Schlaf", A.gesamtS, C.sage]] : [])].map(([n, v, f]) => (
-                <div key={n} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, width: 95 }}>{n}</div>
-                  <Balken wert={v} farbe={f} />
-                  <div style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.espresso, width: 34, textAlign: "right" }}>{v.toFixed(1)}</div>
-                </div>
-              ))}
-            </Card>
-
-            {A.phasen.length > 0 && (
-              <Card style={{ marginBottom: 12 }}>
-                <Eyebrow color={C.espresso}>Dein Zyklus-Spiegel</Eyebrow>
-                {A.phasen.map((p) => (
-                  <div key={p.k} style={{ padding: "10px 0", borderBottom: `1px solid ${C.line}` }}>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso, marginBottom: 6 }}>{p.icon} {p.jz} <span style={{ fontWeight: 400, color: C.ink }}>({p.daten.length} Tage)</span></div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, width: 60 }}>Energie</span>
-                      <Balken wert={p.e} /><span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.espresso, width: 26 }}>{p.e.toFixed(1)}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, width: 60 }}>Körper</span>
-                      <Balken wert={p.koe} farbe={C.rose} /><span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.espresso, width: 26 }}>{p.koe.toFixed(1)}</span>
-                    </div>
-                  </div>
-                ))}
-                {A.phasen.length >= 2 && (
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, marginTop: 10, lineHeight: 1.6 }}>
-                    💡 Deine stärkste Phase ist bisher <b>{[...A.phasen].sort((a, b) => b.e - a.e)[0].jz}</b>, deine sanfteste <b>{[...A.phasen].sort((a, b) => a.e - b.e)[0].jz}</b>. Plane Wichtiges eher in deine starke Phase.
-                  </div>
-                )}
-              </Card>
-            )}
-
-            {A.wtAvg.length > 0 && (
-              <Card style={{ marginBottom: 12 }}>
-                <Eyebrow color={C.espresso}>Deine Wochentage</Eyebrow>
-                {A.wtAvg.map((w) => (
-                  <div key={w.n} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 7 }}>
-                    <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, width: 80 }}>{w.n}</span>
-                    <Balken wert={w.e} />
-                    <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.espresso, width: 26 }}>{w.e.toFixed(1)}</span>
-                  </div>
-                ))}
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, marginTop: 10, lineHeight: 1.6 }}>
-                  💪 Am meisten Energie hast du <b>{A.wtAvg[0].n}s</b>{A.wtAvg.length > 1 ? <>, am wenigsten <b>{A.wtAvg[A.wtAvg.length - 1].n}s</b></> : null}.
-                </div>
-              </Card>
-            )}
-
-            {(A.topSig.length > 0 || A.topStim.length > 0) && (
-              <Card style={{ marginBottom: 12 }}>
-                <Eyebrow color={C.espresso}>Was sich bei dir wiederholt</Eyebrow>
-                {A.topSig.length > 0 && (
-                  <div style={{ marginTop: 6 }}>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginBottom: 6 }}>Körper-Signale</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {A.topSig.map(([k, n]) => { const s = KOERPER_SIGNALE.find((x) => x.k === k); return <span key={k} style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, background: C.beige, borderRadius: 12, padding: "5px 11px", color: C.espresso }}>{s?.icon} {s?.n} · {n}×</span>; })}
-                    </div>
-                  </div>
-                )}
-                {A.topStim.length > 0 && (
-                  <div style={{ marginTop: 12 }}>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginBottom: 6 }}>Stimmungen</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {A.topStim.map(([k, n]) => { const s = STIMMUNGEN.find((x) => x.k === k); return <span key={k} style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, background: C.roseSoft, borderRadius: 12, padding: "5px 11px", color: C.espresso }}>{s?.icon} {s?.n} · {n}×</span>; })}
-                    </div>
-                  </div>
-                )}
-              </Card>
-            )}
-
-            {(A.korrSchlaf !== null || A.laengen.length > 0) && (
-              <Card style={{ marginBottom: 12 }}>
-                <Eyebrow color={C.espresso}>Zusammenhänge in deinen Daten</Eyebrow>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, lineHeight: 1.8 }}>
-                  {A.korrSchlaf !== null && (
-                    <div>😴 Schlaf ↔ Energie: {A.korrSchlaf > 0.4 ? <b>deutlicher Zusammenhang</b> : A.korrSchlaf > 0.15 ? "leichter Zusammenhang" : "kaum Zusammenhang"} (r = {A.korrSchlaf.toFixed(2)}){A.korrSchlaf > 0.4 ? " — dein Schlaf ist ein echter Hebel." : ""}</div>
-                  )}
-                  {A.laengen.length > 0 && (
-                    <div>🔄 Deine Zykluslänge: Ø {Math.round(A.laengen.reduce((s, x) => s + x, 0) / A.laengen.length)} Tage ({A.laengen.length === 1 ? "1 gemessener Zyklus" : `${A.laengen.length} gemessene Zyklen`})</div>
-                  )}
-                </div>
-                {!viel && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, marginTop: 8 }}>Je mehr Check-ins, desto verlässlicher werden diese Zusammenhänge.</div>}
-              </Card>
-            )}
-
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6 }}>
-              Alle Auswertungen entstehen ausschließlich aus deinen Eingaben auf diesem Gerät. Sie sind Selbstbeobachtung — keine medizinische Diagnose.
-            </div>
-          </>
-        )
-      )}
-
-      {ansicht === "verlauf" && (
-        alle.length === 0 ? (
-          <Card><div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Noch keine Check-ins. Fang heute an 🤍</div></Card>
-        ) : (
-          <>
-            <Card style={{ marginBottom: 12 }}>
-              <Eyebrow color={C.espresso}>Energie der letzten {Math.min(21, alle.length)} Tage</Eyebrow>
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 90, marginTop: 10 }}>
-                {[...alle].slice(0, 21).reverse().map((c, i) => (
-                  <div key={i} title={`${c.datum} · Energie ${c.energie}`} style={{
-                    flex: 1, height: `${(c.energie / 5) * 100}%`, borderRadius: "4px 4px 0 0",
-                    background: c.zyklustag && phaseVon(c.zyklustag)?.k === "winter" ? C.plum : `linear-gradient(180deg, ${C.gold}, ${C.rose})`,
-                  }} />
-                ))}
-              </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 8 }}>Dunkle Balken = Menstruationstage</div>
-            </Card>
-            {alle.slice(0, 30).map((c, i) => (
-              <Card key={i} style={{ marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink }}>{c.datum}{c.zyklustag ? ` · Tag ${c.zyklustag} ${phaseVon(c.zyklustag)?.icon || ""}` : ""}</div>
-                  <div style={{ fontSize: 15 }}>{skala[c.koerper - 1]} {skala[c.energie - 1]}{c.schlaf ? ` ${schlafSkala[c.schlaf - 1]}` : ""}</div>
-                </div>
-                {((c.signale || []).length > 0 || (c.stimmung || []).length > 0) && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }}>
-                    {(c.signale || []).map((k) => { const s = KOERPER_SIGNALE.find((x) => x.k === k); return <span key={"s" + k} style={{ fontSize: 11.5, background: C.beige, borderRadius: 10, padding: "3px 8px", fontFamily: "system-ui, sans-serif", color: C.espresso }}>{s?.icon} {s?.n}</span>; })}
-                    {(c.stimmung || []).map((k) => { const s = STIMMUNGEN.find((x) => x.k === k); return <span key={"m" + k} style={{ fontSize: 11.5, background: C.roseSoft, borderRadius: 10, padding: "3px 8px", fontFamily: "system-ui, sans-serif", color: C.espresso }}>{s?.icon} {s?.n}</span>; })}
-                  </div>
-                )}
-                {c.notiz && <div style={{ fontFamily: "Georgia, serif", fontSize: 14, color: C.espresso, marginTop: 8, lineHeight: 1.6 }}>„{c.notiz}“</div>}
-              </Card>
-            ))}
-          </>
-        )
-      )}
-    </div>
-  );
-}
-
 /* ── Freundinnen-Kreis — geteilte Rituale (lokaler Kreis, Server folgt) ── */
 function FreundinnenKreis({ kreis, setKreis, streak, addPunkte }) {
   const [name, setName] = useState("");
@@ -7108,66 +6657,429 @@ function WochenOrakel({ wo, setWo, addPunkte }) {
   );
 }
 
-/* ── Wachstums-Garten ── */
-function Garten({ entries, punkte, streak, traeume, zyklus, reisen, ch369 }) {
-  const monat = new Date().getMonth();
-  const jahreszeit = monat <= 1 || monat === 11 ? { n: "Winter", himmel: "linear-gradient(180deg,#DCE6EE,#F3F0EA)", boden: "#E8E2D8", icon: "❄️" }
-    : monat <= 4 ? { n: "Frühling", himmel: "linear-gradient(180deg,#E4F0E0,#FBF6EE)", boden: "#DCE8D2", icon: "🌷" }
-    : monat <= 7 ? { n: "Sommer", himmel: "linear-gradient(180deg,#FDF0D8,#FBF6EE)", boden: "#D7E4C8", icon: "☀️" }
-    : { n: "Herbst", himmel: "linear-gradient(180deg,#F7E4D0,#FBF6EE)", boden: "#E2D6C0", icon: "🍂" };
-  const taten = (entries?.length || 0) + (traeume?.length || 0) + (zyklus?.length || 0) + (Object.values(ch369?.archiv || {}).length || 0) + (reisen || []).reduce((s, r) => s + (r.tag || 0), 0);
-  const stufen = [
-    { ab: 0, e: "🌱", n: "Keimling" }, { ab: 3, e: "🌿", n: "Sprössling" }, { ab: 8, e: "☘️", n: "Junge Pflanze" },
-    { ab: 15, e: "🌾", n: "Kräftig gewachsen" }, { ab: 25, e: "🌻", n: "In Blüte" }, { ab: 40, e: "🌳", n: "Fest verwurzelt" },
-  ];
-  const stufe = [...stufen].reverse().find((s) => taten >= s.ab);
-  const naechste = stufen.find((s) => s.ab > taten);
-  const pflanzen = Array.from({ length: Math.min(12, Math.max(1, Math.ceil(taten / 3))) });
+/* ── Qigong · Die Acht Brokate (Ba Duan Jin) ────────────────────────────────
+   Sanfte Bewegungsfolge, seit Jahrhunderten überliefert. Kein Heilversprechen:
+   die App führt durch die Bewegungen und zählt mit, mehr nicht.             */
+
+const BROKATE = [
+  { nr: 1, t: "Den Himmel stützen", s: "Beide Hände heben sich über den Kopf", atem: "Einatmen beim Heben, ausatmen beim Senken", wdh: "6 ×",
+    text: "Steh locker, Füße hüftbreit. Verschränke die Finger vor dem Bauch, drehe die Handflächen nach oben und schiebe sie über den Kopf, als würdest du den Himmel stützen. Streck dich sanft, schau den Händen nach. Dann öffne die Arme und senke sie in einem großen Bogen." },
+  { nr: 2, t: "Den Bogen spannen", s: "Blick über die Fingerspitzen in die Weite", atem: "Ausatmen beim Spannen", wdh: "je Seite 5 ×",
+    text: "Geh in einen leichten Reitsitz. Kreuze die Arme vor der Brust, ziehe die eine Hand wie eine Bogensehne zur Seite, die andere zeigt mit ausgestrecktem Zeigefinger in die Ferne. Der Blick folgt dem Finger." },
+  { nr: 3, t: "Milz und Magen weiten", s: "Eine Hand hebt, eine sinkt", atem: "Ruhig und gleichmäßig", wdh: "je Seite 6 ×",
+    text: "Eine Handfläche schiebt nach oben zum Himmel, die andere drückt nach unten zur Erde. Beide Handgelenke bleiben weich. Dann die Seite wechseln — wie eine langsame Welle durch den Rumpf." },
+  { nr: 4, t: "Nach hinten schauen", s: "Kopf dreht sich, Schultern bleiben weich", atem: "Einatmen beim Drehen", wdh: "je Seite 5 ×",
+    text: "Stell dich aufrecht, Arme locker. Drehe den Kopf langsam nach links, als wolltest du über die Schulter etwas hinter dir sehen. Halte drei Atemzüge, komm zurück, wechsle die Seite." },
+  { nr: 5, t: "Kopf und Rumpf wiegen", s: "Löst Hitze und Unruhe", atem: "Lang ausatmen", wdh: "je Seite 5 ×",
+    text: "Breiter Stand, Hände auf den Oberschenkeln. Neige den Oberkörper zur Seite und wiege ihn in einem weichen Bogen nach vorn zur anderen Seite. Nichts erzwingen — es darf ganz klein sein." },
+  { nr: 6, t: "Mit den Händen die Füße greifen", s: "Dehnt den Rücken", atem: "Ausatmen beim Beugen", wdh: "6 ×",
+    text: "Streck die Arme über den Kopf, roll dann Wirbel für Wirbel nach vorn und lass die Hände Richtung Füße wandern. Nur so weit, wie es angenehm ist. Roll genauso langsam wieder auf." },
+  { nr: 7, t: "Mit Blick und Faust zuschlagen", s: "Weckt die Kraft", atem: "Kräftig ausatmen beim Stoß", wdh: "je Seite 6 ×",
+    text: "Reitsitz, Fäuste an der Hüfte, Handrücken nach unten. Stoß eine Faust langsam nach vorn, die Augen weit, und zieh sie ebenso langsam zurück. Der Boden trägt dich." },
+  { nr: 8, t: "Auf den Zehen wippen", s: "Der Abschluss — sieben Mal", atem: "Einatmen beim Heben", wdh: "7 ×",
+    text: "Füße parallel, Arme locker. Heb die Fersen, halte kurz oben, und lass sie sanft fallen, sodass eine kleine Erschütterung durch den Körper geht. Zum Schluss still stehen und nachspüren." },
+];
+
+function Qigong({ qigong, setQigong, addPunkte }) {
+  const [aktiv, setAktiv] = useState(null);
+  const [laufend, setLaufend] = useState(false);
+  const [sek, setSek] = useState(0);
+
+  useEffect(() => {
+    if (!laufend) return;
+    const t = setInterval(() => setSek((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, [laufend]);
+
+  const heute = new Date().toLocaleDateString("de-DE");
+  const heuteGemacht = (qigong || []).find((e) => e.datum === heute);
+  const gesamt = (qigong || []).length;
+
+  const beenden = () => {
+    const minuten = Math.max(1, Math.round(sek / 60));
+    setQigong([{ datum: heute, minuten, uebungen: BROKATE.length }, ...(qigong || []).filter((e) => e.datum !== heute)]);
+    addPunkte?.(10, "Qigong geübt");
+    setLaufend(false); setSek(0); setAktiv(null);
+  };
+
   return (
-    <div style={{ padding: "26px 20px" }}>
-      <style>{`@keyframes sway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }`}</style>
-      <Eyebrow color={C.plum}>Dein Garten</Eyebrow>
-      <H size={25}>Was du pflegst, wächst</H>
-      <Card style={{ margin: "16px 0 14px", padding: 0, overflow: "hidden" }}>
-        <div style={{ background: jahreszeit.himmel, padding: "22px 16px 0", textAlign: "center", position: "relative" }}>
-          <div style={{ position: "absolute", top: 12, right: 16, fontSize: 24 }}>{jahreszeit.icon}</div>
-          <div style={{ fontSize: 62, marginBottom: 6 }}>{stufe.e}</div>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>{stufe.n}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 4, marginBottom: 14 }}>{jahreszeit.n} in deinem Garten</div>
-          <div style={{ background: jahreszeit.boden, display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", padding: "14px 12px" }}>
-            {pflanzen.map((_, i) => (
-              <span key={i} style={{ fontSize: 22, animation: `sway ${2.6 + (i % 4) * 0.4}s ease-in-out ${i * 0.12}s infinite`, display: "inline-block" }}>
-                {["🌱", "🌿", "☘️", "🌸", "🌼"][i % 5]}
-              </span>
+    <div style={{ padding: "22px 20px" }}>
+      <Eyebrow color={C.plum}>Qigong</Eyebrow>
+      <H size={25} style={{ marginBottom: 8 }}>Die Acht Brokate</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+        Acht ruhige Bewegungen, zusammen etwa zehn Minuten. Du brauchst nichts außer
+        einem Platz zum Stehen. Bewege dich nur so weit, wie es sich gut anfühlt — bei
+        Schmerzen hör auf und frag jemanden vom Fach.
+      </p>
+
+      <Card style={{ marginBottom: 16, display: "flex", gap: 14, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+        <div style={{ width: 52, height: 52, borderRadius: "50%", background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🌿</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>
+            {heuteGemacht ? `Heute geübt · ${heuteGemacht.minuten} Min` : laufend ? `Läuft · ${Math.floor(sek / 60)}:${String(sek % 60).padStart(2, "0")}` : "Noch nicht geübt heute"}
+          </div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
+            {gesamt > 0 ? `${gesamt} ${gesamt === 1 ? "Übungstag" : "Übungstage"} insgesamt` : "Deine erste Runde wartet"}
+          </div>
+        </div>
+        {laufend
+          ? <Btn small onClick={beenden}>Fertig</Btn>
+          : <Btn small onClick={() => { setLaufend(true); setSek(0); setAktiv(1); }}>Starten</Btn>}
+      </Card>
+
+      {BROKATE.map((b) => {
+        const auf = aktiv === b.nr;
+        return (
+          <Card key={b.nr} style={{ marginBottom: 10, borderColor: auf ? C.gold : C.line }}>
+            <div onClick={() => setAktiv(auf ? null : b.nr)} style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
+              <div style={{ width: 38, height: 38, borderRadius: "50%", background: auf ? C.goldPale : C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", fontSize: 17, color: C.plum, flexShrink: 0 }}>{b.nr}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{b.t}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>{b.s} · {b.wdh}</div>
+              </div>
+              <span style={{ color: C.gold, fontSize: 18 }}>{auf ? "▾" : "›"}</span>
+            </div>
+            {auf && (
+              <div style={{ marginTop: 10, animation: "fadeUp .3s ease" }}>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.7, margin: "0 0 8px" }}>{b.text}</p>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, fontWeight: 600 }}>🌬️ {b.atem}</div>
+              </div>
+            )}
+          </Card>
+        );
+      })}
+
+      {(qigong || []).length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <Eyebrow color={C.plum}>Deine letzten Runden</Eyebrow>
+          <div style={{ marginTop: 8 }}>
+            {(qigong || []).slice(0, 7).map((e) => (
+              <div key={e.datum} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>
+                <span>{e.datum}</span><span style={{ color: C.sage, fontWeight: 700 }}>{e.minuten} Min</span>
+              </div>
             ))}
           </div>
         </div>
-      </Card>
+      )}
+    </div>
+  );
+}
+
+/* ── Achtsamkeit · drei kleine Übungen für zwischendurch ────────────────── */
+
+const ATEM_TAKT = [["Einatmen", 4], ["Halten", 7], ["Ausatmen", 8]];
+
+function Achtsamkeit({ achtsam, setAchtsam, addPunkte }) {
+  const [modus, setModus] = useState(null);
+  const [phase, setPhase] = useState(0);
+  const [rest, setRest] = useState(4);
+  const [runde, setRunde] = useState(0);
+  const [sinne, setSinne] = useState(["", "", "", "", ""]);
+
+  useEffect(() => {
+    if (modus !== "atem") return;
+    const t = setInterval(() => {
+      setRest((r) => {
+        if (r > 1) return r - 1;
+        setPhase((ph) => {
+          const naechste = (ph + 1) % ATEM_TAKT.length;
+          if (naechste === 0) setRunde((x) => x + 1);
+          setRest(ATEM_TAKT[naechste][1]);
+          return naechste;
+        });
+        return ATEM_TAKT[(phase + 1) % ATEM_TAKT.length][1];
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [modus, phase]);
+
+  const merken = (art) => {
+    const heute = new Date().toLocaleDateString("de-DE");
+    setAchtsam([{ datum: heute, art }, ...(achtsam || [])].slice(0, 60));
+    addPunkte?.(5, "Achtsamkeit geübt");
+  };
+
+  const SINN_FRAGEN = [
+    "5 Dinge, die du siehst",
+    "4 Dinge, die du hörst",
+    "3 Dinge, die du spürst",
+    "2 Dinge, die du riechst",
+    "1 Sache, für die du gerade dankbar bist",
+  ];
+
+  return (
+    <div style={{ padding: "22px 20px" }}>
+      <Eyebrow color={C.plum}>Achtsamkeit</Eyebrow>
+      <H size={25} style={{ marginBottom: 8 }}>Ankommen, wo du bist</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
+        Drei kurze Übungen. Keine braucht mehr als ein paar Minuten — und keine
+        verlangt, dass du dabei etwas fühlst oder erreichst.
+      </p>
+
+      {/* 4-7-8 Atem */}
       <Card style={{ marginBottom: 12 }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, lineHeight: 1.9 }}>
-          🌱 {taten} Handlungen haben deinen Garten wachsen lassen<br />
-          🔥 {streak} Tage Serie · ✨ {punkte} Lichtpunkte
-        </div>
-        {naechste && (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ height: 8, borderRadius: 5, background: C.beige, overflow: "hidden" }}>
-              <div style={{ width: `${Math.min(100, ((taten - stufe.ab) / (naechste.ab - stufe.ab)) * 100)}%`, height: "100%", background: `linear-gradient(90deg, ${C.sage}, ${C.gold})` }} />
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>🌬️ Der 4-7-8-Atem</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+          Vier zählen beim Einatmen, sieben halten, acht ausatmen. Vier Runden reichen.
+        </p>
+        {modus === "atem" ? (
+          <div style={{ textAlign: "center", padding: "10px 0" }}>
+            <div style={{
+              width: 130, height: 130, margin: "0 auto 14px", borderRadius: "50%",
+              background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`,
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              transform: `scale(${phase === 0 ? 1 : phase === 1 ? 1 : 0.72})`, transition: "transform 1s ease",
+            }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>{ATEM_TAKT[phase][0]}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 30, color: C.plum }}>{rest}</div>
             </div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 6 }}>
-              Noch {naechste.ab - taten} Handlungen bis „{naechste.n}“ {naechste.e}
-            </div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginBottom: 12 }}>Runde {runde + 1}</div>
+            <Btn small ghost onClick={() => { setModus(null); if (runde > 0) merken("Atem 4-7-8"); setRunde(0); setPhase(0); setRest(4); }}>Beenden</Btn>
           </div>
+        ) : (
+          <Btn small onClick={() => { setModus("atem"); setPhase(0); setRest(4); setRunde(0); }}>Beginnen</Btn>
         )}
       </Card>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.8, lineHeight: 1.6 }}>
-        Jeder Journal-Eintrag, Traum, Körper-Check und Reise-Tag lässt hier etwas wachsen. Dein Garten ist echt — er zählt nur, was du wirklich getan hast.
+
+      {/* 5-4-3-2-1 */}
+      <Card style={{ marginBottom: 12 }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>🖐️ 5 · 4 · 3 · 2 · 1</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+          Wenn die Gedanken rasen: hol dich über deine Sinne zurück in den Raum.
+        </p>
+        {modus === "sinne" ? (
+          <div style={{ animation: "fadeUp .3s ease" }}>
+            {SINN_FRAGEN.map((f, i) => (
+              <div key={f} style={{ marginBottom: 9 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, fontWeight: 600, marginBottom: 4 }}>{f}</div>
+                <input
+                  value={sinne[i]}
+                  onChange={(e) => setSinne(sinne.map((x, j) => (j === i ? e.target.value : x)))}
+                  style={{ width: "100%", padding: "10px 12px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 9, marginTop: 10 }}>
+              <Btn small onClick={() => { merken("5-4-3-2-1"); setModus(null); setSinne(["", "", "", "", ""]); }}>Fertig</Btn>
+              <Btn small ghost onClick={() => setModus(null)}>Abbrechen</Btn>
+            </div>
+          </div>
+        ) : (
+          <Btn small onClick={() => setModus("sinne")}>Beginnen</Btn>
+        )}
+      </Card>
+
+      {/* Körperreise */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>🫀 Kleine Körperreise</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "0 0 10px" }}>
+          Wandere langsam durch deinen Körper — Füße, Beine, Becken, Bauch, Brust,
+          Schultern, Arme, Hals, Gesicht. Bei jeder Station ein Atemzug. Nichts
+          verändern, nur bemerken.
+        </p>
+        <Btn small ghost onClick={() => merken("Körperreise")}>Gemacht ✓</Btn>
+      </Card>
+
+      {(achtsam || []).length > 0 && (
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.8, textAlign: "center" }}>
+          Du hast dir {(achtsam || []).length} × bewusst diesen Moment genommen. 🤍
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ── Dankbarkeit · drei Dinge am Tag ────────────────────────────────────── */
+
+const DANK_IMPULSE = [
+  "Wer hat dir heute — auch ganz klein — das Leben leichter gemacht?",
+  "Was an deinem Körper hat heute gut für dich gearbeitet?",
+  "Welcher Moment war heute schöner, als du erwartet hast?",
+  "Wofür würde die Frau, die du vor fünf Jahren warst, dich beneiden?",
+  "Was hast du heute gehabt, das nicht selbstverständlich ist?",
+  "Welcher Ort hat dir heute gutgetan?",
+];
+
+function Dankbarkeit({ dank, setDank, addPunkte }) {
+  const heute = new Date().toLocaleDateString("de-DE");
+  const heutiger = (dank || []).find((d) => d.datum === heute);
+  const [drei, setDrei] = useState(heutiger?.drei || ["", "", ""]);
+  const impuls = DANK_IMPULSE[new Date().getDate() % DANK_IMPULSE.length];
+
+  const speichern = () => {
+    const sauber = drei.map((x) => x.trim()).filter(Boolean);
+    if (!sauber.length) return;
+    setDank([{ datum: heute, drei: drei.map((x) => x.trim()) }, ...(dank || []).filter((d) => d.datum !== heute)]);
+    if (!heutiger) addPunkte?.(10, "Dankbarkeit notiert");
+  };
+
+  // Wie viele Tage am Stück?
+  let serie = 0;
+  const tage = (dank || []).map((d) => d.datum);
+  for (let i = 0; i < 400; i++) {
+    const t = new Date(Date.now() - i * 864e5).toLocaleDateString("de-DE");
+    if (tage.includes(t)) serie++;
+    else if (i > 0) break;
+  }
+
+  return (
+    <div style={{ padding: "22px 20px" }}>
+      <Eyebrow color={C.plum}>Dankbarkeit</Eyebrow>
+      <H size={25} style={{ marginBottom: 8 }}>Drei Dinge von heute</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+        Nicht die großen Dinge — die kleinen zählen genauso. Ein Satz reicht.
+      </p>
+
+      <Card style={{ marginBottom: 14, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+        <Eyebrow color={C.plum}>Impuls für heute</Eyebrow>
+        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.espresso, lineHeight: 1.6, margin: "6px 0 0" }}>{impuls}</p>
+      </Card>
+
+      {[0, 1, 2].map((i) => (
+        <div key={i} style={{ marginBottom: 10 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, fontWeight: 600, marginBottom: 4 }}>{i + 1}.</div>
+          <textarea
+            value={drei[i]}
+            onChange={(e) => setDrei(drei.map((x, j) => (j === i ? e.target.value : x)))}
+            rows={2}
+            placeholder="Ich bin dankbar für …"
+            style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "Georgia, serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }}
+          />
+        </div>
+      ))}
+
+      <Btn full onClick={speichern}>{heutiger ? "Aktualisieren" : "Für heute festhalten"}</Btn>
+
+      {serie > 0 && (
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.sage, fontWeight: 700, textAlign: "center", marginTop: 14 }}>
+          🔥 {serie} {serie === 1 ? "Tag" : "Tage"} am Stück
+        </p>
+      )}
+
+      {(dank || []).length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <Eyebrow color={C.plum}>Zurückblättern</Eyebrow>
+          <div style={{ marginTop: 8 }}>
+            {(dank || []).slice(0, 14).map((d) => (
+              <Card key={d.datum} style={{ marginBottom: 9 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginBottom: 6 }}>{d.datum}</div>
+                {d.drei.filter(Boolean).map((x, i) => (
+                  <div key={i} style={{ fontFamily: "Georgia, serif", fontSize: 14, color: C.espresso, lineHeight: 1.6 }}>· {x}</div>
+                ))}
+              </Card>
+            ))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: 4 }}>
+            <TeilenBtn
+              eyebrow="Dankbar heute"
+              titel={(dank[0]?.drei || []).filter(Boolean)[0] || "Drei Dinge von heute"}
+              text="Nicht die großen Dinge — die kleinen zählen genauso."
+              beschriftung="Dankbarkeit teilen"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Loslassen · was darf gehen? ────────────────────────────────────────── */
+
+function Loslassen({ losgelassen, setLosgelassen, addPunkte }) {
+  const [text, setText] = useState("");
+  const [gehend, setGehend] = useState(null);
+
+  const offene = (losgelassen || []).filter((x) => !x.los_am);
+  const gegangen = (losgelassen || []).filter((x) => x.los_am);
+
+  const hinzufuegen = () => {
+    const t = text.trim();
+    if (!t) return;
+    setLosgelassen([{ id: `${Date.now()}`, text: t, seit: new Date().toLocaleDateString("de-DE"), los_am: null }, ...(losgelassen || [])]);
+    setText("");
+  };
+
+  const loslassen = (id) => {
+    setGehend(id);
+    setTimeout(() => {
+      setLosgelassen((losgelassen || []).map((x) => (x.id === id ? { ...x, los_am: new Date().toLocaleDateString("de-DE") } : x)));
+      setGehend(null);
+      addPunkte?.(10, "Losgelassen");
+    }, 900);
+  };
+
+  return (
+    <div style={{ padding: "22px 20px" }}>
+      <Eyebrow color={C.plum}>Loslassen</Eyebrow>
+      <H size={25} style={{ marginBottom: 8 }}>Was darf gehen?</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+        Schreib auf, was du gerade mitträgst — ein Gedanke, ein Anspruch, ein Satz von
+        früher. Es bleibt hier stehen, bis du bereit bist. Nichts davon verlässt dein Gerät,
+        solange du nicht synchronisierst.
+      </p>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && hinzufuegen()}
+          placeholder="z. B. Ich muss es allen recht machen"
+          style={{ flex: 1, padding: "13px 14px", fontSize: 15, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }}
+        />
+        <Btn small onClick={hinzufuegen}>Ablegen</Btn>
       </div>
+
+      {offene.length === 0 && gegangen.length === 0 && (
+        <Card style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 30, marginBottom: 8 }}>🕊️</div>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            Noch nichts abgelegt. Manchmal ist der erste Satz der schwerste.
+          </p>
+        </Card>
+      )}
+
+      {offene.length > 0 && (
+        <>
+          <Eyebrow color={C.plum}>Noch bei mir</Eyebrow>
+          <div style={{ marginTop: 8, marginBottom: 20 }}>
+            {offene.map((x) => (
+              <Card key={x.id} style={{
+                marginBottom: 10,
+                opacity: gehend === x.id ? 0 : 1,
+                transform: gehend === x.id ? "translateY(-24px)" : "none",
+                transition: "opacity .9s ease, transform .9s ease",
+              }}>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.6, margin: "0 0 4px" }}>{x.text}</p>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginBottom: 10 }}>abgelegt am {x.seit}</div>
+                <Btn small ghost onClick={() => loslassen(x.id)}>🕊️ Jetzt loslassen</Btn>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {gegangen.length > 0 && (
+        <>
+          <Eyebrow color={C.sage}>Gegangen</Eyebrow>
+          <div style={{ marginTop: 8 }}>
+            {gegangen.slice(0, 20).map((x) => (
+              <div key={x.id} style={{ padding: "11px 0", borderBottom: `1px solid ${C.line}` }}>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 14, color: C.ink, textDecoration: "line-through", opacity: 0.75 }}>{x.text}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.sage, fontWeight: 600, marginTop: 2 }}>losgelassen am {x.los_am}</div>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.8, lineHeight: 1.6, marginTop: 14 }}>
+            {gegangen.length} {gegangen.length === 1 ? "Sache" : "Dinge"} tragen sich nicht mehr mit dir.
+          </p>
+        </>
+      )}
     </div>
   );
 }
 
 /* ── Jahres-Rückblick ── */
-function Jahresrueckblick({ entries, traeume, zyklus, punkte, streak, drawn, reisen, feste }) {
+function Jahresrueckblick({ entries, qigong, dank, losgelassen, punkte, streak, drawn, reisen, feste }) {
   const jahr = new Date().getFullYear();
   const worte = {};
   (entries || []).forEach((e) => {
@@ -7175,12 +7087,11 @@ function Jahresrueckblick({ entries, traeume, zyklus, punkte, streak, drawn, rei
       .filter((w) => w.length > 4).forEach((w) => { worte[w] = (worte[w] || 0) + 1; });
   });
   const topWorte = Object.entries(worte).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const traumSym = {};
-  (traeume || []).forEach((t) => (t.symbole || []).forEach((s) => { traumSym[s] = (traumSym[s] || 0) + 1; }));
-  const topSym = Object.entries(traumSym).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const avgE = (zyklus || []).length ? ((zyklus.reduce((s, c) => s + c.energie, 0) / zyklus.length)).toFixed(1) : null;
+  const qigongMin = (qigong || []).reduce((sum, e) => sum + (e.minuten || 0), 0);
+  const dankSaetze = (dank || []).reduce((sum, d) => sum + (d.drei || []).filter(Boolean).length, 0);
+  const gegangen = (losgelassen || []).filter((x) => x.los_am).length;
   const fertigeReisen = (reisen || []).filter((r) => r.fertig).length;
-  const leer = !(entries || []).length && !(traeume || []).length && !(zyklus || []).length;
+  const leer = !(entries || []).length && !(qigong || []).length && !(dank || []).length;
   return (
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow color={C.plum}>Rückblick</Eyebrow>
@@ -7189,7 +7100,7 @@ function Jahresrueckblick({ entries, traeume, zyklus, punkte, streak, drawn, rei
       {leer ? (
         <Card>
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.7 }}>
-            Dein Rückblick entsteht aus dem, was du schreibst. Schreib deinen ersten Journal-Eintrag oder halte einen Traum fest — dann füllt sich diese Seite ganz von selbst.
+            Dein Rückblick entsteht aus dem, was du schreibst. Schreib deinen ersten Journal-Eintrag oder halte drei Dinge fest, für die du dankbar bist — dann füllt sich diese Seite ganz von selbst.
           </div>
         </Card>
       ) : (
@@ -7198,7 +7109,7 @@ function Jahresrueckblick({ entries, traeume, zyklus, punkte, streak, drawn, rei
             <div style={{ fontFamily: "Georgia, serif", fontSize: 44, color: C.espresso }}>{(entries || []).length}</div>
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Journal-Einträge</div>
             <div style={{ display: "flex", justifyContent: "space-around", marginTop: 16 }}>
-              {[["🌙", (traeume || []).length, "Träume"], ["🌗", (zyklus || []).length, "Checks"], ["🏆", fertigeReisen, "Reisen"], ["🔥", streak, "Tage"]].map(([i, n, l]) => (
+              {[["🌿", (qigong || []).length, "Qigong"], ["🤍", (dank || []).length, "Dank-Tage"], ["🏆", fertigeReisen, "Reisen"], ["🔥", streak, "Tage"]].map(([i, n, l]) => (
                 <div key={l}>
                   <div style={{ fontSize: 20 }}>{i}</div>
                   <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>{n}</div>
@@ -7217,22 +7128,13 @@ function Jahresrueckblick({ entries, traeume, zyklus, punkte, streak, drawn, rei
               </div>
             </Card>
           )}
-          {topSym.length > 0 && (
-            <Card style={{ marginBottom: 12 }}>
-              <Eyebrow color={C.espresso}>Deine Traumsymbole</Eyebrow>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.espresso, lineHeight: 1.9 }}>
-                {topSym.map(([k, n]) => {
-                  const s = TRAUM_SYMBOLE.find((x) => x.key === k);
-                  return <div key={k}>{s?.icon} {k} · {n}×</div>;
-                })}
-              </div>
-            </Card>
-          )}
           <Card style={{ marginBottom: 12 }}>
             <Eyebrow color={C.espresso}>Zahlen & Zeichen</Eyebrow>
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, lineHeight: 1.9 }}>
               ✨ {punkte} Lichtpunkte gesammelt<br />
-              {avgE && <>🌗 Ø Energie {avgE}/5 über {zyklus.length} Check-ins<br /></>}
+              {qigongMin > 0 && <>🌿 {qigongMin} Minuten Qigong an {(qigong || []).length} Tagen<br /></>}
+              {dankSaetze > 0 && <>🤍 {dankSaetze} Dinge, für die du dankbar warst<br /></>}
+              {gegangen > 0 && <>🕊️ {gegangen} {gegangen === 1 ? "Sache" : "Dinge"} losgelassen<br /></>}
               {drawn && <>🔮 Zuletzt gezogen: {drawn.name || drawn.titel || "deine Tageskarte"}<br /></>}
               {(feste || []).length > 0 && <>🕯️ {feste.length} Jahreskreis-Feste gefeiert</>}
             </div>
@@ -7304,7 +7206,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
-const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", traum: "Traumbibliothek", zyklus: "Körper & Zyklus", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", garten: "Dein Garten", rueckblick: "Jahres-Rückblick" };
+const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -7364,8 +7266,10 @@ export default function IlhoApp() {
   const [ilhoOpen, setIlhoOpen] = useState(false);
   const [ilhoAktiv, setIlhoAktiv] = useState(true);
   const [archetyp, setArchetyp] = useState(null);
-  const [traeume, setTraeume] = useState([]);
-  const [zyklus, setZyklus] = useState([]);
+  const [qigong, setQigong] = useState([]);
+  const [achtsam, setAchtsam] = useState([]);
+  const [dank, setDank] = useState([]);
+  const [losgelassen, setLosgelassen] = useState([]);
   const [flamme, setFlamme] = useState(null);
   const [zkMsgs, setZkMsgs] = useState([]);
   const [sosOpen, setSosOpen] = useState(false);
@@ -7427,8 +7331,10 @@ export default function IlhoApp() {
     if (s.checkins) setCheckins(s.checkins);
     if (typeof s.ilhoAktiv === "boolean") setIlhoAktiv(s.ilhoAktiv);
     if (s.archetyp) setArchetyp(s.archetyp);
-    if (s.traeume) setTraeume(s.traeume);
-    if (s.zyklus) setZyklus(s.zyklus);
+    if (s.qigong) setQigong(s.qigong);
+    if (s.achtsam) setAchtsam(s.achtsam);
+    if (s.dank) setDank(s.dank);
+    if (s.losgelassen) setLosgelassen(s.losgelassen);
     if (s.flamme) setFlamme(s.flamme);
     if (s.zkMsgs) setZkMsgs(s.zkMsgs);
     if (s.kreis) setKreis(s.kreis);
@@ -7447,9 +7353,9 @@ export default function IlhoApp() {
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo }));
+      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo }));
     } catch (e) {}
-  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
   // Echte Supabase-Session: stellt Login nach Reload/Google-Redirect wieder her.
   // Ohne konfiguriertes Supabase (kein .env) bleibt supabase === null und hier passiert nichts —
@@ -7496,10 +7402,10 @@ export default function IlhoApp() {
 
   useEffect(() => {
     if (!supabase || !user || !cloudBereit) return; // nichts speichern, bevor der Cloud-Stand geladen (oder als leer bestätigt) wurde
-    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
+    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
     const timer = setTimeout(() => { speichereAppState(state); }, 1200); // debounced, kein Schreiben bei jeder Mikro-Änderung
     return () => clearTimeout(timer);
-  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
   // Erreichbarkeit der Cloud einmal beim Start pruefen (pausiertes Projekt, Funkloch).
   useEffect(() => {
@@ -7643,8 +7549,10 @@ export default function IlhoApp() {
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
               {tab === "archetyp" && <ArchetypTest archetyp={archetyp} setArchetyp={setArchetyp} addPunkte={addPunkte} />}
               {tab === "flamme" && <Flamme flamme={flamme} setFlamme={setFlamme} addPunkte={addPunkte} />}
-              {tab === "traum" && <Traumbibliothek traeume={traeume} setTraeume={setTraeume} addPunkte={addPunkte} />}
-              {tab === "zyklus" && <ZyklusSpiegel zyklus={zyklus} setZyklus={setZyklus} addPunkte={addPunkte} drawn={drawn} entries={entries} />}
+              {tab === "qigong" && <Qigong qigong={qigong} setQigong={setQigong} addPunkte={addPunkte} />}
+              {tab === "achtsamkeit" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} />}
+              {tab === "dankbarkeit" && <Dankbarkeit dank={dank} setDank={setDank} addPunkte={addPunkte} />}
+              {tab === "loslassen" && <Loslassen losgelassen={losgelassen} setLosgelassen={setLosgelassen} addPunkte={addPunkte} />}
               {tab === "kreis" && <FreundinnenKreis kreis={kreis} setKreis={setKreis} streak={streak} addPunkte={addPunkte} />}
               {tab === "mondrituale" && <Mondrituale mondrit={mondrit} setMondrit={setMondrit} addPunkte={addPunkte} />}
               {tab === "intuition" && <Intuition intu={intu} setIntu={setIntu} addPunkte={addPunkte} />}
@@ -7652,8 +7560,7 @@ export default function IlhoApp() {
               {tab === "jahreskreis" && <Jahreskreis feste={feste} setFeste={setFeste} addPunkte={addPunkte} />}
               {tab === "leere" && <RitualDerLeere leere={leere} setLeere={setLeere} addPunkte={addPunkte} />}
               {tab === "wochenorakel" && <WochenOrakel wo={wo} setWo={setWo} addPunkte={addPunkte} />}
-              {tab === "garten" && <Garten entries={entries} punkte={punkte} streak={streak} traeume={traeume} zyklus={zyklus} reisen={reisen} ch369={ch369} />}
-              {tab === "rueckblick" && <Jahresrueckblick entries={entries} traeume={traeume} zyklus={zyklus} punkte={punkte} streak={streak} drawn={drawn} reisen={reisen} feste={feste} />}
+              {tab === "rueckblick" && <Jahresrueckblick entries={entries} qigong={qigong} dank={dank} losgelassen={losgelassen} punkte={punkte} streak={streak} drawn={drawn} reisen={reisen} feste={feste} />}
             </div>
 
             <nav style={{
