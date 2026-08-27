@@ -260,3 +260,327 @@ export async function logEvent(eventType, topicTag = null) {
     await supabase.from("app_events").insert({ user_hash: userHash, event_type: eventType, topic_tag: topicTag });
   } catch { /* Event-Logging darf die App nie stören */ }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Klientinnen-Seite: Bindung, Nachrichten, Termine, Community, Dateien, DSGVO
+// Migration: backend/supabase/migrations/20260827_klientinnen_kommunikation.sql
+// Alle Funktionen geben bei fehlender Konfiguration still null/[] zurück,
+// damit die App auch ohne Cloud weiterläuft.
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function nutzerin() {
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  return user || null;
+}
+
+// ── Bindung Coachin ↔ Klientin ─────────────────────────────────────────────
+
+// Liefert { id, coach_id, status, coach_name } oder null, wenn noch keine Coachin verbunden ist.
+export async function ladeMeineBindung() {
+  const user = await nutzerin();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from("klientinnen")
+    .select("id, coach_id, status, anzeigename, verbunden_am, coaches(name)")
+    .eq("user_id", user.id)
+    .in("status", ["aktiv", "pausiert"])
+    .order("verbunden_am", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) { console.warn("ladeMeineBindung:", error.message); return null; }
+  if (!data) return null;
+  return { ...data, coach_name: data.coaches?.name || null };
+}
+
+// Einladungscode der Coachin einlösen. Wirft mit klarer Meldung, wenn der Code nicht gilt.
+export async function mitCoachVerbinden(code, anzeigename = null) {
+  if (!supabase) throw new Error("Keine Verbindung");
+  const { data, error } = await supabase.rpc("mit_coach_verbinden", {
+    p_code: code, p_anzeigename: anzeigename,
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// ── Nachrichten ────────────────────────────────────────────────────────────
+
+export async function ladeNachrichten(klientinId, limit = 200) {
+  if (!supabase || !klientinId) return [];
+  const { data, error } = await supabase
+    .from("nachrichten")
+    .select("id, absender, text, audio_pfad, audio_sek, gelesen_am, created_at")
+    .eq("klientin_id", klientinId)
+    .order("created_at", { ascending: true })
+    .limit(limit);
+  if (error) { console.warn("ladeNachrichten:", error.message); return []; }
+  return data || [];
+}
+
+export async function sendeNachricht({ klientinId, text = null, audioPfad = null, audioSek = null }) {
+  const user = await nutzerin();
+  if (!user || !klientinId) return null;
+  const { data, error } = await supabase
+    .from("nachrichten")
+    .insert({ klientin_id: klientinId, absender: "klientin", absender_id: user.id,
+              text, audio_pfad: audioPfad, audio_sek: audioSek })
+    .select()
+    .single();
+  if (error) { console.warn("sendeNachricht:", error.message); return null; }
+  return data;
+}
+
+// Realtime: neue Nachrichten der Coachin landen sofort im Verlauf.
+// Rückgabe: Funktion zum Abmelden (im useEffect-Cleanup aufrufen).
+export function abonniereNachrichten(klientinId, beiNeuerNachricht) {
+  if (!supabase || !klientinId) return () => {};
+  const kanal = supabase
+    .channel(`nachrichten:${klientinId}`)
+    .on("postgres_changes",
+      { event: "INSERT", schema: "public", table: "nachrichten", filter: `klientin_id=eq.${klientinId}` },
+      (nutzlast) => beiNeuerNachricht(nutzlast.new))
+    .subscribe();
+  return () => { supabase.removeChannel(kanal); };
+}
+
+export async function markiereGelesen(klientinId) {
+  if (!supabase || !klientinId) return;
+  await supabase.from("nachrichten")
+    .update({ gelesen_am: new Date().toISOString() })
+    .eq("klientin_id", klientinId)
+    .eq("absender", "coach")
+    .is("gelesen_am", null);
+}
+
+// ── Termine ────────────────────────────────────────────────────────────────
+
+export async function ladeFreieSlots(coachId, tage = 21) {
+  if (!supabase || !coachId) return [];
+  const bis = new Date(Date.now() + tage * 864e5).toISOString();
+  const { data, error } = await supabase
+    .from("coach_slots")
+    .select("id, beginn, dauer_min, kanal")
+    .eq("coach_id", coachId)
+    .eq("aktiv", true)
+    .gte("beginn", new Date().toISOString())
+    .lte("beginn", bis)
+    .order("beginn", { ascending: true });
+  if (error) { console.warn("ladeFreieSlots:", error.message); return []; }
+  return data || [];
+}
+
+export async function ladeMeineTermine() {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("termine")
+    .select("id, beginn, dauer_min, kanal, titel, video_url, status")
+    .eq("status", "gebucht")
+    .gte("beginn", new Date(Date.now() - 3 * 3600e3).toISOString())
+    .order("beginn", { ascending: true });
+  if (error) { console.warn("ladeMeineTermine:", error.message); return []; }
+  return data || [];
+}
+
+export async function terminBuchen(slotId) {
+  if (!supabase) throw new Error("Keine Verbindung");
+  const { data, error } = await supabase.rpc("termin_buchen", { p_slot: slotId });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function terminStornieren(terminId) {
+  if (!supabase) throw new Error("Keine Verbindung");
+  const { error } = await supabase.rpc("termin_stornieren", { p_termin: terminId });
+  if (error) throw new Error(error.message);
+}
+
+// ── Community ──────────────────────────────────────────────────────────────
+
+export async function ladeFeed(limit = 50) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("community_feed")
+    .select("id, alias, text, herzen, created_at, user_id")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) { console.warn("ladeFeed:", error.message); return []; }
+  return data || [];
+}
+
+export async function schreibeBeitrag(text, alias = "Anonym") {
+  const user = await nutzerin();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from("community_posts")
+    .insert({ user_id: user.id, alias, text })
+    .select("id, alias, text, created_at, user_id")
+    .single();
+  if (error) { console.warn("schreibeBeitrag:", error.message); return null; }
+  return { ...data, herzen: 0 };
+}
+
+export async function herzSetzen(postId) {
+  const user = await nutzerin();
+  if (!user) return false;
+  const { error } = await supabase.from("community_herzen").insert({ post_id: postId, user_id: user.id });
+  return !error;
+}
+
+export async function meldeBeitrag(postId, grund = null) {
+  const user = await nutzerin();
+  if (!user) return false;
+  const { error } = await supabase
+    .from("community_meldungen")
+    .insert({ post_id: postId, melderin_id: user.id, grund });
+  return !error;
+}
+
+export async function loescheBeitrag(postId) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("community_posts").delete().eq("id", postId);
+  return !error;
+}
+
+// ── Dateien (privater Bucket pro Nutzerin + Material der Coachin) ───────────
+
+export async function ladeMeineDateien() {
+  const user = await nutzerin();
+  if (!user) return [];
+  const { data, error } = await supabase.storage.from("klientin-dateien").list(user.id, { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+  if (error) { console.warn("ladeMeineDateien:", error.message); return []; }
+  return (data || []).map((d) => ({ name: d.name, groesse: d.metadata?.size ?? 0, pfad: `${user.id}/${d.name}` }));
+}
+
+export async function ladeDateiHoch(datei) {
+  const user = await nutzerin();
+  if (!user || !datei) return null;
+  const sauber = datei.name.replace(/[^\w.\-]+/g, "_");
+  const pfad = `${user.id}/${Date.now()}-${sauber}`;
+  const { error } = await supabase.storage.from("klientin-dateien").upload(pfad, datei, { upsert: false });
+  if (error) { console.warn("ladeDateiHoch:", error.message); return null; }
+  return { name: sauber, groesse: datei.size, pfad };
+}
+
+// Signierte URL — der Bucket ist privat, öffentliche Links gibt es bewusst nicht.
+export async function dateiLink(pfad, bucket = "klientin-dateien", sekunden = 300) {
+  if (!supabase || !pfad) return null;
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(pfad, sekunden);
+  if (error) { console.warn("dateiLink:", error.message); return null; }
+  return data?.signedUrl || null;
+}
+
+export async function loescheDatei(pfad) {
+  if (!supabase || !pfad) return false;
+  const { error } = await supabase.storage.from("klientin-dateien").remove([pfad]);
+  return !error;
+}
+
+export async function ladeCoachMaterial(coachId) {
+  if (!supabase || !coachId) return [];
+  const { data, error } = await supabase.storage.from("coach-material").list(coachId, { limit: 100 });
+  if (error) { console.warn("ladeCoachMaterial:", error.message); return []; }
+  return (data || []).map((d) => ({ name: d.name, groesse: d.metadata?.size ?? 0, pfad: `${coachId}/${d.name}` }));
+}
+
+// ── DSGVO: Auskunft (Art. 15/20) und Löschung (Art. 17) ────────────────────
+
+export async function exportiereMeineDaten() {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("meine_daten_export");
+  if (error) { console.warn("exportiereMeineDaten:", error.message); return null; }
+  return data;
+}
+
+// Löscht Konto + alle Daten serverseitig. bestaetigung muss "LÖSCHEN" sein.
+export async function loescheKonto(bestaetigung) {
+  const basis = import.meta.env?.VITE_AI_FUNCTION_URL;
+  if (!supabase || !basis) throw new Error("Keine Verbindung");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Nicht angemeldet");
+  const url = basis.replace(/\/ai\/?$/, "/konto-loeschen");
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: import.meta.env?.VITE_SUPABASE_ANON_KEY || "",
+    },
+    body: JSON.stringify({ bestaetigung }),
+  });
+  const d = await res.json();
+  if (!res.ok) throw new Error(d?.error || "Löschen fehlgeschlagen");
+  await supabase.auth.signOut();
+  return true;
+}
+
+// ── Passwort ───────────────────────────────────────────────────────────────
+
+export async function passwortZuruecksetzen(email) {
+  if (!supabase) throw new Error("Keine Verbindung");
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: `${window.location.origin}${window.location.pathname}#passwort-neu`,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function neuesPasswortSetzen(passwort) {
+  if (!supabase) throw new Error("Keine Verbindung");
+  const { error } = await supabase.auth.updateUser({ password: passwort });
+  if (error) throw new Error(error.message);
+}
+
+// ── Push-Benachrichtigungen (Web Push / VAPID) ─────────────────────────────
+
+function base64ZuUint8(base64) {
+  const rest = "=".repeat((4 - (base64.length % 4)) % 4);
+  const roh = atob((base64 + rest).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from([...roh].map((c) => c.charCodeAt(0)));
+}
+
+export function pushMoeglich() {
+  return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window
+    && !!import.meta.env?.VITE_VAPID_PUBLIC_KEY;
+}
+
+export async function pushStatus() {
+  if (!pushMoeglich()) return "nicht_moeglich";
+  if (Notification.permission === "denied") return "blockiert";
+  const reg = await navigator.serviceWorker.getRegistration();
+  const abo = await reg?.pushManager.getSubscription();
+  return abo ? "aktiv" : "aus";
+}
+
+export async function pushAktivieren() {
+  if (!pushMoeglich()) throw new Error("Push wird auf diesem Gerät nicht unterstützt");
+  const erlaubnis = await Notification.requestPermission();
+  if (erlaubnis !== "granted") throw new Error("Keine Erlaubnis für Benachrichtigungen");
+
+  const reg = await navigator.serviceWorker.ready;
+  const abo = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: base64ZuUint8(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+  });
+
+  const user = await nutzerin();
+  if (!user) throw new Error("Nicht angemeldet");
+  const roh = abo.toJSON();
+  const { error } = await supabase.from("push_abos").upsert({
+    endpoint: roh.endpoint,
+    user_id: user.id,
+    p256dh: roh.keys.p256dh,
+    auth_key: roh.keys.auth,
+    geraet: navigator.userAgent.slice(0, 120),
+  }, { onConflict: "endpoint" });
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+export async function pushDeaktivieren() {
+  const reg = await navigator.serviceWorker.getRegistration();
+  const abo = await reg?.pushManager.getSubscription();
+  if (!abo) return true;
+  const endpoint = abo.endpoint;
+  await abo.unsubscribe();
+  if (supabase) await supabase.from("push_abos").delete().eq("endpoint", endpoint);
+  return true;
+}

@@ -8,3 +8,11 @@ const Root = () => (window.location.hash === "#admin" ? <Admin /> : <App />);
 window.addEventListener("hashchange", () => window.location.reload());
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Root />);
+
+// Service Worker: Offline-Hülle + Push. Nur im Produktions-Build registrieren,
+// damit der Vite-Dev-Server nicht gegen einen gecachten Stand arbeitet.
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((e) => console.warn("SW:", e.message));
+  });
+}

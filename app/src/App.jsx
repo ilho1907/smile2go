@@ -3,7 +3,13 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import MediaBanner from "./MediaBanner";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO } from "./media";
-import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT } from "./supabase";
+import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
+  ladeMeineBindung, mitCoachVerbinden, ladeNachrichten, sendeNachricht, abonniereNachrichten, markiereGelesen,
+  ladeFreieSlots, ladeMeineTermine, terminBuchen, terminStornieren,
+  ladeFeed, schreibeBeitrag, herzSetzen, meldeBeitrag, loescheBeitrag,
+  ladeMeineDateien, ladeDateiHoch, dateiLink, loescheDatei,
+  exportiereMeineDaten, loescheKonto, passwortZuruecksetzen, neuesPasswortSetzen,
+  pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -574,6 +580,24 @@ function Auth({ onLogin }) {
 
   const echterBackend = !!supabase;
 
+  const [resetHinweis, setResetHinweis] = useState("");
+
+  // Passwort vergessen: Supabase schickt einen Link, der mit #passwort-neu
+  // zurueck in die App fuehrt (siehe PasswortNeu weiter unten).
+  const passwortVergessen = async () => {
+    setErr(""); setResetHinweis("");
+    if (!email.includes("@")) return setErr("Bitte gib zuerst deine E-Mail-Adresse ein.");
+    if (!echterBackend) return setResetHinweis("Prototyp-Modus: In der fertigen App bekommst du jetzt eine E-Mail.");
+    setBusy(true);
+    try {
+      await passwortZuruecksetzen(email);
+      setResetHinweis(`Wir haben dir einen Link an ${email} geschickt — er gilt 60 Minuten.`);
+    } catch (e) {
+      setErr(e.message || "Das hat gerade nicht geklappt.");
+    }
+    setBusy(false);
+  };
+
   const input = {
     width: "100%", padding: "15px 16px", fontSize: 16,
     fontFamily: "system-ui, sans-serif",
@@ -732,6 +756,18 @@ function Auth({ onLogin }) {
       )}
 
       <Btn full onClick={submit} disabled={busy}>{busy ? "Einen Moment …" : mode === "login" ? "Anmelden" : "Konto erstellen"}</Btn>
+
+      {mode === "login" && (
+        <button onClick={passwortVergessen} disabled={busy} style={{
+          width: "100%", background: "none", border: "none", cursor: "pointer", marginTop: 14,
+          fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, fontWeight: 600,
+          textDecoration: "underline", minHeight: 44,
+        }}>Passwort vergessen?</button>
+      )}
+
+      {resetHinweis && (
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: "#3E7A4A", background: "#EAF6EC", borderRadius: 12, padding: "11px 14px", marginTop: 12, lineHeight: 1.5 }}>{resetHinweis}</div>
+      )}
 
       <p style={{ textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 20, lineHeight: 1.6 }}>
         🇪🇺 Hosting in der EU · DSGVO-konform · Jederzeit kündbar
@@ -3433,10 +3469,57 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
 
 /* ── Profil ── */
 
-function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon }) {
+function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, aufBindung }) {
   const [time, setTime] = useState("07:00");
-  const [push, setPush] = useState(true);
+  const [push, setPush] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushHinweis, setPushHinweis] = useState("");
   const [plan, setPlan] = useState("Starter");
+  const [dsgvoHinweis, setDsgvoHinweis] = useState("");
+  const [loeschDialog, setLoeschDialog] = useState(false);
+  const [loeschWort, setLoeschWort] = useState("");
+
+  // Push-Status vom Geraet lesen (Erlaubnis + bestehendes Abo).
+  useEffect(() => { pushStatus().then((st) => setPush(st === "aktiv")); }, []);
+
+  const pushUmschalten = async () => {
+    setPushHinweis(""); setPushBusy(true);
+    try {
+      if (push) { await pushDeaktivieren(); setPush(false); }
+      else { await pushAktivieren(); setPush(true); }
+    } catch (e) {
+      setPushHinweis(pushMoeglich() ? (e.message || "Das hat nicht geklappt.") : "Dieses Gerät unterstützt keine Push-Nachrichten (auf iPhone: App erst zum Home-Bildschirm hinzufügen).");
+    }
+    setPushBusy(false);
+  };
+
+  // Art. 15/20 DSGVO — vollstaendige Auskunft als JSON-Datei.
+  const datenExport = async () => {
+    setDsgvoHinweis("Sammle deine Daten …");
+    const daten = await exportiereMeineDaten();
+    if (!daten) { setDsgvoHinweis("Export gerade nicht möglich — bitte später erneut versuchen."); return; }
+    const blob = new Blob([JSON.stringify(daten, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `smile2go-meine-daten-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setDsgvoHinweis("✓ Deine Daten wurden heruntergeladen.");
+    setTimeout(() => setDsgvoHinweis(""), 4000);
+  };
+
+  // Art. 17 DSGVO — Konto und alle Daten endgueltig loeschen.
+  const kontoLoeschen = async () => {
+    setDsgvoHinweis("");
+    try {
+      await loescheKonto(loeschWort);
+      setLoeschDialog(false);
+      onLogout?.();
+    } catch (e) {
+      setDsgvoHinweis(e.message || "Löschen fehlgeschlagen.");
+    }
+  };
 
   const Row = ({ children }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 0", borderBottom: `1px solid ${C.line}` }}>{children}</div>
@@ -3491,15 +3574,36 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon }) {
         <Card style={{ marginTop: 8, marginBottom: 16, paddingTop: 4, paddingBottom: 4 }}>
           <Row>
             <Label>Push aktiv</Label>
-            <button onClick={() => setPush(!push)} style={{ width: 52, height: 30, borderRadius: 20, border: "none", cursor: "pointer", position: "relative", background: push ? C.rose : C.line, transition: "background .2s" }}>
+            <button onClick={pushUmschalten} disabled={pushBusy} style={{ width: 52, height: 30, borderRadius: 20, border: "none", cursor: "pointer", position: "relative", background: push ? C.rose : C.line, transition: "background .2s", opacity: pushBusy ? 0.6 : 1 }}>
               <span style={{ position: "absolute", top: 3, left: push ? 25 : 3, width: 24, height: 24, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
             </button>
           </Row>
+          {pushHinweis && (
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#A8552F", lineHeight: 1.5, padding: "0 0 12px" }}>{pushHinweis}</div>
+          )}
           <Row>
             <Label>Erinnerung um</Label>
             <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, padding: "8px 12px", border: `1.5px solid ${C.line}`, borderRadius: 10, background: C.card, color: C.espresso }} />
           </Row>
         </Card>
+
+        {/* Meine Coachin */}
+        <Eyebrow color={C.plum}>Meine Coachin</Eyebrow>
+        {bindung?.coach_id ? (
+          <Card style={{ marginTop: 8, marginBottom: 16, display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", fontSize: 18, flexShrink: 0 }}>
+              {(bindung.coach_name || "C").charAt(0)}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{bindung.coach_name || "Deine Coachin"}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.sage, fontWeight: 600 }}>
+                ✓ verbunden seit {new Date(bindung.verbunden_am).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <div style={{ marginTop: 8 }}><CoachVerbinden onVerbunden={aufBindung} /></div>
+        )}
 
         {/* Persönlich */}
         <Eyebrow color={C.plum}>Persönlich</Eyebrow>
@@ -3552,8 +3656,8 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon }) {
             { t: "🆘 In Krisen: TelefonSeelsorge 0800 111 0 111 · Notruf 112", fn: null },
             { t: "📄 Datenschutzerklärung", fn: () => go("datenschutz") },
             { t: "📄 Impressum", fn: () => go("impressum") },
-            { t: "📥 Meine Daten exportieren", fn: null },
-            { t: "🗑️ Konto & alle Daten löschen", fn: null },
+            { t: "📥 Meine Daten exportieren", fn: datenExport },
+            { t: "🗑️ Konto & alle Daten löschen", fn: () => setLoeschDialog(true) },
           ].map((x, i, arr) => (
             <div key={x.t} onClick={x.fn || undefined} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 0", borderBottom: i < arr.length - 1 ? `1px solid ${C.line}` : "none", cursor: x.fn ? "pointer" : "default", opacity: x.fn ? 1 : 0.55 }}>
               <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.espresso }}>{x.t}</span>
@@ -3562,201 +3666,395 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon }) {
           ))}
         </Card>
 
+        {dsgvoHinweis && (
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "11px 14px", marginBottom: 14, lineHeight: 1.5 }}>{dsgvoHinweis}</div>
+        )}
+
+        {loeschDialog && (
+          <Card style={{ marginBottom: 16, border: `1.5px solid ${C.rose}` }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 6 }}>Konto wirklich löschen?</div>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+              Damit werden dein Konto, dein Tagebuch, deine Nachrichten, Termine und Dateien
+              endgültig gelöscht. Das lässt sich nicht rückgängig machen.
+              Tippe zur Bestätigung <strong>LÖSCHEN</strong> ein.
+            </p>
+            <input
+              value={loeschWort}
+              onChange={(e) => setLoeschWort(e.target.value)}
+              placeholder="LÖSCHEN"
+              style={{ width: "100%", padding: "13px 14px", fontSize: 15, letterSpacing: 1, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginBottom: 12 }}
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ flex: 1 }}><Btn full ghost onClick={() => { setLoeschDialog(false); setLoeschWort(""); }}>Abbrechen</Btn></div>
+              <div style={{ flex: 1 }}><Btn full onClick={kontoLoeschen} disabled={loeschWort.trim().toUpperCase() !== "LÖSCHEN"}>Endgültig löschen</Btn></div>
+            </div>
+          </Card>
+        )}
+
         <Btn full ghost onClick={onLogout}>Abmelden</Btn>
       </div>
     </div>
   );
 }
 
-/* ── Termin-Buchung (Calendly-Stil): buchen & verschieben in Sekunden ── */
+/* ── Coachin verbinden: Einladungscode einlösen ── */
 
-function Buchen({ buchung, setBuchung, termine, setTermine }) {
-  const TAGE = Array.from({ length: 5 }).map((_, i) => {
-    const d = new Date(Date.now() + (i + 1) * 864e5);
-    return d;
-  }).filter((d) => d.getDay() !== 0 && d.getDay() !== 6).slice(0, 4);
-  const ZEITEN = ["09:00", "11:00", "14:00", "16:30"];
+function CoachVerbinden({ onVerbunden, kompakt = false }) {
+  const [code, setCode] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const einloesen = async () => {
+    setErr("");
+    if (code.trim().length < 4) return setErr("Bitte gib den Code deiner Coachin ein.");
+    setBusy(true);
+    try {
+      await mitCoachVerbinden(code);
+      setCode("");
+      onVerbunden?.();
+    } catch (e) {
+      setErr(e.message?.includes("ungueltig") ? "Dieser Code gilt nicht (mehr). Frag deine Coachin nach einem neuen." : (e.message || "Das hat nicht geklappt."));
+    }
+    setBusy(false);
+  };
+
+  return (
+    <Card style={{ marginBottom: 14, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+      {!kompakt && (
+        <>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>Mit deiner Coachin verbinden</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+            Deine Coachin hat dir einen Einladungscode gegeben. Damit gehören Nachrichten, Termine und Materialien ab sofort euch beiden — und niemandem sonst.
+          </p>
+        </>
+      )}
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          onKeyDown={(e) => e.key === "Enter" && einloesen()}
+          placeholder="z. B. ANJA-2026"
+          style={{ flex: 1, padding: "13px 14px", fontSize: 15, letterSpacing: 1, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }}
+        />
+        <Btn small onClick={einloesen} disabled={busy}>{busy ? "…" : "Verbinden"}</Btn>
+      </div>
+      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#A8552F", marginTop: 10 }}>{err}</div>}
+    </Card>
+  );
+}
+
+/* ── Termin-Buchung: echte Zeitfenster der Coachin, echte Buchung ── */
+
+function Buchen({ bindung, aufBindung, termine, setTermine }) {
+  const [slots, setSlots] = useState([]);
+  const [meine, setMeine] = useState([]);
   const [tag, setTag] = useState(null);
-  const [videoInfo, setVideoInfo] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [laedt, setLaedt] = useState(true);
 
-  const buchen = (z) => {
-    const label = `${tag.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "short" })} · ${z}`;
-    setBuchung({ label, z });
-    setTermine([{ z, t: `Coaching-Session mit Anja (${tag.toLocaleDateString("de-DE", { day: "numeric", month: "short" })})` }, ...termine]);
+  const laden = async () => {
+    if (!bindung?.coach_id) { setLaedt(false); return; }
+    const [frei, gebucht] = await Promise.all([ladeFreieSlots(bindung.coach_id), ladeMeineTermine()]);
+    setSlots(frei);
+    setMeine(gebucht);
+    // Startseite (Heute) zeigt die naechsten Termine — Zustand gespiegelt halten.
+    setTermine?.(gebucht.map((t) => ({
+      z: new Date(t.beginn).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+      t: `${t.titel || "Coaching-Session"} (${new Date(t.beginn).toLocaleDateString("de-DE", { day: "numeric", month: "short" })})`,
+    })));
+    setLaedt(false);
   };
 
-  const stornieren = () => {
-    setTermine(termine.filter((t) => !t.t.startsWith("Coaching-Session")));
-    setBuchung(null);
-    setTag(null);
+  useEffect(() => { laden(); /* eslint-disable-next-line */ }, [bindung?.coach_id]);
+
+  const buchen = async (slot) => {
+    setErr(""); setBusy(true);
+    try {
+      await terminBuchen(slot.id);
+      setTag(null);
+      await laden();
+    } catch (e) {
+      setErr(e.message?.includes("verfuegbar") ? "Dieses Zeitfenster wurde eben vergeben. Bitte wähle ein anderes." : (e.message || "Buchung fehlgeschlagen."));
+      await laden();
+    }
+    setBusy(false);
   };
 
-  if (buchung)
+  const stornieren = async (id) => {
+    setBusy(true);
+    try { await terminStornieren(id); await laden(); } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+
+  if (!bindung?.coach_id)
     return (
       <div style={{ padding: "20px 20px" }}>
         <Eyebrow>Termin buchen</Eyebrow>
-        <H size={24} style={{ marginBottom: 16 }}>Deine Session steht 🤍</H>
-        <Card style={{ textAlign: "center", background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, border: "none", marginBottom: 16 }}>
-          <div style={{ fontSize: 36, marginBottom: 6 }}>📅</div>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 21, color: C.espresso }}>{buchung.label}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 4 }}>1:1 Coaching-Session mit Anja · 50 Min · Zoom</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.sage, fontWeight: 700, marginTop: 8 }}>✓ Bestätigung per Mail & Erinnerung 24 h vorher</div>
-        </Card>
-        <Card style={{ marginBottom: 14, display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={{ width: 44, height: 44, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21, flexShrink: 0 }}>🎥</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>Video-Session</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink }}>{videoInfo ? "Dein Video-Raum öffnet 15 Min vor Beginn — du bekommst hier & per Mail den Link." : "Direkt aus der App beitreten — kein Extra-Tool nötig."}</div>
-          </div>
-          <Btn small ghost onClick={() => setVideoInfo(true)}>Session beitreten</Btn>
-        </Card>
-        <div style={{ display: "flex", gap: 10 }}>
-          <div style={{ flex: 1 }}><Btn full ghost onClick={() => { setBuchung(null); }}>↻ Verschieben</Btn></div>
-          <div style={{ flex: 1 }}><Btn full ghost onClick={stornieren}>Stornieren</Btn></div>
-        </div>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, textAlign: "center", marginTop: 14 }}>
-          Verschieben & Stornieren — in Sekunden, ohne E-Mail-Pingpong.
+        <H size={24} style={{ marginBottom: 10 }}>Erst verbinden, dann buchen</H>
+        <CoachVerbinden onVerbunden={aufBindung} />
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6 }}>
+          Sobald ihr verbunden seid, siehst du hier die echten freien Zeiten deiner Coachin.
         </p>
       </div>
     );
 
+  // Freie Fenster nach Tag gruppieren
+  const nachTag = {};
+  slots.forEach((sl) => {
+    const d = new Date(sl.beginn);
+    const key = d.toDateString();
+    (nachTag[key] = nachTag[key] || []).push(sl);
+  });
+  const tage = Object.keys(nachTag);
+
   return (
     <div style={{ padding: "20px 20px" }}>
       <Eyebrow>Termin buchen</Eyebrow>
-      <H size={24} style={{ marginBottom: 8 }}>Buche in Sekunden</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
-        1:1 Session mit deiner Coachin — Termin wählen, fertig. Dein Termin erscheint automatisch auf deiner Startseite.
-      </p>
+      <H size={24} style={{ marginBottom: 8 }}>Deine Sessions</H>
 
-      <Eyebrow color={C.plum}>1 · Tag wählen</Eyebrow>
-      <div style={{ display: "flex", gap: 8, margin: "8px 0 16px", flexWrap: "wrap" }}>
-        {TAGE.map((d) => {
-          const aktiv = tag?.toDateString() === d.toDateString();
-          return (
-            <button key={d.toISOString()} onClick={() => setTag(d)} style={{
-              flex: 1, minWidth: 70, padding: "11px 6px", borderRadius: 14, cursor: "pointer",
-              border: `1.5px solid ${aktiv ? C.rose : C.line}`,
-              background: aktiv ? C.roseSoft : C.card, textAlign: "center",
-            }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: aktiv ? C.plum : C.ink }}>{d.toLocaleDateString("de-DE", { weekday: "short" })}</div>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginTop: 2 }}>{d.getDate()}.</div>
-            </button>
-          );
-        })}
-      </div>
+      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>}
 
-      {tag && (
-        <div style={{ animation: "fadeUp .35s ease" }}>
-          <Eyebrow color={C.plum}>2 · Uhrzeit wählen</Eyebrow>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginTop: 8 }}>
-            {ZEITEN.map((z) => (
-              <button key={z} onClick={() => buchen(z)} style={{
-                padding: "15px 0", borderRadius: 14, cursor: "pointer",
-                border: `1.5px solid ${C.gold}`, background: C.card,
-                fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 700, color: C.espresso, minHeight: 50,
-              }}>{z} Uhr</button>
-            ))}
-          </div>
+      {meine.length > 0 && (
+        <div style={{ marginBottom: 22 }}>
+          {meine.map((t) => {
+            const d = new Date(t.beginn);
+            return (
+              <Card key={t.id} style={{ marginBottom: 10, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, border: "none" }}>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso }}>
+                  {d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })} · {d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                </div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 4 }}>
+                  {t.titel || "1:1 Coaching-Session"}{bindung.coach_name ? ` mit ${bindung.coach_name}` : ""} · {t.dauer_min} Min · {t.kanal === "video" ? "Video" : t.kanal === "telefon" ? "Telefon" : "Vor Ort"}
+                </div>
+                <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                  {t.video_url && (
+                    <div style={{ flex: 1 }}>
+                      <a href={t.video_url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}><Btn full small>Session beitreten</Btn></a>
+                    </div>
+                  )}
+                  <div style={{ flex: 1 }}><Btn full small ghost onClick={() => stornieren(t.id)} disabled={busy}>Stornieren</Btn></div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
+      )}
+
+      {laedt ? (
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Lade freie Zeiten …</p>
+      ) : tage.length === 0 ? (
+        <Card>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.espresso, fontWeight: 600, marginBottom: 4 }}>Gerade keine freien Zeiten</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: 0 }}>
+            {bindung.coach_name || "Deine Coachin"} hat aktuell keine offenen Zeitfenster eingetragen. Schreib ihr gern im Chat — sie öffnet dir eines.
+          </p>
+        </Card>
+      ) : (
+        <>
+          <Eyebrow color={C.plum}>1 · Tag wählen</Eyebrow>
+          <div style={{ display: "flex", gap: 8, margin: "8px 0 16px", flexWrap: "wrap" }}>
+            {tage.map((k) => {
+              const d = new Date(k);
+              const aktiv = tag === k;
+              return (
+                <button key={k} onClick={() => setTag(k)} style={{
+                  flex: "1 0 70px", minWidth: 70, padding: "11px 6px", borderRadius: 14, cursor: "pointer",
+                  border: `1.5px solid ${aktiv ? C.rose : C.line}`,
+                  background: aktiv ? C.roseSoft : C.card, textAlign: "center",
+                }}>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: aktiv ? C.plum : C.ink }}>{d.toLocaleDateString("de-DE", { weekday: "short" })}</div>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginTop: 2 }}>{d.getDate()}.</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.sage, fontWeight: 700, marginTop: 2 }}>{nachTag[k].length} frei</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {tag && (
+            <div style={{ animation: "fadeUp .35s ease" }}>
+              <Eyebrow color={C.plum}>2 · Uhrzeit wählen</Eyebrow>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginTop: 8 }}>
+                {nachTag[tag].map((sl) => (
+                  <button key={sl.id} onClick={() => buchen(sl)} disabled={busy} style={{
+                    padding: "15px 0", borderRadius: 14, cursor: busy ? "default" : "pointer",
+                    border: `1.5px solid ${C.gold}`, background: C.card, opacity: busy ? 0.6 : 1,
+                    fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 700, color: C.espresso, minHeight: 50,
+                  }}>{new Date(sl.beginn).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-/* ── Coach-Chat: Text & Sprachnachrichten zwischen den Sessions ── */
+/* ── Coach-Chat: echte Nachrichten zwischen Klientin und Coachin ── */
 
-const COACH_ANTWORTEN = [
-  "Danke, dass du das teilst 🤍 Ich lese alles in Ruhe und melde mich heute noch mit ein paar Gedanken.",
-  "Wie schön, von dir zu hören! Nimm dir heute bewusst einen Moment für dich — wir vertiefen das in der nächsten Session.",
-  "Das klingt nach einem wichtigen Schritt. Sei stolz auf dich! ✨ Magst du dazu kurz ins Tagebuch schreiben?",
-];
-
-function CoachChat({ msgs, setMsgs }) {
+function CoachChat({ bindung, aufBindung }) {
+  const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState("");
+  const [laedt, setLaedt] = useState(true);
+  const [err, setErr] = useState("");
+  const [nimmtAuf, setNimmtAuf] = useState(false);
+  const [audioLinks, setAudioLinks] = useState({});
   const endRef = useRef(null);
+  const recRef = useRef(null);
+
+  const klientinId = bindung?.id;
+
+  useEffect(() => {
+    let aktiv = true;
+    if (!klientinId) { setLaedt(false); return; }
+    (async () => {
+      const verlauf = await ladeNachrichten(klientinId);
+      if (!aktiv) return;
+      setMsgs(verlauf);
+      setLaedt(false);
+      markiereGelesen(klientinId);
+    })();
+    const ab = abonniereNachrichten(klientinId, (neu) => {
+      setMsgs((m) => (m.some((x) => x.id === neu.id) ? m : [...m, neu]));
+      if (neu.absender === "coach") markiereGelesen(klientinId);
+    });
+    return () => { aktiv = false; ab(); };
+  }, [klientinId]);
+
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
-  const antwort = () => {
-    setTimeout(() => {
-      setMsgs((m) => [...m, { von: "coach", txt: COACH_ANTWORTEN[m.length % COACH_ANTWORTEN.length] }]);
-    }, 1400);
-  };
+  // Sprachnachrichten liegen im privaten Bucket — Links werden bei Bedarf signiert.
+  useEffect(() => {
+    msgs.filter((m) => m.audio_pfad && !audioLinks[m.id]).forEach(async (m) => {
+      const url = await dateiLink(m.audio_pfad);
+      if (url) setAudioLinks((a) => ({ ...a, [m.id]: url }));
+    });
+  }, [msgs]); // eslint-disable-line
 
-  const send = () => {
-    if (!input.trim()) return;
-    setMsgs((m) => [...m, { von: "ich", txt: input.trim() }]);
+  const senden = async () => {
+    const text = input.trim();
+    if (!text || !klientinId) return;
     setInput("");
-    antwort();
+    const gesendet = await sendeNachricht({ klientinId, text });
+    if (!gesendet) { setErr("Nachricht konnte nicht gesendet werden."); setInput(text); return; }
+    setMsgs((m) => (m.some((x) => x.id === gesendet.id) ? m : [...m, gesendet]));
   };
 
-  const sprach = () => {
-    const sek = 8 + Math.floor(Math.random() * 40);
-    setMsgs((m) => [...m, { von: "ich", voice: `0:${String(sek).padStart(2, "0")}` }]);
-    antwort();
+  const aufnahmeStarten = async () => {
+    setErr("");
+    try {
+      const strom = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(strom);
+      const teile = [];
+      const start = Date.now();
+      rec.ondataavailable = (e) => teile.push(e.data);
+      rec.onstop = async () => {
+        strom.getTracks().forEach((t) => t.stop());
+        const sek = Math.max(1, Math.round((Date.now() - start) / 1000));
+        const blob = new Blob(teile, { type: rec.mimeType || "audio/webm" });
+        const datei = new File([blob], `sprachnachricht-${Date.now()}.webm`, { type: blob.type });
+        const hoch = await ladeDateiHoch(datei);
+        if (!hoch) { setErr("Sprachnachricht konnte nicht hochgeladen werden."); return; }
+        const gesendet = await sendeNachricht({ klientinId, audioPfad: hoch.pfad, audioSek: sek });
+        if (gesendet) setMsgs((m) => (m.some((x) => x.id === gesendet.id) ? m : [...m, gesendet]));
+      };
+      recRef.current = rec;
+      rec.start();
+      setNimmtAuf(true);
+    } catch {
+      setErr("Ohne Mikrofon-Erlaubnis geht die Sprachnachricht leider nicht.");
+    }
   };
+
+  const aufnahmeStoppen = () => {
+    recRef.current?.stop();
+    recRef.current = null;
+    setNimmtAuf(false);
+  };
+
+  if (!klientinId)
+    return (
+      <div style={{ padding: "20px 16px" }}>
+        <Eyebrow>Coach-Chat</Eyebrow>
+        <H size={24} style={{ marginBottom: 10 }}>Noch keine Coachin verbunden</H>
+        <CoachVerbinden onVerbunden={aufBindung} />
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6 }}>
+          Deine Nachrichten sind Ende-zu-Ende an eure Verbindung gebunden: nur du und deine Coachin könnt sie lesen.
+        </p>
+      </div>
+    );
 
   return (
     <div style={{ padding: "14px 16px 20px", display: "flex", flexDirection: "column", minHeight: "60vh" }}>
       <Card style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14, padding: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${C.rose}, ${C.plum})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>👩‍🦰</div>
-        <div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>Anja · deine Coachin</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.sage, fontWeight: 600 }}>● antwortet meist innerhalb weniger Stunden</div>
+        <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", fontSize: 19, flexShrink: 0 }}>
+          {(bindung.coach_name || "C").charAt(0)}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{bindung.coach_name || "Deine Coachin"}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.sage, fontWeight: 600 }}>Antwortet meist innerhalb eines Tages</div>
         </div>
       </Card>
 
-      <div style={{ flex: 1 }}>
-        {msgs.length === 0 && (
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, textAlign: "center", lineHeight: 1.6, padding: "20px 10px" }}>
-            Zwischen euren Sessions ist Anja für dich da — schreib ihr oder schick eine Sprachnachricht 🎤
+      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "10px 13px", marginBottom: 10 }}>{err}</div>}
+
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
+        {laedt && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Lade Verlauf …</div>}
+        {!laedt && msgs.length === 0 && (
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.ink, lineHeight: 1.6, textAlign: "center", padding: "20px 10px" }}>
+            Noch keine Nachrichten. Schreib den ersten Gedanken — auch ein Satz reicht. 🤍
           </p>
         )}
-        {msgs.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.von === "ich" ? "flex-end" : "flex-start", marginBottom: 9 }}>
-            <div style={{
-              maxWidth: "80%", padding: "11px 14px", borderRadius: 17,
-              borderBottomRightRadius: m.von === "ich" ? 5 : 17,
-              borderBottomLeftRadius: m.von === "ich" ? 17 : 5,
-              background: m.von === "ich" ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.card,
-              border: m.von === "ich" ? "none" : `1px solid ${C.line}`,
-              color: m.von === "ich" ? "#fff" : C.espresso,
-              fontFamily: "system-ui, sans-serif", fontSize: 14, lineHeight: 1.5,
-            }}>
-              {m.voice ? (
-                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>▶</span>
-                  <span style={{ letterSpacing: 1.5 }}>▁▃▅▂▆▃▁▄▂▅▁</span>
-                  <span style={{ fontSize: 12, opacity: 0.9 }}>{m.voice}</span>
-                </span>
-              ) : m.txt}
+        {msgs.map((m) => {
+          const ich = m.absender === "klientin";
+          return (
+            <div key={m.id} style={{ alignSelf: ich ? "flex-end" : "flex-start", maxWidth: "82%" }}>
+              <div style={{
+                background: ich ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.card,
+                color: ich ? "#fff" : C.espresso,
+                border: ich ? "none" : `1px solid ${C.line}`,
+                borderRadius: ich ? "18px 18px 5px 18px" : "18px 18px 18px 5px",
+                padding: "11px 14px", fontFamily: "system-ui, sans-serif", fontSize: 14.5, lineHeight: 1.55,
+              }}>
+                {m.audio_pfad ? (
+                  audioLinks[m.id]
+                    ? <audio controls src={audioLinks[m.id]} style={{ width: 190, maxWidth: "100%" }} />
+                    : <span>🎙️ Sprachnachricht {m.audio_sek ? `· 0:${String(m.audio_sek).padStart(2, "0")}` : ""}</span>
+                ) : m.text}
+              </div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7, marginTop: 3, textAlign: ich ? "right" : "left" }}>
+                {new Date(m.created_at).toLocaleString("de-DE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                {ich && m.gelesen_am ? " · gelesen" : ""}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={endRef} />
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <button onClick={sprach} style={{
-          width: 48, height: 48, borderRadius: "50%", border: `1.5px solid ${C.rose}`, background: C.roseSoft,
-          fontSize: 19, cursor: "pointer", flexShrink: 0,
-        }}>🎤</button>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", position: "sticky", bottom: 0, background: C.cream, paddingTop: 6 }}>
+        <button
+          onClick={nimmtAuf ? aufnahmeStoppen : aufnahmeStarten}
+          aria-label={nimmtAuf ? "Aufnahme beenden" : "Sprachnachricht aufnehmen"}
+          style={{
+            width: 46, height: 46, borderRadius: "50%", flexShrink: 0, cursor: "pointer",
+            border: `1.5px solid ${nimmtAuf ? C.rose : C.line}`,
+            background: nimmtAuf ? C.roseSoft : C.card, fontSize: 19,
+          }}
+        >{nimmtAuf ? "⏹" : "🎙️"}</button>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Nachricht an Anja …"
-          style={{ flex: 1, padding: "13px 16px", fontSize: 15, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 22, background: C.card, color: C.espresso, outline: "none" }}
+          onKeyDown={(e) => e.key === "Enter" && senden()}
+          placeholder={`Nachricht an ${bindung.coach_name || "deine Coachin"} …`}
+          style={{ flex: 1, padding: "13px 15px", fontSize: 15, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 22, background: C.card, color: C.espresso, outline: "none" }}
         />
-        <button onClick={send} style={{
-          width: 48, height: 48, borderRadius: "50%", border: "none", cursor: "pointer",
-          background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 18, flexShrink: 0,
-        }}>↑</button>
+        <Btn small onClick={senden}>Senden</Btn>
       </div>
     </div>
   );
 }
-
-/* ── Mein Office: Käufe · Briefkopf · Angebote & Rechnungen (Business) ── */
 
 const STILE = ["Elegant", "Modern", "Verspielt"];
 
@@ -4103,18 +4401,64 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice }) 
     return "📄";
   };
 
-  const onFiles = (e) => {
+  // Beim Oeffnen: was liegt bereits im privaten Bucket dieser Nutzerin?
+  useEffect(() => {
+    if (!supabase) return;
+    ladeMeineDateien().then((dateien) => {
+      if (!dateien.length) return;
+      setUploads((vorher) => {
+        const bekannt = new Set(vorher.map((u) => u.pfad).filter(Boolean));
+        const zusatz = dateien
+          .filter((d) => !bekannt.has(d.pfad))
+          .map((d) => ({ name: d.name.replace(/^\d+-/, ""), size: Math.round(d.groesse / 1024), pfad: d.pfad, cloud: true }));
+        return [...vorher, ...zusatz];
+      });
+    });
+  }, []); // eslint-disable-line
+
+  // Hochladen: echte Datei in den privaten EU-Bucket (klientin-dateien/<user_id>/…).
+  // Bilder bekommen zusaetzlich eine lokale Vorschau, damit das Briefkopf-Logo sofort sitzt.
+  const onFiles = async (e) => {
     const files = Array.from(e.target.files || []);
-    Promise.all(files.map((f) => new Promise((res) => {
-      const basis = { name: f.name, size: Math.round(f.size / 1024) };
-      if (f.type.startsWith("image/") && f.size < 1500000) {
-        const r = new FileReader();
-        r.onload = () => res({ ...basis, dataUrl: r.result });
-        r.onerror = () => res(basis);
-        r.readAsDataURL(f);
-      } else res(basis);
-    }))).then((neu) => { if (neu.length) setUploads([...neu, ...uploads]); });
     e.target.value = "";
+    if (!files.length) return;
+
+    for (const f of files) {
+      const basis = { name: f.name, size: Math.round(f.size / 1024) };
+      let eintrag = basis;
+
+      if (f.type.startsWith("image/") && f.size < 1500000) {
+        const dataUrl = await new Promise((res) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.onerror = () => res(null);
+          r.readAsDataURL(f);
+        });
+        if (dataUrl) eintrag = { ...basis, dataUrl };
+      }
+
+      if (supabase) {
+        setHinweis(`Lade „${f.name}" hoch …`);
+        const hoch = await ladeDateiHoch(f);
+        if (hoch) eintrag = { ...eintrag, pfad: hoch.pfad, cloud: true };
+        else eintrag = { ...eintrag, fehler: true };
+      }
+
+      setUploads((vorher) => [eintrag, ...vorher]);
+    }
+    setHinweis("");
+  };
+
+  const dateiOeffnen = async (u) => {
+    if (!u.pfad) return;
+    const url = await dateiLink(u.pfad);
+    if (url) window.open(url, "_blank", "noopener");
+  };
+
+  const dateiEntfernen = async (i) => {
+    const u = uploads[i];
+    if (u?.pfad) await loescheDatei(u.pfad);
+    setUploads(uploads.filter((_, j) => j !== i));
   };
 
   const alsLogo = (u) => {
@@ -4194,7 +4538,7 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice }) 
 
       <Eyebrow color={C.plum}>📤 Eigene Medien hochladen</Eyebrow>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, lineHeight: 1.5, margin: "6px 0 8px" }}>
-        Was passiert mit deinen Uploads? Fotos kannst du als <strong>Briefkopf-Logo</strong> für Angebote & Rechnungen nutzen. In der fertigen App: sicher in der EU gespeichert (Supabase Storage), mit deiner Coachin teilbar und an Dokumente anhängbar.
+        Was passiert mit deinen Uploads? Sie liegen verschlüsselt in deinem privaten Bereich in der EU (Supabase Storage) — nur du kommst heran, Links sind zeitlich begrenzt. Fotos kannst du zusätzlich als <strong>Briefkopf-Logo</strong> für Angebote & Rechnungen nutzen.
       </p>
       <Card style={{ marginTop: 8, marginBottom: 12, textAlign: "center", border: `2px dashed ${C.goldSoft}`, background: C.goldPale }}>
         <label style={{ cursor: "pointer", display: "block", padding: "10px 0" }}>
@@ -4212,14 +4556,21 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice }) 
               {u.dataUrl ? <img src={u.dataUrl} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} /> : <span style={{ fontSize: 20 }}>{typIcon(u.name)}</span>}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, color: C.espresso, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.sage, fontWeight: 600 }}>✓ Hochgeladen · {u.size} KB</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: u.fehler ? "#A8552F" : C.sage, fontWeight: 600 }}>
+                  {u.fehler ? "⚠ Upload fehlgeschlagen" : u.cloud ? "✓ Sicher gespeichert (EU)" : "✓ Bereit"} · {u.size} KB
+                </div>
+                {u.pfad && (
+                  <button onClick={() => dateiOeffnen(u)} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: "3px 8px 0 0", textDecoration: "underline" }}>
+                    ↗ Öffnen
+                  </button>
+                )}
                 {u.dataUrl && (
                   <button onClick={() => alsLogo(u)} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: "3px 0 0", textDecoration: "underline" }}>
                     🏷️ Als Briefkopf-Logo verwenden
                   </button>
                 )}
               </div>
-              <button onClick={() => setUploads(uploads.filter((_, j) => j !== i))} style={{ background: "none", border: "none", color: C.ink, opacity: 0.5, cursor: "pointer", fontSize: 16, minWidth: 36, minHeight: 36 }}>✕</button>
+              <button onClick={() => dateiEntfernen(i)} style={{ background: "none", border: "none", color: C.ink, opacity: 0.5, cursor: "pointer", fontSize: 16, minWidth: 36, minHeight: 36 }}>✕</button>
             </Card>
           ))}
         </div>
@@ -4451,46 +4802,121 @@ function Meditation({ addPunkte }) {
   );
 }
 
-/* ── Community-Feed · Frauen unterstützen Frauen (sozialer Anker gegen Abbruch) ── */
-const COMMUNITY = [
-  { name: "Anja (Coach)", zeit: "vor 1 Std", text: "Impuls der Woche: Schenk dir heute 5 Minuten nur für dich. Was tut dir gut? 🤍", herzen: 41, coach: true },
-  { name: "Sabine", zeit: "vor 2 Std", text: "Tag 12 der 3-6-9 Challenge — heute zum ersten Mal ohne Handy gefrühstückt.", herzen: 14 },
-  { name: "Claudia", zeit: "vor 5 Std", text: "Habe endlich „Nein“ gesagt und es fühlt sich richtig an. Danke, dass ihr da seid.", herzen: 23 },
-  { name: "Petra", zeit: "gestern", text: "Meditation vor dem Schlafen verändert wirklich meinen Schlaf. Wer macht mit?", herzen: 9 },
-];
-function Community({ addPunkte }) {
-  const [posts, setPosts] = useState(COMMUNITY);
+/* ── Community-Feed · echte Beiträge aus der Datenbank, mit Meldefunktion ── */
+
+function Community({ addPunkte, alias, anon }) {
+  const [posts, setPosts] = useState([]);
   const [neu, setNeu] = useState("");
   const [geherzt, setGeherzt] = useState({});
-  const herz = (i) => { if (geherzt[i]) return; setGeherzt({ ...geherzt, [i]: true }); setPosts((ps) => ps.map((p, j) => (j === i ? { ...p, herzen: p.herzen + 1 } : p))); };
-  const teilen = () => { if (!neu.trim()) return; setPosts([{ name: "Du", zeit: "gerade eben", text: neu.trim(), herzen: 0 }, ...posts]); setNeu(""); if (addPunkte) addPunkte(5, "Community-Beitrag"); };
+  const [laedt, setLaedt] = useState(true);
+  const [hinweis, setHinweis] = useState("");
+  const [gemeldet, setGemeldet] = useState({});
+
+  const name = anon ? "Anonym" : (alias?.trim() || "Anonym");
+
+  const laden = async () => {
+    const daten = await ladeFeed();
+    setPosts(daten);
+    setLaedt(false);
+  };
+  useEffect(() => { laden(); }, []);
+
+  const teilen = async () => {
+    const text = neu.trim();
+    if (!text) return;
+    setNeu("");
+    const post = await schreibeBeitrag(text, name);
+    if (!post) { setHinweis("Beitrag konnte nicht gespeichert werden."); setNeu(text); return; }
+    setPosts((ps) => [post, ...ps]);
+    addPunkte?.(5, "Community-Beitrag");
+  };
+
+  const herz = async (id) => {
+    if (geherzt[id]) return;
+    setGeherzt((g) => ({ ...g, [id]: true }));
+    setPosts((ps) => ps.map((p) => (p.id === id ? { ...p, herzen: (p.herzen || 0) + 1 } : p)));
+    const ok = await herzSetzen(id);
+    if (!ok) setPosts((ps) => ps.map((p) => (p.id === id ? { ...p, herzen: Math.max(0, (p.herzen || 1) - 1) } : p)));
+  };
+
+  const melden = async (id) => {
+    const grund = window.prompt("Was stimmt mit diesem Beitrag nicht? (kurz)");
+    if (grund === null) return;
+    const ok = await meldeBeitrag(id, grund);
+    setGemeldet((m) => ({ ...m, [id]: true }));
+    setHinweis(ok ? "Danke — wir schauen uns den Beitrag an." : "Melden hat nicht geklappt.");
+    setTimeout(() => setHinweis(""), 3500);
+  };
+
+  const loeschen = async (id) => {
+    if (!window.confirm("Diesen Beitrag löschen?")) return;
+    const ok = await loescheBeitrag(id);
+    if (ok) setPosts((ps) => ps.filter((p) => p.id !== id));
+  };
+
+  const zeit = (iso) => {
+    const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (min < 2) return "gerade eben";
+    if (min < 60) return `vor ${min} Min`;
+    if (min < 1440) return `vor ${Math.round(min / 60)} Std`;
+    return new Date(iso).toLocaleDateString("de-DE", { day: "numeric", month: "short" });
+  };
+
   return (
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow>Community</Eyebrow>
       <H size={25} style={{ marginBottom: 6 }}>Frauen unterstützen Frauen</H>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
         Teile einen Gedanken oder feiere jemanden. Ein liebes ♥ tut mehr, als du denkst.
+        Du schreibst als <strong>{name}</strong>.
       </p>
+
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         <input value={neu} onChange={(e) => setNeu(e.target.value)} onKeyDown={(e) => e.key === "Enter" && teilen()} placeholder="Etwas Schönes teilen…" style={{ flex: 1, padding: "13px 14px", fontSize: 15, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }} />
         <Btn small onClick={teilen}>Teilen</Btn>
       </div>
-      {posts.map((p, i) => (
-        <Card key={i} style={{ marginBottom: 12, background: p.coach ? `linear-gradient(135deg, ${C.card}, ${C.goldPale})` : C.card }}>
+
+      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "10px 14px", marginBottom: 12 }}>{hinweis}</div>}
+
+      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Lade Beiträge …</p>}
+
+      {!laedt && posts.length === 0 && (
+        <Card style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 30, marginBottom: 8 }}>🌸</div>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            Hier ist noch still. Magst du den ersten Gedanken teilen?
+          </p>
+        </Card>
+      )}
+
+      {posts.map((p) => (
+        <Card key={p.id} style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: C.plum, fontWeight: 700, flexShrink: 0 }}>{p.name.charAt(0)}</div>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: C.plum, fontWeight: 700, flexShrink: 0 }}>{(p.alias || "A").charAt(0)}</div>
             <div style={{ flex: 1 }}>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{p.name}</span>
-              {p.coach && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 10, padding: "2px 7px", marginLeft: 6 }}>Coachin</span>}
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 1 }}>{p.zeit}</div>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{p.alias}</span>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 1 }}>{zeit(p.created_at)}</div>
             </div>
           </div>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6, margin: "0 0 10px" }}>{p.text}</p>
-          <button onClick={() => herz(i)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: geherzt[i] ? "default" : "pointer", color: geherzt[i] ? C.rose : C.ink, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, padding: 0 }}>
-            <span style={{ fontSize: 16 }}>{geherzt[i] ? "❤️" : "🤍"}</span> {p.herzen}
-          </button>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6, margin: "0 0 10px", whiteSpace: "pre-wrap" }}>{p.text}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button onClick={() => herz(p.id)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: geherzt[p.id] ? "default" : "pointer", color: geherzt[p.id] ? C.rose : C.ink, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, padding: 0, minHeight: 36 }}>
+              <span style={{ fontSize: 16 }}>{geherzt[p.id] ? "❤️" : "🤍"}</span> {p.herzen || 0}
+            </button>
+            <button onClick={() => melden(p.id)} disabled={gemeldet[p.id]} style={{ background: "none", border: "none", cursor: gemeldet[p.id] ? "default" : "pointer", color: C.ink, opacity: 0.6, fontFamily: "system-ui, sans-serif", fontSize: 12, padding: 0, minHeight: 36 }}>
+              {gemeldet[p.id] ? "gemeldet" : "melden"}
+            </button>
+            <button onClick={() => loeschen(p.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.ink, opacity: 0.6, fontFamily: "system-ui, sans-serif", fontSize: 12, padding: 0, minHeight: 36, marginLeft: "auto" }}>
+              löschen
+            </button>
+          </div>
         </Card>
       ))}
+
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 18 }}>
+        Beiträge, die mehrfach gemeldet werden, verschwinden automatisch aus dem Feed, bis sie geprüft sind.
+        Eigene Beiträge kannst du jederzeit selbst löschen.
+      </p>
     </div>
   );
 }
@@ -6586,11 +7012,68 @@ function Jahresrueckblick({ entries, traeume, zyklus, punkte, streak, drawn, rei
 
 /* ── App-Rahmen ── */
 
+/* ── Neues Passwort setzen · Ziel des Links aus der Passwort-vergessen-Mail ── */
+function PasswortNeu({ onFertig }) {
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [fertig, setFertig] = useState(false);
+
+  const input = {
+    width: "100%", padding: "15px 16px", fontSize: 16, fontFamily: "system-ui, sans-serif",
+    border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso,
+    marginBottom: 12, outline: "none",
+  };
+
+  const speichern = async () => {
+    setErr("");
+    if (pw.length < 8) return setErr("Dein neues Passwort braucht mindestens 8 Zeichen.");
+    if (pw !== pw2) return setErr("Die beiden Passwörter stimmen nicht überein.");
+    setBusy(true);
+    try {
+      await neuesPasswortSetzen(pw);
+      setFertig(true);
+    } catch (e) {
+      setErr(e.message || "Das hat nicht geklappt — bitte fordere den Link neu an.");
+    }
+    setBusy(false);
+  };
+
+  if (fertig)
+    return (
+      <div style={{ padding: "60px 24px", textAlign: "center" }}>
+        <div style={{ fontSize: 52, marginBottom: 18 }}>🤍</div>
+        <H size={26} style={{ marginBottom: 12 }}>Passwort geändert</H>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 28 }}>
+          Du kannst dich ab sofort mit deinem neuen Passwort anmelden.
+        </p>
+        <Btn full onClick={onFertig}>Weiter zur App</Btn>
+      </div>
+    );
+
+  return (
+    <div style={{ padding: "56px 24px 40px" }}>
+      <Eyebrow>smile2go</Eyebrow>
+      <H size={26} style={{ marginBottom: 8 }}>Neues Passwort</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.6, marginBottom: 20 }}>
+        Wähle ein neues Passwort für dein Konto — mindestens 8 Zeichen.
+      </p>
+      <input style={input} type="password" placeholder="Neues Passwort" value={pw} onChange={(e) => setPw(e.target.value)} />
+      <input style={input} type="password" placeholder="Neues Passwort wiederholen" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>}
+      <Btn full onClick={speichern} disabled={busy}>{busy ? "Speichere …" : "Passwort speichern"}</Btn>
+    </div>
+  );
+}
+
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
 const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", traum: "Traumbibliothek", zyklus: "Körper & Zyklus", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", garten: "Dein Garten", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
+  const [bindung, setBindung] = useState(null);
+  const [pwReset, setPwReset] = useState(typeof window !== "undefined" && window.location.hash === "#passwort-neu");
   const [tab, setTab] = useState("heute");
   const [stack, setStack] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -6610,7 +7093,6 @@ export default function IlhoApp() {
   const [pkModal, setPkModal] = useState(false);
   const [tools, setTools] = useState({ gcal: true, health: false, notion: false, spotify: false, zoom: false, whatsapp: true });
   const [kursWahl, setKursWahl] = useState([]);
-  const [buchung, setBuchung] = useState(null);
   const [ziele, setZiele] = useState([
     { id: 1, titel: "Mehr Ruhe im Alltag", bereich: "Selbstfürsorge", faellig: "31.08.", warum: "Ich will abends abschalten können — ohne schlechtes Gewissen.", fortschritt: 40, meilen: [
       { t: "7 Tage Morgenritual gehalten", done: true },
@@ -6782,6 +7264,16 @@ export default function IlhoApp() {
     return () => clearTimeout(timer);
   }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, traeume, zyklus, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
+  // Bindung zur Coachin: bestimmt, wohin Nachrichten, Termine und Materialien gehoeren.
+  const aufBindung = async () => {
+    const b = await ladeMeineBindung();
+    setBindung(b);
+  };
+  useEffect(() => {
+    if (user) aufBindung();
+    else setBindung(null);
+  }, [user]); // eslint-disable-line
+
   const go = (next) => {
     setStack([...stack, tab]);
     setTab(next);
@@ -6819,7 +7311,11 @@ export default function IlhoApp() {
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
       `}</style>
       <div style={{ width: "100%", maxWidth: 430, background: C.cream, minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
-        {!user ? (
+        {pwReset ? (
+          <div style={{ animation: "fadeUp .5s ease" }}>
+            <PasswortNeu onFertig={() => { window.location.hash = ""; setPwReset(false); }} />
+          </div>
+        ) : !user ? (
           <div style={{ animation: "fadeUp .5s ease" }}><Auth onLogin={(mail, zeichen, ilho) => { setUser(mail); if (zeichen) setMeinZeichen(zeichen); if (typeof ilho === "boolean") setIlhoAktiv(ilho); }} /></div>
         ) : (
           <>
@@ -6872,16 +7368,16 @@ export default function IlhoApp() {
               {tab === "aufgaben" && <><MediaBanner video={S2GVID.aufgaben} poster={S2GIMG.aufgaben} title="Aufgaben" subtitle="Schritt für Schritt" height={190} /><Aufgaben aufgaben={aufgaben} setAufgaben={setAufgaben} addPunkte={addPunkte} go={go} /></>}
               {tab === "appguide" && <><MediaBanner video={S2GVID.appguide} poster={S2GIMG.appguide} title="App-Guide" subtitle="Dein Wegweiser" height={190} /><AppGuide /></>}
               {tab === "kurse" && <><MediaBanner video={S2GVID.kurse} poster={S2GIMG.kurse} title="Deine Kurse" subtitle="Weiterlernen, wo du warst" height={200} /><Kurse kursWahl={kursWahl} setKursWahl={setKursWahl} addPunkte={addPunkte} /></>}
-              {tab === "buchen" && <><MediaBanner video={S2GVID.buchen} poster={S2GIMG.buchen} title="Termin buchen" subtitle="Zeit für dich" height={190} /><Buchen buchung={buchung} setBuchung={setBuchung} termine={termine} setTermine={setTermine} /></>}
-              {tab === "coach" && <><MediaBanner video={S2GVID.coach} poster={S2GIMG.coach} title="Coach-Chat" subtitle="Du wirst gehört" height={190} /><CoachChat msgs={coachMsgs} setMsgs={setCoachMsgs} /></>}
+              {tab === "buchen" && <><MediaBanner video={S2GVID.buchen} poster={S2GIMG.buchen} title="Termin buchen" subtitle="Zeit für dich" height={190} /><Buchen bindung={bindung} aufBindung={aufBindung} termine={termine} setTermine={setTermine} /></>}
+              {tab === "coach" && <><MediaBanner video={S2GVID.coach} poster={S2GIMG.coach} title="Coach-Chat" subtitle="Du wirst gehört" height={190} /><CoachChat bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "media" && <><MediaBanner video={S2GVID.mediathek} poster={S2GIMG.mediathek} title="Mediathek" subtitle="Deine Inhalte, dein Raum" height={200} /><Mediathek uploads={uploads} setUploads={setUploads} tools={tools} setTools={setTools} office={office} setOffice={setOffice} /></>}
               {tab === "meditation" && <MeditationCine addPunkte={addPunkte} />}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
-              {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} /></>}
+              {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} alias={alias} anon={anon} /></>}
               {tab === "fortschritt" && <><MediaBanner video={S2GVID.fortschritt} poster={S2GIMG.fortschritt} title="Mein Fortschritt" subtitle="Du wächst" height={190} /><Fortschritt streak={streak} entries={entries} punkte={punkte} energie={energie} aufgaben={aufgaben} ch369={ch369} checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} twinTon={twinTon} /></>}
               {tab === "fragebogen" && <><MediaBanner video={S2GVID.fragebogen} poster={S2GIMG.fragebogen} title="Fragebogen" subtitle="Lerne dich kennen" height={190} /><Fragebogen intake={intake} setIntake={setIntake} addPunkte={addPunkte} /></>}
               {tab === "pakete" && <><MediaBanner video={S2GVID.pakete} poster={S2GIMG.pakete} title="Pakete" subtitle="Wähle dein Geschenk an dich" height={190} /><Pakete addPunkte={addPunkte} go={go} /></>}
-              {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
+              {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} bindung={bindung} aufBindung={aufBindung} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
               {tab === "coachdash" && <CoachDashboard name={anzeigeName} streak={streak} entries={entries} ch369={ch369} drawn={drawn} horo={horo} energie={energie} aufgaben={aufgaben} checkins={checkins} />}
               {tab === "coachtwin" && <CoachTwinInterview addPunkte={addPunkte} />}
               {tab === "sessionnotiz" && <SessionIntelligenz addPunkte={addPunkte} />}
