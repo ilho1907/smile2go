@@ -1035,7 +1035,7 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
       {/* ilho-Kopfzeile */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 20 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 13, color: C.sage, marginBottom: 2 }}>✨ ilho hat dein Tag vorbereitet</div>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 13, color: C.sage, marginBottom: 2 }}>✨ ilho hat deinen Tag vorbereitet</div>
           <H size={26} style={{ marginBottom: 4 }}>{gruss}{name ? `, ${name}` : ""} 🤍</H>
         </div>
         <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", fontSize: 22, color: C.gold, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(58,42,34,.1)" }}>👤</button>
@@ -1044,9 +1044,18 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
       {/* Für dich erledigt: ilho's Vorbereitung */}
       <Card style={{ marginBottom: 18, background: C.roseSoft, border: `1px dashed ${C.rose}` }}>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.plum, marginBottom: 10 }}>📋 Für dich vorbereitet</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        {/* Die Karte zieht sie selbst — ilho nimmt ihr das nicht ab und verrät sie auch nicht vorher. */}
+        <div
+          onClick={() => !drawn && go("orakel")}
+          style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, cursor: drawn ? "default" : "pointer" }}
+        >
           <span style={{ fontSize: 16 }}>🎴</span>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>Tageskarte gezogen — <span style={{ fontWeight: 600 }}>{drawn?.n || "wartet…"}</span></span>
+          <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>
+            {drawn
+              ? <>Tageskarte gezogen — <span style={{ fontWeight: 600 }}>{drawn.n}</span></>
+              : <>Deine Tageskarte wartet — <span style={{ fontWeight: 600 }}>du ziehst sie selbst</span></>}
+          </span>
+          {!drawn && <span style={{ color: C.gold, fontSize: 17 }}>›</span>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <span style={{ fontSize: 16 }}>☀️</span>
