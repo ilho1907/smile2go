@@ -987,6 +987,8 @@ const TILE_KATALOG = {
 };
 
 function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs, setPrefs, ch369, meinZeichen, openPunkte, drawn, horo, entries, setJournalSec, twinTon = "" }) {
+  // Nur eine heute gezogene Karte gilt als gezogen — sonst wartet sie wieder.
+  const heutigeKarte = drawn && (!drawn.tag || drawn.tag === new Date().toDateString()) ? drawn : null;
   const [chatOpen, setChatOpen] = useState(false);
   const [ilhoMsgs, setIlhoMsgs] = useState(() => {
     try { return JSON.parse(localStorage.getItem("ilho_chat_history")) || []; } catch { return []; }
@@ -1041,22 +1043,10 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
         <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", fontSize: 22, color: C.gold, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(58,42,34,.1)" }}>👤</button>
       </div>
 
-      {/* Für dich erledigt: ilho's Vorbereitung */}
-      <Card style={{ marginBottom: 18, background: C.roseSoft, border: `1px dashed ${C.rose}` }}>
+      {/* ilho bereitet vor — die Tageskarte gehört aber nicht in diese Liste:
+          die zieht die Nutzerin selbst. Deshalb steht sie getrennt darunter. */}
+      <Card style={{ marginBottom: 12, background: C.roseSoft, border: `1px dashed ${C.rose}` }}>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.plum, marginBottom: 10 }}>📋 Für dich vorbereitet</div>
-        {/* Die Karte zieht sie selbst — ilho nimmt ihr das nicht ab und verrät sie auch nicht vorher. */}
-        <div
-          onClick={() => !drawn && go("orakel")}
-          style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, cursor: drawn ? "default" : "pointer" }}
-        >
-          <span style={{ fontSize: 16 }}>🎴</span>
-          <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>
-            {drawn
-              ? <>Tageskarte gezogen — <span style={{ fontWeight: 600 }}>{drawn.n}</span></>
-              : <>Deine Tageskarte wartet — <span style={{ fontWeight: 600 }}>du ziehst sie selbst</span></>}
-          </span>
-          {!drawn && <span style={{ color: C.gold, fontSize: 17 }}>›</span>}
-        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <span style={{ fontSize: 16 }}>☀️</span>
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>Mantra bereit — <span style={{ fontStyle: "italic", fontWeight: 500 }}>„{mot.t}"</span></span>
@@ -1065,6 +1055,27 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
           <span style={{ fontSize: 16 }}>🕯️</span>
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>2-Min-Atemritual bereit</span>
         </div>
+      </Card>
+
+      {/* Die Tageskarte: ihr Ritual, nicht ilhos Vorbereitung */}
+      <Card
+        onClick={() => !heutigeKarte && go("orakel")}
+        style={{
+          marginBottom: 18, cursor: heutigeKarte ? "default" : "pointer",
+          display: "flex", alignItems: "center", gap: 12,
+          background: heutigeKarte ? C.card : `linear-gradient(135deg, ${C.card}, ${C.goldPale})`,
+        }}
+      >
+        <div style={{ width: 42, height: 42, borderRadius: 12, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🎴</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>Dein Ritual</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.espresso, marginTop: 2 }}>
+            {heutigeKarte
+              ? <>Heute gezogen — <span style={{ fontWeight: 700 }}>{heutigeKarte.n}</span></>
+              : <>Deine Tageskarte wartet auf dich</>}
+          </div>
+        </div>
+        {!heutigeKarte && <span style={{ color: C.gold, fontSize: 20 }}>›</span>}
       </Card>
 
       {/* Dein heutiger Sonnenstrahl */}
