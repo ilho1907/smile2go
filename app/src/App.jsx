@@ -5509,6 +5509,7 @@ function Mehr({ go }) {
     { g: "Coaching", items: [
       { icon: "🌸", t: "Coaching", s: "Termine, Pakete & Fortschritt", tab: "coaching" },
       { icon: "🏆", t: "Challenges & Ziele", s: "Challenge, Aufgaben & Meilensteine", tab: "aufgaben" },
+      { icon: "🤍", t: "Termin mit dir selbst", s: "Eine feste Stunde pro Woche · nur für dich", tab: "selbsttermin" },
       { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index & Trend", tab: "fortschritt" },
       { icon: "🎓", t: "Kurse", s: "Deine Kurse · Shop", tab: "kurse" },
     ] },
@@ -7078,6 +7079,430 @@ function Loslassen({ losgelassen, setLosgelassen, addPunkte }) {
   );
 }
 
+/* ── Traumbibliothek — deine Traumsymbole & Muster ── */
+const TRAUM_SYMBOLE = [
+  { key: "wasser", w: ["wasser", "meer", "ozean", "fluss", "see", "regen", "welle"], icon: "🌊", deut: "Gefühle & das Unbewusste — wie bewegt ist dein Innenleben gerade?" },
+  { key: "fliegen", w: ["flieg", "schweb", "flug"], icon: "🕊️", deut: "Freiheit & Perspektive — der Wunsch, über den Dingen zu stehen." },
+  { key: "fallen", w: ["fall", "stürz", "abgrund"], icon: "🌀", deut: "Kontrollverlust oder Loslassen — wo darfst du dich fangen lassen?" },
+  { key: "zaehne", w: ["zahn", "zähne"], icon: "🦷", deut: "Sorge um Ausstrahlung & Kraft — klassisches Symbol für Verunsicherung." },
+  { key: "haus", w: ["haus", "wohnung", "zimmer", "tür", "keller", "dachboden"], icon: "🏠", deut: "Dein Selbst — jedes Zimmer ein Anteil von dir." },
+  { key: "verfolgung", w: ["verfolg", "gejagt", "flucht", "weglauf", "rennen"], icon: "🏃‍♀️", deut: "Etwas will angeschaut werden, dem du ausweichst." },
+  { key: "tiere", w: ["katze", "hund", "vogel", "pferd", "wolf", "tier"], icon: "🦊", deut: "Instinkte & Urkräfte — welche Seite von dir zeigt sich?" },
+  { key: "schlange", w: ["schlange"], icon: "🐍", deut: "Wandlung & Heilung — Häutung steht bevor." },
+  { key: "tod", w: ["tod", "sterb", "beerdigung", "grab"], icon: "🥀", deut: "Selten wörtlich: ein Kapitel endet, damit ein neues beginnt." },
+  { key: "baby", w: ["baby", "kind", "geburt", "schwanger"], icon: "👶", deut: "Etwas Neues wird in dir geboren — eine Idee, ein Lebensabschnitt." },
+  { key: "pruefung", w: ["prüfung", "test", "schule", "zu spät", "verpass"], icon: "📝", deut: "Angst, nicht zu genügen — wer prüft dich da wirklich?" },
+  { key: "feuer", w: ["feuer", "brenn", "flamme"], icon: "🔥", deut: "Leidenschaft oder Zorn — Energie, die einen Ausdruck sucht." },
+  { key: "licht", w: ["licht", "sonne", "stern", "mond"], icon: "✨", deut: "Hoffnung, Führung, Bewusstwerdung." },
+  { key: "auto", w: ["auto", "fahren", "zug", "bus", "reise", "weg"], icon: "🛤️", deut: "Deine Lebensrichtung — wer sitzt am Steuer?" },
+];
+function findeSymbole(text) {
+  const t = text.toLowerCase();
+  return TRAUM_SYMBOLE.filter((s) => s.w.some((w) => t.includes(w)));
+}
+function Traumbibliothek({ traeume, setTraeume, addPunkte }) {
+  const [text, setText] = useState("");
+  const speichern = () => {
+    if (!text.trim()) return;
+    const symbole = findeSymbole(text).map((s) => s.key);
+    setTraeume([{ datum: new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" }), text: text.trim(), symbole }, ...(traeume || [])]);
+    setText("");
+    addPunkte(5, "Traum festgehalten");
+  };
+  const alle = traeume || [];
+  const counts = {};
+  alle.forEach((tr) => (tr.symbole || []).forEach((k) => { counts[k] = (counts[k] || 0) + 1; }));
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  return (
+    <div style={{ padding: "26px 20px" }}>
+      <Eyebrow color={C.plum}>Traumbibliothek</Eyebrow>
+      <H size={25}>Was hat dir die Nacht erzählt?</H>
+      <Card style={{ margin: "16px 0 14px" }}>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={4}
+          placeholder="Stichworte reichen: „Wasser, altes Haus, ich konnte fliegen …“"
+          style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 15, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso }}
+        />
+        <div style={{ marginTop: 10 }}>
+          <Btn full onClick={speichern} disabled={!text.trim()}>🌙 Traum festhalten</Btn>
+        </div>
+      </Card>
+      {top.length > 0 && (
+        <Card style={{ marginBottom: 14, background: C.goldPale }}>
+          <Eyebrow color={C.espresso}>Deine wiederkehrenden Symbole</Eyebrow>
+          {top.map(([k, n]) => {
+            const s = TRAUM_SYMBOLE.find((x) => x.key === k);
+            return (
+              <div key={k} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
+                <span style={{ fontSize: 22 }}>{s.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{k.charAt(0).toUpperCase() + k.slice(1)} · {n}×</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5 }}>{s.deut}</div>
+                </div>
+              </div>
+            );
+          })}
+        </Card>
+      )}
+      {alle.length === 0 && (
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.7 }}>
+          Halte deine Träume gleich morgens fest — schon Stichworte genügen. Mit der Zeit erkennt deine Bibliothek, welche Symbole immer wiederkehren.
+        </p>
+      )}
+      {alle.map((tr, i) => (
+        <Card key={i} style={{ marginBottom: 10 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginBottom: 6 }}>{tr.datum}</div>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6 }}>{tr.text}</div>
+          {(tr.symbole || []).length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {tr.symbole.map((k) => {
+                const s = TRAUM_SYMBOLE.find((x) => x.key === k);
+                return <span key={k} style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, background: C.beige, borderRadius: 10, padding: "4px 10px", color: C.espresso }}>{s?.icon} {k}</span>;
+              })}
+            </div>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/* ── Wachstums-Garten ── */
+function Garten({ entries, punkte, streak, traeume, qigong, dank, losgelassen, reisen, ch369 }) {
+  const monat = new Date().getMonth();
+  const jahreszeit = monat <= 1 || monat === 11 ? { n: "Winter", himmel: "linear-gradient(180deg,#DCE6EE,#F3F0EA)", boden: "#E8E2D8", icon: "❄️" }
+    : monat <= 4 ? { n: "Frühling", himmel: "linear-gradient(180deg,#E4F0E0,#FBF6EE)", boden: "#DCE8D2", icon: "🌷" }
+    : monat <= 7 ? { n: "Sommer", himmel: "linear-gradient(180deg,#FDF0D8,#FBF6EE)", boden: "#D7E4C8", icon: "☀️" }
+    : { n: "Herbst", himmel: "linear-gradient(180deg,#F7E4D0,#FBF6EE)", boden: "#E2D6C0", icon: "🍂" };
+  const taten = (entries?.length || 0) + (traeume?.length || 0) + (qigong?.length || 0) + (dank?.length || 0)
+    + ((losgelassen || []).filter((x) => x.los_am).length) + (Object.values(ch369?.archiv || {}).length || 0)
+    + (reisen || []).reduce((s, r) => s + (r.tag || 0), 0);
+  const stufen = [
+    { ab: 0, e: "🌱", n: "Keimling" }, { ab: 3, e: "🌿", n: "Sprössling" }, { ab: 8, e: "☘️", n: "Junge Pflanze" },
+    { ab: 15, e: "🌾", n: "Kräftig gewachsen" }, { ab: 25, e: "🌻", n: "In Blüte" }, { ab: 40, e: "🌳", n: "Fest verwurzelt" },
+  ];
+  const stufe = [...stufen].reverse().find((s) => taten >= s.ab);
+  const naechste = stufen.find((s) => s.ab > taten);
+  const pflanzen = Array.from({ length: Math.min(12, Math.max(1, Math.ceil(taten / 3))) });
+  return (
+    <div style={{ padding: "26px 20px" }}>
+      <style>{`@keyframes sway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }`}</style>
+      <Eyebrow color={C.plum}>Dein Garten</Eyebrow>
+      <H size={25}>Was du pflegst, wächst</H>
+      <Card style={{ margin: "16px 0 14px", padding: 0, overflow: "hidden" }}>
+        <div style={{ background: jahreszeit.himmel, padding: "22px 16px 0", textAlign: "center", position: "relative" }}>
+          <div style={{ position: "absolute", top: 12, right: 16, fontSize: 24 }}>{jahreszeit.icon}</div>
+          <div style={{ fontSize: 62, marginBottom: 6 }}>{stufe.e}</div>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>{stufe.n}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 4, marginBottom: 14 }}>{jahreszeit.n} in deinem Garten</div>
+          <div style={{ background: jahreszeit.boden, display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", padding: "14px 12px" }}>
+            {pflanzen.map((_, i) => (
+              <span key={i} style={{ fontSize: 22, animation: `sway ${2.6 + (i % 4) * 0.4}s ease-in-out ${i * 0.12}s infinite`, display: "inline-block" }}>
+                {["🌱", "🌿", "☘️", "🌸", "🌼"][i % 5]}
+              </span>
+            ))}
+          </div>
+        </div>
+      </Card>
+      <Card style={{ marginBottom: 12 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, lineHeight: 1.9 }}>
+          🌱 {taten} Handlungen haben deinen Garten wachsen lassen<br />
+          🔥 {streak} Tage Serie · ✨ {punkte} Lichtpunkte
+        </div>
+        {naechste && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ height: 8, borderRadius: 5, background: C.beige, overflow: "hidden" }}>
+              <div style={{ width: `${Math.min(100, ((taten - stufe.ab) / (naechste.ab - stufe.ab)) * 100)}%`, height: "100%", background: `linear-gradient(90deg, ${C.sage}, ${C.gold})` }} />
+            </div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 6 }}>
+              Noch {naechste.ab - taten} Handlungen bis „{naechste.n}“ {naechste.e}
+            </div>
+          </div>
+        )}
+      </Card>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.8, lineHeight: 1.6 }}>
+        Jeder Journal-Eintrag, Traum, Qigong-Tag, Dankbarkeitsmoment und jedes Losgelassene lässt hier etwas wachsen. Dein Garten ist echt — er zählt nur, was du wirklich getan hast.
+      </div>
+    </div>
+  );
+}
+
+/* ── Wochen-Überraschung ────────────────────────────────────────────────────
+   Nicht alles muss immer sichtbar sein. Jede Woche öffnet sich genau ein
+   Bereich — verpackt, ungewiss, für sieben Tage. Wer die kleine Aufgabe
+   erledigt, bekommt Lichtpunkte. Danach schließt er sich wieder.          */
+
+const WOCHEN_POOL = [
+  { k: "traum",       icon: "🌙", t: "Traumbibliothek",      s: "Deine Traumsymbole & Muster",        aufgabe: "Halte einen Traum fest — Stichworte reichen." },
+  { k: "garten",      icon: "🌳", t: "Dein Garten",          s: "Was du pflegst, wächst sichtbar",    aufgabe: "Schau nach, wie weit dein Garten gewachsen ist." },
+  { k: "intuition",   icon: "🔮", t: "Intuitions-Training",  s: "Trainiere dein Gefühl",              aufgabe: "Spiel eine Runde — vertrau dem ersten Impuls." },
+  { k: "schatten",    icon: "🖤", t: "Schattenspiegel",      s: "Schreiben & verbrennen",             aufgabe: "Schreib etwas auf, das raus darf — und lass es brennen." },
+  { k: "leere",       icon: "🕊️", t: "Ritual der Leere",     s: "24 Stunden ohne App",                aufgabe: "Wähle dein Zeitfenster und starte." },
+  { k: "wochenorakel", icon: "🃏", t: "Wochen-Orakel",       s: "Die Karte deiner Coachin",           aufgabe: "Zieh die Karte dieser Woche." },
+];
+
+// Montag als Wochenanfang, Format 2026-KW35
+function wochenSchluessel(d = new Date()) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const tag = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - tag);
+  const jahresStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const kw = Math.ceil(((t - jahresStart) / 864e5 + 1) / 7);
+  return `${t.getUTCFullYear()}-KW${String(kw).padStart(2, "0")}`;
+}
+
+function WochenUeberraschung({ wochen, setWochen, go, addPunkte }) {
+  const woche = wochenSchluessel();
+  const aktuell = wochen?.woche === woche ? wochen : null;
+
+  // Neue Woche: ein Bereich wird gezogen — nie derselbe wie letzte Woche.
+  useEffect(() => {
+    if (aktuell) return;
+    const moeglich = WOCHEN_POOL.filter((m) => m.k !== wochen?.modul);
+    const gezogen = moeglich[Math.floor(Math.random() * moeglich.length)];
+    setWochen({ woche, modul: gezogen.k, geoeffnet: false, erledigt: false });
+  }, [woche]); // eslint-disable-line
+
+  if (!aktuell) return null;
+  const modul = WOCHEN_POOL.find((m) => m.k === aktuell.modul) || WOCHEN_POOL[0];
+
+  const oeffnen = () => {
+    setWochen({ ...aktuell, geoeffnet: true });
+    addPunkte?.(5, "Wochen-Überraschung geöffnet");
+  };
+
+  const erledigen = () => {
+    if (aktuell.erledigt) return;
+    setWochen({ ...aktuell, erledigt: true });
+    addPunkte?.(25, "Wochen-Aufgabe geschafft");
+  };
+
+  if (!aktuell.geoeffnet)
+    return (
+      <div style={{ padding: "0 20px 16px" }}>
+        <Card onClick={oeffnen} style={{
+          textAlign: "center", cursor: "pointer",
+          background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`,
+          border: `1.5px dashed ${C.goldSoft}`,
+        }}>
+          <div style={{ fontSize: 40, marginBottom: 6, animation: "floaty 3s ease-in-out infinite" }}>🎁</div>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>Deine Wochen-Überraschung</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.55, margin: "6px 0 12px" }}>
+            Ein Bereich öffnet sich nur für diese sieben Tage. Welcher — weißt du erst, wenn du tippst.
+          </p>
+          <Btn small>Öffnen ✨</Btn>
+        </Card>
+      </div>
+    );
+
+  return (
+    <div style={{ padding: "0 20px 16px" }}>
+      <Card style={{
+        background: aktuell.erledigt
+          ? `linear-gradient(135deg, ${C.card}, #EAF6EC)`
+          : `linear-gradient(135deg, ${C.card}, ${C.goldPale})`,
+        animation: "fadeUp .5s ease",
+      }}>
+        <Eyebrow color={C.plum}>Diese Woche geöffnet</Eyebrow>
+        <div style={{ display: "flex", gap: 13, alignItems: "center", marginTop: 4 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>{modul.icon}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{modul.t}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>{modul.s}</div>
+          </div>
+        </div>
+        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15, color: C.espresso, lineHeight: 1.6, margin: "12px 0 12px" }}>
+          {modul.aufgabe}
+        </p>
+        <div style={{ display: "flex", gap: 9 }}>
+          <Btn small onClick={() => go(modul.k)}>Hingehen</Btn>
+          <Btn small ghost onClick={erledigen} disabled={aktuell.erledigt}>
+            {aktuell.erledigt ? "✓ geschafft · +25" : "Erledigt · +25 ✨"}
+          </Btn>
+        </div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, margin: "10px 0 0" }}>
+          Am Montag schließt sich dieser Bereich wieder und ein neuer öffnet sich.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+/* ── Termin mit dir selbst ──────────────────────────────────────────────────
+   Eine Stunde pro Woche, die niemandem sonst gehört. Sie steht wie ein
+   echter Termin da — und lässt sich als Kalendereintrag mitnehmen.       */
+
+const WOCHENTAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+
+function naechstesDatum(wochentag, uhrzeit) {
+  const [h, m] = uhrzeit.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  const diff = (wochentag - d.getDay() + 7) % 7;
+  if (diff === 0 && d < new Date()) d.setDate(d.getDate() + 7);
+  else d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function icsDatei({ wochentag, uhrzeit, dauer, titel }) {
+  const start = naechstesDatum(wochentag, uhrzeit);
+  const ende = new Date(start.getTime() + dauer * 60000);
+  const f = (d) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const TAGE_ICS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+  return [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//smile2go//Selbsttermin//DE",
+    "BEGIN:VEVENT",
+    `UID:selbsttermin-${Date.now()}@smile2go`,
+    `DTSTAMP:${f(new Date())}`,
+    `DTSTART:${f(start)}`,
+    `DTEND:${f(ende)}`,
+    `RRULE:FREQ=WEEKLY;BYDAY=${TAGE_ICS[wochentag]}`,
+    `SUMMARY:${titel}`,
+    "DESCRIPTION:Diese Stunde gehört nur dir. — smile2go",
+    "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", "DESCRIPTION:Deine Stunde beginnt gleich",
+    "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR",
+  ].join("\r\n");
+}
+
+function SelbstTermin({ selbst, setSelbst, addPunkte }) {
+  const [tag, setTag] = useState(selbst?.wochentag ?? 0);
+  const [zeit, setZeit] = useState(selbst?.uhrzeit || "10:00");
+  const [dauer, setDauer] = useState(selbst?.dauer || 60);
+  const [was, setWas] = useState(selbst?.was || "");
+  const [hinweis, setHinweis] = useState("");
+
+  const woche = wochenSchluessel();
+  const dieseWocheGehalten = selbst?.gehalten?.includes(woche);
+  const serie = (selbst?.gehalten || []).length;
+
+  const speichern = () => {
+    setSelbst({ ...(selbst || {}), aktiv: true, wochentag: Number(tag), uhrzeit: zeit, dauer: Number(dauer), was: was.trim(), gehalten: selbst?.gehalten || [] });
+    setHinweis("✓ Dein Termin steht.");
+    setTimeout(() => setHinweis(""), 3000);
+  };
+
+  const gehalten = () => {
+    if (dieseWocheGehalten) return;
+    setSelbst({ ...selbst, gehalten: [...(selbst?.gehalten || []), woche] });
+    addPunkte?.(30, "Stunde für dich gehalten");
+  };
+
+  const kalender = () => {
+    const text = icsDatei({ wochentag: Number(tag), uhrzeit: zeit, dauer: Number(dauer), titel: was.trim() || "Meine Stunde" });
+    const url = URL.createObjectURL(new Blob([text], { type: "text/calendar" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = "meine-stunde.ics"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div style={{ padding: "22px 20px" }}>
+      <Eyebrow color={C.plum}>Termin mit dir selbst</Eyebrow>
+      <H size={25} style={{ marginBottom: 8 }}>Eine Stunde in der Woche</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
+        Termine mit anderen hältst du. Diesen hier auch: eine feste Stunde, die
+        niemandem sonst gehört. Nicht zum Aufräumen, nicht zum Nachholen — für dich.
+      </p>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <label style={{ flex: "1 1 150px" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Wochentag</div>
+            <select value={tag} onChange={(e) => setTag(e.target.value)} style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }}>
+              {WOCHENTAGE.map((t, i) => <option key={t} value={i}>{t}</option>)}
+            </select>
+          </label>
+          <label style={{ flex: "1 1 110px" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Uhrzeit</div>
+            <input type="time" value={zeit} onChange={(e) => setZeit(e.target.value)} style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }} />
+          </label>
+          <label style={{ flex: "1 1 110px" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Minuten</div>
+            <input type="number" step={15} min={15} value={dauer} onChange={(e) => setDauer(e.target.value)} style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }} />
+          </label>
+        </div>
+
+        <div style={{ marginTop: 6, marginBottom: 12 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Wofür ist diese Stunde? (optional)</div>
+          <input value={was} onChange={(e) => setWas(e.target.value)} placeholder="z. B. Spazieren ohne Handy · lesen · gar nichts"
+            style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }} />
+        </div>
+
+        <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+          <Btn small onClick={speichern}>{selbst?.aktiv ? "Ändern" : "Termin setzen"}</Btn>
+          <Btn small ghost onClick={kalender}>📅 In meinen Kalender</Btn>
+        </div>
+        {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.sage, fontWeight: 700, marginTop: 10 }}>{hinweis}</div>}
+      </Card>
+
+      {selbst?.aktiv && (
+        <>
+          <Card style={{ marginBottom: 14, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, border: "none", textAlign: "center" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.plum, fontWeight: 700 }}>Dein nächster Termin</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: C.espresso, marginTop: 6 }}>
+              {WOCHENTAGE[selbst.wochentag]} · {selbst.uhrzeit}
+            </div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 4 }}>
+              {selbst.dauer} Minuten{selbst.was ? ` · ${selbst.was}` : ""}
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <Btn small ghost={dieseWocheGehalten} onClick={gehalten} disabled={dieseWocheGehalten}>
+                {dieseWocheGehalten ? "✓ diese Woche gehalten" : "Diese Woche gehalten · +30 ✨"}
+              </Btn>
+            </div>
+          </Card>
+
+          {serie > 0 && (
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.sage, fontWeight: 700, textAlign: "center" }}>
+              🤍 {serie} {serie === 1 ? "Woche" : "Wochen"}, in denen du dir diese Stunde genommen hast
+            </p>
+          )}
+        </>
+      )}
+
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 16 }}>
+        Der Kalendereintrag wiederholt sich wöchentlich und erinnert dich 30 Minuten vorher.
+        Er liegt in deinem eigenen Kalender — wir sehen ihn nicht.
+      </p>
+    </div>
+  );
+}
+
+/* ── Karten über der Startseite ── */
+
+function WochenKarten({ wochen, setWochen, selbst, go, addPunkte }) {
+  const woche = wochenSchluessel();
+  const heute = new Date().getDay();
+  const gehalten = selbst?.gehalten?.includes(woche);
+  const heuteDran = selbst?.aktiv && Number(selbst.wochentag) === heute && !gehalten;
+
+  return (
+    <>
+      <WochenUeberraschung wochen={wochen} setWochen={setWochen} go={go} addPunkte={addPunkte} />
+      {heuteDran && (
+        <div style={{ padding: "0 20px 16px" }}>
+          <Card onClick={() => go("selbsttermin")} style={{
+            cursor: "pointer", display: "flex", gap: 13, alignItems: "center",
+            background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})`,
+          }}>
+            <div style={{ width: 46, height: 46, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🤍</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>Heute gehört dir eine Stunde</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
+                {selbst.uhrzeit} · {selbst.dauer} Min{selbst.was ? ` · ${selbst.was}` : ""}
+              </div>
+            </div>
+            <span style={{ color: C.gold, fontSize: 20 }}>›</span>
+          </Card>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ── Jahres-Rückblick ── */
 function Jahresrueckblick({ entries, qigong, dank, losgelassen, punkte, streak, drawn, reisen, feste }) {
   const jahr = new Date().getFullYear();
@@ -7206,7 +7631,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
-const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", traum: "Traumbibliothek", garten: "Dein Garten", selbsttermin: "Termin mit dir selbst", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -7267,6 +7692,9 @@ export default function IlhoApp() {
   const [ilhoAktiv, setIlhoAktiv] = useState(true);
   const [archetyp, setArchetyp] = useState(null);
   const [qigong, setQigong] = useState([]);
+  const [traeume, setTraeume] = useState([]);
+  const [wochen, setWochen] = useState(null);
+  const [selbst, setSelbst] = useState(null);
   const [achtsam, setAchtsam] = useState([]);
   const [dank, setDank] = useState([]);
   const [losgelassen, setLosgelassen] = useState([]);
@@ -7332,6 +7760,9 @@ export default function IlhoApp() {
     if (typeof s.ilhoAktiv === "boolean") setIlhoAktiv(s.ilhoAktiv);
     if (s.archetyp) setArchetyp(s.archetyp);
     if (s.qigong) setQigong(s.qigong);
+    if (s.traeume) setTraeume(s.traeume);
+    if (s.wochen) setWochen(s.wochen);
+    if (s.selbst) setSelbst(s.selbst);
     if (s.achtsam) setAchtsam(s.achtsam);
     if (s.dank) setDank(s.dank);
     if (s.losgelassen) setLosgelassen(s.losgelassen);
@@ -7353,9 +7784,9 @@ export default function IlhoApp() {
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo }));
+      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, traeume, wochen, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo }));
     } catch (e) {}
-  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, traeume, wochen, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
   // Echte Supabase-Session: stellt Login nach Reload/Google-Redirect wieder her.
   // Ohne konfiguriertes Supabase (kein .env) bleibt supabase === null und hier passiert nichts —
@@ -7402,10 +7833,10 @@ export default function IlhoApp() {
 
   useEffect(() => {
     if (!supabase || !user || !cloudBereit) return; // nichts speichern, bevor der Cloud-Stand geladen (oder als leer bestätigt) wurde
-    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
+    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, traeume, wochen, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
     const timer = setTimeout(() => { speichereAppState(state); }, 1200); // debounced, kein Schreiben bei jeder Mikro-Änderung
     return () => clearTimeout(timer);
-  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, traeume, wochen, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
   // Erreichbarkeit der Cloud einmal beim Start pruefen (pausiertes Projekt, Funkloch).
   useEffect(() => {
@@ -7520,7 +7951,7 @@ export default function IlhoApp() {
             )}
 
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 172 : 86, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><WochenKarten wochen={wochen} setWochen={setWochen} selbst={selbst} go={go} addPunkte={addPunkte} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} /></>}
               {tab === "impressum" && <Impressum />}
@@ -7549,6 +7980,9 @@ export default function IlhoApp() {
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
               {tab === "archetyp" && <ArchetypTest archetyp={archetyp} setArchetyp={setArchetyp} addPunkte={addPunkte} />}
               {tab === "flamme" && <Flamme flamme={flamme} setFlamme={setFlamme} addPunkte={addPunkte} />}
+              {tab === "traum" && <Traumbibliothek traeume={traeume} setTraeume={setTraeume} addPunkte={addPunkte} />}
+              {tab === "garten" && <Garten entries={entries} punkte={punkte} streak={streak} traeume={traeume} qigong={qigong} dank={dank} losgelassen={losgelassen} reisen={reisen} ch369={ch369} />}
+              {tab === "selbsttermin" && <SelbstTermin selbst={selbst} setSelbst={setSelbst} addPunkte={addPunkte} />}
               {tab === "qigong" && <Qigong qigong={qigong} setQigong={setQigong} addPunkte={addPunkte} />}
               {tab === "achtsamkeit" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} />}
               {tab === "dankbarkeit" && <Dankbarkeit dank={dank} setDank={setDank} addPunkte={addPunkte} />}
