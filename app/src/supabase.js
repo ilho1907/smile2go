@@ -990,3 +990,31 @@ export async function anfrageStatus(id, status) {
   const { error } = await supabase.from("anfragen").update({ status }).eq("id", id);
   return !error;
 }
+
+// ── Der Twin ihrer Coachin ─────────────────────────────────────────────────
+// Nicht das eigene Dossier (das hat eine Klientin nie), sondern das
+// freigegebene ihrer verbundenen Coachin — inklusive Name und, falls
+// vorhanden, dem Hinweis auf eine freigegebene Stimme.
+export async function ladeTwinMeinerCoachin(coachId) {
+  if (!supabase || !coachId) return null;
+
+  const { data: dossier, error } = await supabase
+    .from("coach_dossier_aktiv")
+    .select("id, coach_id, version, dossier, dossier_text, freigegeben, freigegeben_am")
+    .eq("coach_id", coachId)
+    .maybeSingle();
+  if (error) { console.warn("ladeTwinMeinerCoachin:", error.message); return null; }
+  if (!dossier?.freigegeben) return null;
+
+  const [{ data: coach }, { data: stimme }] = await Promise.all([
+    supabase.from("coaches").select("name").eq("id", coachId).maybeSingle(),
+    supabase.from("stimm_profil_aktiv").select("voice_id, anbieter").eq("coach_id", coachId).maybeSingle(),
+  ]);
+
+  return {
+    ...dossier,
+    coach_name: coach?.name || null,
+    voice_id: stimme?.voice_id || null,
+    stimm_anbieter: stimme?.anbieter || null,
+  };
+}

@@ -10,7 +10,7 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   ladeMeineDateien, ladeDateiHoch, dateiLink, loescheDatei,
   exportiereMeineDaten, loescheKonto, passwortZuruecksetzen, neuesPasswortSetzen,
   pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren, cloudErreichbar,
-  ladeCoachBeitraege, ladeCoachProfil, merkeEinladung,
+  ladeCoachBeitraege, ladeCoachProfil, merkeEinladung, ladeTwinMeinerCoachin,
   ladeMaterialien, ladeAngebote, ladeKursModule, ladeKursFortschritt,
   modulErledigt, modulZurueck, stelleAnfrage } from "./supabase";
 
@@ -7411,13 +7411,16 @@ export default function IlhoApp() {
   // Solange es keine Klientinnen-Coachin-Zuordnung gibt, ist das das eigene Dossier
   // (die Coachin erlebt ihre eigene ilho). Später kommt hier das Dossier der
   // verknüpften Coachin her — der Rest des Codes bleibt unverändert.
+  // Der Twin gehört der COACHIN, nicht der Nutzerin: geladen wird das
+  // freigegebene Dossier der verbundenen Coachin. Ohne Bindung kein Twin —
+  // dann spricht ilho in seinem eigenen, neutralen Ton.
   const [twin, setTwin] = useState(null);
   useEffect(() => {
-    if (!supabase || !user) { setTwin(null); return; }
+    if (!supabase || !user || !bindung?.coach_id) { setTwin(null); return; }
     let aktiv = true;
-    ladeEigenesDossier().then((d) => { if (aktiv && d?.freigegeben) setTwin(d); });
+    ladeTwinMeinerCoachin(bindung.coach_id).then((d) => { if (aktiv) setTwin(d); });
     return () => { aktiv = false; };
-  }, [supabase, user]);
+  }, [user, bindung?.coach_id]); // eslint-disable-line
   const twinTon = tonalitaetsZusatz(twin);
 
   useEffect(() => {
