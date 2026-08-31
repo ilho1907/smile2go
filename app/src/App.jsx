@@ -5529,6 +5529,7 @@ function Mehr({ go }) {
     { g: "Coaching", items: [
       { icon: "🌸", t: "Coaching", s: "Termine, Pakete & Fortschritt", tab: "coaching" },
       { icon: "🏆", t: "Challenges & Ziele", s: "Challenge, Aufgaben & Meilensteine", tab: "aufgaben" },
+      { icon: "🤍", t: "Me-Time", s: "Termin mit dir selbst · eine feste Stunde pro Woche", tab: "metime" },
       { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index & Trend", tab: "fortschritt" },
       { icon: "🎓", t: "Kurse", s: "Deine Kurse · Shop", tab: "kurse" },
     ] },
@@ -7098,6 +7099,185 @@ function Loslassen({ losgelassen, setLosgelassen, addPunkte }) {
   );
 }
 
+/* ── Me-Time · Termin mit dir selbst ────────────────────────────────────────
+   Termine mit anderen hält man. Diesen hier auch: eine feste Stunde pro
+   Woche, die niemandem sonst gehört — mit Kalendereintrag zum Mitnehmen. */
+
+// Montag als Wochenanfang, Format 2026-KW35
+function wochenSchluessel(d = new Date()) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const tag = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - tag);
+  const jahresStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const kw = Math.ceil(((t - jahresStart) / 864e5 + 1) / 7);
+  return `${t.getUTCFullYear()}-KW${String(kw).padStart(2, "0")}`;
+}
+
+const WOCHENTAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+
+function naechstesDatum(wochentag, uhrzeit) {
+  const [h, m] = uhrzeit.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  const diff = (wochentag - d.getDay() + 7) % 7;
+  if (diff === 0 && d < new Date()) d.setDate(d.getDate() + 7);
+  else d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function icsDatei({ wochentag, uhrzeit, dauer, titel }) {
+  const start = naechstesDatum(wochentag, uhrzeit);
+  const ende = new Date(start.getTime() + dauer * 60000);
+  const f = (d) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const TAGE_ICS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+  return [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//smile2go//Selbsttermin//DE",
+    "BEGIN:VEVENT",
+    `UID:selbsttermin-${Date.now()}@smile2go`,
+    `DTSTAMP:${f(new Date())}`,
+    `DTSTART:${f(start)}`,
+    `DTEND:${f(ende)}`,
+    `RRULE:FREQ=WEEKLY;BYDAY=${TAGE_ICS[wochentag]}`,
+    `SUMMARY:${titel}`,
+    "DESCRIPTION:Diese Stunde gehört nur dir. — smile2go",
+    "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", "DESCRIPTION:Deine Stunde beginnt gleich",
+    "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR",
+  ].join("\r\n");
+}
+
+function SelbstTermin({ selbst, setSelbst, addPunkte }) {
+  const [tag, setTag] = useState(selbst?.wochentag ?? 0);
+  const [zeit, setZeit] = useState(selbst?.uhrzeit || "10:00");
+  const [dauer, setDauer] = useState(selbst?.dauer || 60);
+  const [was, setWas] = useState(selbst?.was || "");
+  const [hinweis, setHinweis] = useState("");
+
+  const woche = wochenSchluessel();
+  const dieseWocheGehalten = selbst?.gehalten?.includes(woche);
+  const serie = (selbst?.gehalten || []).length;
+
+  const speichern = () => {
+    setSelbst({ ...(selbst || {}), aktiv: true, wochentag: Number(tag), uhrzeit: zeit, dauer: Number(dauer), was: was.trim(), gehalten: selbst?.gehalten || [] });
+    setHinweis("✓ Dein Termin steht.");
+    setTimeout(() => setHinweis(""), 3000);
+  };
+
+  const gehalten = () => {
+    if (dieseWocheGehalten) return;
+    setSelbst({ ...selbst, gehalten: [...(selbst?.gehalten || []), woche] });
+    addPunkte?.(30, "Stunde für dich gehalten");
+  };
+
+  const kalender = () => {
+    const text = icsDatei({ wochentag: Number(tag), uhrzeit: zeit, dauer: Number(dauer), titel: was.trim() || "Meine Stunde" });
+    const url = URL.createObjectURL(new Blob([text], { type: "text/calendar" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = "meine-stunde.ics"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div style={{ padding: "22px 20px" }}>
+      <Eyebrow color={C.plum}>Me-Time</Eyebrow>
+      <H size={25} style={{ marginBottom: 8 }}>Dein Termin mit dir selbst</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
+        Termine mit anderen hältst du. Diesen hier auch: eine feste Stunde, die
+        niemandem sonst gehört. Nicht zum Aufräumen, nicht zum Nachholen — für dich.
+      </p>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <label style={{ flex: "1 1 150px" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Wochentag</div>
+            <select value={tag} onChange={(e) => setTag(e.target.value)} style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }}>
+              {WOCHENTAGE.map((t, i) => <option key={t} value={i}>{t}</option>)}
+            </select>
+          </label>
+          <label style={{ flex: "1 1 110px" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Uhrzeit</div>
+            <input type="time" value={zeit} onChange={(e) => setZeit(e.target.value)} style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }} />
+          </label>
+          <label style={{ flex: "1 1 110px" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Minuten</div>
+            <input type="number" step={15} min={15} value={dauer} onChange={(e) => setDauer(e.target.value)} style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }} />
+          </label>
+        </div>
+
+        <div style={{ marginTop: 6, marginBottom: 12 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Wofür ist diese Stunde? (optional)</div>
+          <input value={was} onChange={(e) => setWas(e.target.value)} placeholder="z. B. Spazieren ohne Handy · lesen · gar nichts"
+            style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }} />
+        </div>
+
+        <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+          <Btn small onClick={speichern}>{selbst?.aktiv ? "Ändern" : "Termin setzen"}</Btn>
+          <Btn small ghost onClick={kalender}>📅 In meinen Kalender</Btn>
+        </div>
+        {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.sage, fontWeight: 700, marginTop: 10 }}>{hinweis}</div>}
+      </Card>
+
+      {selbst?.aktiv && (
+        <>
+          <Card style={{ marginBottom: 14, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, border: "none", textAlign: "center" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.plum, fontWeight: 700 }}>Dein nächster Termin</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: C.espresso, marginTop: 6 }}>
+              {WOCHENTAGE[selbst.wochentag]} · {selbst.uhrzeit}
+            </div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 4 }}>
+              {selbst.dauer} Minuten{selbst.was ? ` · ${selbst.was}` : ""}
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <Btn small ghost={dieseWocheGehalten} onClick={gehalten} disabled={dieseWocheGehalten}>
+                {dieseWocheGehalten ? "✓ diese Woche gehalten" : "Diese Woche gehalten · +30 ✨"}
+              </Btn>
+            </div>
+          </Card>
+
+          {serie > 0 && (
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.sage, fontWeight: 700, textAlign: "center" }}>
+              🤍 {serie} {serie === 1 ? "Woche" : "Wochen"}, in denen du dir diese Stunde genommen hast
+            </p>
+          )}
+        </>
+      )}
+
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 16 }}>
+        Der Kalendereintrag wiederholt sich wöchentlich und erinnert dich 30 Minuten vorher.
+        Er liegt in deinem eigenen Kalender — wir sehen ihn nicht.
+      </p>
+    </div>
+  );
+}
+
+/* ── Karten über der Startseite ── */
+/* ── Me-Time-Erinnerung auf der Startseite ── */
+
+function MeTimeKarte({ selbst, go }) {
+  const woche = wochenSchluessel();
+  const heute = new Date().getDay();
+  const gehalten = selbst?.gehalten?.includes(woche);
+  if (!selbst?.aktiv || Number(selbst.wochentag) !== heute || gehalten) return null;
+
+  return (
+    <div style={{ padding: "0 20px 16px" }}>
+      <Card onClick={() => go("metime")} style={{
+        cursor: "pointer", display: "flex", gap: 13, alignItems: "center",
+        background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})`,
+      }}>
+        <div style={{ width: 46, height: 46, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🤍</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>Heute gehört dir eine Stunde</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
+            {selbst.uhrzeit} · {selbst.dauer} Min{selbst.was ? ` · ${selbst.was}` : ""}
+          </div>
+        </div>
+        <span style={{ color: C.gold, fontSize: 20 }}>›</span>
+      </Card>
+    </div>
+  );
+}
+
 /* ── Jahres-Rückblick ── */
 function Jahresrueckblick({ entries, qigong, dank, losgelassen, punkte, streak, drawn, reisen, feste }) {
   const jahr = new Date().getFullYear();
@@ -7226,7 +7406,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
-const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -7287,6 +7467,7 @@ export default function IlhoApp() {
   const [ilhoAktiv, setIlhoAktiv] = useState(true);
   const [archetyp, setArchetyp] = useState(null);
   const [qigong, setQigong] = useState([]);
+  const [selbst, setSelbst] = useState(null);
   const [achtsam, setAchtsam] = useState([]);
   const [dank, setDank] = useState([]);
   const [losgelassen, setLosgelassen] = useState([]);
@@ -7352,6 +7533,7 @@ export default function IlhoApp() {
     if (typeof s.ilhoAktiv === "boolean") setIlhoAktiv(s.ilhoAktiv);
     if (s.archetyp) setArchetyp(s.archetyp);
     if (s.qigong) setQigong(s.qigong);
+    if (s.selbst) setSelbst(s.selbst);
     if (s.achtsam) setAchtsam(s.achtsam);
     if (s.dank) setDank(s.dank);
     if (s.losgelassen) setLosgelassen(s.losgelassen);
@@ -7373,9 +7555,9 @@ export default function IlhoApp() {
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo }));
+      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo }));
     } catch (e) {}
-  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
   // Echte Supabase-Session: stellt Login nach Reload/Google-Redirect wieder her.
   // Ohne konfiguriertes Supabase (kein .env) bleibt supabase === null und hier passiert nichts —
@@ -7425,10 +7607,10 @@ export default function IlhoApp() {
 
   useEffect(() => {
     if (!supabase || !user || !cloudBereit) return; // nichts speichern, bevor der Cloud-Stand geladen (oder als leer bestätigt) wurde
-    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
+    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
     const timer = setTimeout(() => { speichereAppState(state); }, 1200); // debounced, kein Schreiben bei jeder Mikro-Änderung
     return () => clearTimeout(timer);
-  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
   // Erreichbarkeit der Cloud einmal beim Start pruefen (pausiertes Projekt, Funkloch).
   useEffect(() => {
@@ -7543,7 +7725,7 @@ export default function IlhoApp() {
             )}
 
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 172 : 86, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><MeTimeKarte selbst={selbst} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} /></>}
               {tab === "impressum" && <Impressum />}
@@ -7572,6 +7754,7 @@ export default function IlhoApp() {
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
               {tab === "archetyp" && <ArchetypTest archetyp={archetyp} setArchetyp={setArchetyp} addPunkte={addPunkte} />}
               {tab === "flamme" && <Flamme flamme={flamme} setFlamme={setFlamme} addPunkte={addPunkte} />}
+              {tab === "metime" && <SelbstTermin selbst={selbst} setSelbst={setSelbst} addPunkte={addPunkte} />}
               {tab === "qigong" && <Qigong qigong={qigong} setQigong={setQigong} addPunkte={addPunkte} />}
               {tab === "achtsamkeit" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} />}
               {tab === "dankbarkeit" && <Dankbarkeit dank={dank} setDank={setDank} addPunkte={addPunkte} />}
