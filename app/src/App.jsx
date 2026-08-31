@@ -5529,7 +5529,7 @@ function Mehr({ go }) {
     { g: "Coaching", items: [
       { icon: "🌸", t: "Coaching", s: "Termine, Pakete & Fortschritt", tab: "coaching" },
       { icon: "🏆", t: "Challenges & Ziele", s: "Challenge, Aufgaben & Meilensteine", tab: "aufgaben" },
-      { icon: "🤍", t: "Me-Time", s: "Termin mit dir selbst · eine feste Stunde pro Woche", tab: "metime" },
+      { icon: "🤍", t: "Me-Time", s: "Termin mit dir selbst · Wellness, Essen, Reisen", tab: "metime" },
       { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index & Trend", tab: "fortschritt" },
       { icon: "🎓", t: "Kurse", s: "Deine Kurse · Shop", tab: "kurse" },
     ] },
@@ -7099,165 +7099,242 @@ function Loslassen({ losgelassen, setLosgelassen, addPunkte }) {
   );
 }
 
-/* ── Me-Time · Termin mit dir selbst ────────────────────────────────────────
-   Termine mit anderen hält man. Diesen hier auch: eine feste Stunde pro
-   Woche, die niemandem sonst gehört — mit Kalendereintrag zum Mitnehmen. */
+/* ── Me-Time · Termine mit dir selbst ───────────────────────────────────────
+   Kein Vorsatz, sondern ein Eintrag: Datum wählen, Art wählen, in einem Satz
+   sagen worum es geht — fertig. Danach steht er da wie jeder andere Termin
+   und lässt sich in den eigenen Kalender mitnehmen.                       */
 
-// Montag als Wochenanfang, Format 2026-KW35
-function wochenSchluessel(d = new Date()) {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const tag = t.getUTCDay() || 7;
-  t.setUTCDate(t.getUTCDate() + 4 - tag);
-  const jahresStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-  const kw = Math.ceil(((t - jahresStart) / 864e5 + 1) / 7);
-  return `${t.getUTCFullYear()}-KW${String(kw).padStart(2, "0")}`;
-}
+const METIME_ARTEN = [
+  { k: "wellness", icon: "🧖‍♀️", t: "Wellness", bsp: "z. B. Sauna, langes Bad, Massage" },
+  { k: "essen",    icon: "🍽️",  t: "Essen",    bsp: "z. B. in Ruhe kochen, Lieblingscafé" },
+  { k: "reisen",   icon: "✈️",  t: "Reisen",   bsp: "z. B. Tagesausflug, ein Wochenende weg" },
+  { k: "anderes",  icon: "✦",   t: "Anderes",  bsp: "z. B. lesen, spazieren, gar nichts" },
+];
 
-const WOCHENTAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-
-function naechstesDatum(wochentag, uhrzeit) {
-  const [h, m] = uhrzeit.split(":").map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  const diff = (wochentag - d.getDay() + 7) % 7;
-  if (diff === 0 && d < new Date()) d.setDate(d.getDate() + 7);
-  else d.setDate(d.getDate() + diff);
-  return d;
-}
-
-function icsDatei({ wochentag, uhrzeit, dauer, titel }) {
-  const start = naechstesDatum(wochentag, uhrzeit);
-  const ende = new Date(start.getTime() + dauer * 60000);
+function icsTermin({ datum, uhrzeit, dauer, titel }) {
+  const start = new Date(`${datum}T${uhrzeit || "10:00"}`);
+  const ende = new Date(start.getTime() + (dauer || 60) * 60000);
   const f = (d) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const TAGE_ICS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
   return [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//smile2go//Selbsttermin//DE",
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//smile2go//Me-Time//DE",
     "BEGIN:VEVENT",
-    `UID:selbsttermin-${Date.now()}@smile2go`,
+    `UID:metime-${start.getTime()}@smile2go`,
     `DTSTAMP:${f(new Date())}`,
     `DTSTART:${f(start)}`,
     `DTEND:${f(ende)}`,
-    `RRULE:FREQ=WEEKLY;BYDAY=${TAGE_ICS[wochentag]}`,
-    `SUMMARY:${titel}`,
-    "DESCRIPTION:Diese Stunde gehört nur dir. — smile2go",
-    "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", "DESCRIPTION:Deine Stunde beginnt gleich",
+    `SUMMARY:Me-Time · ${titel}`,
+    "DESCRIPTION:Diese Zeit gehört dir. — smile2go",
+    "BEGIN:VALARM", "TRIGGER:-PT60M", "ACTION:DISPLAY", "DESCRIPTION:Deine Me-Time beginnt bald",
     "END:VALARM",
     "END:VEVENT", "END:VCALENDAR",
   ].join("\r\n");
 }
 
-function SelbstTermin({ selbst, setSelbst, addPunkte }) {
-  const [tag, setTag] = useState(selbst?.wochentag ?? 0);
-  const [zeit, setZeit] = useState(selbst?.uhrzeit || "10:00");
-  const [dauer, setDauer] = useState(selbst?.dauer || 60);
-  const [was, setWas] = useState(selbst?.was || "");
+function kalenderMitnehmen(t) {
+  const text = icsTermin({ datum: t.datum, uhrzeit: t.uhrzeit, dauer: t.dauer, titel: t.text || METIME_ARTEN.find((a) => a.k === t.art)?.t || "Me-Time" });
+  const url = URL.createObjectURL(new Blob([text], { type: "text/calendar" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = "me-time.ics"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function MeTime({ metime, setMetime, addPunkte }) {
+  const [offen, setOffen] = useState(false);
+  const [datum, setDatum] = useState("");
+  const [uhrzeit, setUhrzeit] = useState("10:00");
+  const [dauer, setDauer] = useState(60);
+  const [art, setArt] = useState("wellness");
+  const [text, setText] = useState("");
   const [hinweis, setHinweis] = useState("");
 
-  const woche = wochenSchluessel();
-  const dieseWocheGehalten = selbst?.gehalten?.includes(woche);
-  const serie = (selbst?.gehalten || []).length;
+  const liste = [...(metime || [])].sort((a, b) => `${a.datum}T${a.uhrzeit}`.localeCompare(`${b.datum}T${b.uhrzeit}`));
+  const heuteIso = new Date().toISOString().slice(0, 10);
+  const kommende = liste.filter((t) => t.datum >= heuteIso && !t.erledigt);
+  const vergangene = liste.filter((t) => t.datum < heuteIso || t.erledigt).reverse();
 
-  const speichern = () => {
-    setSelbst({ ...(selbst || {}), aktiv: true, wochentag: Number(tag), uhrzeit: zeit, dauer: Number(dauer), was: was.trim(), gehalten: selbst?.gehalten || [] });
+  const eintragen = () => {
+    if (!datum) { setHinweis("Bitte wähle zuerst ein Datum."); return; }
+    const neu = {
+      id: `${Date.now()}`, datum, uhrzeit, dauer: Number(dauer),
+      art, text: text.trim(), erledigt: false,
+    };
+    setMetime([...(metime || []), neu]);
+    addPunkte?.(15, "Me-Time eingetragen");
+    setOffen(false); setDatum(""); setText(""); setArt("wellness"); setUhrzeit("10:00"); setDauer(60);
     setHinweis("✓ Dein Termin steht.");
-    setTimeout(() => setHinweis(""), 3000);
+    setTimeout(() => setHinweis(""), 3500);
   };
 
-  const gehalten = () => {
-    if (dieseWocheGehalten) return;
-    setSelbst({ ...selbst, gehalten: [...(selbst?.gehalten || []), woche] });
-    addPunkte?.(30, "Stunde für dich gehalten");
+  const erledigen = (id) => {
+    setMetime((metime || []).map((t) => (t.id === id ? { ...t, erledigt: true } : t)));
+    addPunkte?.(30, "Me-Time gehalten");
   };
 
-  const kalender = () => {
-    const text = icsDatei({ wochentag: Number(tag), uhrzeit: zeit, dauer: Number(dauer), titel: was.trim() || "Meine Stunde" });
-    const url = URL.createObjectURL(new Blob([text], { type: "text/calendar" }));
-    const a = document.createElement("a");
-    a.href = url; a.download = "meine-stunde.ics"; a.click();
-    URL.revokeObjectURL(url);
+  const loeschen = (id) => setMetime((metime || []).filter((t) => t.id !== id));
+
+  const zeigDatum = (t) => {
+    const d = new Date(`${t.datum}T${t.uhrzeit || "10:00"}`);
+    return d.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "long" });
+  };
+
+  const feld = {
+    width: "100%", padding: "12px 13px", fontSize: 15, fontFamily: "system-ui, sans-serif",
+    border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso,
+    outline: "none", boxSizing: "border-box",
   };
 
   return (
     <div style={{ padding: "22px 20px" }}>
       <Eyebrow color={C.plum}>Me-Time</Eyebrow>
-      <H size={25} style={{ marginBottom: 8 }}>Dein Termin mit dir selbst</H>
+      <H size={25} style={{ marginBottom: 8 }}>Zeit, die dir gehört</H>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
-        Termine mit anderen hältst du. Diesen hier auch: eine feste Stunde, die
-        niemandem sonst gehört. Nicht zum Aufräumen, nicht zum Nachholen — für dich.
+        Termine mit anderen hältst du. Diese hier auch: trag sie ein wie jeden
+        anderen Termin — mit Datum, damit sie wirklich stattfindet.
       </p>
 
-      <Card style={{ marginBottom: 14 }}>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <label style={{ flex: "1 1 150px" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Wochentag</div>
-            <select value={tag} onChange={(e) => setTag(e.target.value)} style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }}>
-              {WOCHENTAGE.map((t, i) => <option key={t} value={i}>{t}</option>)}
-            </select>
-          </label>
-          <label style={{ flex: "1 1 110px" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Uhrzeit</div>
-            <input type="time" value={zeit} onChange={(e) => setZeit(e.target.value)} style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }} />
-          </label>
-          <label style={{ flex: "1 1 110px" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Minuten</div>
-            <input type="number" step={15} min={15} value={dauer} onChange={(e) => setDauer(e.target.value)} style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }} />
-          </label>
+      {!offen && (
+        <div style={{ marginBottom: 18 }}>
+          <Btn full onClick={() => setOffen(true)}>＋ Termin vereinbaren</Btn>
         </div>
+      )}
 
-        <div style={{ marginTop: 6, marginBottom: 12 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Wofür ist diese Stunde? (optional)</div>
-          <input value={was} onChange={(e) => setWas(e.target.value)} placeholder="z. B. Spazieren ohne Handy · lesen · gar nichts"
-            style={{ width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }} />
-        </div>
+      {hinweis && (
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.sage, fontWeight: 700, marginBottom: 14 }}>{hinweis}</div>
+      )}
 
-        <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
-          <Btn small onClick={speichern}>{selbst?.aktiv ? "Ändern" : "Termin setzen"}</Btn>
-          <Btn small ghost onClick={kalender}>📅 In meinen Kalender</Btn>
-        </div>
-        {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.sage, fontWeight: 700, marginTop: 10 }}>{hinweis}</div>}
-      </Card>
+      {offen && (
+        <Card style={{ marginBottom: 18, animation: "fadeUp .3s ease" }}>
+          {/* 1 · Wann */}
+          <Eyebrow color={C.plum}>1 · Wann?</Eyebrow>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "8px 0 16px" }}>
+            <div style={{ flex: "2 1 160px" }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Datum</div>
+              <input type="date" value={datum} min={heuteIso} onChange={(e) => setDatum(e.target.value)} style={feld} />
+            </div>
+            <div style={{ flex: "1 1 100px" }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Uhrzeit</div>
+              <input type="time" value={uhrzeit} onChange={(e) => setUhrzeit(e.target.value)} style={feld} />
+            </div>
+            <div style={{ flex: "1 1 90px" }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Minuten</div>
+              <input type="number" step={15} min={15} value={dauer} onChange={(e) => setDauer(e.target.value)} style={feld} />
+            </div>
+          </div>
 
-      {selbst?.aktiv && (
+          {/* 2 · Was */}
+          <Eyebrow color={C.plum}>2 · Wofür?</Eyebrow>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, margin: "8px 0 14px" }}>
+            {METIME_ARTEN.map((a) => {
+              const aktiv = art === a.k;
+              return (
+                <button key={a.k} onClick={() => setArt(a.k)} style={{
+                  display: "flex", alignItems: "center", gap: 9, padding: "12px 13px",
+                  borderRadius: 13, cursor: "pointer", minHeight: 50, textAlign: "left",
+                  border: `1.5px solid ${aktiv ? C.rose : C.line}`,
+                  background: aktiv ? C.roseSoft : C.card,
+                }}>
+                  <span style={{ fontSize: 20 }}>{a.icon}</span>
+                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 700, color: aktiv ? C.plum : C.espresso }}>{a.t}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && eintragen()}
+            placeholder={METIME_ARTEN.find((a) => a.k === art)?.bsp}
+            style={{ ...feld, marginBottom: 14 }}
+          />
+
+          <div style={{ display: "flex", gap: 9 }}>
+            <Btn onClick={eintragen}>Termin eintragen</Btn>
+            <Btn ghost onClick={() => { setOffen(false); setHinweis(""); }}>Abbrechen</Btn>
+          </div>
+        </Card>
+      )}
+
+      {kommende.length > 0 && (
         <>
-          <Card style={{ marginBottom: 14, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, border: "none", textAlign: "center" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.plum, fontWeight: 700 }}>Dein nächster Termin</div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: C.espresso, marginTop: 6 }}>
-              {WOCHENTAGE[selbst.wochentag]} · {selbst.uhrzeit}
-            </div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 4 }}>
-              {selbst.dauer} Minuten{selbst.was ? ` · ${selbst.was}` : ""}
-            </div>
-            <div style={{ marginTop: 14 }}>
-              <Btn small ghost={dieseWocheGehalten} onClick={gehalten} disabled={dieseWocheGehalten}>
-                {dieseWocheGehalten ? "✓ diese Woche gehalten" : "Diese Woche gehalten · +30 ✨"}
-              </Btn>
-            </div>
-          </Card>
-
-          {serie > 0 && (
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.sage, fontWeight: 700, textAlign: "center" }}>
-              🤍 {serie} {serie === 1 ? "Woche" : "Wochen"}, in denen du dir diese Stunde genommen hast
-            </p>
-          )}
+          <Eyebrow color={C.plum}>Deine nächsten Zeiten</Eyebrow>
+          <div style={{ marginTop: 8, marginBottom: 20 }}>
+            {kommende.map((t) => {
+              const a = METIME_ARTEN.find((x) => x.k === t.art) || METIME_ARTEN[3];
+              const istHeute = t.datum === heuteIso;
+              return (
+                <Card key={t.id} style={{
+                  marginBottom: 10,
+                  background: istHeute ? `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})` : C.card,
+                  border: istHeute ? "none" : `1px solid ${C.line}`,
+                }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21, flexShrink: 0 }}>{a.icon}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso }}>
+                        {istHeute ? "Heute" : zeigDatum(t)} · {t.uhrzeit}
+                      </div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 2 }}>
+                        {a.t}{t.text ? ` · ${t.text}` : ""} · {t.dauer} Min
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                    <Btn small onClick={() => erledigen(t.id)}>Gehalten · +30 ✨</Btn>
+                    <Btn small ghost onClick={() => kalenderMitnehmen(t)}>📅 Kalender</Btn>
+                    <button onClick={() => loeschen(t.id)} style={{ background: "none", border: "none", color: C.ink, opacity: 0.55, fontFamily: "system-ui, sans-serif", fontSize: 12.5, cursor: "pointer", minHeight: 40 }}>entfernen</button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </>
       )}
 
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 16 }}>
-        Der Kalendereintrag wiederholt sich wöchentlich und erinnert dich 30 Minuten vorher.
-        Er liegt in deinem eigenen Kalender — wir sehen ihn nicht.
-      </p>
+      {kommende.length === 0 && !offen && (
+        <Card style={{ textAlign: "center", marginBottom: 18 }}>
+          <div style={{ fontSize: 30, marginBottom: 8 }}>🤍</div>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            Noch nichts eingetragen. Was hättest du diese Woche gern für dich —
+            eine Stunde Sauna, ein Essen in Ruhe, ein Tag weg?
+          </p>
+        </Card>
+      )}
+
+      {vergangene.length > 0 && (
+        <>
+          <Eyebrow color={C.sage}>Gehalten</Eyebrow>
+          <div style={{ marginTop: 8 }}>
+            {vergangene.slice(0, 12).map((t) => {
+              const a = METIME_ARTEN.find((x) => x.k === t.art) || METIME_ARTEN[3];
+              return (
+                <div key={t.id} style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.line}` }}>
+                  <span style={{ fontSize: 17 }}>{a.icon}</span>
+                  <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>
+                    {zeigDatum(t)} · {a.t}{t.text ? ` · ${t.text}` : ""}
+                  </span>
+                  {t.erledigt && <span style={{ color: C.sage, fontWeight: 700, fontSize: 13 }}>✓</span>}
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.sage, fontWeight: 700, marginTop: 12 }}>
+            🤍 {vergangene.filter((t) => t.erledigt).length}× hast du dir diese Zeit wirklich genommen
+          </p>
+        </>
+      )}
     </div>
   );
 }
 
-/* ── Karten über der Startseite ── */
 /* ── Me-Time-Erinnerung auf der Startseite ── */
 
-function MeTimeKarte({ selbst, go }) {
-  const woche = wochenSchluessel();
-  const heute = new Date().getDay();
-  const gehalten = selbst?.gehalten?.includes(woche);
-  if (!selbst?.aktiv || Number(selbst.wochentag) !== heute || gehalten) return null;
+function MeTimeKarte({ metime, go }) {
+  const heuteIso = new Date().toISOString().slice(0, 10);
+  const heute = (metime || []).filter((t) => t.datum === heuteIso && !t.erledigt);
+  if (heute.length === 0) return null;
+  const t = heute[0];
+  const a = METIME_ARTEN.find((x) => x.k === t.art) || METIME_ARTEN[3];
 
   return (
     <div style={{ padding: "0 20px 16px" }}>
@@ -7265,11 +7342,11 @@ function MeTimeKarte({ selbst, go }) {
         cursor: "pointer", display: "flex", gap: 13, alignItems: "center",
         background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})`,
       }}>
-        <div style={{ width: 46, height: 46, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🤍</div>
+        <div style={{ width: 46, height: 46, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{a.icon}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>Heute gehört dir eine Stunde</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>Heute ist deine Me-Time</div>
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
-            {selbst.uhrzeit} · {selbst.dauer} Min{selbst.was ? ` · ${selbst.was}` : ""}
+            {t.uhrzeit} · {a.t}{t.text ? ` · ${t.text}` : ""}
           </div>
         </div>
         <span style={{ color: C.gold, fontSize: 20 }}>›</span>
@@ -7467,7 +7544,7 @@ export default function IlhoApp() {
   const [ilhoAktiv, setIlhoAktiv] = useState(true);
   const [archetyp, setArchetyp] = useState(null);
   const [qigong, setQigong] = useState([]);
-  const [selbst, setSelbst] = useState(null);
+  const [metime, setMetime] = useState([]);
   const [achtsam, setAchtsam] = useState([]);
   const [dank, setDank] = useState([]);
   const [losgelassen, setLosgelassen] = useState([]);
@@ -7533,7 +7610,7 @@ export default function IlhoApp() {
     if (typeof s.ilhoAktiv === "boolean") setIlhoAktiv(s.ilhoAktiv);
     if (s.archetyp) setArchetyp(s.archetyp);
     if (s.qigong) setQigong(s.qigong);
-    if (s.selbst) setSelbst(s.selbst);
+    if (s.metime) setMetime(s.metime);
     if (s.achtsam) setAchtsam(s.achtsam);
     if (s.dank) setDank(s.dank);
     if (s.losgelassen) setLosgelassen(s.losgelassen);
@@ -7555,9 +7632,9 @@ export default function IlhoApp() {
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo }));
+      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo }));
     } catch (e) {}
-  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
   // Echte Supabase-Session: stellt Login nach Reload/Google-Redirect wieder her.
   // Ohne konfiguriertes Supabase (kein .env) bleibt supabase === null und hier passiert nichts —
@@ -7607,10 +7684,10 @@ export default function IlhoApp() {
 
   useEffect(() => {
     if (!supabase || !user || !cloudBereit) return; // nichts speichern, bevor der Cloud-Stand geladen (oder als leer bestätigt) wurde
-    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
+    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
     const timer = setTimeout(() => { speichereAppState(state); }, 1200); // debounced, kein Schreiben bei jeder Mikro-Änderung
     return () => clearTimeout(timer);
-  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, selbst, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
 
   // Erreichbarkeit der Cloud einmal beim Start pruefen (pausiertes Projekt, Funkloch).
   useEffect(() => {
@@ -7725,7 +7802,7 @@ export default function IlhoApp() {
             )}
 
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 172 : 86, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><MeTimeKarte selbst={selbst} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} /></>}
               {tab === "impressum" && <Impressum />}
@@ -7754,7 +7831,7 @@ export default function IlhoApp() {
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
               {tab === "archetyp" && <ArchetypTest archetyp={archetyp} setArchetyp={setArchetyp} addPunkte={addPunkte} />}
               {tab === "flamme" && <Flamme flamme={flamme} setFlamme={setFlamme} addPunkte={addPunkte} />}
-              {tab === "metime" && <SelbstTermin selbst={selbst} setSelbst={setSelbst} addPunkte={addPunkte} />}
+              {tab === "metime" && <MeTime metime={metime} setMetime={setMetime} addPunkte={addPunkte} />}
               {tab === "qigong" && <Qigong qigong={qigong} setQigong={setQigong} addPunkte={addPunkte} />}
               {tab === "achtsamkeit" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} />}
               {tab === "dankbarkeit" && <Dankbarkeit dank={dank} setDank={setDank} addPunkte={addPunkte} />}
