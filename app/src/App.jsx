@@ -5201,7 +5201,7 @@ function AppGuide() {
             </span>
           </button>
         ) : (
-          <video controls autoPlay playsInline src="/begruessung.mp4" style={{ width: "100%", borderRadius: 12, background: C.espresso, maxHeight: 380 }}>
+          <video controls autoPlay playsInline src="/begruessung_klein.mp4" style={{ width: "100%", borderRadius: 12, background: C.espresso, maxHeight: 380 }}>
             Dein Browser kann das Video nicht abspielen.
           </video>
         )}

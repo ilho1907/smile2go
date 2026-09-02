@@ -2,7 +2,12 @@ node_modules
 dist
 .env
 *.timestamp-*.mjs
+.vercel
+
+# Originale bleiben lokal - im Web laufen die komprimierten Fassungen
 public/media/orakel/
 public/begruessung.mp4
 public/media/video/*.mp4
-.vercel
+!public/media/video/*_klein.mp4
+public/media/img/*.png
+public/media/audio/*.wav

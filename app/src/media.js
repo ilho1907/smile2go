@@ -58,8 +58,8 @@ export const KARTEN = {
 
 export const IMG = {
   orakel:      `${HF}/hf_20260715_231226_703bb6d2-2492-4231-9e47-18eb1af3ed6a.png`,
-  lichtpunkte: "/media/img/lichtpunkte.png",
-  welcome:     "/media/img/welcome.png",
+  lichtpunkte: "/media/img/lichtpunkte.jpg",
+  welcome:     "/media/img/welcome.jpg",
   podcast:     `${HF}/hf_20260715_231653_65c37c5e-3318-4697-aa7c-e75ce9cefcca.png`,
   meditation:  `${HF}/hf_20260715_231650_78aa0c65-c67a-4ef4-84dd-4d2ff420b4b3.png`,
   coaching:    `${HF}/hf_20260715_231237_ac48a110-6c8b-4e05-803b-61075ca9af44.png`,
@@ -107,19 +107,19 @@ export const VIDEO = {
   appguide:    `${HF}/hf_20260715_233526_3e3363f8-ddfd-431c-924e-903ba4df4ded.mp4`,
   profil:      `${HF}/hf_20260715_233529_e71fb115-5b6c-47a3-a3f8-6ddf6e6dddee.mp4`,
   kurse:       `${HF}/hf_20260715_233922_46831acd-dbeb-4251-a44d-1299b5698341.mp4`,
-  lichtpunkte: "/media/video/lichtpunkte.mp4",
-  welcome:     "/media/video/welcome.mp4",
-  ad9x16:      "/media/video/ad_9x16.mp4",
-  ad16x9:      "/media/video/ad_16x9.mp4",
+  lichtpunkte: "/media/video/lichtpunkte_klein.mp4",
+  welcome:     "/media/video/welcome_klein.mp4",
+  ad9x16:      "/media/video/ad_9x16_klein.mp4",
+  ad16x9:      "/media/video/ad_16x9_klein.mp4",
 };
 export const AUDIO = {
-  meditation:  "/media/audio/meditation.wav",
-  welcome:     "/media/audio/welcome.wav",
-  lichtpunkte: "/media/audio/lichtpunkte.wav",
-  podcast:     "/media/audio/podcast.wav",
-  dankbarkeit: "/media/audio/dankbarkeit.wav",
-  brief:       "/media/audio/brief.wav",
-  tagebuch:    "/media/audio/tagebuch.wav",
+  meditation:  "/media/audio/meditation.mp3",
+  welcome:     "/media/audio/welcome.mp3",
+  lichtpunkte: "/media/audio/lichtpunkte.mp3",
+  podcast:     "/media/audio/podcast.mp3",
+  dankbarkeit: "/media/audio/dankbarkeit.mp3",
+  brief:       "/media/audio/brief.mp3",
+  tagebuch:    "/media/audio/tagebuch.mp3",
 };
 
 // Sprach-Prompts (Voiceover-Texte, passend zu den Audios)

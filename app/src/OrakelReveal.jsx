@@ -35,7 +35,7 @@ export default function OrakelReveal({ card, onMeaning }) {
   const anim = useRef({ glow: 0, rays: 0, parts: [], raf: 0, running: false });
 
   const c = card || {
-    image: "/media/img/orakel.png",
+    image: "/media/img/orakel.jpg",
     name: "Saraswati",
     subtitle: "Göttin der Erkenntnis · Klarheit",
     message:
