@@ -27,9 +27,11 @@ CREATE INDEX IF NOT EXISTS idx_beitraege_coach ON coach_beitraege(coach_id, vero
 ALTER TABLE coach_beitraege ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Coachin verwaltet ihre Beitraege" ON coach_beitraege;
+DROP POLICY IF EXISTS "Coachin verwaltet ihre Beitraege" ON coach_beitraege;
 CREATE POLICY "Coachin verwaltet ihre Beitraege" ON coach_beitraege
   FOR ALL USING (auth.uid() = coach_id) WITH CHECK (auth.uid() = coach_id);
 
+DROP POLICY IF EXISTS "Klientin liest die Beitraege ihrer Coachin" ON coach_beitraege;
 DROP POLICY IF EXISTS "Klientin liest die Beitraege ihrer Coachin" ON coach_beitraege;
 CREATE POLICY "Klientin liest die Beitraege ihrer Coachin" ON coach_beitraege
   FOR SELECT USING (
@@ -52,6 +54,7 @@ CREATE TABLE IF NOT EXISTS einladungen (
 
 ALTER TABLE einladungen ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Eigene Einladungen" ON einladungen;
 DROP POLICY IF EXISTS "Eigene Einladungen" ON einladungen;
 CREATE POLICY "Eigene Einladungen" ON einladungen
   FOR ALL TO authenticated USING (von_user_id = auth.uid()) WITH CHECK (von_user_id = auth.uid());

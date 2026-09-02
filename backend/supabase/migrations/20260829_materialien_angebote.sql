@@ -29,9 +29,11 @@ CREATE INDEX IF NOT EXISTS idx_material_coach ON materialien(coach_id, sichtbar_
 ALTER TABLE materialien ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Coachin verwaltet ihre Materialien" ON materialien;
+DROP POLICY IF EXISTS "Coachin verwaltet ihre Materialien" ON materialien;
 CREATE POLICY "Coachin verwaltet ihre Materialien" ON materialien
   FOR ALL USING (auth.uid() = coach_id) WITH CHECK (auth.uid() = coach_id);
 
+DROP POLICY IF EXISTS "Klientin sieht ihre Materialien" ON materialien;
 DROP POLICY IF EXISTS "Klientin sieht ihre Materialien" ON materialien;
 CREATE POLICY "Klientin sieht ihre Materialien" ON materialien
   FOR SELECT USING (
@@ -70,9 +72,11 @@ CREATE INDEX IF NOT EXISTS idx_angebote_coach ON angebote(coach_id, reihenfolge)
 ALTER TABLE angebote ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Coachin verwaltet ihre Angebote" ON angebote;
+DROP POLICY IF EXISTS "Coachin verwaltet ihre Angebote" ON angebote;
 CREATE POLICY "Coachin verwaltet ihre Angebote" ON angebote
   FOR ALL USING (auth.uid() = coach_id) WITH CHECK (auth.uid() = coach_id);
 
+DROP POLICY IF EXISTS "Klientin sieht die Angebote ihrer Coachin" ON angebote;
 DROP POLICY IF EXISTS "Klientin sieht die Angebote ihrer Coachin" ON angebote;
 CREATE POLICY "Klientin sieht die Angebote ihrer Coachin" ON angebote
   FOR SELECT USING (
@@ -99,6 +103,7 @@ CREATE TABLE IF NOT EXISTS kurs_module (
 ALTER TABLE kurs_module ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Coachin verwaltet ihre Module" ON kurs_module;
+DROP POLICY IF EXISTS "Coachin verwaltet ihre Module" ON kurs_module;
 CREATE POLICY "Coachin verwaltet ihre Module" ON kurs_module
   FOR ALL USING (
     EXISTS (SELECT 1 FROM angebote a WHERE a.id = kurs_module.angebot_id AND a.coach_id = auth.uid())
@@ -106,6 +111,7 @@ CREATE POLICY "Coachin verwaltet ihre Module" ON kurs_module
     EXISTS (SELECT 1 FROM angebote a WHERE a.id = kurs_module.angebot_id AND a.coach_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Klientin sieht Module ihrer Coachin" ON kurs_module;
 DROP POLICY IF EXISTS "Klientin sieht Module ihrer Coachin" ON kurs_module;
 CREATE POLICY "Klientin sieht Module ihrer Coachin" ON kurs_module
   FOR SELECT USING (
@@ -125,6 +131,7 @@ CREATE TABLE IF NOT EXISTS kurs_fortschritt (
 
 ALTER TABLE kurs_fortschritt ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Fortschritt gehoert beiden Seiten" ON kurs_fortschritt;
 DROP POLICY IF EXISTS "Fortschritt gehoert beiden Seiten" ON kurs_fortschritt;
 CREATE POLICY "Fortschritt gehoert beiden Seiten" ON kurs_fortschritt
   FOR ALL USING (
@@ -153,6 +160,7 @@ CREATE INDEX IF NOT EXISTS idx_anfragen_coach ON anfragen(coach_id, status, crea
 ALTER TABLE anfragen ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Beide Seiten sehen ihre Anfragen" ON anfragen;
+DROP POLICY IF EXISTS "Beide Seiten sehen ihre Anfragen" ON anfragen;
 CREATE POLICY "Beide Seiten sehen ihre Anfragen" ON anfragen
   FOR SELECT USING (
     auth.uid() = coach_id
@@ -160,11 +168,13 @@ CREATE POLICY "Beide Seiten sehen ihre Anfragen" ON anfragen
   );
 
 DROP POLICY IF EXISTS "Klientin stellt eigene Anfrage" ON anfragen;
+DROP POLICY IF EXISTS "Klientin stellt eigene Anfrage" ON anfragen;
 CREATE POLICY "Klientin stellt eigene Anfrage" ON anfragen
   FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM klientinnen k WHERE k.id = anfragen.klientin_id AND k.user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Coachin bearbeitet Anfragen" ON anfragen;
 DROP POLICY IF EXISTS "Coachin bearbeitet Anfragen" ON anfragen;
 CREATE POLICY "Coachin bearbeitet Anfragen" ON anfragen
   FOR UPDATE USING (auth.uid() = coach_id);

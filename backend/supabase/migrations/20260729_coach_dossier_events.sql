@@ -10,10 +10,13 @@ CREATE TABLE IF NOT EXISTS coaches (
 
 ALTER TABLE coaches ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Coachin sieht nur sich selbst" ON coaches;
 CREATE POLICY "Coachin sieht nur sich selbst" ON coaches
   FOR SELECT USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Coachin legt nur sich selbst an" ON coaches;
 CREATE POLICY "Coachin legt nur sich selbst an" ON coaches
   FOR INSERT WITH CHECK (auth.uid() = id);
+DROP POLICY IF EXISTS "Coachin aktualisiert nur sich selbst" ON coaches;
 CREATE POLICY "Coachin aktualisiert nur sich selbst" ON coaches
   FOR UPDATE USING (auth.uid() = id);
 
@@ -34,10 +37,13 @@ CREATE TABLE IF NOT EXISTS coach_dossier (
 
 ALTER TABLE coach_dossier ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Coachin sieht nur ihr eigenes Dossier" ON coach_dossier;
 CREATE POLICY "Coachin sieht nur ihr eigenes Dossier" ON coach_dossier
   FOR SELECT USING (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin legt nur ihr eigenes Dossier an" ON coach_dossier;
 CREATE POLICY "Coachin legt nur ihr eigenes Dossier an" ON coach_dossier
   FOR INSERT WITH CHECK (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin aktualisiert nur ihr eigenes Dossier" ON coach_dossier;
 CREATE POLICY "Coachin aktualisiert nur ihr eigenes Dossier" ON coach_dossier
   FOR UPDATE USING (auth.uid() = coach_id);
 
@@ -49,6 +55,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_coach_dossier_updated_at ON coach_dossier;
 DROP TRIGGER IF EXISTS trg_coach_dossier_updated_at ON coach_dossier;
 CREATE TRIGGER trg_coach_dossier_updated_at
   BEFORE UPDATE ON coach_dossier
@@ -79,5 +86,6 @@ CREATE TABLE IF NOT EXISTS app_events (
 -- Auswertung (Katman 4) erfolgt später ausschließlich serverseitig (Service-Role), nicht jetzt.
 ALTER TABLE app_events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Jede Sitzung darf Events schreiben, niemand liest zurück" ON app_events;
 CREATE POLICY "Jede Sitzung darf Events schreiben, niemand liest zurück" ON app_events
   FOR INSERT WITH CHECK (true);

@@ -19,10 +19,13 @@ CREATE TABLE IF NOT EXISTS content_embeddings (
 
 ALTER TABLE content_embeddings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Coachin sieht nur eigene Inhalte" ON content_embeddings;
 CREATE POLICY "Coachin sieht nur eigene Inhalte" ON content_embeddings
   FOR SELECT USING (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin legt nur eigene Inhalte an" ON content_embeddings;
 CREATE POLICY "Coachin legt nur eigene Inhalte an" ON content_embeddings
   FOR INSERT WITH CHECK (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin loescht nur eigene Inhalte" ON content_embeddings;
 CREATE POLICY "Coachin loescht nur eigene Inhalte" ON content_embeddings
   FOR DELETE USING (auth.uid() = coach_id);
 

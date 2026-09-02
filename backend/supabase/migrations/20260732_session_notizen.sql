@@ -21,11 +21,15 @@ ALTER TABLE session_notizen
 
 ALTER TABLE session_notizen ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Coachin sieht nur ihre eigenen Session-Notizen" ON session_notizen;
 CREATE POLICY "Coachin sieht nur ihre eigenen Session-Notizen" ON session_notizen
   FOR SELECT USING (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin legt nur eigene Session-Notizen an" ON session_notizen;
 CREATE POLICY "Coachin legt nur eigene Session-Notizen an" ON session_notizen
   FOR INSERT WITH CHECK (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin aktualisiert nur eigene Session-Notizen" ON session_notizen;
 CREATE POLICY "Coachin aktualisiert nur eigene Session-Notizen" ON session_notizen
   FOR UPDATE USING (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin loescht nur eigene Session-Notizen" ON session_notizen;
 CREATE POLICY "Coachin loescht nur eigene Session-Notizen" ON session_notizen
   FOR DELETE USING (auth.uid() = coach_id);

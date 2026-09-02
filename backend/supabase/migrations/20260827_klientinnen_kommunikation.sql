@@ -26,13 +26,16 @@ CREATE INDEX IF NOT EXISTS idx_klientinnen_coach ON klientinnen(coach_id, status
 ALTER TABLE klientinnen ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Klientin sieht ihre eigene Bindung" ON klientinnen;
+DROP POLICY IF EXISTS "Klientin sieht ihre eigene Bindung" ON klientinnen;
 CREATE POLICY "Klientin sieht ihre eigene Bindung" ON klientinnen
   FOR SELECT USING (auth.uid() = user_id OR auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Klientin aktualisiert ihre eigene Bindung" ON klientinnen;
 DROP POLICY IF EXISTS "Klientin aktualisiert ihre eigene Bindung" ON klientinnen;
 CREATE POLICY "Klientin aktualisiert ihre eigene Bindung" ON klientinnen
   FOR UPDATE USING (auth.uid() = user_id OR auth.uid() = coach_id);
 
 -- Die Klientin darf den Namen ihrer Coachin lesen (fuer Chat-Kopf, Termin, Mediathek).
+DROP POLICY IF EXISTS "Klientin sieht ihre Coachin" ON coaches;
 DROP POLICY IF EXISTS "Klientin sieht ihre Coachin" ON coaches;
 CREATE POLICY "Klientin sieht ihre Coachin" ON coaches
   FOR SELECT USING (
@@ -52,6 +55,7 @@ CREATE TABLE IF NOT EXISTS coach_einladungen (
 
 ALTER TABLE coach_einladungen ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Coachin verwaltet ihre Einladungen" ON coach_einladungen;
 DROP POLICY IF EXISTS "Coachin verwaltet ihre Einladungen" ON coach_einladungen;
 CREATE POLICY "Coachin verwaltet ihre Einladungen" ON coach_einladungen
   FOR ALL USING (auth.uid() = coach_id) WITH CHECK (auth.uid() = coach_id);
@@ -118,12 +122,14 @@ CREATE INDEX IF NOT EXISTS idx_nachrichten_verlauf ON nachrichten(klientin_id, c
 ALTER TABLE nachrichten ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Beide Seiten sehen ihren Verlauf" ON nachrichten;
+DROP POLICY IF EXISTS "Beide Seiten sehen ihren Verlauf" ON nachrichten;
 CREATE POLICY "Beide Seiten sehen ihren Verlauf" ON nachrichten
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM klientinnen k WHERE k.id = nachrichten.klientin_id
             AND (k.user_id = auth.uid() OR k.coach_id = auth.uid()))
   );
 
+DROP POLICY IF EXISTS "Beide Seiten schreiben in ihren Verlauf" ON nachrichten;
 DROP POLICY IF EXISTS "Beide Seiten schreiben in ihren Verlauf" ON nachrichten;
 CREATE POLICY "Beide Seiten schreiben in ihren Verlauf" ON nachrichten
   FOR INSERT WITH CHECK (
@@ -133,6 +139,7 @@ CREATE POLICY "Beide Seiten schreiben in ihren Verlauf" ON nachrichten
                   OR (k.coach_id = auth.uid() AND absender = 'coach')))
   );
 
+DROP POLICY IF EXISTS "Empfaengerin darf als gelesen markieren" ON nachrichten;
 DROP POLICY IF EXISTS "Empfaengerin darf als gelesen markieren" ON nachrichten;
 CREATE POLICY "Empfaengerin darf als gelesen markieren" ON nachrichten
   FOR UPDATE USING (
@@ -162,9 +169,11 @@ CREATE INDEX IF NOT EXISTS idx_slots_coach_zeit ON coach_slots(coach_id, beginn)
 ALTER TABLE coach_slots ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Coachin verwaltet ihre Zeitfenster" ON coach_slots;
+DROP POLICY IF EXISTS "Coachin verwaltet ihre Zeitfenster" ON coach_slots;
 CREATE POLICY "Coachin verwaltet ihre Zeitfenster" ON coach_slots
   FOR ALL USING (auth.uid() = coach_id) WITH CHECK (auth.uid() = coach_id);
 
+DROP POLICY IF EXISTS "Klientin sieht die Zeitfenster ihrer Coachin" ON coach_slots;
 DROP POLICY IF EXISTS "Klientin sieht die Zeitfenster ihrer Coachin" ON coach_slots;
 CREATE POLICY "Klientin sieht die Zeitfenster ihrer Coachin" ON coach_slots
   FOR SELECT USING (
@@ -192,12 +201,14 @@ CREATE INDEX IF NOT EXISTS idx_termine_coach ON termine(coach_id, beginn);
 ALTER TABLE termine ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Beide Seiten sehen ihre Termine" ON termine;
+DROP POLICY IF EXISTS "Beide Seiten sehen ihre Termine" ON termine;
 CREATE POLICY "Beide Seiten sehen ihre Termine" ON termine
   FOR SELECT USING (
     auth.uid() = coach_id
     OR EXISTS (SELECT 1 FROM klientinnen k WHERE k.id = termine.klientin_id AND k.user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Beide Seiten aendern ihre Termine" ON termine;
 DROP POLICY IF EXISTS "Beide Seiten aendern ihre Termine" ON termine;
 CREATE POLICY "Beide Seiten aendern ihre Termine" ON termine
   FOR UPDATE USING (
@@ -306,28 +317,36 @@ ALTER TABLE community_herzen ENABLE ROW LEVEL SECURITY;
 ALTER TABLE community_meldungen ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Alle Angemeldeten lesen sichtbare Beitraege" ON community_posts;
+DROP POLICY IF EXISTS "Alle Angemeldeten lesen sichtbare Beitraege" ON community_posts;
 CREATE POLICY "Alle Angemeldeten lesen sichtbare Beitraege" ON community_posts
   FOR SELECT TO authenticated USING (sichtbar OR user_id = auth.uid());
 DROP POLICY IF EXISTS "Jede schreibt unter eigenem Konto" ON community_posts;
+DROP POLICY IF EXISTS "Jede schreibt unter eigenem Konto" ON community_posts;
 CREATE POLICY "Jede schreibt unter eigenem Konto" ON community_posts
   FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "Jede loescht ihren eigenen Beitrag" ON community_posts;
 DROP POLICY IF EXISTS "Jede loescht ihren eigenen Beitrag" ON community_posts;
 CREATE POLICY "Jede loescht ihren eigenen Beitrag" ON community_posts
   FOR DELETE TO authenticated USING (user_id = auth.uid());
 
 DROP POLICY IF EXISTS "Herzen lesen" ON community_herzen;
+DROP POLICY IF EXISTS "Herzen lesen" ON community_herzen;
 CREATE POLICY "Herzen lesen" ON community_herzen
   FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Eigenes Herz setzen" ON community_herzen;
+DROP POLICY IF EXISTS "Eigenes Herz setzen" ON community_herzen;
 CREATE POLICY "Eigenes Herz setzen" ON community_herzen
   FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "Eigenes Herz zuruecknehmen" ON community_herzen;
 DROP POLICY IF EXISTS "Eigenes Herz zuruecknehmen" ON community_herzen;
 CREATE POLICY "Eigenes Herz zuruecknehmen" ON community_herzen
   FOR DELETE TO authenticated USING (user_id = auth.uid());
 
 DROP POLICY IF EXISTS "Eigene Meldung anlegen" ON community_meldungen;
+DROP POLICY IF EXISTS "Eigene Meldung anlegen" ON community_meldungen;
 CREATE POLICY "Eigene Meldung anlegen" ON community_meldungen
   FOR INSERT TO authenticated WITH CHECK (melderin_id = auth.uid());
+DROP POLICY IF EXISTS "Eigene Meldung sehen" ON community_meldungen;
 DROP POLICY IF EXISTS "Eigene Meldung sehen" ON community_meldungen;
 CREATE POLICY "Eigene Meldung sehen" ON community_meldungen
   FOR SELECT TO authenticated USING (melderin_id = auth.uid());
@@ -348,6 +367,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_community_meldung ON community_meldungen;
 DROP TRIGGER IF EXISTS trg_community_meldung ON community_meldungen;
 CREATE TRIGGER trg_community_meldung
   AFTER INSERT ON community_meldungen
@@ -381,6 +401,7 @@ CREATE INDEX IF NOT EXISTS idx_push_user ON push_abos(user_id);
 ALTER TABLE push_abos ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Nutzerin verwaltet ihre Push-Abos" ON push_abos;
+DROP POLICY IF EXISTS "Nutzerin verwaltet ihre Push-Abos" ON push_abos;
 CREATE POLICY "Nutzerin verwaltet ihre Push-Abos" ON push_abos
   FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
@@ -398,21 +419,25 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Pfadschema: <user_id>/<dateiname> bzw. <coach_id>/<dateiname>
 DROP POLICY IF EXISTS "Eigene Dateien lesen" ON storage.objects;
+DROP POLICY IF EXISTS "Eigene Dateien lesen" ON storage.objects;
 CREATE POLICY "Eigene Dateien lesen" ON storage.objects
   FOR SELECT TO authenticated USING (
     bucket_id = 'klientin-dateien' AND (storage.foldername(name))[1] = auth.uid()::text
   );
+DROP POLICY IF EXISTS "Eigene Dateien hochladen" ON storage.objects;
 DROP POLICY IF EXISTS "Eigene Dateien hochladen" ON storage.objects;
 CREATE POLICY "Eigene Dateien hochladen" ON storage.objects
   FOR INSERT TO authenticated WITH CHECK (
     bucket_id = 'klientin-dateien' AND (storage.foldername(name))[1] = auth.uid()::text
   );
 DROP POLICY IF EXISTS "Eigene Dateien loeschen" ON storage.objects;
+DROP POLICY IF EXISTS "Eigene Dateien loeschen" ON storage.objects;
 CREATE POLICY "Eigene Dateien loeschen" ON storage.objects
   FOR DELETE TO authenticated USING (
     bucket_id = 'klientin-dateien' AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
+DROP POLICY IF EXISTS "Material der eigenen Coachin lesen" ON storage.objects;
 DROP POLICY IF EXISTS "Material der eigenen Coachin lesen" ON storage.objects;
 CREATE POLICY "Material der eigenen Coachin lesen" ON storage.objects
   FOR SELECT TO authenticated USING (
@@ -422,6 +447,7 @@ CREATE POLICY "Material der eigenen Coachin lesen" ON storage.objects
                  WHERE k.user_id = auth.uid() AND k.coach_id::text = (storage.foldername(name))[1])
     )
   );
+DROP POLICY IF EXISTS "Coachin laedt Material hoch" ON storage.objects;
 DROP POLICY IF EXISTS "Coachin laedt Material hoch" ON storage.objects;
 CREATE POLICY "Coachin laedt Material hoch" ON storage.objects
   FOR INSERT TO authenticated WITH CHECK (

@@ -11,10 +11,13 @@ CREATE TABLE IF NOT EXISTS app_state (
 
 ALTER TABLE app_state ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Nutzerin sieht nur ihren eigenen Zustand" ON app_state;
 CREATE POLICY "Nutzerin sieht nur ihren eigenen Zustand" ON app_state
   FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Nutzerin legt nur ihren eigenen Zustand an" ON app_state;
 CREATE POLICY "Nutzerin legt nur ihren eigenen Zustand an" ON app_state
   FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Nutzerin aktualisiert nur ihren eigenen Zustand" ON app_state;
 CREATE POLICY "Nutzerin aktualisiert nur ihren eigenen Zustand" ON app_state
   FOR UPDATE USING (auth.uid() = user_id);
 
@@ -27,6 +30,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_app_state_updated_at ON app_state;
 DROP TRIGGER IF EXISTS trg_app_state_updated_at ON app_state;
 CREATE TRIGGER trg_app_state_updated_at
   BEFORE UPDATE ON app_state

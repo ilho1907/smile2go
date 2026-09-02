@@ -44,27 +44,35 @@ ALTER TABLE journey_steps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE journey_runs ENABLE ROW LEVEL SECURITY;
 
 -- Vorlagen: eigene + Systemvorlagen lesbar, aber nur eigene änderbar.
+DROP POLICY IF EXISTS "Vorlagen lesen: eigene und System" ON journey_templates;
 CREATE POLICY "Vorlagen lesen: eigene und System" ON journey_templates
   FOR SELECT USING (coach_id IS NULL OR auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Vorlagen anlegen: nur eigene" ON journey_templates;
 CREATE POLICY "Vorlagen anlegen: nur eigene" ON journey_templates
   FOR INSERT WITH CHECK (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Vorlagen aendern: nur eigene" ON journey_templates;
 CREATE POLICY "Vorlagen aendern: nur eigene" ON journey_templates
   FOR UPDATE USING (auth.uid() = coach_id);
 
+DROP POLICY IF EXISTS "Schritte lesen wie die Vorlage" ON journey_steps;
 CREATE POLICY "Schritte lesen wie die Vorlage" ON journey_steps
   FOR SELECT USING (EXISTS (
     SELECT 1 FROM journey_templates t WHERE t.id = template_id AND (t.coach_id IS NULL OR t.coach_id = auth.uid())
   ));
+DROP POLICY IF EXISTS "Schritte aendern nur bei eigener Vorlage" ON journey_steps;
 CREATE POLICY "Schritte aendern nur bei eigener Vorlage" ON journey_steps
   FOR ALL USING (EXISTS (
     SELECT 1 FROM journey_templates t WHERE t.id = template_id AND t.coach_id = auth.uid()
   ));
 
 -- Läufe: Klientin sieht ihre eigenen, Coachin ihre zugeordneten.
+DROP POLICY IF EXISTS "Laeufe lesen: eigene oder als zustaendige Coachin" ON journey_runs;
 CREATE POLICY "Laeufe lesen: eigene oder als zustaendige Coachin" ON journey_runs
   FOR SELECT USING (auth.uid() = user_id OR auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Laeufe anlegen: fuer sich selbst oder als Coachin" ON journey_runs;
 CREATE POLICY "Laeufe anlegen: fuer sich selbst oder als Coachin" ON journey_runs
   FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Laeufe aendern: eigene oder als Coachin" ON journey_runs;
 CREATE POLICY "Laeufe aendern: eigene oder als Coachin" ON journey_runs
   FOR UPDATE USING (auth.uid() = user_id OR auth.uid() = coach_id);
 

@@ -47,8 +47,10 @@ ALTER TABLE interessentinnen ENABLE ROW LEVEL SECURITY;
 -- Nur die zuständige Coachin sieht ihre Interessentinnen. Anlegen geschieht
 -- serverseitig über das Formular (Edge Function mit Service-Role) — keine Client-INSERT-Policy,
 -- damit niemand fremde Adressen einschleusen kann.
+DROP POLICY IF EXISTS "Coachin sieht nur ihre eigenen Interessentinnen" ON interessentinnen;
 CREATE POLICY "Coachin sieht nur ihre eigenen Interessentinnen" ON interessentinnen
   FOR SELECT USING (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin pflegt nur ihre eigenen Interessentinnen" ON interessentinnen;
 CREATE POLICY "Coachin pflegt nur ihre eigenen Interessentinnen" ON interessentinnen
   FOR UPDATE USING (auth.uid() = coach_id);
 
@@ -57,6 +59,7 @@ RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_interessentinnen_updated_at ON interessentinnen;
 DROP TRIGGER IF EXISTS trg_interessentinnen_updated_at ON interessentinnen;
 CREATE TRIGGER trg_interessentinnen_updated_at
   BEFORE UPDATE ON interessentinnen

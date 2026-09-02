@@ -18,12 +18,16 @@ CREATE TABLE IF NOT EXISTS stimm_profile (
 
 ALTER TABLE stimm_profile ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Coachin sieht nur ihr eigenes Stimmprofil" ON stimm_profile;
 CREATE POLICY "Coachin sieht nur ihr eigenes Stimmprofil" ON stimm_profile
   FOR SELECT USING (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin legt nur ihr eigenes Stimmprofil an" ON stimm_profile;
 CREATE POLICY "Coachin legt nur ihr eigenes Stimmprofil an" ON stimm_profile
   FOR INSERT WITH CHECK (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin aendert nur ihr eigenes Stimmprofil" ON stimm_profile;
 CREATE POLICY "Coachin aendert nur ihr eigenes Stimmprofil" ON stimm_profile
   FOR UPDATE USING (auth.uid() = coach_id);
+DROP POLICY IF EXISTS "Coachin loescht ihr Stimmprofil jederzeit" ON stimm_profile;
 CREATE POLICY "Coachin loescht ihr Stimmprofil jederzeit" ON stimm_profile
   FOR DELETE USING (auth.uid() = coach_id);
 
@@ -53,6 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_audio_cache_coach ON audio_cache (coach_id, kateg
 ALTER TABLE audio_cache ENABLE ROW LEVEL SECURITY;
 
 -- Lesen darf jede eingeloggte Nutzerin (sie hört die Audios ihrer Coachin bzw. die neutralen).
+DROP POLICY IF EXISTS "Audio lesen fuer Eingeloggte" ON audio_cache;
 CREATE POLICY "Audio lesen fuer Eingeloggte" ON audio_cache
   FOR SELECT USING (auth.role() = 'authenticated');
 -- Schreiben nur serverseitig (Edge Function mit Service-Role) — keine Client-Policy.
