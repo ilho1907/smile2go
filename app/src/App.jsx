@@ -798,6 +798,7 @@ function Auth({ onLogin }) {
       </div>
 
       {/* Google-Login */}
+      {import.meta.env.VITE_GOOGLE_LOGIN === "1" && (<>
       <button
         onClick={googleLogin}
         style={{
@@ -822,6 +823,7 @@ function Auth({ onLogin }) {
         <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink }}>oder mit E-Mail</span>
         <div style={{ flex: 1, height: 1, background: C.line }} />
       </div>
+      </>)}
 
       <div style={{ display: "flex", gap: 8, marginBottom: 18, background: C.beige, borderRadius: 14, padding: 5 }}>
         {[["login", "Anmelden"], ["register", "Registrieren"]].map(([k, label]) => (
