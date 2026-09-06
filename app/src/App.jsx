@@ -2361,8 +2361,6 @@ function Rituale({ ritual, setRitual, addPunkte }) {
 
   return (
     <div>
-      <MediaBanner video={S2GVID.rituale} poster={S2GIMG.rituale} title="Rituale" subtitle="Kleine Rituale, große Wirkung" />
-
       <Card style={{ marginBottom: 14, display: "flex", gap: 14, alignItems: "center", background: C.goldPale, border: `1px solid ${C.goldSoft}` }}>
         <div style={{ fontSize: 36, animation: "floaty 3s ease-in-out infinite" }}>{mond.e}</div>
         <div>
