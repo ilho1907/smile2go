@@ -1064,15 +1064,6 @@ const TILE_KATALOG = {
 function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs, setPrefs, ch369, meinZeichen, openPunkte, drawn, horo, entries, setJournalSec, twinTon = "" }) {
   // Nur eine heute gezogene Karte gilt als gezogen — sonst wartet sie wieder.
   const heutigeKarte = drawn && (!drawn.tag || drawn.tag === new Date().toDateString()) ? drawn : null;
-  const [chatOpen, setChatOpen] = useState(false);
-  const [ilhoMsgs, setIlhoMsgs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("ilho_chat_history")) || []; } catch { return []; }
-  });
-
-  useEffect(() => {
-    localStorage.setItem("ilho_chat_history", JSON.stringify(ilhoMsgs));
-  }, [ilhoMsgs]);
-
   /* Morning notification: 7-8am ilho prep alert */
   useEffect(() => {
     const now = new Date();
@@ -1193,99 +1184,6 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
         <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600 }}>🔥 {streak} Tage Serie</span>
         <button onClick={openPunkte} style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: C.plum, background: C.roseSoft, border: `1.5px solid ${C.rose}`, borderRadius: 20, padding: "5px 12px", cursor: "pointer" }}>✨ {punkte} Sonnenstrahlen ›</button>
       </div>
-
-      {/* ilho Chat Drawer */}
-      <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.line}` }}>
-        <button onClick={() => setChatOpen(!chatOpen)} style={{
-          width: "100%", padding: "14px 16px", borderRadius: 14, cursor: "pointer",
-          border: `1.5px solid ${C.plum}`, background: chatOpen ? C.roseSoft : C.card,
-          fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 700, color: C.plum,
-          display: "flex", alignItems: "center", gap: 10,
-        }}>
-          <span style={{ fontSize: 18 }}>✨</span>
-          <span>ilho fragen — alles was dich bewegt</span>
-          <span style={{ marginLeft: "auto", fontSize: 12 }}>{chatOpen ? "▼" : "▶"}</span>
-        </button>
-      </div>
-
-      {chatOpen && (
-        <div style={{
-          marginTop: 12, padding: "12px", background: C.cream, borderRadius: 14,
-          border: `1px solid ${C.line}`, maxHeight: "360px", display: "flex", flexDirection: "column",
-        }}>
-          {ilhoMsgs.length > 0 && (
-            <button onClick={() => setIlhoMsgs([])} style={{
-              alignSelf: "flex-end", fontSize: 11, fontFamily: "system-ui", color: C.ink,
-              background: "none", border: "none", cursor: "pointer", marginBottom: 6, opacity: 0.6,
-            }}>clear</button>
-          )}
-          <div style={{ flex: 1, overflowY: "auto", marginBottom: 10, paddingRight: 4 }}>
-            {ilhoMsgs.length === 0 && (
-              <div style={{ textAlign: "center", padding: "20px 10px", color: C.ink }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 15, marginBottom: 8 }}>Hallo {name || "du"} 🤍</div>
-                <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, lineHeight: 1.5, marginBottom: 0 }}>
-                  Was dich bewegt, hat hier Raum. Ich bin ilho, dein KI-Assistent.
-                </p>
-              </div>
-            )}
-            {ilhoMsgs.map((m, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
-                <div style={{
-                  maxWidth: "76%", padding: "10px 12px", borderRadius: 14,
-                  background: m.role === "user" ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.card,
-                  border: m.role === "user" ? "none" : `1px solid ${C.line}`,
-                  color: m.role === "user" ? "#fff" : C.espresso,
-                  fontFamily: "system-ui, sans-serif", fontSize: 13, lineHeight: 1.5,
-                }}>
-                  {m.content}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            <input
-              id="ilho-input"
-              placeholder="Schreib ilho …"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                  const msg = e.currentTarget.value.trim();
-                  const newMsgs = [...ilhoMsgs, { role: "user", content: msg }];
-                  setIlhoMsgs(newMsgs);
-                  e.currentTarget.value = "";
-
-                  const callAI = async () => {
-                    try {
-                      const recentMsgs = newMsgs.slice(-6);
-                      const recentEntries = entries?.slice(-3)?.map((e) => e.text?.slice(0, 100)).join(" | ") || "keine neulich";
-                      const ctx = `${ILHO_SYSTEM}\n(Kontext: Nutzerin ${name}, Streak ${streak}d. Journal (letzte 3): ${recentEntries})${twinTon}`;
-                      const reply = await askLuma(recentMsgs, ctx);
-                      setIlhoMsgs((prev) => [...prev, { role: "assistant", content: reply }]);
-                    } catch (err) {
-                      setIlhoMsgs((prev) => [...prev, { role: "assistant", content: "Gerade kann ich dich nicht erreichen. Versuch es gleich noch einmal. 🤍" }]);
-                    }
-                  };
-                  callAI();
-                }
-              }}
-              style={{
-                flex: 1, padding: "10px 12px", fontSize: 13, fontFamily: "system-ui, sans-serif",
-                border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none",
-              }}
-            />
-            <Mikro size={40} onText={(t) => {
-              const inp = document.getElementById("ilho-input");
-              if (inp) { inp.value = (inp.value ? inp.value + " " : "") + t; inp.focus(); }
-            }} />
-            <button onClick={() => {
-              const inp = document.getElementById("ilho-input");
-              if (inp && inp.value.trim()) inp.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", code: "Enter" }));
-            }} style={{
-              width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer",
-              background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 16, flexShrink: 0,
-            }}>↑</button>
-          </div>
-        </div>
-      )}
 
       {/* Mehr: Alle Features */}
       <Card style={{ marginTop: 16, background: C.cream, textAlign: "center", padding: "12px" }}>
