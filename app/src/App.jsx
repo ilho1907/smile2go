@@ -6690,66 +6690,246 @@ const BELOHNUNGEN = [
   { p: 1000, icon: "🌕", t: "Exklusive Vollmond-Meditation", s: "Nur für Sammlerinnen" },
 ];
 
-function PunkteModal({ punkte, onClose, onEinloesen }) {
-  const naechster = MEILENSTEINE.find((m) => m > punkte) || MEILENSTEINE[MEILENSTEINE.length - 1];
+/* Abzeichen: erreichbar statt endlos. Alles hier ist in Wochen zu schaffen,
+   nicht in Jahren — sonst ist die Liste eine Mahnung statt einer Freude. */
+const ABZEICHEN = [
+  { g: "Anfang", id: "erster", icon: "🌱", t: "Erster Eintrag", s: "Schreib deinen ersten Tagebucheintrag", ziel: 1, k: "eintraege" },
+  { g: "Anfang", id: "karte", icon: "🃏", t: "Erste Karte", s: "Zieh deine erste Tageskarte", ziel: 1, k: "karte" },
+  { g: "Anfang", id: "ritual", icon: "🕯️", t: "Erstes Ritual", s: "Nähre ein Ritual in der Woche", ziel: 1, k: "rituale" },
+  { g: "Anfang", id: "woche1", icon: "🔥", t: "Erste Woche", s: "Sieben Tage am Stück da sein", ziel: 7, k: "serie" },
+
+  { g: "Schreiben", id: "e10", icon: "📓", t: "Zehn Einträge", s: "Zehn Mal deinen Raum genutzt", ziel: 10, k: "eintraege" },
+  { g: "Schreiben", id: "e50", icon: "📚", t: "Fünfzig Einträge", s: "Fünfzig Mal aufgeschrieben, was war", ziel: 50, k: "eintraege" },
+  { g: "Schreiben", id: "w1000", icon: "✍️", t: "Tausend Wörter", s: "Insgesamt 1000 Wörter geschrieben", ziel: 1000, k: "woerter" },
+  { g: "Schreiben", id: "w5000", icon: "🖋️", t: "Fünftausend Wörter", s: "Insgesamt 5000 Wörter geschrieben", ziel: 5000, k: "woerter" },
+  { g: "Schreiben", id: "brief", icon: "💌", t: "Brief an dich", s: "Schreib einen Brief an dein Zukunfts-Ich", ziel: 1, k: "briefe" },
+
+  { g: "Ankommen", id: "a5", icon: "🖐️", t: "Fünf Momente", s: "Fünf achtsame Momente gesammelt", ziel: 5, k: "achtsam" },
+  { g: "Ankommen", id: "a25", icon: "🌊", t: "Fünfundzwanzig Momente", s: "25 achtsame Momente gesammelt", ziel: 25, k: "achtsam" },
+  { g: "Ankommen", id: "q10", icon: "🌿", t: "Zehn mal Qigong", s: "Zehn Einheiten Die Acht Brokate", ziel: 10, k: "qigong" },
+  { g: "Ankommen", id: "d10", icon: "🤍", t: "Zehn Dankbarkeits-Tage", s: "An zehn Tagen drei Dinge notiert", ziel: 10, k: "dank" },
+  { g: "Ankommen", id: "l10", icon: "🕊️", t: "Zehn mal losgelassen", s: "Zehn Dinge bewusst abgelegt", ziel: 10, k: "losgelassen" },
+
+  { g: "Dranbleiben", id: "s3", icon: "✨", t: "Drei Tage", s: "Drei Tage Serie", ziel: 3, k: "serie" },
+  { g: "Dranbleiben", id: "s21", icon: "🌙", t: "Einundzwanzig Tage", s: "21 Tage Serie — eine Gewohnheit entsteht", ziel: 21, k: "serie" },
+  { g: "Dranbleiben", id: "s40", icon: "🌕", t: "Vierzig Tage", s: "40 Tage Serie", ziel: 40, k: "serie" },
+  { g: "Dranbleiben", id: "p300", icon: "💫", t: "Dreihundert Lichtpunkte", s: "300 Lichtpunkte gesammelt", ziel: 300, k: "punkte" },
+
+  { g: "Wege", id: "r1", icon: "🛤️", t: "Reise begonnen", s: "Eine Transformations-Reise gestartet", ziel: 1, k: "reisen" },
+  { g: "Wege", id: "rf", icon: "🏔️", t: "Reise vollendet", s: "Eine Reise bis zum letzten Tag gegangen", ziel: 1, k: "reisenFertig" },
+  { g: "Wege", id: "ch", icon: "🔢", t: "369 gegangen", s: "Die 369-Methode abgeschlossen", ziel: 1, k: "ch369" },
+  { g: "Wege", id: "mt", icon: "🛁", t: "Me-Time gehalten", s: "Einen Termin mit dir selbst eingehalten", ziel: 1, k: "metime" },
+];
+const ABZ_GRUPPEN = ["Anfang", "Schreiben", "Ankommen", "Dranbleiben", "Wege"];
+
+function zaehleAlles(d) {
+  const arr = (x) => (Array.isArray(x) ? x : []);
+  const eintraege = arr(d.entries);
+  const textVon = (e) => [e.intention, (arr(e.items) || []).join(" "), e.text].filter(Boolean).join(" ");
+  const woerterVon = (e) => textVon(e).trim().split(/\s+/).filter(Boolean).length;
+  return {
+    punkte: d.punkte || 0,
+    serie: d.streak || 0,
+    eintraege: eintraege.length,
+    woerter: eintraege.reduce((s, e) => s + woerterVon(e), 0),
+    laengster: eintraege.reduce((m, e) => Math.max(m, woerterVon(e)), 0),
+    briefe: arr(d.briefe).length,
+    karte: d.drawn ? 1 : 0,
+    rituale: d.ritual ? Object.values(d.ritual).filter(Boolean).length : 0,
+    achtsam: arr(d.achtsam).length,
+    qigong: arr(d.qigong).length,
+    qigongMin: arr(d.qigong).reduce((s, x) => s + (Number(x.minuten) || 0), 0),
+    dank: arr(d.dank).filter((x) => x && x.datum).length,
+    losgelassen: arr(d.losgelassen).filter((x) => x && x.los_am).length,
+    metime: arr(d.metime).filter((x) => x && x.erledigt).length,
+    reisen: arr(d.reisen).length,
+    reisenFertig: arr(d.reisen).filter((r) => r.fertig).length,
+    ch369: d.ch369 && d.ch369.fertig ? 1 : 0,
+    checkins: arr(d.checkins).length,
+  };
+}
+
+function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
+  const [reiter, setReiter] = useState("abzeichen");
+  const [alle, setAlle] = useState(false);
+  const z = zaehleAlles({ punkte, ...daten });
+
+  const mitStand = ABZEICHEN.map((a) => {
+    const wert = Math.min(z[a.k] || 0, a.ziel);
+    return { ...a, wert, fertig: wert >= a.ziel, anteil: a.ziel ? wert / a.ziel : 0 };
+  });
+  const geschafft = mitStand.filter((a) => a.fertig);
+  const naechste = mitStand.filter((a) => !a.fertig).sort((x, y) => y.anteil - x.anteil).slice(0, 5);
+  const naechsterMs = MEILENSTEINE.find((m) => m > punkte) || MEILENSTEINE[MEILENSTEINE.length - 1];
+
+  const Kachel = ({ a }) => (
+    <div style={{
+      background: a.fertig ? `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})` : C.card,
+      border: `1px solid ${a.fertig ? C.goldSoft : C.line}`, borderRadius: 14,
+      padding: "12px 8px", textAlign: "center",
+    }}>
+      <div style={{ fontSize: 24, filter: a.fertig ? "none" : "grayscale(1)", opacity: a.fertig ? 1 : 0.4 }}>
+        {a.fertig ? a.icon : "🔒"}
+      </div>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: C.espresso, marginTop: 5, lineHeight: 1.3 }}>{a.t}</div>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.mut, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
+        {a.fertig ? "✓ geschafft" : `${a.wert}/${a.ziel}`}
+      </div>
+    </div>
+  );
+
+  const StatBlock = ({ titel, zeilen }) => (
+    <>
+      <Eyebrow color={C.plum}>{titel}</Eyebrow>
+      <Card style={{ marginTop: 6, marginBottom: 14, paddingTop: 2, paddingBottom: 2 }}>
+        {zeilen.map(([n, w], i) => (
+          <div key={n} style={{
+            display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12,
+            padding: "11px 0", borderBottom: i === zeilen.length - 1 ? "none" : `1px solid ${C.line}`,
+          }}>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>{n}</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 700, color: C.espresso, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{w}</span>
+          </div>
+        ))}
+      </Card>
+    </>
+  );
+
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, zIndex: 40, background: "rgba(58,42,34,.45)",
       display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(3px)",
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
-        width: "100%", maxWidth: 430, maxHeight: "82vh", overflowY: "auto",
-        background: C.cream, borderRadius: "24px 24px 0 0", padding: "22px 20px 30px",
+        width: "100%", maxWidth: 430, maxHeight: "88vh", overflowY: "auto",
+        background: C.cream, borderRadius: "24px 24px 0 0", padding: "18px 20px 30px",
         animation: "fadeUp .35s ease",
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <H size={21}>✨ Deine Lichtpunkte</H>
-          <button onClick={onClose} style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "50%", width: 38, height: 38, fontSize: 16, cursor: "pointer", color: C.ink }}>✕</button>
-        </div>
-
-        <Card style={{ textAlign: "center", marginBottom: 16, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, border: "none" }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 44, color: C.plum }}>{punkte}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, fontWeight: 600 }}>
-            Noch {Math.max(0, naechster - punkte)} bis zum nächsten Meilenstein ({naechster})
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <div style={{ display: "flex", gap: 3, background: C.beige, borderRadius: 22, padding: 3, flex: 1 }}>
+            {[["abzeichen", "Abzeichen"], ["statistik", "Statistiken"]].map(([k, n]) => (
+              <button key={k} onClick={() => setReiter(k)} style={{
+                flex: 1, padding: "9px 0", borderRadius: 19, border: "none", cursor: "pointer", minHeight: 40,
+                fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700,
+                background: reiter === k ? C.card : "transparent", color: reiter === k ? C.plum : C.ink,
+              }}>{n}</button>
+            ))}
           </div>
-        </Card>
+          <button onClick={onClose} aria-label="Schließen" style={{
+            background: C.card, border: `1px solid ${C.line}`, borderRadius: "50%",
+            width: 38, height: 38, fontSize: 16, cursor: "pointer", color: C.ink, flexShrink: 0,
+          }}>✕</button>
+        </div>
 
-        <Eyebrow color={C.plum}>Meilensteine</Eyebrow>
-        <div style={{ display: "flex", gap: 8, marginBottom: 18, marginTop: 6 }}>
-          {MEILENSTEINE.map((m) => {
-            const erreicht = punkte >= m;
-            return (
-              <div key={m} style={{ flex: 1, textAlign: "center", padding: "10px 2px", borderRadius: 12, background: erreicht ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.card, border: erreicht ? "none" : `1.5px solid ${C.line}` }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: erreicht ? "#fff" : C.ink }}>{m >= 1000 ? `${m / 1000}k` : m}</div>
-                <div style={{ fontSize: 11, marginTop: 2 }}>{erreicht ? "✓" : "○"}</div>
+        {reiter === "abzeichen" ? (
+          <>
+            <Card style={{ textAlign: "center", marginBottom: 16, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, border: "none" }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 42, color: C.plum, lineHeight: 1.1 }}>{geschafft.length}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: C.ink }}>
+                von {ABZEICHEN.length} Abzeichen
               </div>
-            );
-          })}
-        </div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 8 }}>
+                ✨ {punkte} Lichtpunkte · noch {Math.max(0, naechsterMs - punkte)} bis {naechsterMs}
+              </div>
+            </Card>
 
-        <Eyebrow color={C.plum}>🎁 Punkte einlösen</Eyebrow>
-        <div style={{ marginTop: 6, marginBottom: 16 }}>
-          {BELOHNUNGEN.map((b) => {
-            const kann = punkte >= b.p;
-            return (
-              <Card key={b.t} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center", opacity: kann ? 1 : 0.55 }}>
-                <span style={{ fontSize: 24 }}>{b.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{b.t}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>{b.s} · {b.p} Punkte</div>
+            {!alle && naechste.length > 0 && (
+              <>
+                <Eyebrow color={C.plum}>Deine nächsten Abzeichen</Eyebrow>
+                <div style={{ marginTop: 6, marginBottom: 12 }}>
+                  {naechste.map((a) => (
+                    <Card key={a.id} style={{ marginBottom: 8, display: "flex", gap: 12, alignItems: "center", padding: 13 }}>
+                      <div style={{ fontSize: 22, opacity: 0.45 }}>{a.icon}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{a.t}</div>
+                        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 1 }}>{a.s}</div>
+                        <div style={{ height: 4, borderRadius: 3, background: C.beige, marginTop: 7, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${Math.round(a.anteil * 100)}%`, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})` }} />
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.plum, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                        {a.wert}/{a.ziel}
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-                <Btn small ghost={!kann} onClick={() => kann && onEinloesen(b.p, b.t)}>{kann ? "Einlösen" : `${b.p} P`}</Btn>
-              </Card>
-            );
-          })}
-        </div>
+              </>
+            )}
 
-        <Eyebrow color={C.ink}>So sammelst du täglich</Eyebrow>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.8, marginTop: 6 }}>
-          🔮 Tageskarte +5 · 📔 Tagebuch +10 · 🏆 Challenge-Tag +20<br />
-          🧭 Energie-Check +3 · ⭐ Horoskop +3 · 🃏 Aufgaben-Karte +5<br />
-          🔮 Ritual +2 · 💌 Zukunftsbrief +10 · 💰 Fülle +5 · 🎴 Mystik +4
-        </p>
+            <button onClick={() => setAlle(!alle)} style={{
+              width: "100%", background: "none", border: "none", cursor: "pointer", minHeight: 40,
+              fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: C.plum,
+              textDecoration: "underline", marginBottom: 14,
+            }}>
+              {alle ? "Nur die nächsten zeigen" : "Alle Abzeichen anzeigen"}
+            </button>
+
+            {alle && ABZ_GRUPPEN.map((g) => (
+              <div key={g} style={{ marginBottom: 16 }}>
+                <Eyebrow color={C.plum}>{g}</Eyebrow>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 6 }}>
+                  {mitStand.filter((a) => a.g === g).map((a) => <Kachel key={a.id} a={a} />)}
+                </div>
+              </div>
+            ))}
+
+            <Eyebrow color={C.plum}>🎁 Lichtpunkte einlösen</Eyebrow>
+            <div style={{ marginTop: 6 }}>
+              {BELOHNUNGEN.map((b) => {
+                const kann = punkte >= b.p;
+                return (
+                  <Card key={b.t} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center", opacity: kann ? 1 : 0.55 }}>
+                    <span style={{ fontSize: 24 }}>{b.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{b.t}</div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>{b.s} · {b.p} Punkte</div>
+                    </div>
+                    <Btn small ghost={!kann} onClick={() => kann && onEinloesen(b.p, b.t)}>{kann ? "Einlösen" : `${b.p} P`}</Btn>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginBottom: 16 }}>
+              {[["Lichtpunkte", z.punkte], ["Tage Serie", z.serie], ["Einträge", z.eintraege], ["Abzeichen", geschafft.length]].map(([n, w]) => (
+                <Card key={n} style={{ textAlign: "center", padding: "14px 8px" }}>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: 26, color: C.plum, fontVariantNumeric: "tabular-nums" }}>{w}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 2 }}>{n}</div>
+                </Card>
+              ))}
+            </div>
+
+            <StatBlock titel="Bestwerte" zeilen={[
+              ["Längster Eintrag", `${z.laengster} Wörter`],
+              ["Aktuelle Serie", `${z.serie} Tage`],
+              ["Qigong-Minuten", `${z.qigongMin} Min.`],
+            ]} />
+
+            <StatBlock titel="Schreiben" zeilen={[
+              ["Tagebucheinträge", z.eintraege],
+              ["Geschriebene Wörter", z.woerter],
+              ["Briefe an dich", z.briefe],
+              ["Check-Ins", z.checkins],
+            ]} />
+
+            <StatBlock titel="Ankommen" zeilen={[
+              ["Achtsame Momente", z.achtsam],
+              ["Qigong-Einheiten", z.qigong],
+              ["Dankbarkeits-Tage", z.dank],
+              ["Losgelassen", z.losgelassen],
+              ["Me-Time gehalten", z.metime],
+            ]} />
+
+            <StatBlock titel="Wege" zeilen={[
+              ["Reisen begonnen", z.reisen],
+              ["Reisen vollendet", z.reisenFertig],
+              ["369-Methode", z.ch369 ? "abgeschlossen" : "offen"],
+              ["Rituale diese Woche", z.rituale],
+            ]} />
+          </>
+        )}
       </div>
     </div>
   );
@@ -8986,6 +9166,19 @@ export default function IlhoApp() {
             {pkModal && (
               <PunkteModal
                 punkte={punkte}
+                streak={streak}
+                entries={entries}
+                briefe={briefe}
+                drawn={drawn}
+                ritual={ritual}
+                achtsam={achtsam}
+                qigong={qigong}
+                dank={dank}
+                losgelassen={losgelassen}
+                metime={metime}
+                reisen={reisen}
+                ch369={ch369}
+                checkins={checkins}
                 onClose={() => setPkModal(false)}
                 onEinloesen={(p, t) => { setPunkte((x) => x - p); setToast(`🎁 ${t} — eingelöst!`); setTimeout(() => setToast(null), 2600); setPkModal(false); }}
               />
