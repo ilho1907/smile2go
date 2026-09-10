@@ -2,7 +2,8 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
 import MediaBanner from "./MediaBanner";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, AUDIO as S2GAUDIO } from "./media";
+import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
   ladeMeineBindung, mitCoachVerbinden, ladeNachrichten, sendeNachricht, abonniereNachrichten, markiereGelesen,
   ladeFreieSlots, ladeMeineTermine, terminBuchen, terminStornieren,
@@ -481,6 +482,78 @@ function Hoerknopf({ text, kategorie = "karte", twin, klein = false }) {
         KI-Stimme{twin?.voice_id ? " deiner Coachin" : ""}
       </span>
       {url && <audio ref={audioRef} src={url} preload="none" />}
+    </div>
+  );
+}
+
+/* ── Hörspur — geführte Übung als Audio ──
+   Für Momente, in denen Lesen zu viel ist: Play drücken, Augen zu, mitgehen.
+   Die Übung bleibt zusätzlich als Text da — niemand muss Ton hören wollen. */
+function Hoerspur({ src, titel = "Anhören", beiEnde, dunkel = false }) {
+  const audioRef = useRef(null);
+  const [laeuft, setLaeuft] = useState(false);
+  const [jetzt, setJetzt] = useState(0);
+  const [dauer, setDauer] = useState(0);
+  const [fehler, setFehler] = useState(false);
+
+  const zeit = (s) => {
+    if (!s || !isFinite(s)) return "0:00";
+    const m = Math.floor(s / 60), r = Math.floor(s % 60);
+    return m + ":" + String(r).padStart(2, "0");
+  };
+
+  const umschalten = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (laeuft) { a.pause(); return; }
+    stoppSprache();                       // Vorlesestimme schweigt, wenn die Spur läuft
+    a.play().catch(() => setFehler(true));
+  };
+
+  if (fehler) return null;
+
+  const rand = dunkel ? "#5A473C" : C.line;
+  const schrift = dunkel ? "#F5E9DB" : C.espresso;
+  const leise = dunkel ? "#C0AC98" : C.ink;
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "10px 12px", border: `1.5px solid ${rand}`, borderRadius: 14,
+      background: dunkel ? "rgba(251,246,238,.07)" : C.goldPale,
+    }}>
+      <button
+        onClick={umschalten}
+        aria-label={laeuft ? "Pause" : titel}
+        style={{
+          width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "none", cursor: "pointer",
+          background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 16,
+        }}
+      >
+        {laeuft ? "❚❚" : "▶"}
+      </button>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: schrift }}>
+          {laeuft ? "Läuft — leg das Handy weg" : titel}
+        </div>
+        <div style={{ height: 4, borderRadius: 3, background: rand, margin: "7px 0 5px", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${dauer ? (jetzt / dauer) * 100 : 0}%`, background: C.gold, transition: "width .25s linear" }} />
+        </div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: leise }}>
+          {zeit(jetzt)} / {zeit(dauer)}
+        </div>
+      </div>
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="metadata"
+        onLoadedMetadata={(e) => setDauer(e.target.duration)}
+        onTimeUpdate={(e) => setJetzt(e.target.currentTime)}
+        onPlay={() => setLaeuft(true)}
+        onPause={() => setLaeuft(false)}
+        onError={() => setFehler(true)}
+        onEnded={() => { setLaeuft(false); setJetzt(0); beiEnde?.(); }}
+      />
     </div>
   );
 }
@@ -4395,30 +4468,196 @@ const VORLAGEN = [
 ];
 const FARBEN = ["#C9963C", "#D96E8B", "#8E4A63", "#6E8B6A", "#5C7A99", "#3A2A22"];
 
+// ── Markenerstellung ───────────────────────────────────────────────────────
+// Aus dem hochgeladenen Logo werden Farben gelesen (Canvas, im Browser, kostenlos —
+// kein Dienst, kein Upload). Der Stil bestimmt echte Schriften und Formen, nicht nur
+// ein Etikett. Beides zusammen ergibt die Marke, die auf jedem Dokument erscheint.
+const MARKE_STILE = {
+  Elegant: {
+    kopf: "Georgia, 'Times New Roman', serif",
+    text: "Georgia, 'Times New Roman', serif",
+    spur: "0em", gross: false, radius: 4, linie: 3,
+    beschreibung: "Serifen, ruhig, zeitlos — für Beratung und Retreats.",
+  },
+  Modern: {
+    kopf: "'Helvetica Neue', Inter, system-ui, sans-serif",
+    text: "system-ui, -apple-system, 'Helvetica Neue', sans-serif",
+    spur: "0.14em", gross: true, radius: 0, linie: 2,
+    beschreibung: "Klar, gesperrt, reduziert — für Kurse und Business-Angebote.",
+  },
+  Verspielt: {
+    kopf: "'Avenir Next', 'Segoe UI', system-ui, sans-serif",
+    text: "system-ui, -apple-system, sans-serif",
+    spur: "0.02em", gross: false, radius: 18, linie: 5,
+    beschreibung: "Weich, rund, warm — für Circles und kreative Formate.",
+  },
+};
+const stilVon = (name) => MARKE_STILE[name] || MARKE_STILE.Elegant;
+
+const hex2rgb = (h) => {
+  const m = String(h).replace("#", "");
+  const v = m.length === 3 ? m.split("").map((c) => c + c).join("") : m;
+  return [parseInt(v.slice(0, 2), 16) || 0, parseInt(v.slice(2, 4), 16) || 0, parseInt(v.slice(4, 6), 16) || 0];
+};
+const rgb2hex = (r, g, b) => "#" + [r, g, b].map((x) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0")).join("");
+const mischen = (h, ziel, anteil) => {
+  const [r, g, b] = hex2rgb(h); const [zr, zg, zb] = hex2rgb(ziel);
+  return rgb2hex(r + (zr - r) * anteil, g + (zg - g) * anteil, b + (zb - b) * anteil);
+};
+const helligkeit = (h) => { const [r, g, b] = hex2rgb(h); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+// Zu helle Markenfarben sind auf Weiß nicht lesbar — sie werden so weit abgedunkelt,
+// bis Text und Linien auf dem Dokument sicher stehen.
+const lesbar = (h) => { let f = h, i = 0; while (helligkeit(f) > 0.62 && i++ < 8) f = mischen(f, "#000000", 0.16); return f; };
+const farbTon = (h) => {
+  const [r, g, b] = hex2rgb(h).map((x) => x / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  if (!d) return 0;
+  let t = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return (t * 60 + 360) % 360;
+};
+const saettigung = (h) => { const [r, g, b] = hex2rgb(h); return (Math.max(r, g, b) - Math.min(r, g, b)) / 255; };
+
+// Liest die tragenden Farben aus einem Bild. Weiß, Schwarz und Transparenz fallen raus,
+// ähnliche Töne werden zusammengefasst. Ergebnis: bis zu vier Vorschläge.
+function farbenAusLogo(dataUrl) {
+  return new Promise((fertig) => {
+    if (typeof window === "undefined" || !dataUrl) { fertig([]); return; }
+    const bild = new Image();
+    bild.crossOrigin = "anonymous";
+    bild.onerror = () => fertig([]);
+    bild.onload = () => {
+      try {
+        const n = 72;
+        const cv = document.createElement("canvas");
+        cv.width = n; cv.height = n;
+        const ctx = cv.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(bild, 0, 0, n, n);
+        const d = ctx.getImageData(0, 0, n, n).data;
+        const eimer = new Map();
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i + 3] < 128) continue;
+          const r = d[i], g = d[i + 1], b = d[i + 2];
+          const max = Math.max(r, g, b), min = Math.min(r, g, b);
+          const mitte = (max + min) / 2;
+          if (max - min < 20 && (mitte > 228 || mitte < 30)) continue; // Papierweiß und Tiefschwarz raus
+          const k = `${r >> 4}_${g >> 4}_${b >> 4}`;
+          const e = eimer.get(k) || { n: 0, r: 0, g: 0, b: 0 };
+          e.n++; e.r += r; e.g += g; e.b += b;
+          eimer.set(k, e);
+        }
+        const kandidaten = [...eimer.values()]
+          .sort((a, b) => b.n - a.n).slice(0, 12)
+          .map((e) => rgb2hex(e.r / e.n, e.g / e.n, e.b / e.n));
+        const raus = [];
+        for (const f of kandidaten) {
+          if (raus.length >= 4) break;
+          const nah = raus.some((v) => Math.abs(farbTon(v) - farbTon(f)) < 22 && Math.abs(helligkeit(v) - helligkeit(f)) < 0.18);
+          if (!nah) raus.push(lesbar(f));
+        }
+        fertig(raus);
+      } catch (e) { fertig([]); }
+    };
+    bild.src = dataUrl;
+  });
+}
+
+// Aus einer Hauptfarbe wird die vollständige Palette: Akzent (verschobener Ton) und
+// ein sehr heller Grund für Flächen.
+function paletteAus(haupt, zweiter) {
+  const p = lesbar(haupt || FARBEN[0]);
+  let akzent = zweiter && saettigung(zweiter) > 0.12 ? lesbar(zweiter) : null;
+  if (!akzent || Math.abs(farbTon(akzent) - farbTon(p)) < 15) akzent = mischen(p, "#8E4A63", 0.45);
+  return { farbe: p, farbe2: akzent, farbePale: mischen(p, "#FFFFFF", 0.9) };
+}
+
+// Zeigt sofort, wie die Marke wirkt — dieselben Schriften und Farben wie im Dokument.
+function MarkeVorschau({ setup, logoImg }) {
+  const st = stilVon(setup.stil);
+  const f1 = setup.farbe || FARBEN[0];
+  const f2 = setup.farbe2 || f1;
+  const pale = setup.farbePale || mischen(f1, "#FFFFFF", 0.9);
+  return (
+    <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 14, padding: "16px 16px 14px", margin: "10px 0 16px" }}>
+      <div style={{ borderBottom: `${st.linie}px solid ${f1}`, paddingBottom: 11, display: "flex", alignItems: "center", gap: 9 }}>
+        {logoImg
+          ? <img src={logoImg} alt="" style={{ height: 34, borderRadius: st.radius }} />
+          : <span style={{ fontSize: 24 }}>{setup.logo || "🌹"}</span>}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: st.kopf, letterSpacing: st.spur, textTransform: st.gross ? "uppercase" : "none", fontSize: 17, color: f1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {setup.firma || "Dein Markenname"}
+          </div>
+          <div style={{ fontFamily: st.text, fontSize: 10.5, color: C.ink }}>{setup.nische || "Deine Nische"}</div>
+        </div>
+      </div>
+      <div style={{ fontFamily: st.kopf, letterSpacing: st.spur, textTransform: st.gross ? "uppercase" : "none", fontSize: 14, color: C.espresso, margin: "12px 0 4px" }}>
+        Angebot <span style={{ color: f2 }}>A-2026-001</span>
+      </div>
+      <div style={{ fontFamily: st.text, fontSize: 12, color: C.ink, lineHeight: 1.6 }}>
+        Liebe Kundin, hier kommt dein persönliches Angebot …
+      </div>
+      <div style={{ background: pale, borderRadius: st.radius, padding: "7px 11px", marginTop: 10, fontFamily: st.text, fontSize: 11, color: C.ink }}>
+        Gesamt <b style={{ color: f1 }}>480,00 €</b>
+      </div>
+    </div>
+  );
+}
+
+// Logos werden vor dem Speichern verkleinert — ein großes Bild würde den lokalen
+// Speicher sprengen und jeden Dokument-Download unnötig aufblähen.
+function logoVerkleinern(dataUrl, maxKante = 480) {
+  return new Promise((fertig) => {
+    if (typeof window === "undefined") { fertig(dataUrl); return; }
+    const bild = new Image();
+    bild.onerror = () => fertig(dataUrl);
+    bild.onload = () => {
+      try {
+        const f = Math.min(1, maxKante / Math.max(bild.width, bild.height));
+        if (f >= 1 && dataUrl.length < 400000) { fertig(dataUrl); return; }
+        const cv = document.createElement("canvas");
+        cv.width = Math.round(bild.width * f) || 1;
+        cv.height = Math.round(bild.height * f) || 1;
+        cv.getContext("2d").drawImage(bild, 0, 0, cv.width, cv.height);
+        fertig(cv.toDataURL("image/png"));
+      } catch (e) { fertig(dataUrl); }
+    };
+    bild.src = dataUrl;
+  });
+}
+
+
 function docHtml(bk, doc, logoImg) {
-  const pos = doc.positionen.map((p) => `<tr><td style="padding:8px 0;border-bottom:1px solid #eee">${p.t}</td><td style="text-align:right;padding:8px 0;border-bottom:1px solid #eee">${p.p} €</td></tr>`).join("");
+  const st = stilVon(bk.stil);
+  const f1 = bk.farbe || FARBEN[0];
+  const f2 = bk.farbe2 || f1;
+  const pale = bk.farbePale || mischen(f1, "#FFFFFF", 0.9);
+  const kopfStil = `font-family:${st.kopf};letter-spacing:${st.spur};${st.gross ? "text-transform:uppercase;" : ""}`;
+  const pos = doc.positionen.map((p) => `<tr><td style="padding:9px 0;border-bottom:1px solid ${pale}">${p.t}</td><td style="text-align:right;padding:9px 0;border-bottom:1px solid ${pale}">${p.p} €</td></tr>`).join("");
   const summe = doc.positionen.reduce((s, p) => s + (parseFloat(String(p.p).replace(",", ".")) || 0), 0).toFixed(2).replace(".", ",");
   return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>${doc.typ} ${doc.nr}</title></head>
-<body style="font-family:Georgia,serif;color:#3A2A22;max-width:700px;margin:40px auto;padding:0 24px">
-<div style="border-bottom:3px solid ${bk.farbe};padding-bottom:18px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center">
-  <div><div style="font-size:26px;color:${bk.farbe}">${logoImg ? `<img src="${logoImg}" style="height:44px;border-radius:9px;vertical-align:middle;margin-right:10px">` : bk.logo + " "}${bk.firma}</div>
+<body style="font-family:${st.text};color:#3A2A22;max-width:700px;margin:40px auto;padding:0 24px">
+<div style="border-bottom:${st.linie}px solid ${f1};padding-bottom:18px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center">
+  <div><div style="font-size:26px;color:${f1};${kopfStil}">${logoImg ? `<img src="${logoImg}" style="height:44px;border-radius:${st.radius}px;vertical-align:middle;margin-right:10px">` : bk.logo + " "}${bk.firma}</div>
   <div style="font-size:12px;color:#6B5443;margin-top:4px">${bk.nische}${bk.unterthemen ? " · " + bk.unterthemen : ""}</div></div>
   <div style="font-size:11px;color:#6B5443;text-align:right">${bk.adresse.replace(/\n/g, "<br>")}</div>
 </div>
 <div style="font-size:12px;color:#6B5443">${doc.empfaenger}</div>
-<h2 style="margin:26px 0 4px;font-weight:normal">${doc.typ} <span style="color:${bk.farbe}">${doc.nr}</span></h2>
+<h2 style="margin:26px 0 4px;font-weight:normal;${kopfStil}">${doc.typ} <span style="color:${f2}">${doc.nr}</span></h2>
 <div style="font-size:12px;color:#6B5443;margin-bottom:22px">Datum: ${doc.datum}${doc.typ === "Angebot" ? " · Gültig 30 Tage" : " · Zahlbar innerhalb 14 Tagen"}</div>
 <div style="font-size:14px;line-height:1.7;white-space:pre-wrap">${doc.text}</div>
 <table style="width:100%;margin:24px 0;font-size:14px;border-collapse:collapse">${pos}
-<tr><td style="padding:12px 0;font-weight:bold">Gesamt</td><td style="text-align:right;padding:12px 0;font-weight:bold;color:${bk.farbe}">${summe} €</td></tr></table>
-<div style="font-size:11px;color:#6B5443">Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.${bk.ustid ? " · USt-IdNr.: " + bk.ustid : ""}</div>
-<div style="margin-top:34px;font-size:13px">Herzliche Grüße<br><span style="color:${bk.farbe};font-size:17px">${bk.firma}</span></div>
+<tr><td style="padding:12px 0;font-weight:bold">Gesamt</td><td style="text-align:right;padding:12px 0;font-weight:bold;color:${f1}">${summe} €</td></tr></table>
+<div style="background:${pale};border-radius:${st.radius}px;padding:10px 14px;font-size:11px;color:#6B5443">Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.${bk.ustid ? " · USt-IdNr.: " + bk.ustid : ""}</div>
+<div style="margin-top:34px;font-size:13px">Herzliche Grüße<br><span style="color:${f1};font-size:17px;${kopfStil}">${bk.firma}</span></div>
 </body></html>`;
 }
 
 function Office({ office, setOffice, addPunkte }) {
   const bk = office.briefkopf;
-  const [setup, setSetup] = useState({ firma: "", nische: "", unterthemen: "", stil: "Elegant", farbe: FARBEN[0], logo: "🌹", adresse: "", ustid: "" });
+  const bkStil = stilVon(bk && bk.stil);
+  const bkKopf = { fontFamily: bkStil.kopf, letterSpacing: bkStil.spur, textTransform: bkStil.gross ? "uppercase" : "none" };
+  const [setup, setSetup] = useState({ firma: "", nische: "", unterthemen: "", stil: "Elegant", farbe: FARBEN[0], farbe2: FARBEN[2], farbePale: mischen(FARBEN[0], "#FFFFFF", 0.9), logo: "🌹", adresse: "", ustid: "" });
+  const [schritt, setSchritt] = useState(1);
+  const [vorschlaege, setVorschlaege] = useState([]);
   const [typ, setTyp] = useState("Angebot");
   const [empfaenger, setEmpfaenger] = useState("");
   const [positionen, setPositionen] = useState([{ t: "", p: "" }]);
@@ -4434,8 +4673,41 @@ function Office({ office, setOffice, addPunkte }) {
   const speichernBk = () => {
     if (!setup.firma.trim()) return;
     setOffice({ ...office, briefkopf: setup });
-    if (addPunkte) addPunkte(10, "Briefkopf erstellt");
+    setSchritt(1);
+    if (addPunkte) addPunkte(10, "Marke erstellt");
   };
+
+  // Logo aussuchen: das Bild bleibt auf dem Geraet, die Farben werden hier im Browser
+  // ausgelesen und sofort als Palettenvorschlag uebernommen.
+  const logoWaehlen = (e) => {
+    const datei = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!datei) return;
+    if (datei.size > 3 * 1024 * 1024) {
+      setInfo("⚠️ Bitte ein Logo unter 3 MB — kleiner lädt schneller.");
+      setTimeout(() => setInfo(""), 3400);
+      return;
+    }
+    const leser = new FileReader();
+    leser.onload = async () => {
+      const roh = String(leser.result || "");
+      const dataUrl = await logoVerkleinern(roh);
+      setOffice({ ...office, logoImg: dataUrl });
+      const f = await farbenAusLogo(dataUrl);
+      setVorschlaege(f);
+      if (f.length) setSetup((v) => ({ ...v, ...paletteAus(f[0], f[1]) }));
+    };
+    leser.readAsDataURL(datei);
+  };
+
+  // Ist schon ein Logo hinterlegt (z. B. aus der Mediathek), werden die Farben
+  // beim Öffnen einmal gelesen.
+  useEffect(() => {
+    if (!office.logoImg || vorschlaege.length) return;
+    let aktiv = true;
+    farbenAusLogo(office.logoImg).then((f) => { if (aktiv) setVorschlaege(f); });
+    return () => { aktiv = false; };
+  }, [office.logoImg]); // eslint-disable-line
 
   const sprachEingabe = () => {
     const SR = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
@@ -4541,39 +4813,139 @@ function Office({ office, setOffice, addPunkte }) {
 
       {!bk ? (
         <Card style={{ marginBottom: 16 }}>
-          <Eyebrow>1 · Dein Briefkopf (einmalig)</Eyebrow>
-          <input style={input} placeholder="Firmen-/Coachname *" value={setup.firma} onChange={(e) => setSetup({ ...setup, firma: e.target.value })} />
-          <input style={input} placeholder="Deine Nische (z. B. Spirituelles Coaching)" value={setup.nische} onChange={(e) => setSetup({ ...setup, nische: e.target.value })} />
-          <input style={input} placeholder="Unterthemen (z. B. Energiearbeit, Frauen-Circles)" value={setup.unterthemen} onChange={(e) => setSetup({ ...setup, unterthemen: e.target.value })} />
-          <textarea style={{ ...input, resize: "vertical" }} rows={2} placeholder={"Adresse (Straße\nPLZ Ort)"} value={setup.adresse} onChange={(e) => setSetup({ ...setup, adresse: e.target.value })} />
-          <input style={input} placeholder="USt-IdNr. (optional)" value={setup.ustid} onChange={(e) => setSetup({ ...setup, ustid: e.target.value })} />
+          <Eyebrow>✨ Deine Marke — in drei Schritten</Eyebrow>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.55, margin: "6px 0 4px" }}>
+            Logo, Farben, Schrift. Danach trägt jedes Angebot und jede Rechnung deine Handschrift — automatisch.
+          </p>
 
-          <Eyebrow color={C.plum}>Stil</Eyebrow>
-          <div style={{ display: "flex", gap: 7, margin: "6px 0 12px" }}>
-            {STILE.map((s) => (
-              <button key={s} onClick={() => setSetup({ ...setup, stil: s })} style={{ flex: 1, padding: "10px 0", borderRadius: 14, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 600, border: `1.5px solid ${setup.stil === s ? C.rose : C.line}`, background: setup.stil === s ? C.roseSoft : "transparent", color: setup.stil === s ? C.plum : C.ink }}>{s}</button>
+          <div style={{ display: "flex", gap: 6, margin: "12px 0 2px" }}>
+            {[1, 2, 3].map((n) => (
+              <div key={n} style={{ flex: 1, height: 4, borderRadius: 4, background: schritt >= n ? (setup.farbe || C.rose) : C.line, transition: "background .25s" }} />
             ))}
           </div>
-          <Eyebrow color={C.plum}>Farbe & Logo</Eyebrow>
-          <div style={{ display: "flex", gap: 9, alignItems: "center", margin: "8px 0 14px", flexWrap: "wrap" }}>
-            {FARBEN.map((f) => (
-              <button key={f} onClick={() => setSetup({ ...setup, farbe: f })} style={{ width: 34, height: 34, borderRadius: "50%", background: f, border: setup.farbe === f ? `3px solid ${C.espresso}` : "2px solid #fff", cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,.15)" }} />
-            ))}
-            <input value={setup.logo} onChange={(e) => setSetup({ ...setup, logo: e.target.value })} maxLength={2} style={{ ...input, width: 64, marginBottom: 0, textAlign: "center", fontSize: 20 }} />
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.mut, marginTop: 6 }}>
+            Schritt {schritt} von 3 · {schritt === 1 ? "Logo & Name" : schritt === 2 ? "Farben" : "Schrift & Angaben"}
           </div>
-          <Btn full onClick={speichernBk}>Briefkopf speichern ✓</Btn>
+
+          <MarkeVorschau setup={setup} logoImg={office.logoImg} />
+
+          {schritt === 1 && (
+            <>
+              <Eyebrow color={C.plum}>Logo</Eyebrow>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", margin: "8px 0 14px", flexWrap: "wrap" }}>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 15px", borderRadius: 13, border: `1.5px dashed ${C.rose}`, background: C.roseSoft, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 600, color: C.plum, minHeight: 44 }}>
+                  🖼️ {office.logoImg ? "Logo austauschen" : "Logo hochladen"}
+                  <input type="file" accept="image/*" onChange={logoWaehlen} style={{ display: "none" }} />
+                </label>
+                {office.logoImg && (
+                  <button onClick={() => setOffice({ ...office, logoImg: null })} style={{ background: "none", border: "none", color: C.mut, fontFamily: "system-ui, sans-serif", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>entfernen</button>
+                )}
+                <input value={setup.logo} onChange={(e) => setSetup({ ...setup, logo: e.target.value })} maxLength={2} style={{ ...input, width: 62, marginBottom: 0, textAlign: "center", fontSize: 20 }} />
+              </div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.mut, marginTop: -8, marginBottom: 12 }}>
+                Kein Logo? Das Emoji rechts wird stattdessen verwendet. Dein Bild bleibt auf deinem Gerät — die Farben werden hier im Browser gelesen.
+              </div>
+
+              <Eyebrow color={C.plum}>Name & Nische</Eyebrow>
+              <input style={input} placeholder="Firmen-/Coachname *" value={setup.firma} onChange={(e) => setSetup({ ...setup, firma: e.target.value })} />
+              <input style={input} placeholder="Deine Nische (z. B. Spirituelles Coaching)" value={setup.nische} onChange={(e) => setSetup({ ...setup, nische: e.target.value })} />
+              <input style={input} placeholder="Unterthemen (z. B. Energiearbeit, Frauen-Circles)" value={setup.unterthemen} onChange={(e) => setSetup({ ...setup, unterthemen: e.target.value })} />
+              <Btn full onClick={() => setup.firma.trim() && setSchritt(2)} disabled={!setup.firma.trim()}>Weiter zu den Farben →</Btn>
+            </>
+          )}
+
+          {schritt === 2 && (
+            <>
+              {vorschlaege.length > 0 && (
+                <>
+                  <Eyebrow color={C.plum}>Aus deinem Logo gelesen</Eyebrow>
+                  <div style={{ display: "flex", gap: 9, alignItems: "center", margin: "8px 0 6px", flexWrap: "wrap" }}>
+                    {vorschlaege.map((f, i) => (
+                      <button key={f + i} onClick={() => setSetup({ ...setup, ...paletteAus(f, vorschlaege.find((v) => v !== f)) })} title={f} style={{ width: 40, height: 40, borderRadius: "50%", background: f, border: setup.farbe === lesbar(f) ? `3px solid ${C.espresso}` : "2px solid #fff", cursor: "pointer", boxShadow: "0 2px 7px rgba(0,0,0,.18)" }} />
+                    ))}
+                    <button onClick={() => setSetup({ ...setup, ...paletteAus(vorschlaege[0], vorschlaege[1]) })} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>Vorschlag übernehmen</button>
+                  </div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.mut, marginBottom: 12 }}>
+                    Aus deinem Logo. Zu helle Töne werden automatisch abgedunkelt, damit sie auf Papier lesbar bleiben.
+                  </div>
+                </>
+              )}
+              {!office.logoImg && (
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.mut, margin: "4px 0 12px", lineHeight: 1.5 }}>
+                  Noch kein Logo hochgeladen — such dir unten eine Farbe aus, oder geh zurück und lade dein Logo hoch, dann schlage ich passende Farben vor.
+                </div>
+              )}
+
+              <Eyebrow color={C.plum}>Oder eine Grundfarbe wählen</Eyebrow>
+              <div style={{ display: "flex", gap: 9, alignItems: "center", margin: "8px 0 12px", flexWrap: "wrap" }}>
+                {FARBEN.map((f) => (
+                  <button key={f} onClick={() => setSetup({ ...setup, ...paletteAus(f) })} style={{ width: 36, height: 36, borderRadius: "50%", background: f, border: setup.farbe === f ? `3px solid ${C.espresso}` : "2px solid #fff", cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,.15)" }} />
+                ))}
+                <label style={{ width: 36, height: 36, borderRadius: "50%", border: `2px dashed ${C.line}`, display: "grid", placeItems: "center", cursor: "pointer", fontSize: 15 }}>
+                  🎨
+                  <input type="color" value={setup.farbe || FARBEN[0]} onChange={(e) => setSetup({ ...setup, ...paletteAus(e.target.value) })} style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
+                </label>
+              </div>
+
+              <Eyebrow color={C.plum}>Deine Palette</Eyebrow>
+              <div style={{ display: "flex", gap: 8, margin: "8px 0 16px" }}>
+                {[["Hauptfarbe", setup.farbe], ["Akzent", setup.farbe2], ["Fläche", setup.farbePale]].map(([n, f]) => (
+                  <div key={n} style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ height: 34, borderRadius: 10, background: f || C.line, border: `1px solid ${C.line}` }} />
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, color: C.mut, marginTop: 4 }}>{n}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <Btn ghost onClick={() => setSchritt(1)}>← Zurück</Btn>
+                <div style={{ flex: 1 }}><Btn full onClick={() => setSchritt(3)}>Weiter zur Schrift →</Btn></div>
+              </div>
+            </>
+          )}
+
+          {schritt === 3 && (
+            <>
+              <Eyebrow color={C.plum}>Schrift & Form</Eyebrow>
+              <div style={{ margin: "8px 0 14px" }}>
+                {STILE.map((s) => {
+                  const st = stilVon(s);
+                  const an = setup.stil === s;
+                  return (
+                    <button key={s} onClick={() => setSetup({ ...setup, stil: s })} style={{
+                      display: "block", width: "100%", textAlign: "left", marginBottom: 8,
+                      padding: "12px 14px", borderRadius: 14, cursor: "pointer", minHeight: 44,
+                      border: `1.5px solid ${an ? C.rose : C.line}`, background: an ? C.roseSoft : "transparent",
+                    }}>
+                      <div style={{ fontFamily: st.kopf, letterSpacing: st.spur, textTransform: st.gross ? "uppercase" : "none", fontSize: 15.5, color: an ? C.plum : C.espresso }}>{s}</div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 3 }}>{st.beschreibung}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <Eyebrow color={C.plum}>Angaben fürs Dokument</Eyebrow>
+              <textarea style={{ ...input, resize: "vertical", marginTop: 8 }} rows={2} placeholder={"Adresse (Straße\nPLZ Ort)"} value={setup.adresse} onChange={(e) => setSetup({ ...setup, adresse: e.target.value })} />
+              <input style={input} placeholder="USt-IdNr. (optional)" value={setup.ustid} onChange={(e) => setSetup({ ...setup, ustid: e.target.value })} />
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <Btn ghost onClick={() => setSchritt(2)}>← Zurück</Btn>
+                <div style={{ flex: 1 }}><Btn full onClick={speichernBk}>Marke speichern ✓</Btn></div>
+              </div>
+            </>
+          )}
         </Card>
       ) : !doc ? (
         <Card style={{ marginBottom: 16 }}>
           {/* Briefkopf-Vorschau */}
-          <div style={{ borderBottom: `3px solid ${bk.farbe}`, paddingBottom: 10, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ borderBottom: `${bkStil.linie}px solid ${bk.farbe}`, paddingBottom: 10, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: bk.farbe, display: "flex", alignItems: "center", gap: 8 }}>
-                {office.logoImg ? <img src={office.logoImg} alt="" style={{ height: 30, borderRadius: 7 }} /> : bk.logo} {bk.firma}
+              <div style={{ ...bkKopf, fontSize: 18, color: bk.farbe, display: "flex", alignItems: "center", gap: 8 }}>
+                {office.logoImg ? <img src={office.logoImg} alt="" style={{ height: 30, borderRadius: bkStil.radius }} /> : bk.logo} {bk.firma}
               </div>
               <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink }}>{bk.nische}</div>
             </div>
-            <button onClick={() => { setSetup(bk); setOffice({ ...office, briefkopf: null }); }} style={{ background: "none", border: "none", color: C.plum, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontFamily: "system-ui, sans-serif" }}>Bearbeiten</button>
+            <button onClick={() => { setSetup({ ...setup, ...bk }); setSchritt(1); setOffice({ ...office, briefkopf: null }); }} style={{ background: "none", border: "none", color: C.plum, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontFamily: "system-ui, sans-serif" }}>Bearbeiten</button>
           </div>
 
           <Eyebrow>2 · Schnellstart — Vorlagen für deine Nische</Eyebrow>
@@ -4620,14 +4992,14 @@ function Office({ office, setOffice, addPunkte }) {
       ) : (
         <Card style={{ marginBottom: 16 }}>
           {/* Dokument-Vorschau */}
-          <div style={{ borderBottom: `3px solid ${bk.farbe}`, paddingBottom: 10, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: bk.farbe, display: "flex", alignItems: "center", gap: 8 }}>
-              {office.logoImg ? <img src={office.logoImg} alt="" style={{ height: 28, borderRadius: 7 }} /> : bk.logo} {bk.firma}
+          <div style={{ borderBottom: `${bkStil.linie}px solid ${bk.farbe}`, paddingBottom: 10, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
+            <div style={{ ...bkKopf, fontSize: 17, color: bk.farbe, display: "flex", alignItems: "center", gap: 8 }}>
+              {office.logoImg ? <img src={office.logoImg} alt="" style={{ height: 28, borderRadius: bkStil.radius }} /> : bk.logo} {bk.firma}
             </div>
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, textAlign: "right" }}>{doc.datum}</div>
           </div>
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginBottom: 8 }}>{doc.empfaenger}</div>
-          <H size={18} style={{ marginBottom: 10 }}>{doc.typ} <span style={{ color: bk.farbe }}>{doc.nr}</span></H>
+          <H size={18} style={{ marginBottom: 10 }}>{doc.typ} <span style={{ color: bk.farbe2 || bk.farbe }}>{doc.nr}</span></H>
 
           {bearbeiten ? (
             <textarea value={doc.text} onChange={(e) => setDoc({ ...doc, text: e.target.value })} rows={9}
@@ -5582,38 +5954,502 @@ function Podcast({ addPunkte }) {
   );
 }
 
-function CoachingHub({ go }) {
-  const items = [
-    { icon: "📅", t: "Termin buchen", s: "1:1 Session mit deiner Coachin", tab: "buchen" },
-    { icon: "💎", t: "Coaching-Pakete", s: "Pakete ansehen & anfragen", tab: "pakete" },
-    { icon: "🏆", t: "Challenges & Ziele", s: "Challenge, Aufgaben & Meilensteine", tab: "aufgaben" },
-    { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index & Trend", tab: "fortschritt" },
-  ];
+/* ── Meine Coachin — hier treffen sich Begleitung und Alltag ──
+   Eine Seite beantwortet drei Fragen: Wer begleitet mich? Was ist von ihr für
+   mich da? Was steht an? Dazu — offen und nachlesbar — was sie von mir sieht.
+   Ohne Verbindung wird daraus die Einladung, sich zu verbinden. */
+
+const SIEHT = [
+  "Deinen Anzeigenamen und seit wann ihr verbunden seid",
+  "Eure Nachrichten und Sprachnachrichten",
+  "Termine, die du bei ihr buchst",
+  "Deinen Fortschritt in ihren Kursen",
+  "Anfragen, die du zu ihren Paketen stellst",
+];
+const SIEHT_NICHT = [
+  "Dein Journal, deine Briefe und Reflexionen",
+  "Orakel, Schattenspiegel und deine Rituale",
+  "Stimmung, Lichtpunkte, Streaks und Tests",
+  "Deine Dateien — außer du schickst sie ihr im Chat",
+  "Alles, was du ilho schreibst",
+];
+
+function terminText(beginn) {
+  const d = new Date(beginn);
+  const tage = Math.round((d.setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 864e5);
+  const uhr = new Date(beginn).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const wann = tage === 0 ? "heute" : tage === 1 ? "morgen" : tage < 7 ? `in ${tage} Tagen` :
+    new Date(beginn).toLocaleDateString("de-DE", { day: "numeric", month: "long" });
+  return `${wann} um ${uhr} Uhr`;
+}
+
+function CoachingHub({ go, bindung, aufBindung }) {
+  const [profil, setProfil] = useState(null);
+  const [msgs, setMsgs] = useState([]);
+  const [termine, setTermine] = useState([]);
+  const [material, setMaterial] = useState([]);
+  const [angebote, setAngebote] = useState([]);
+  const [beitraege, setBeitraege] = useState([]);
+  const [kurs, setKurs] = useState(null);
+  const [laedt, setLaedt] = useState(true);
+  const [zeigTransparenz, setZeigTransparenz] = useState(false);
+
+  useEffect(() => {
+    let aktiv = true;
+    if (!bindung?.coach_id) { setLaedt(false); return; }
+    (async () => {
+      setLaedt(true);
+      const [p, n, t, m, a, b, f] = await Promise.all([
+        ladeCoachProfil(bindung.coach_id),
+        ladeNachrichten(bindung.id, 50),
+        ladeMeineTermine(),
+        ladeMaterialien(bindung.coach_id),
+        ladeAngebote(bindung.coach_id),
+        ladeCoachBeitraege(bindung.coach_id, 3),
+        ladeKursFortschritt(bindung.id),
+      ]);
+      if (!aktiv) return;
+      setProfil(p); setMsgs(n || []); setTermine(t || []);
+      setMaterial(m || []); setAngebote(a || []); setBeitraege(b || []);
+      const kursAngebot = (a || []).find((x) => x.typ === "kurs");
+      if (kursAngebot) {
+        const module = await ladeKursModule(kursAngebot.id);
+        if (!aktiv) return;
+        setKurs({ titel: kursAngebot.titel, erledigt: module.filter((mo) => f[mo.id]).length, gesamt: module.length });
+      }
+      setLaedt(false);
+    })();
+    return () => { aktiv = false; };
+  }, [bindung?.coach_id, bindung?.id]);
+
+  /* ── Ohne Verbindung: erklären, was danach anders ist ── */
+  if (!bindung?.coach_id) {
+    return (
+      <div style={{ padding: "26px 20px" }}>
+        <Eyebrow>Deine Begleitung</Eyebrow>
+        <H size={25} style={{ marginBottom: 8 }}>Noch bist du hier allein unterwegs</H>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+          Alles in dieser App gehört dir — auch ohne Coachin. Mit einem Einladungscode
+          wird daraus ein gemeinsamer Raum: geschützt, nur ihr zwei.
+        </p>
+        <CoachVerbinden onVerbunden={aufBindung} />
+        <Card style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, marginBottom: 10 }}>Was sich dann ändert</div>
+          {[
+            ["💌", "Ein Chat, der nur euch gehört", "Text und Sprachnachrichten — sie antwortet dir persönlich."],
+            ["📅", "Termine direkt bei ihr", "Du siehst ihre freien Zeiten und buchst mit einem Tippen."],
+            ["📁", "Ihre Materialien und Kurse", "Was sie für dich einstellt, liegt hier bereit."],
+            ["🤍", "Und trotzdem: dein Raum bleibt deiner", "Journal, Orakel und Rituale sieht sie nicht."],
+          ].map(([i, t, s]) => (
+            <div key={t} style={{ display: "flex", gap: 11, marginBottom: 11 }}>
+              <span style={{ fontSize: 19 }}>{i}</span>
+              <span>
+                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, color: C.espresso }}>{t}</span>
+                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, marginTop: 2 }}>{s}</span>
+              </span>
+            </div>
+          ))}
+        </Card>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.75, lineHeight: 1.6 }}>
+          Du hast noch keinen Code? Deine Coachin findet ihn in ihrem Bereich unter „Klientinnen".
+        </p>
+      </div>
+    );
+  }
+
+  const name = profil?.name || bindung.coach_name || "Deine Coachin";
+  const vorname = name.split(" ")[0];
+  const initialen = name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  const ungelesen = msgs.filter((m) => m.absender === "coach" && !m.gelesen_am).length;
+  const letzteVonIhr = [...msgs].reverse().find((m) => m.absender === "coach");
+  const naechster = termine[0];
+  const pausiert = bindung.status === "pausiert";
+
+  // Was ansteht — aus echten Daten, nicht aus einer Wunschliste.
+  const anstehend = [];
+  if (ungelesen) anstehend.push({ icon: "💌", t: `${ungelesen} neue Nachricht${ungelesen > 1 ? "en" : ""} von ${vorname}`, s: "Lesen und in Ruhe antworten", tab: "coach" });
+  if (naechster) anstehend.push({ icon: "📅", t: `Session ${terminText(naechster.beginn)}`, s: `${naechster.dauer_min} Min · ${naechster.kanal === "video" ? "Video" : naechster.kanal === "telefon" ? "Telefon" : "vor Ort"}`, tab: "buchen" });
+  if (kurs && kurs.gesamt > 0 && kurs.erledigt < kurs.gesamt) anstehend.push({ icon: "🎓", t: `${kurs.titel}: Modul ${kurs.erledigt + 1} von ${kurs.gesamt}`, s: "Da wartet noch etwas auf dich", tab: "kurse" });
+  if (!naechster) anstehend.push({ icon: "🗓️", t: "Noch kein Termin ausgemacht", s: `Freie Zeiten von ${vorname} ansehen`, tab: "buchen" });
+  let berichtWoche = null;
+  try { berichtWoche = localStorage.getItem("s2g_bericht_woche"); } catch {}
+  if (berichtWoche !== String(wochenNummer())) anstehend.push({ icon: "🌿", t: `Deine Woche an ${vorname} schicken`, s: "Zahlen statt Inhalte — du wählst aus", tab: "wochenbericht" });
+
   return (
     <div style={{ padding: "26px 20px" }}>
-      <Eyebrow>Coaching</Eyebrow>
-      <H size={25} style={{ marginBottom: 6 }}>Deine Begleitung</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, marginBottom: 18 }}>
-        Alles rund um deine Coachin — Termine, Pakete, Ziele und dein Fortschritt an einem Ort.
-      </p>
-      {items.map((x) => (
-        <Card key={x.t} onClick={() => go(x.tab)} style={{ marginBottom: 11, display: "flex", gap: 14, alignItems: "center" }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, flexShrink: 0 }}>{x.icon}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{x.t}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 2 }}>{x.s}</div>
+      <Eyebrow>Deine Begleitung</Eyebrow>
+
+      {/* Wer dich begleitet */}
+      <Card style={{ marginBottom: 14, display: "flex", gap: 14, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+        <div style={{
+          width: 58, height: 58, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
+          fontFamily: "Georgia, serif", fontSize: 21,
+        }}>{initialen || "C"}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso }}>{name}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3 }}>
+            {pausiert ? "⏸ Begleitung pausiert" : "✓ verbunden"}
+            {bindung.verbunden_am ? ` seit ${new Date(bindung.verbunden_am).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}` : ""}
           </div>
-          <div style={{ color: C.gold, fontSize: 20 }}>›</div>
-        </Card>
-      ))}
+          {(profil?.website || profil?.instagram) && (
+            <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+              {profil.website && <a href={profil.website} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum }}>Website</a>}
+              {profil.instagram && <a href={`https://instagram.com/${String(profil.instagram).replace("@", "")}`} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum }}>Instagram</a>}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Was ansteht */}
+      <Eyebrow color={C.plum}>Was ansteht</Eyebrow>
+      <div style={{ marginTop: 8, marginBottom: 16 }}>
+        {anstehend.map((x) => (
+          <Card key={x.t} onClick={() => go(x.tab)} style={{ marginBottom: 9, display: "flex", gap: 13, alignItems: "center" }}>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{x.icon}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{x.t}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 2 }}>{x.s}</div>
+            </div>
+            <div style={{ color: C.gold, fontSize: 20 }}>›</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Was von ihr da ist */}
+      <Eyebrow color={C.plum}>Von {vorname} für dich</Eyebrow>
+      <div style={{ marginTop: 8, marginBottom: 16 }}>
+        {letzteVonIhr && (
+          <Card onClick={() => go("coach")} style={{ marginBottom: 9, borderLeft: `3px solid ${C.rose}` }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.plum, fontWeight: 600, marginBottom: 5 }}>
+              Ihre letzte Nachricht · {new Date(letzteVonIhr.created_at).toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
+            </div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.espresso, lineHeight: 1.55 }}>
+              {letzteVonIhr.text ? `„${String(letzteVonIhr.text).slice(0, 130)}${letzteVonIhr.text.length > 130 ? " …" : ""}"` : "🎙️ Eine Sprachnachricht wartet auf dich."}
+            </div>
+          </Card>
+        )}
+        {material.slice(0, 3).map((m) => (
+          <Card key={m.id} onClick={() => go("media")} style={{ marginBottom: 9, display: "flex", gap: 13, alignItems: "center" }}>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, flexShrink: 0 }}>
+              {KAT_ICON[m.kategorie] || "📄"}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{m.titel}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>{m.beschreibung || m.kategorie}</div>
+            </div>
+            <div style={{ color: C.gold, fontSize: 20 }}>›</div>
+          </Card>
+        ))}
+        {angebote.length > 0 && (
+          <Card onClick={() => go("kurse")} style={{ marginBottom: 9, display: "flex", gap: 13, alignItems: "center" }}>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, flexShrink: 0 }}>💎</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>
+                {angebote.length} {angebote.length === 1 ? "Angebot" : "Angebote"} von {vorname}
+              </div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>Kurse & Pakete ansehen</div>
+            </div>
+            <div style={{ color: C.gold, fontSize: 20 }}>›</div>
+          </Card>
+        )}
+        {beitraege.slice(0, 2).map((b) => (
+          <Card key={b.id} style={{ marginBottom: 9 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.plum, fontWeight: 600, marginBottom: 4 }}>Impuls</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 15.5, color: C.espresso, marginBottom: 4 }}>{b.titel}</div>
+            {b.text && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6 }}>{String(b.text).slice(0, 160)}{b.text.length > 160 ? " …" : ""}</div>}
+          </Card>
+        ))}
+        {!laedt && !letzteVonIhr && material.length === 0 && angebote.length === 0 && beitraege.length === 0 && (
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6 }}>
+            {vorname} hat hier noch nichts eingestellt. Schreib ihr gern zuerst — der Anfang darf auch von dir kommen.
+          </p>
+        )}
+      </div>
+
+      {/* Offen gesagt: was sie sieht */}
+      <Card style={{ marginBottom: 16, background: C.cream }}>
+        <div onClick={() => setZeigTransparenz(!zeigTransparenz)} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+          <span style={{ fontSize: 19 }}>🔍</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>Was {vorname} von dir sieht</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>Damit du es weißt — und nicht raten musst</div>
+          </div>
+          <span style={{ color: C.gold, fontSize: 18 }}>{zeigTransparenz ? "⌃" : "⌄"}</span>
+        </div>
+        {zeigTransparenz && (
+          <div style={{ marginTop: 14, animation: "fadeUp .3s ease" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, color: C.plum, marginBottom: 6 }}>Sie sieht</div>
+            {SIEHT.map((z) => (
+              <div key={z} style={{ display: "flex", gap: 8, fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6, marginBottom: 4 }}>
+                <span style={{ color: C.sage }}>✓</span><span>{z}</span>
+              </div>
+            ))}
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, color: C.plum, margin: "12px 0 6px" }}>Sie sieht nicht</div>
+            {SIEHT_NICHT.map((z) => (
+              <div key={z} style={{ display: "flex", gap: 8, fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6, marginBottom: 4 }}>
+                <span style={{ opacity: 0.5 }}>—</span><span>{z}</span>
+              </div>
+            ))}
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.8, lineHeight: 1.6, marginTop: 12 }}>
+              Magst du die Begleitung beenden, sag es ihr im Chat — sie löst die Verbindung. Deine Daten kannst du im Profil jederzeit exportieren oder löschen.
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Direkt weiter */}
+      <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+        <Btn small onClick={() => go("coach")}><span style={{ marginRight: 6 }}>💌</span>Schreiben</Btn>
+        <Btn small ghost onClick={() => go("buchen")}><span style={{ marginRight: 6 }}>📅</span>Termin</Btn>
+        <Btn small ghost onClick={() => go("kurse")}><span style={{ marginRight: 6 }}>🎓</span>Kurse</Btn>
+        <Btn small ghost onClick={() => go("media")}><span style={{ marginRight: 6 }}>📁</span>Material</Btn>
+      </div>
     </div>
   );
 }
 
-function Mehr({ go }) {
+/* ── Wochenbericht — was ich diese Woche getan habe, geht zu meiner Coachin ──
+   Grundsatz: Zahlen statt Inhalte. Die Coachin sieht, wie oft geübt wurde und
+   was die Klientin ihr selbst schreiben möchte — nie den Text aus Journal,
+   Orakel oder Schattenspiegel. Jede Zeile lässt sich vor dem Senden abwählen.
+   Verschickt wird als ganz normale Nachricht im gemeinsamen Chat. */
+
+const wochenBereich = (versatz = 0) => {
+  const start = montagVon(Date.now());
+  start.setDate(start.getDate() + versatz * 7);
+  const ende = new Date(start);
+  ende.setDate(ende.getDate() + 6);
+  return { start, ende };
+};
+const zeitraumText = ({ start, ende }) =>
+  `${start.toLocaleDateString("de-DE", { day: "numeric", month: start.getMonth() === ende.getMonth() ? undefined : "long" })}.–${ende.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}`;
+
+/* Ein Tag kann in drei Schreibweisen im Zustand stehen — wir prüfen alle. */
+const tageDerWoche = (bereich) => {
+  const de = new Set(), lang = new Set(), iso = new Set();
+  const d = new Date(bereich.start);
+  while (d <= bereich.ende) {
+    de.add(d.toLocaleDateString("de-DE"));
+    lang.add(d.toLocaleDateString("de-DE", { day: "numeric", month: "long" }));
+    iso.add(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return { de, lang, iso, drin: (w) => !!w && (de.has(w) || lang.has(w) || iso.has(w)) };
+};
+
+function baueWochenbericht(daten, versatz = 0) {
+  const bereich = wochenBereich(versatz);
+  const tage = tageDerWoche(bereich);
+  const { entries = [], achtsam = [], dank = [], qigong = [], metime = [], losgelassen = [], punkte = 0 } = daten || {};
+
+  const achtsamWoche = (achtsam || []).filter((a) => tage.drin(a.datum));
+  const arten = [...new Set(achtsamWoche.map((a) => a.art))];
+  const dankWoche = (dank || []).filter((d) => tage.drin(d.datum));
+  const journalWoche = (entries || []).filter((e) => tage.drin(e.date));
+  const qiWoche = (qigong || []).filter((q) => tage.drin(q.datum));
+  const qiMin = qiWoche.reduce((s, q) => s + (q.minuten || 0), 0);
+  const metimeWoche = (metime || []).filter((t) => t.erledigt && tage.drin(t.datum));
+  const losWoche = (losgelassen || []).filter((l) => tage.drin(l.los_am));
+  let tuer = false;
+  try { tuer = localStorage.getItem("s2g_woche_bonus") === String(wochenNummer(bereich.start.getTime())); } catch {}
+
+  const zeilen = [];
+  if (achtsamWoche.length) zeilen.push({ k: "achtsam", icon: "🖐️", text: `Achtsamkeit: ${achtsamWoche.length}×${arten.length ? ` (${arten.slice(0, 3).join(", ")})` : ""}` });
+  if (dankWoche.length) zeilen.push({ k: "dank", icon: "🤍", text: `Dankbarkeit: an ${dankWoche.length} ${dankWoche.length === 1 ? "Tag" : "Tagen"}` });
+  if (journalWoche.length) zeilen.push({ k: "journal", icon: "📔", text: `Journal: ${journalWoche.length} ${journalWoche.length === 1 ? "Eintrag" : "Einträge"} (Inhalt bleibt bei mir)` });
+  if (qiWoche.length) zeilen.push({ k: "qigong", icon: "🌿", text: `Qigong: ${qiWoche.length}× · ${qiMin} Min` });
+  if (metimeWoche.length) zeilen.push({ k: "metime", icon: "💗", text: `Me-Time: ${metimeWoche.length} gehalten` });
+  if (losWoche.length) zeilen.push({ k: "los", icon: "🕊️", text: `Losgelassen: ${losWoche.length}` });
+  if (tuer) zeilen.push({ k: "tuer", icon: "🔑", text: "Meine Wochen-Tür habe ich geöffnet" });
+  if (punkte) zeilen.push({ k: "punkte", icon: "✨", text: `Lichtpunkte gesamt: ${punkte}` });
+
+  return { bereich, zeitraum: zeitraumText(bereich), zeilen, leer: zeilen.length === 0 };
+}
+
+function berichtText(bericht, ausgewaehlt, notiz) {
+  const zeilen = bericht.zeilen.filter((z) => ausgewaehlt.includes(z.k));
+  const teile = [`🌿 Meine Woche · ${bericht.zeitraum}`, ""];
+  if (zeilen.length) teile.push(...zeilen.map((z) => `${z.icon} ${z.text}`));
+  else teile.push("Diese Woche war ruhig — ich war wenig in der App.");
+  if (notiz?.trim()) teile.push("", "Was ich dir sagen möchte:", `„${notiz.trim()}"`);
+  return teile.join("\n");
+}
+
+function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, metime, losgelassen, punkte }) {
+  const bericht = useMemo(
+    () => baueWochenbericht({ entries, achtsam, dank, qigong, metime, losgelassen, punkte }, 0),
+    [entries, achtsam, dank, qigong, metime, losgelassen, punkte]
+  );
+  const [aus, setAus] = useState([]);          // abgewählte Zeilen
+  const [notiz, setNotiz] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [hinweis, setHinweis] = useState("");
+  const [auto, setAuto] = useState(() => { try { return localStorage.getItem("s2g_bericht_auto") === "an"; } catch { return false; } });
+  const [gesendet, setGesendet] = useState(() => { try { return localStorage.getItem("s2g_bericht_woche"); } catch { return null; } });
+
+  const dieseWoche = String(wochenNummer());
+  const schonGesendet = gesendet === dieseWoche;
+  const ausgewaehlt = bericht.zeilen.map((z) => z.k).filter((k) => !aus.includes(k));
+  const text = berichtText(bericht, ausgewaehlt, notiz);
+  const vorname = (bindung?.coach_name || "deiner Coachin").split(" ")[0];
+
+  if (!bindung?.coach_id) {
+    return (
+      <div style={{ padding: "26px 20px" }}>
+        <Eyebrow>Wochenbericht</Eyebrow>
+        <H size={24} style={{ marginBottom: 8 }}>Dafür braucht es eine Coachin</H>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+          Sobald ihr verbunden seid, kannst du ihr am Ende der Woche zeigen, was du getan hast — in Zahlen, ohne deine Texte.
+        </p>
+        <CoachVerbinden onVerbunden={aufBindung} />
+      </div>
+    );
+  }
+
+  const senden = async () => {
+    setBusy(true);
+    const ok = await sendeNachricht({ klientinId: bindung.id, text });
+    setBusy(false);
+    if (!ok) { setHinweis("Das hat gerade nicht geklappt — versuch es gleich noch einmal."); return; }
+    try { localStorage.setItem("s2g_bericht_woche", dieseWoche); } catch {}
+    setGesendet(dieseWoche);
+    setHinweis(`✓ Deine Woche ist bei ${vorname}.`);
+  };
+
+  const autoUmschalten = () => {
+    const neu = !auto;
+    setAuto(neu);
+    try { localStorage.setItem("s2g_bericht_auto", neu ? "an" : "aus"); } catch {}
+  };
+
+  return (
+    <div style={{ padding: "26px 20px" }}>
+      <Eyebrow>Wochenbericht</Eyebrow>
+      <H size={24} style={{ marginBottom: 8 }}>Deine Woche für {vorname}</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+        {bericht.zeitraum} · Sie sieht Zahlen, keine Inhalte. Was du nicht schicken
+        magst, tippst du einfach weg.
+      </p>
+
+      <Card style={{ marginBottom: 14 }}>
+        {bericht.leer ? (
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            Diese Woche ist noch nichts zusammengekommen. Das ist auch eine Antwort —
+            du kannst sie trotzdem schicken.
+          </p>
+        ) : bericht.zeilen.map((z) => {
+          const an = !aus.includes(z.k);
+          return (
+            <div
+              key={z.k}
+              onClick={() => setAus(an ? [...aus, z.k] : aus.filter((k) => k !== z.k))}
+              style={{
+                display: "flex", alignItems: "center", gap: 11, padding: "9px 10px", marginBottom: 6,
+                borderRadius: 12, cursor: "pointer", opacity: an ? 1 : 0.4,
+                background: an ? C.goldPale : "transparent", border: `1px solid ${an ? C.line : "transparent"}`,
+              }}
+            >
+              <span style={{ fontSize: 18 }}>{z.icon}</span>
+              <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>{z.text}</span>
+              <span style={{ color: an ? C.gold : C.ink, fontSize: 15 }}>{an ? "✓" : "○"}</span>
+            </div>
+          );
+        })}
+      </Card>
+
+      <Card style={{ marginBottom: 14 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: C.espresso, marginBottom: 8 }}>
+          Was möchtest du ihr sagen? <span style={{ fontWeight: 400, color: C.ink }}>(freiwillig)</span>
+        </div>
+        <textarea
+          value={notiz}
+          onChange={(e) => setNotiz(e.target.value)}
+          rows={4}
+          placeholder="Diese Woche war …"
+          style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 15, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.card, color: C.espresso }}
+        />
+        <div style={{ marginTop: 8 }}>
+          <Mikro size={40} onText={(t) => setNotiz((v) => (v ? v + " " : "") + t)} />
+        </div>
+      </Card>
+
+      <Eyebrow color={C.plum}>So kommt es bei ihr an</Eyebrow>
+      <Card style={{ margin: "8px 0 14px", background: C.cream }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{text}</div>
+      </Card>
+
+      <div style={{ display: "flex", gap: 9, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
+        <Btn onClick={senden} disabled={busy}>{busy ? "Wird geschickt …" : schonGesendet ? "Noch einmal schicken" : `An ${vorname} schicken`}</Btn>
+        {schonGesendet && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.sage }}>✓ diese Woche schon geschickt</span>}
+      </div>
+      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, marginBottom: 12 }}>{hinweis}</div>}
+
+      <Card onClick={autoUmschalten} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{
+          width: 44, height: 26, borderRadius: 20, flexShrink: 0, padding: 3, display: "flex",
+          justifyContent: auto ? "flex-end" : "flex-start", alignItems: "center",
+          background: auto ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.line, transition: "all .2s",
+        }}>
+          <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#fff" }} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 13.5, color: C.espresso }}>Jeden Montag automatisch schicken</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2, lineHeight: 1.5 }}>
+            Nur die Zahlen der vergangenen Woche — ohne deine Notiz, die schreibst du selbst.
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/* ── Wochen-Rhythmus ──
+   In "Seele & Rituale" und "Wachsen & Spielen" öffnet sich pro Woche genau eine
+   Tür. Alles andere bleibt sichtbar, aber blass — Vorfreude statt Buffet.
+   Montag 00:00 wechselt die offene Tür, die Reihenfolge rotiert durch. Wer die
+   Woche nutzt, bekommt einmalig 20 Lichtpunkte. */
+const WOCHEN_GRUPPEN = ["Seele & Rituale", "Wachsen & Spielen"];
+const WOCHEN_BONUS = 20;
+
+const montagVon = (d) => {
+  const m = new Date(d);
+  m.setHours(0, 0, 0, 0);
+  m.setDate(m.getDate() - ((m.getDay() + 6) % 7));   // Mo = 0
+  return m;
+};
+const wochenNummer = (jetzt = Date.now()) =>
+  Math.round((montagVon(jetzt) - montagVon(new Date(2026, 0, 5))) / 604800000);
+const naechsterMontag = (jetzt = Date.now()) => {
+  const m = montagVon(jetzt);
+  m.setDate(m.getDate() + 7);
+  return m;
+};
+const restZeit = (ziel, jetzt) => {
+  let ms = Math.max(0, ziel - jetzt);
+  const t = Math.floor(ms / 86400000); ms -= t * 86400000;
+  const h = Math.floor(ms / 3600000); ms -= h * 3600000;
+  const m = Math.floor(ms / 60000); ms -= m * 60000;
+  const sek = Math.floor(ms / 1000);
+  const zz = (n) => String(n).padStart(2, "0");
+  return (t > 0 ? t + " T · " : "") + zz(h) + ":" + zz(m) + ":" + zz(sek);
+};
+/* Sekundengenauer Takt — nur dort, wo wirklich ein Countdown läuft. */
+function useSekundenTakt(aktiv = true) {
+  const [jetzt, setJetzt] = useState(() => Date.now());
+  useEffect(() => {
+    if (!aktiv) return;
+    const t = setInterval(() => setJetzt(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [aktiv]);
+  return jetzt;
+}
+
+function Mehr({ go, addPunkte }) {
   const gruppen = [
     { g: "Coaching", items: [
       { icon: "🌸", t: "Coaching", s: "Termine, Pakete & Fortschritt", tab: "coaching" },
+      { icon: "🌿", t: "Wochenbericht", s: "Deine Woche für deine Coachin", tab: "wochenbericht" },
       { icon: "🏆", t: "Challenges & Ziele", s: "Challenge, Aufgaben & Meilensteine", tab: "aufgaben" },
       { icon: "🤍", t: "Me-Time", s: "Termin mit dir selbst · Wellness, Essen, Reisen", tab: "metime" },
       { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index & Trend", tab: "fortschritt" },
@@ -5653,27 +6489,141 @@ function Mehr({ go }) {
       { icon: "👤", t: "Profil & Einstellungen", s: "Benachrichtigung, Abo, DSGVO", tab: "profil" },
     ] },
   ];
+  // Alle Übungen der Wochen-Gruppen in einer Reihe — daraus rotiert die offene Tür.
+  const wochenPool = gruppen.filter((gr) => WOCHEN_GRUPPEN.includes(gr.g)).flatMap((gr) => gr.items);
+  const woche = wochenNummer();
+  const offenIdx = wochenPool.length ? ((woche % wochenPool.length) + wochenPool.length) % wochenPool.length : 0;
+  const offenTab = wochenPool[offenIdx]?.tab;
+  const jetzt = useSekundenTakt(true);
+  const countdown = restZeit(naechsterMontag(jetzt).getTime(), jetzt);
+
+  const [belohnt, setBelohnt] = useState(() => {
+    try { return localStorage.getItem("s2g_woche_bonus"); } catch { return null; }
+  });
+  const schonBelohnt = belohnt === String(woche);
+  const [hinweis, setHinweis] = useState(null);
+
+  // Wann öffnet sich diese Tür? 1 = nächste Woche, 2 = übernächste …
+  const wartetWochen = (tab) => {
+    const i = wochenPool.findIndex((p) => p.tab === tab);
+    if (i < 0) return 0;
+    return (i - offenIdx + wochenPool.length) % wochenPool.length;
+  };
+  const oeffnetAm = (wochen) => {
+    const d = naechsterMontag(jetzt);
+    d.setDate(d.getDate() + (wochen - 1) * 7);
+    return d.toLocaleDateString("de-DE", { day: "numeric", month: "long" });
+  };
+
+  const antippen = (x, gesperrt, offen) => {
+    if (gesperrt) {
+      const w = wartetWochen(x.tab);
+      setHinweis({
+        tab: x.tab,
+        text: w === 1
+          ? `„${x.t}" öffnet sich am Montag, ${oeffnetAm(1)}.`
+          : `„${x.t}" ist in ${w} Wochen dran — ab ${oeffnetAm(w)}.`,
+      });
+      return;
+    }
+    if (offen && !schonBelohnt) {
+      try { localStorage.setItem("s2g_woche_bonus", String(woche)); } catch {}
+      setBelohnt(String(woche));
+      addPunkte?.(WOCHEN_BONUS, "Deine Woche geöffnet");
+    }
+    go(x.tab);
+  };
+
   return (
     <div style={{ padding: "26px 20px" }}>
+      <style>{`@keyframes wocheGlanz { 0%,100% { box-shadow: 0 4px 16px rgba(201,150,60,.22); } 50% { box-shadow: 0 6px 26px rgba(201,150,60,.5); } }`}</style>
       <Eyebrow>Mehr</Eyebrow>
       <H size={25} style={{ marginBottom: 18 }}>Alles an einem Ort</H>
-      {gruppen.map((gr) => (
+      {gruppen.map((gr) => {
+        const rhythmus = WOCHEN_GRUPPEN.includes(gr.g);
+        const ersterBlock = rhythmus && gr.g === gruppen.find((g) => WOCHEN_GRUPPEN.includes(g.g))?.g;
+        return (
         <div key={gr.g} style={{ marginBottom: 14 }}>
           <Eyebrow color={C.plum}>{gr.g}</Eyebrow>
+          {rhythmus && !ersterBlock && (
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, margin: "8px 0 2px" }}>
+              Gehört zum selben Wochen-Rhythmus.
+            </div>
+          )}
+          {ersterBlock && (
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+              margin: "8px 0 10px", padding: "9px 12px", borderRadius: 12,
+              background: C.goldPale, border: `1px solid ${C.line}`,
+            }}>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, lineHeight: 1.5 }}>
+                Jede Woche öffnet sich <b>eine</b> Tür. Diese Woche: <b style={{ color: C.plum }}>{wochenPool[offenIdx]?.t}</b>
+              </span>
+              <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12, color: C.gold, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                {countdown}
+              </span>
+            </div>
+          )}
           <div style={{ marginTop: 8 }}>
-            {gr.items.map((x) => (
-              <Card key={x.t} onClick={() => go(x.tab)} style={{ marginBottom: 10, display: "flex", gap: 14, alignItems: "center" }}>
-                <div style={{ width: 48, height: 48, borderRadius: 14, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, flexShrink: 0 }}>{x.icon}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{x.t}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 2 }}>{x.s}</div>
-                </div>
-                <div style={{ color: C.gold, fontSize: 20 }}>›</div>
-              </Card>
-            ))}
+            {gr.items.map((x) => {
+              const offen = rhythmus && x.tab === offenTab;
+              const gesperrt = rhythmus && !offen;
+              return (
+              <div key={x.t}>
+                <Card
+                  onClick={() => antippen(x, gesperrt, offen)}
+                  style={{
+                    marginBottom: hinweis?.tab === x.tab ? 4 : 10, display: "flex", gap: 14, alignItems: "center",
+                    opacity: gesperrt ? 0.42 : 1,
+                    border: offen ? `2px solid ${C.gold}` : `1px solid ${C.line}`,
+                    background: offen ? `linear-gradient(135deg, ${C.goldPale}, ${C.card})` : C.card,
+                    animation: offen ? "wocheGlanz 3.2s ease-in-out infinite" : "none",
+                  }}
+                >
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14, background: offen ? C.card : C.beige,
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, flexShrink: 0,
+                    filter: gesperrt ? "grayscale(.75)" : "none",
+                  }}>{x.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{x.t}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 2 }}>{x.s}</div>
+                    {offen && (
+                      <div style={{
+                        display: "inline-block", marginTop: 7, padding: "3px 9px", borderRadius: 20,
+                        background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
+                        fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700,
+                      }}>
+                        {schonBelohnt ? `✓ +${WOCHEN_BONUS} geholt` : `Jetzt offen · +${WOCHEN_BONUS} ✨`}
+                      </div>
+                    )}
+                  </div>
+                  {offen ? (
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, color: C.ink, opacity: 0.75 }}>noch offen</div>
+                      <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12.5, color: C.gold, fontVariantNumeric: "tabular-nums" }}>{countdown}</div>
+                    </div>
+                  ) : gesperrt ? (
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 15 }}>🔒</div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, whiteSpace: "nowrap" }}>
+                        {wartetWochen(x.tab) === 1 ? "nächste Woche" : `in ${wartetWochen(x.tab)} Wochen`}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ color: C.gold, fontSize: 20 }}>›</div>
+                  )}
+                </Card>
+                {hinweis?.tab === x.tab && (
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, margin: "0 0 10px 6px", animation: "fadeUp .3s ease" }}>
+                    {hinweis.text}
+                  </div>
+                )}
+              </div>
+            );})}
           </div>
         </div>
-      ))}
+      );})}
     </div>
   );
 }
@@ -5958,6 +6908,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
   const [atemPhase, setAtemPhase] = useState("ein");
   const [schritt, setSchritt] = useState(0);
   const [text, setText] = useState("");
+  const [stimme, setStimme] = useState(() => stimmeAn());
   // 4-7-8 Atmung: 6 Zyklen
   useEffect(() => {
     if (phase !== "atmen") return;
@@ -5975,13 +6926,77 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
     lauf();
     return () => clearTimeout(timer);
   }, [phase]);
+
+  /* ── Sprachbegleitung ──
+     Wer in Panik ist, tippt sich nicht durch fünf Schritte. Darum liest die App
+     hier vor und geht von allein weiter — Hände frei, Augen zu.
+     Alles bleibt sichtbar und klickbar; die Stimme ist ein Angebot, keine Pflicht. */
+  useEffect(() => () => stoppSprache(), []);
+
+  // Auswahl: vorlesen, was zur Wahl steht — und notfalls von allein anfangen.
+  useEffect(() => {
+    if (!stimme || phase !== "wahl") return;
+    let ab = false;
+    (async () => {
+      await sprich("Ich bin bei dir. Was ist gerade los? Ich suche den passenden Weg für dich.", { pauseDanach: 400 });
+      if (ab) return;
+      await sprich("Panik und Herzrasen. Tiefe Traurigkeit. Wut und Druck. Einsamkeit. Überforderung. Oder ganz dunkle Gedanken.", { rate: 0.84, pauseDanach: 6000 });
+      if (ab) return;
+      await sprich("Du musst nichts aussuchen. Ich fange einfach mit dem Atem an — tipp jederzeit etwas anderes an.", { pauseDanach: 1200 });
+      if (ab) return;
+      setWeg("ueberfordert");
+      setPhase("atmen");
+    })();
+    return () => { ab = true; stoppSprache(); };
+  }, [phase, stimme]);
+
+  // Atem: jede Phase wird angesagt, damit niemand auf den Kreis schauen muss.
+  useEffect(() => {
+    if (!stimme || phase !== "atmen") return;
+    sprich(atemPhase === "ein" ? "Einatmen" : atemPhase === "halten" ? "Halten" : "Und langsam ausatmen", { rate: 0.8 });
+  }, [atemPhase, phase, stimme]);
+
+  // Erdung: Schritt vorlesen, Zeit zum Tun lassen, dann selbst weiterblättern.
+  useEffect(() => {
+    if (!stimme || phase !== "erdung" || !weg) return;
+    const uebung = SOS_ERDUNG[weg];
+    if (!uebung) return;
+    let ab = false;
+    const pause = weg === "dunkel" ? 11000 : 7000;
+    (async () => {
+      if (schritt === 0) { await sprich(uebung.name, { pauseDanach: 500 }); if (ab) return; }
+      await sprich(uebung.schritte[schritt], { pauseDanach: pause });
+      if (ab) return;
+      if (schritt < uebung.schritte.length - 1) setSchritt(schritt + 1);
+      else setPhase("halt");
+    })();
+    return () => { ab = true; stoppSprache(); };
+  }, [phase, schritt, weg, stimme]);
+
+  // Halt: der Satz der Coachin — bei dunklen Gedanken zusätzlich die Nummer.
+  useEffect(() => {
+    if (!stimme || phase !== "halt") return;
+    let ab = false;
+    (async () => {
+      await sprich(SOS_ERDUNG[weg]?.hinweis || "Was du gerade fühlst, darf da sein. Du musst es nicht allein tragen.", { pauseDanach: 800 });
+      if (ab) return;
+      if (weg === "dunkel") {
+        await sprich("Die Telefonseelsorge ist rund um die Uhr da, kostenlos: 0 8 0 0 . 1 1 1 . 0 . 1 1 1.", { rate: 0.78, pauseDanach: 800 });
+        if (ab) return;
+      }
+      await sprich("Magst du aufschreiben, was gerade am lautesten in dir ist?");
+    })();
+    return () => { ab = true; stoppSprache(); };
+  }, [phase, weg, stimme]);
   const speichern = () => {
+    stoppSprache();
     if (text.trim() && setEntries) {
       setEntries([{ date: new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" }), intention: `🤍 S.O.S. · ${SOS_WEGE.find((w) => w.k === weg)?.t || "Halt gesucht"}`, items: [text.trim()] }, ...(entries || [])]);
       if (addPunkte) addPunkte(8, "Du hast dich gehalten");
     }
     onClose();
   };
+  const schliessen = () => { stoppSprache(); onClose(); };
   const erdung = weg ? SOS_ERDUNG[weg] : null;
   const dunkel = weg === "dunkel";
   const Hilfe = ({ voll }) => (
@@ -5993,8 +7008,23 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
   );
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 40, display: "flex", justifyContent: "center" }}>
-      <div style={{ position: "absolute", inset: 0, background: "rgba(46,35,32,.9)", backdropFilter: "blur(6px)" }} onClick={phase === "atmen" ? undefined : onClose} />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(46,35,32,.9)", backdropFilter: "blur(6px)" }} onClick={phase === "atmen" ? undefined : schliessen} />
       <div style={{ position: "relative", width: "100%", maxWidth: 430, maxHeight: "100vh", overflowY: "auto", display: "flex", flexDirection: "column", justifyContent: "center", padding: "26px 20px", boxSizing: "border-box" }}>
+
+        {spracheMoeglich() && (
+          <button
+            onClick={() => { const neu = !stimme; setStimme(neu); stimmeSetzen(neu); }}
+            aria-label={stimme ? "Sprachbegleitung ausschalten" : "Sprachbegleitung einschalten"}
+            style={{
+              position: "absolute", top: 12, right: 16, zIndex: 2,
+              background: "rgba(251,246,238,.1)", border: "1.5px solid #5A473C", borderRadius: 20,
+              color: "#D8C4AE", padding: "7px 13px", cursor: "pointer",
+              fontFamily: "system-ui, sans-serif", fontSize: 12,
+            }}
+          >
+            {stimme ? "🔊 Stimme an" : "🔇 Stimme aus"}
+          </button>
+        )}
 
         {phase === "wahl" && (
           <div>
@@ -6003,6 +7033,11 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
               <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: "#D8C4AE", marginTop: 6, lineHeight: 1.6 }}>
                 Was ist gerade los? Ich such den passenden Weg für dich.
               </div>
+              {stimme && spracheMoeglich() && (
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: "#A8927C", marginTop: 8, lineHeight: 1.55 }}>
+                  Du musst nichts tippen — ich lese vor und gehe von allein mit dir weiter.
+                </div>
+              )}
             </div>
             {SOS_WEGE.map((w) => (
               <button key={w.k} onClick={() => { setWeg(w.k); setPhase(w.k === "dunkel" ? "erdung" : "atmen"); }} style={{
@@ -6019,7 +7054,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
                 <span style={{ color: "#C0AC98", fontSize: 19 }}>›</span>
               </button>
             ))}
-            <button onClick={onClose} style={{ display: "block", width: "100%", marginTop: 12, background: "none", border: "1.5px solid #5A473C", borderRadius: 14, color: "#C0AC98", padding: "12px 0", fontFamily: "system-ui, sans-serif", fontSize: 13.5, cursor: "pointer" }}>
+            <button onClick={schliessen} style={{ display: "block", width: "100%", marginTop: 12, background: "none", border: "1.5px solid #5A473C", borderRadius: 14, color: "#C0AC98", padding: "12px 0", fontFamily: "system-ui, sans-serif", fontSize: 13.5, cursor: "pointer" }}>
               Doch nicht — schließen
             </button>
           </div>
@@ -6092,7 +7127,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <Btn full onClick={() => setPhase("schreiben")}>Aufschreiben</Btn>
-              <Btn full ghost onClick={onClose}>Mir geht's besser</Btn>
+              <Btn full ghost onClick={schliessen}>Mir geht's besser</Btn>
             </div>
             <Hilfe voll={dunkel} />
           </Card>
@@ -6110,7 +7145,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
             />
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <Btn full onClick={speichern} disabled={!text.trim()}>Ins Journal legen</Btn>
-              <Btn full ghost onClick={onClose}>Verwerfen</Btn>
+              <Btn full ghost onClick={schliessen}>Verwerfen</Btn>
             </div>
             <Hilfe voll={dunkel} />
           </Card>
@@ -6984,6 +8019,14 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte }) {
           Schultern, Arme, Hals, Gesicht. Bei jeder Station ein Atemzug. Nichts
           verändern, nur bemerken.
         </p>
+        <Hoerspur
+          src={S2GAUDIO.koerperreise}
+          titel="Körperreise anhören · ca. 3 Min"
+          beiEnde={() => merken("Körperreise")}
+        />
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, margin: "8px 0 12px" }}>
+          Kopfhörer sind schön, aber nicht nötig. Am Ende wird die Übung von allein eingetragen.
+        </div>
         <Btn small ghost onClick={() => merken("Körperreise")}>Gemacht ✓</Btn>
       </Card>
 
@@ -7569,7 +8612,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
-const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -7709,6 +8752,7 @@ export default function IlhoApp() {
     if (s.reisen) setReisen(s.reisen);
     if (s.feste) setFeste(s.feste);
     if (s.leere) setLeere(s.leere);
+    if (s.office) setOffice(s.office);
     if (s.wo) setWo(s.wo);
   };
 
@@ -7718,9 +8762,9 @@ export default function IlhoApp() {
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo }));
+      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office }));
     } catch (e) {}
-  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office]);
 
   // Echte Supabase-Session: stellt Login nach Reload/Google-Redirect wieder her.
   // Ohne konfiguriertes Supabase (kein .env) bleibt supabase === null und hier passiert nichts —
@@ -7770,10 +8814,10 @@ export default function IlhoApp() {
 
   useEffect(() => {
     if (!supabase || !user || !cloudBereit) return; // nichts speichern, bevor der Cloud-Stand geladen (oder als leer bestätigt) wurde
-    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo };
+    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office };
     const timer = setTimeout(() => { speichereAppState(state); }, 1200); // debounced, kein Schreiben bei jeder Mikro-Änderung
     return () => clearTimeout(timer);
-  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo]);
+  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office]);
 
   // Erreichbarkeit der Cloud einmal beim Start pruefen (pausiertes Projekt, Funkloch).
   useEffect(() => {
@@ -7792,6 +8836,22 @@ export default function IlhoApp() {
     if (user) aufBindung();
     else setBindung(null);
   }, [user]); // eslint-disable-line
+
+  // Wochenbericht: montags von allein an die Coachin — nur wenn eingeschaltet.
+  useEffect(() => {
+    if (!bindung?.id) return;
+    let an = false, zuletzt = null;
+    try {
+      an = localStorage.getItem("s2g_bericht_auto") === "an";
+      zuletzt = localStorage.getItem("s2g_bericht_woche");
+    } catch {}
+    if (!an) return;
+    const letzte = wochenNummer() - 1;
+    if (zuletzt !== null && Number(zuletzt) >= letzte) return;
+    const b = baueWochenbericht({ entries, achtsam, dank, qigong, metime, losgelassen, punkte }, -1);
+    sendeNachricht({ klientinId: bindung.id, text: berichtText(b, b.zeilen.map((z) => z.k), "") })
+      .then((ok) => { if (ok) { try { localStorage.setItem("s2g_bericht_woche", String(letzte)); } catch {} } });
+  }, [bindung?.id]); // eslint-disable-line
 
   const go = (next) => {
     setStack([...stack, tab]);
@@ -7890,11 +8950,12 @@ export default function IlhoApp() {
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 172 : 86, animation: "fadeUp .45s ease" }}>
               {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
-              {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} /></>}
+              {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} bindung={bindung} aufBindung={aufBindung} /></>}
+              {tab === "wochenbericht" && <Wochenbericht bindung={bindung} aufBindung={aufBindung} entries={entries} achtsam={achtsam} dank={dank} qigong={qigong} metime={metime} losgelassen={losgelassen} punkte={punkte} />}
               {tab === "impressum" && <Impressum />}
               {tab === "datenschutz" && <Datenschutz />}
               {tab === "tagebuch" && <Journal entries={entries} setEntries={setEntries} ritual={ritual} setRitual={setRitual} ch369={ch369} setCh369={setCh369} mm={mm} setMm={setMm} briefe={briefe} setBriefe={setBriefe} akarte={akarte} setAkarte={setAkarte} addPunkte={addPunkte} streak={streak} punkte={punkte} initialSec={journalSec} />}
-              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} /></>}
+              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} /></>}
               {tab === "ziele" && <><MediaBanner video={S2GVID.ziele} poster={S2GIMG.ziele} title="Ziele" subtitle="Deine Richtung, dein Nordstern" height={190} /><Ziele ziele={ziele} setZiele={setZiele} addPunkte={addPunkte} /></>}
               {tab === "aufgaben" && <><MediaBanner video={S2GVID.aufgaben} poster={S2GIMG.aufgaben} title="Aufgaben" subtitle="Schritt für Schritt" height={190} /><Aufgaben aufgaben={aufgaben} setAufgaben={setAufgaben} addPunkte={addPunkte} go={go} /></>}
               {tab === "appguide" && <><MediaBanner video={S2GVID.appguide} poster={S2GIMG.appguide} title="App-Guide" subtitle="Dein Wegweiser" height={190} /><AppGuide /></>}
