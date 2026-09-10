@@ -120,6 +120,7 @@ export const AUDIO = {
   dankbarkeit: "/media/audio/dankbarkeit.mp3",
   brief:       "/media/audio/brief.mp3",
   tagebuch:    "/media/audio/tagebuch.mp3",
+  koerperreise: "/media/audio/koerperreise.mp3",
 };
 
 // Sprach-Prompts (Voiceover-Texte, passend zu den Audios)
@@ -130,6 +131,7 @@ export const VOICE = {
   dankbarkeit: "Wofür bist du heute dankbar?",
   brief:       "Ein Brief an dich selbst — an die Frau in einem Jahr.",
   tagebuch:    "Dies ist dein Raum. Kein richtig, kein falsch.",
+  koerperreise: "Kleine Körperreise — wandere langsam durch deinen Körper. Nichts verändern, nur bemerken.",
 };
 
 export const PALETTE = {

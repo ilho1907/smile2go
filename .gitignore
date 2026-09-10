@@ -4,3 +4,8 @@ node_modules
 .secrets.local
 .env
 .env.local
+
+# Arbeitsdateien
+*.bak-*
+build-marke.sh
+build-marke.log
