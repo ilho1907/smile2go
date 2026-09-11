@@ -2778,16 +2778,17 @@ function coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 }) {
   const index = Math.round(0.25 * energieScore + 0.15 * streakScore + 0.20 * taskDone + 0.15 * journalScore + 0.25 * challengeScore);
   const offen = tasks.filter((a) => !a.erledigt).length;
   const erledigt = tasks.filter((a) => a.erledigt).length;
+  // Jede Warnung weiß, wohin sie führt — sonst weiß man, was fehlt, aber nicht, wo es liegt.
   const warnungen = [];
-  if (energie && energie.v <= 2) warnungen.push(`Energie heute niedrig (${energie.v}/5)`);
-  if (offen >= 3) warnungen.push(`${offen} offene Aufgaben stauen sich`);
-  if ((streak || 0) === 0) warnungen.push("Streak unterbrochen — Reaktivierung sinnvoll");
-  if (ch369?.tag && !dankbarkeitHeute) warnungen.push(`Dankbarkeits-Challenge heute noch nicht gemacht (Tag ${ch369.tag}/21)`);
+  if (energie && energie.v <= 2) warnungen.push({ t: `Energie heute niedrig (${energie.v}/5)`, tab: "fortschritt", hin: "Energie-Check öffnen" });
+  if (offen >= 3) warnungen.push({ t: `${offen} offene Aufgaben stauen sich`, tab: "aufgaben", hin: "Aufgaben öffnen" });
+  if ((streak || 0) === 0) warnungen.push({ t: "Streak unterbrochen — Reaktivierung sinnvoll", tab: "tagebuch", hin: "Eintrag schreiben" });
+  if (ch369?.tag && !dankbarkeitHeute) warnungen.push({ t: `Dankbarkeits-Challenge heute noch nicht gemacht (Tag ${ch369.tag}/21)`, tab: "aufgaben", hin: "Challenge öffnen" });
   const briefing = `Wohlbefindens-Index ${index}/100. ` +
     (energie ? `Energie heute ${energie.v}/5. ` : "") +
     `Streak ${streak || 0} Tage · Aufgaben ${erledigt}/${tasks.length}` +
     (ch369?.tag ? ` · Dankbarkeits-Challenge Tag ${ch369.tag}/21 (heute ${dankbarkeitHeute ? "erledigt" : "offen"})` : "") + ". " +
-    (warnungen.length ? "⚠ " + warnungen.join("; ") + "." : "Keine Auffälligkeiten.");
+    (warnungen.length ? "⚠ " + warnungen.map((w) => w.t).join("; ") + "." : "Keine Auffälligkeiten.");
   const comps = [
     ["Energie", energieScore, "eine Atemübung oder Meditation"],
     ["Aktivität", streakScore, "eine kleine tägliche Routine"],
@@ -3326,7 +3327,7 @@ function coachHeuteAktionen({ ci, checkins, entries, streak, ch369 }) {
   const a = [];
   const heuteStr = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" });
   // 1. Kritische Signale zuerst (bestehende Signal-Logik)
-  ci.warnungen.forEach((w) => a.push({ icon: "🔴", t: w, art: "Signal prüfen" }));
+  ci.warnungen.forEach((w) => a.push({ icon: "🔴", t: w.t, art: "Signal prüfen" }));
   // 2. Stille Klientin: kein Journal seit >3 Einträgen zurückliegendem Datum bzw. Streak-Riss
   if (streak === 0 && entries?.length) a.push({ icon: "🕯️", t: "Klientin war zuletzt nicht aktiv — sanft nachfragen?", art: "Kontakt" });
   // 3. Unbeantwortete Check-in-Notiz (Notiz an Coachin vorhanden)
@@ -3353,7 +3354,7 @@ function CoachReflexion({ ci, checkins, streak }) {
   const holen = async () => {
     if (busy) return;
     setBusy(true);
-    const lage = `Wohlbefindens-Index: ${ci.index}/100 · Serie: ${streak} Tage · Warnungen: ${ci.warnungen.join("; ") || "keine"} · Schwächster Bereich: ${ci.schwaechster} · Letzter Check-in: ${checkins?.[0] ? `${checkins[0].wert}/5${checkins[0].notiz ? ` — „${checkins[0].notiz}"` : ""}` : "keiner"}`;
+    const lage = `Wohlbefindens-Index: ${ci.index}/100 · Serie: ${streak} Tage · Warnungen: ${ci.warnungen.map((w) => w.t).join("; ") || "keine"} · Schwächster Bereich: ${ci.schwaechster} · Letzter Check-in: ${checkins?.[0] ? `${checkins[0].wert}/5${checkins[0].notiz ? ` — „${checkins[0].notiz}"` : ""}` : "keiner"}`;
     const f = await askLuma([{ role: "user", content: lage }], REFLEXION_SYSTEM);
     if (f) { setFrage(f); localStorage.setItem("s2g_reflex_frage", f); logEvent("coach_reflexion"); }
     setBusy(false);
@@ -3464,7 +3465,26 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
         <Card style={{ marginBottom: 14, background: "#F9E8E2", border: `1px solid #E7B7A8` }}>
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#B0492F" }}>⚠ Frühwarnung</div>
           {ci.warnungen.map((w, i) => (
-            <div key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, marginTop: 4 }}>• {w}</div>
+            <button
+              key={i}
+              onClick={() => go?.(w.tab)}
+              disabled={!go}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 40,
+                marginTop: 6, padding: "8px 10px", textAlign: "left",
+                background: "rgba(255,255,255,.6)", border: "1px solid #E7B7A8", borderRadius: 10,
+                cursor: go ? "pointer" : "default",
+                fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso,
+              }}
+            >
+              <span style={{ flex: 1, minWidth: 0 }}>{w.t}</span>
+              {go && (
+                <>
+                  <span style={{ fontSize: 11, color: "#B0492F", whiteSpace: "nowrap" }}>{w.hin}</span>
+                  <span style={{ color: "#B0492F", fontSize: 15 }}>›</span>
+                </>
+              )}
+            </button>
           ))}
         </Card>
       )}
@@ -3595,7 +3615,7 @@ function Wochenbild({ entries, checkins, streak, prefs, setPrefs, addPunkte, twi
   );
 }
 
-function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checkins, setCheckins, addPunkte, prefs, setPrefs, twinTon = "" }) {
+function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checkins, setCheckins, addPunkte, prefs, setPrefs, twinTon = "", go }) {
   const ci = coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 });
   const week = [3, 2, 4, 1, 3, 2, 4];
   const max = Math.max(...week);
@@ -3639,7 +3659,26 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
         <Card style={{ marginBottom: 14, background: "#F9E8E2", border: `1px solid #E7B7A8` }}>
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#B0492F" }}>⚠ Frühwarnung</div>
           {ci.warnungen.map((w, i) => (
-            <div key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, marginTop: 4 }}>• {w}</div>
+            <button
+              key={i}
+              onClick={() => go?.(w.tab)}
+              disabled={!go}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 40,
+                marginTop: 6, padding: "8px 10px", textAlign: "left",
+                background: "rgba(255,255,255,.6)", border: "1px solid #E7B7A8", borderRadius: 10,
+                cursor: go ? "pointer" : "default",
+                fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso,
+              }}
+            >
+              <span style={{ flex: 1, minWidth: 0 }}>{w.t}</span>
+              {go && (
+                <>
+                  <span style={{ fontSize: 11, color: "#B0492F", whiteSpace: "nowrap" }}>{w.hin}</span>
+                  <span style={{ color: "#B0492F", fontSize: 15 }}>›</span>
+                </>
+              )}
+            </button>
           ))}
         </Card>
       )}
@@ -9367,7 +9406,7 @@ export default function IlhoApp() {
               {tab === "meditation" && <MeditationCine addPunkte={addPunkte} />}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
               {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} alias={alias} anon={anon} bindung={bindung} /></>}
-              {tab === "fortschritt" && <><MediaBanner video={S2GVID.fortschritt} poster={S2GIMG.fortschritt} title="Mein Fortschritt" subtitle="Du wächst" height={190} /><Fortschritt streak={streak} entries={entries} punkte={punkte} energie={energie} aufgaben={aufgaben} ch369={ch369} checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} twinTon={twinTon} /></>}
+              {tab === "fortschritt" && <><MediaBanner video={S2GVID.fortschritt} poster={S2GIMG.fortschritt} title="Mein Fortschritt" subtitle="Du wächst" height={190} /><Fortschritt streak={streak} entries={entries} punkte={punkte} energie={energie} aufgaben={aufgaben} ch369={ch369} checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} twinTon={twinTon} go={go} /></>}
               {tab === "fragebogen" && <><MediaBanner video={S2GVID.fragebogen} poster={S2GIMG.fragebogen} title="Fragebogen" subtitle="Lerne dich kennen" height={190} /><Fragebogen intake={intake} setIntake={setIntake} addPunkte={addPunkte} /></>}
               {tab === "pakete" && <><MediaBanner video={S2GVID.pakete} poster={S2GIMG.pakete} title="Pakete" subtitle="Wähle dein Geschenk an dich" height={190} /><Pakete addPunkte={addPunkte} go={go} /></>}
               {tab === "office" && <Office office={office} setOffice={setOffice} addPunkte={addPunkte} />}
