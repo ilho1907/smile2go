@@ -6688,6 +6688,24 @@ function Mehr({ go, addPunkte, openThema, bindung }) {
     <div style={{ padding: "26px 20px" }}>
       <style>{`@keyframes wocheGlanz { 0%,100% { box-shadow: 0 4px 16px rgba(201,150,60,.22); } 50% { box-shadow: 0 6px 26px rgba(201,150,60,.5); } }`}</style>
       <Eyebrow>Mehr</Eyebrow>
+
+      {/* Was die Coachinnen anbieten steht vor dem eigenen Werkzeugkasten —
+          das ist der Grund, warum es die Plattform gibt. */}
+      <H size={25} style={{ marginBottom: 6 }}>Was unsere Coachinnen anbieten</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, margin: "0 0 10px" }}>
+        Kurse, Pakete und Retreats — zuerst von deiner eigenen Coachin.
+      </p>
+      <Card onClick={() => go("kurse")} style={{ marginBottom: 24, display: "flex", gap: 13, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})`, border: `1px solid ${C.goldSoft}` }}>
+        <div style={{ width: 46, height: 46, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🎓</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>Angebote ansehen</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
+            {bindung?.coach_name ? `Von ${bindung.coach_name} und aus der Plattform` : "Verbinde dich mit einer Coachin, dann erscheinen hier ihre Angebote"}
+          </div>
+        </div>
+        <span style={{ color: C.gold, fontSize: 20 }}>›</span>
+      </Card>
+
       <H size={25} style={{ marginBottom: 6 }}>Themen & Bereiche</H>
 
       {/* Themen: nach dem sortiert, was gerade los ist — nicht nach Funktion. */}
