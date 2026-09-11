@@ -3852,8 +3852,6 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
           {[
             { icon: "🤍", t: "Me-Time", s: "Termin mit dir selbst", tab: "metime" },
             { icon: "🌿", t: "Wochenbericht", s: "Deine Woche für deine Coachin", tab: "wochenbericht" },
-            { icon: "🏆", t: "Challenges & Ziele", s: "Aufgaben & Meilensteine", tab: "aufgaben" },
-            { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index", tab: "fortschritt" },
           ].map((x) => (
             <Card key={x.tab} onClick={() => go(x.tab)} style={{ padding: 13 }}>
               <div style={{ fontSize: 20 }}>{x.icon}</div>
@@ -6602,6 +6600,11 @@ const MEHR_GRUPPEN = [
       { icon: "🎓", t: "Deine Kurse", s: "Kurse, die du gewählt hast", tab: "kurse" },
       { icon: "📓", t: "Tagebuch & Vorlagen", s: "Deine Schreib-Vorlagen an einem Ort", tab: "tagebuch" },
     ] },
+    { g: "Fortschritt & Challenge", items: [
+      { icon: "🏆", t: "Challenges & Ziele", s: "Aufgaben, Meilensteine & deine Ziele", tab: "aufgaben" },
+      { icon: "✨", t: "Abzeichen & Statistiken", s: "Lichtpunkte, Abzeichen und deine Zahlen", tab: "__punkte" },
+      { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index & Trend", tab: "fortschritt" },
+    ] },
     { g: "Üben & Ankommen", items: [
       { icon: "🌿", t: "Qigong", s: "Die Acht Brokate · zehn ruhige Minuten", tab: "qigong" },
       { icon: "🖐️", t: "Achtsamkeit", s: "Atem, Sinne & Körperreise für zwischendurch", tab: "achtsamkeit" },
@@ -6633,7 +6636,7 @@ const MEHR_GRUPPEN = [
     ] },
 ];
 
-function Mehr({ go, addPunkte, openThema, bindung }) {
+function Mehr({ go, addPunkte, openThema, bindung, openPunkte }) {
   const [auf, setAuf] = useState("Deine Coachin");
   const gruppen = MEHR_GRUPPEN;
   // Alle Übungen der Wochen-Gruppen in einer Reihe — daraus rotiert die offene Tür.
@@ -6678,6 +6681,7 @@ function Mehr({ go, addPunkte, openThema, bindung }) {
       setBelohnt(String(woche));
       addPunkte?.(WOCHEN_BONUS, "Deine Woche geöffnet");
     }
+    if (x.tab === "__punkte") { openPunkte?.(); return; }
     go(x.tab);
   };
 
@@ -9366,7 +9370,7 @@ export default function IlhoApp() {
               {tab === "impressum" && <Impressum />}
               {tab === "datenschutz" && <Datenschutz />}
               {tab === "tagebuch" && <Journal entries={entries} setEntries={setEntries} ritual={ritual} setRitual={setRitual} ch369={ch369} setCh369={setCh369} mm={mm} setMm={setMm} briefe={briefe} setBriefe={setBriefe} akarte={akarte} setAkarte={setAkarte} addPunkte={addPunkte} streak={streak} punkte={punkte} initialSec={journalSec} />}
-              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} bindung={bindung} openThema={(id) => { setThemaId(id); go("thema"); }} /></>}
+              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} bindung={bindung} openPunkte={() => setPkModal(true)} openThema={(id) => { setThemaId(id); go("thema"); }} /></>}
               {tab === "thema" && <ThemaScreen id={themaId} go={go} bindung={bindung} />}
               {tab === "ziele" && <><MediaBanner video={S2GVID.ziele} poster={S2GIMG.ziele} title="Ziele" subtitle="Deine Richtung, dein Nordstern" height={190} /><Ziele ziele={ziele} setZiele={setZiele} addPunkte={addPunkte} /></>}
               {tab === "aufgaben" && <><MediaBanner video={S2GVID.aufgaben} poster={S2GIMG.aufgaben} title="Aufgaben" subtitle="Schritt für Schritt" height={190} /><Aufgaben aufgaben={aufgaben} setAufgaben={setAufgaben} addPunkte={addPunkte} go={go} /></>}
