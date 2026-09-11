@@ -1089,7 +1089,7 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
   const determineUniqueFocus = () => {
     const items = [
       { k: "journal", icon: "📔", t: "Journaling", done: entries?.some((e) => e.date === heuteStr), nav: "tagebuch", sec: "heute", p: "+10", priority: 100 },
-      { k: "challenge", icon: "🏆", t: "Challenge", done: ch369?.letzterTag === new Date().toDateString(), nav: "tagebuch", sec: "challenge", p: "+20", priority: 90 },
+      { k: "challenge", icon: "🏆", t: "Challenge", done: ch369?.letzterTag === new Date().toDateString(), nav: "aufgaben", p: "+20", priority: 90 },
       { k: "horoskop", icon: "⭐", t: "Horoskop", done: !!horo?.text, nav: "orakel", p: "+3", priority: 50 },
     ];
     const pending = items.filter((x) => !x.done);
@@ -2068,7 +2068,6 @@ function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, 
 
   const chips = [
     { k: "heute", t: "📔 Journaling" },
-    { k: "challenge", t: "🏆 Challenge" },
     { k: "rituale", t: "🔮 Rituale" },
     { k: "brief", t: "💌 Zukunftsbrief" },
     { k: "money", t: "💰 Fülle" },
@@ -2077,7 +2076,6 @@ function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, 
   // Higgsfield-Kinovideos pro Bereich (Erklärtexte bleiben Text)
   const SEC_MEDIA = {
     heute:     { v: S2GVID.journal,   p: S2GIMG.journal,   t: "Journaling",    s: "Dein Raum. Kein richtig, kein falsch." },
-    challenge: { v: S2GVID.challenge, p: S2GIMG.challenge, t: "Challenge",     s: "Ein Schritt. Jeden Tag." },
     rituale:   { v: S2GVID.rituale,   p: S2GIMG.rituale,   t: "Rituale",       s: "Kleine Rituale, große Wirkung." },
     brief:     { v: S2GVID.brief,     p: S2GIMG.brief,     t: "Zukunftsbrief", s: "Ein Brief an dich selbst." },
     money:     { v: S2GVID.fuelle,    p: S2GIMG.fuelle,    t: "Fülle",         s: "Du darfst empfangen." },
@@ -2104,14 +2102,6 @@ function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, 
       {sm && <MediaBanner video={sm.v} poster={sm.p} title={sm.t} subtitle={sm.s} height={190} />}
 
       {sec === "heute" && <JournalHeute entries={entries} setEntries={setEntries} addPunkte={addPunkte} />}
-      {sec === "challenge" && (
-        <>
-          <Challenge369 ch={ch369} setCh={setCh369} akarte={akarte} setAkarte={setAkarte} addPunkte={addPunkte} />
-          <div style={{ marginTop: 22, borderTop: `1px solid ${C.line}`, paddingTop: 6 }}>
-            <Fortschritt streak={streak} entries={entries} punkte={punkte} />
-          </div>
-        </>
-      )}
       {sec === "rituale" && <Rituale ritual={ritual} setRitual={setRitual} addPunkte={addPunkte} />}
       {sec === "brief" && <Brief briefe={briefe} setBriefe={setBriefe} addPunkte={addPunkte} />}
       {sec === "money" && <MoneyMind mm={mm} setMm={setMm} addPunkte={addPunkte} />}
@@ -5244,7 +5234,7 @@ function Ziele({ ziele, setZiele, addPunkte }) {
 }
 
 /* ── Aufgaben / Hausaufgaben zwischen den Sessions ── */
-function Aufgaben({ aufgaben, setAufgaben, addPunkte, go }) {
+function Aufgaben({ aufgaben, setAufgaben, addPunkte, go, ch369, setCh369, akarte, setAkarte }) {
   const [neu, setNeu] = useState("");
   const toggle = (id) =>
     setAufgaben((as) => as.map((a) => {
@@ -5276,14 +5266,9 @@ function Aufgaben({ aufgaben, setAufgaben, addPunkte, go }) {
         {offen.length} offen · {erledigt.length} erledigt. Jede erledigte Aufgabe bringt +10 ✨.
       </p>
 
-      <Card onClick={() => go && go("tagebuch")} style={{ marginBottom: 22, display: "flex", gap: 13, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
-        <div style={{ width: 46, height: 46, borderRadius: 13, background: C.goldPale, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🏆</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>3-6-9 Challenge</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>21-Tage-Dankbarkeit · +20 ✨ pro Tag</div>
-        </div>
-        <span style={{ color: C.gold, fontSize: 20 }}>›</span>
-      </Card>
+      <div style={{ marginBottom: 26 }}>
+        <Challenge369 ch={ch369} setCh={setCh369} akarte={akarte} setAkarte={setAkarte} addPunkte={addPunkte} />
+      </div>
 
       <Card onClick={() => go && go("ziele")} style={{ marginBottom: 22, display: "flex", gap: 13, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
         <div style={{ width: 46, height: 46, borderRadius: 13, background: C.roseSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🎯</div>
@@ -9373,7 +9358,7 @@ export default function IlhoApp() {
               {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} bindung={bindung} openPunkte={() => setPkModal(true)} openThema={(id) => { setThemaId(id); go("thema"); }} /></>}
               {tab === "thema" && <ThemaScreen id={themaId} go={go} bindung={bindung} />}
               {tab === "ziele" && <><MediaBanner video={S2GVID.ziele} poster={S2GIMG.ziele} title="Ziele" subtitle="Deine Richtung, dein Nordstern" height={190} /><Ziele ziele={ziele} setZiele={setZiele} addPunkte={addPunkte} /></>}
-              {tab === "aufgaben" && <><MediaBanner video={S2GVID.aufgaben} poster={S2GIMG.aufgaben} title="Aufgaben" subtitle="Schritt für Schritt" height={190} /><Aufgaben aufgaben={aufgaben} setAufgaben={setAufgaben} addPunkte={addPunkte} go={go} /></>}
+              {tab === "aufgaben" && <><MediaBanner video={S2GVID.aufgaben} poster={S2GIMG.aufgaben} title="Aufgaben" subtitle="Schritt für Schritt" height={190} /><Aufgaben aufgaben={aufgaben} setAufgaben={setAufgaben} addPunkte={addPunkte} go={go} ch369={ch369} setCh369={setCh369} akarte={akarte} setAkarte={setAkarte} /></>}
               {tab === "appguide" && <><MediaBanner video={S2GVID.appguide} poster={S2GIMG.appguide} title="App-Guide" subtitle="Dein Wegweiser" height={190} /><AppGuide /></>}
               {tab === "kurse" && <><MediaBanner video={S2GVID.kurse} poster={S2GIMG.kurse} title="Deine Kurse" subtitle="Weiterlernen, wo du warst" height={200} /><Kurse bindung={bindung} aufBindung={aufBindung} addPunkte={addPunkte} /></>}
               {tab === "buchen" && <><MediaBanner video={S2GVID.buchen} poster={S2GIMG.buchen} title="Termin buchen" subtitle="Zeit für dich" height={190} /><Buchen bindung={bindung} aufBindung={aufBindung} termine={termine} setTermine={setTermine} /></>}
