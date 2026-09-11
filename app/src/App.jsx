@@ -1109,6 +1109,8 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
         <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", fontSize: 22, color: C.gold, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(58,42,34,.1)" }}>👤</button>
       </div>
 
+      <WochenChallenge go={go} />
+
       {/* ilho bereitet vor — die Tageskarte gehört aber nicht in diese Liste:
           die zieht die Nutzerin selbst. Deshalb steht sie getrennt darunter. */}
       <Card style={{ marginBottom: 12, background: C.roseSoft, border: `1px dashed ${C.rose}` }}>
@@ -1984,6 +1986,96 @@ function Kurse({ bindung, aufBindung, addPunkte }) {
     return <KursDetail angebot={detail} bindung={bindung} addPunkte={addPunkte} zurueck={() => setDetail(null)} />;
 
   const gruppen = ["kurs", "paket", "retreat", "shop"].filter((t) => angebote.some((a) => a.typ === t));
+
+  return (
+    <div style={{ padding: "20px 20px" }}>
+      <Eyebrow>Kurse & Angebote</Eyebrow>
+      <H size={24} style={{ marginBottom: 4 }}>Was unsere Coachinnen anbieten</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, marginBottom: 12 }}>
+        Zuerst das, was {bindung.coach_name || "deine Coachin"} für dich hinterlegt hat.
+      </p>
+
+      {hinweis && (
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "11px 14px", marginBottom: 14, lineHeight: 1.5 }}>{hinweis}</div>
+      )}
+
+      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Lade Angebote …</p>}
+
+      {!laedt && angebote.length === 0 && (
+        <Card style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 30, marginBottom: 8 }}>🌱</div>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            {bindung.coach_name || "Deine Coachin"} hat hier noch keine Kurse oder Pakete eingestellt.
+            Sobald sie etwas anlegt, findest du es hier.
+          </p>
+        </Card>
+      )}
+
+      {gruppen.map((typ) => (
+        <div key={typ} style={{ marginBottom: 22 }}>
+          <Eyebrow color={C.plum}>{TYP_ICON[typ]} {TYP_TITEL[typ]}</Eyebrow>
+          <div style={{ marginTop: 8 }}>
+            {angebote.filter((a) => a.typ === typ).map((a) => (
+              <Card key={a.id} style={{ marginBottom: 11 }}>
+                <div style={{ display: "flex", gap: 13, alignItems: "center" }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, flexShrink: 0 }}>{TYP_ICON[typ]}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{a.titel}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>
+                      {[a.untertitel, a.einheiten, a.thema].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                  {preisText(a) && (
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.plum, whiteSpace: "nowrap" }}>{preisText(a)}</div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: 9, marginTop: 12 }}>
+                  {typ === "kurs" && (
+                    <Btn small onClick={() => setDetail(a)}>Inhalte ansehen</Btn>
+                  )}
+                  <Btn small ghost onClick={() => { setAnfrageFuer(anfrageFuer === a.id ? null : a.id); setAnfrageText(""); }}>
+                    {anfrageFuer === a.id ? "Abbrechen" : "Ich hab Interesse"}
+                  </Btn>
+                </div>
+
+                {anfrageFuer === a.id && (
+                  <div style={{ marginTop: 12, animation: "fadeUp .3s ease" }}>
+                    <textarea
+                      value={anfrageText}
+                      onChange={(e) => setAnfrageText(e.target.value)}
+                      rows={3}
+                      placeholder="Magst du kurz schreiben, was dich daran anspricht? (optional)"
+                      style={{ width: "100%", padding: "11px 13px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }}
+                    />
+                    <Btn small full onClick={() => anfragen(a)}>Anfrage senden</Btn>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 6 }}>
+        Bezahlung läuft noch nicht über die App: deine Anfrage geht direkt an deine Coachin, ihr klärt alles Weitere im Chat.
+      </p>
+    </div>
+  );
+}
+
+/* ── Journal-Hub: Tagebuch · Aufgaben · 3-6-9 · Money Mind ── */
+
+function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, setMm, briefe, setBriefe, akarte, setAkarte, addPunkte, streak, punkte, initialSec }) {
+  const [sec, setSec] = useState(initialSec || "heute");
+
+  const chips = [
+    { k: "heute", t: "📔 Journaling" },
+    { k: "challenge", t: "🏆 Challenge" },
+    { k: "rituale", t: "🔮 Rituale" },
+    { k: "brief", t: "💌 Zukunftsbrief" },
+    { k: "money", t: "💰 Fülle" },
+  ];
 
   // Higgsfield-Kinovideos pro Bereich (Erklärtexte bleiben Text)
   const SEC_MEDIA = {
@@ -6433,6 +6525,55 @@ function ThemaScreen({ id, go, bindung }) {
 const WOCHEN_GRUPPEN = ["Seele & Rituale", "Wachsen & Spielen"];
 const WOCHEN_BONUS = 20;
 
+/* Die Wochentür: eine Übung pro Woche, für alle gleich. Sie wird an drei
+   Stellen gebraucht — oben auf "Heute", im Menü und in der Gruppe selbst. */
+function wochenTuer() {
+  const pool = MEHR_GRUPPEN.filter((g) => WOCHEN_GRUPPEN.includes(g.g)).flatMap((g) => g.items);
+  if (!pool.length) return { pool: [], item: null, index: 0 };
+  const w = wochenNummer();
+  const i = ((w % pool.length) + pool.length) % pool.length;
+  return { pool, item: pool[i], index: i };
+}
+
+function WochenChallenge({ go }) {
+  const jetzt = useSekundenTakt(true);
+  const { item } = wochenTuer();
+  if (!item) return null;
+  const countdown = restZeit(naechsterMontag(jetzt).getTime(), jetzt);
+  return (
+    <Card
+      onClick={() => go(item.tab)}
+      style={{
+        marginBottom: 14, padding: "14px 16px",
+        background: `linear-gradient(135deg, ${C.goldPale}, ${C.card})`,
+        border: `1.5px solid ${C.goldSoft}`,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 9 }}>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: C.gold }}>
+          🗝️ Wochenthema · Challenge
+        </span>
+        <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12.5, color: C.gold, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+          {countdown}
+        </span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 13, background: C.card, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21,
+        }}>{item.icon}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{item.t}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
+            Diese Woche offen · +{WOCHEN_BONUS} ✨
+          </div>
+        </div>
+        <span style={{ color: C.gold, fontSize: 20 }}>›</span>
+      </div>
+    </Card>
+  );
+}
+
 const montagVon = (d) => {
   const m = new Date(d);
   m.setHours(0, 0, 0, 0);
@@ -6466,9 +6607,7 @@ function useSekundenTakt(aktiv = true) {
   return jetzt;
 }
 
-function Mehr({ go, addPunkte, openThema, bindung }) {
-  const [auf, setAuf] = useState("Deine Coachin");
-  const gruppen = [
+const MEHR_GRUPPEN = [
     { g: "Deine Coachin", items: [
       { icon: "🌸", t: "Coaching", s: "Deine Begleitung, Pakete & Fortschritt", tab: "coaching" },
       { icon: "💬", t: "Coach-Chat", s: "Schreib ihr, wenn dich etwas bewegt", tab: "coach" },
@@ -6508,7 +6647,11 @@ function Mehr({ go, addPunkte, openThema, bindung }) {
       { icon: "👤", t: "Profil & Einstellungen", s: "Mein Bereich, Benachrichtigung, Abo, DSGVO", tab: "profil" },
       { icon: "💼", t: "Mein Office", s: "Deine Marke, Angebote & Rechnungen", tab: "office" },
     ] },
-  ];
+];
+
+function Mehr({ go, addPunkte, openThema, bindung }) {
+  const [auf, setAuf] = useState("Deine Coachin");
+  const gruppen = MEHR_GRUPPEN;
   // Alle Übungen der Wochen-Gruppen in einer Reihe — daraus rotiert die offene Tür.
   const wochenPool = gruppen.filter((gr) => WOCHEN_GRUPPEN.includes(gr.g)).flatMap((gr) => gr.items);
   const woche = wochenNummer();
@@ -6558,7 +6701,7 @@ function Mehr({ go, addPunkte, openThema, bindung }) {
     <div style={{ padding: "26px 20px" }}>
       <style>{`@keyframes wocheGlanz { 0%,100% { box-shadow: 0 4px 16px rgba(201,150,60,.22); } 50% { box-shadow: 0 6px 26px rgba(201,150,60,.5); } }`}</style>
       <Eyebrow>Mehr</Eyebrow>
-      <H size={25} style={{ marginBottom: 6 }}>Alles an einem Ort</H>
+      <H size={25} style={{ marginBottom: 6 }}>Themen & Bereiche</H>
 
       {/* Themen: nach dem sortiert, was gerade los ist — nicht nach Funktion. */}
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, margin: "0 0 12px" }}>
@@ -6590,8 +6733,12 @@ function Mehr({ go, addPunkte, openThema, bindung }) {
             }}
           >
             <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.espresso }}>{gr.g}</span>
-            {rhythmus && auf !== gr.g && (
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.gold }}>diese Woche offen</span>
+            {rhythmus && auf !== gr.g && wochenPool[offenIdx] && (
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.gold, textAlign: "right", lineHeight: 1.3 }}>
+                {wochenPool[offenIdx].t}
+                <br />
+                <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontVariantNumeric: "tabular-nums" }}>{countdown}</span>
+              </span>
             )}
             <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.mut }}>{gr.items.length}</span>
             <span style={{ color: C.mut, fontSize: 12, transform: auf === gr.g ? "rotate(180deg)" : "none", transition: "transform .2s" }}>⌄</span>
