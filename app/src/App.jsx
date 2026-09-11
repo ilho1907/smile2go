@@ -1109,12 +1109,12 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
         <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", fontSize: 22, color: C.gold, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(58,42,34,.1)" }}>👤</button>
       </div>
 
-      <WochenChallenge go={go} />
 
       {/* ilho bereitet vor — die Tageskarte gehört aber nicht in diese Liste:
           die zieht die Nutzerin selbst. Deshalb steht sie getrennt darunter. */}
       <Card style={{ marginBottom: 12, background: C.roseSoft, border: `1px dashed ${C.rose}` }}>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.plum, marginBottom: 10 }}>📋 Für dich vorbereitet</div>
+        <WochenChallenge go={go} />
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <span style={{ fontSize: 16 }}>☀️</span>
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>Mantra bereit — <span style={{ fontStyle: "italic", fontWeight: 500 }}>„{mot.t}"</span></span>
@@ -6541,36 +6541,23 @@ function WochenChallenge({ go }) {
   if (!item) return null;
   const countdown = restZeit(naechsterMontag(jetzt).getTime(), jetzt);
   return (
-    <Card
+    <button
       onClick={() => go(item.tab)}
       style={{
-        marginBottom: 14, padding: "14px 16px",
-        background: `linear-gradient(135deg, ${C.goldPale}, ${C.card})`,
-        border: `1.5px solid ${C.goldSoft}`,
+        display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 44,
+        padding: "8px 10px", marginBottom: 8, cursor: "pointer", textAlign: "left",
+        background: C.card, border: `1px solid ${C.goldSoft}`, borderRadius: 12,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 9 }}>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: C.gold }}>
-          🗝️ Wochenthema · Challenge
-        </span>
-        <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12.5, color: C.gold, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-          {countdown}
-        </span>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 13, background: C.card, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21,
-        }}>{item.icon}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{item.t}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
-            Diese Woche offen · +{WOCHEN_BONUS} ✨
-          </div>
-        </div>
-        <span style={{ color: C.gold, fontSize: 20 }}>›</span>
-      </div>
-    </Card>
+      <span style={{ fontSize: 16 }}>{item.icon}</span>
+      <span style={{ flex: 1, minWidth: 0, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>
+        Dein Ritual diese Woche — <b style={{ fontWeight: 700 }}>{item.t}</b>
+      </span>
+      <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11.5, color: C.gold, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+        {countdown}
+      </span>
+      <span style={{ color: C.gold, fontSize: 16 }}>›</span>
+    </button>
   );
 }
 
