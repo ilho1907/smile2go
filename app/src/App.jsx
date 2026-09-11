@@ -1115,6 +1115,24 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
       <Card style={{ marginBottom: 12, background: C.roseSoft, border: `1px dashed ${C.rose}` }}>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.plum, marginBottom: 10 }}>📋 Für dich vorbereitet</div>
         <WochenChallenge go={go} />
+        <button
+          onClick={() => !heutigeKarte && go("orakel")}
+          disabled={!!heutigeKarte}
+          style={{
+            display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 44,
+            padding: "8px 10px", marginBottom: 10, textAlign: "left",
+            cursor: heutigeKarte ? "default" : "pointer",
+            background: C.card, border: `1px solid ${C.goldSoft}`, borderRadius: 12,
+          }}
+        >
+          <span style={{ fontSize: 16 }}>🎴</span>
+          <span style={{ flex: 1, minWidth: 0, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>
+            {heutigeKarte
+              ? <>Tageskarte gezogen — <b style={{ fontWeight: 700 }}>{heutigeKarte.n}</b></>
+              : <>Deine <b style={{ fontWeight: 700 }}>Tageskarte</b> wartet auf dich</>}
+          </span>
+          {!heutigeKarte && <span style={{ color: C.gold, fontSize: 16 }}>›</span>}
+        </button>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <span style={{ fontSize: 16 }}>☀️</span>
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>Mantra bereit — <span style={{ fontStyle: "italic", fontWeight: 500 }}>„{mot.t}"</span></span>
@@ -1123,27 +1141,6 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
           <span style={{ fontSize: 16 }}>🕯️</span>
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>2-Min-Atemritual bereit</span>
         </div>
-      </Card>
-
-      {/* Die Tageskarte: ihr Ritual, nicht ilhos Vorbereitung */}
-      <Card
-        onClick={() => !heutigeKarte && go("orakel")}
-        style={{
-          marginBottom: 18, cursor: heutigeKarte ? "default" : "pointer",
-          display: "flex", alignItems: "center", gap: 12,
-          background: heutigeKarte ? C.card : `linear-gradient(135deg, ${C.card}, ${C.goldPale})`,
-        }}
-      >
-        <div style={{ width: 42, height: 42, borderRadius: 12, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🎴</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>Dein Ritual</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.espresso, marginTop: 2 }}>
-            {heutigeKarte
-              ? <>Heute gezogen — <span style={{ fontWeight: 700 }}>{heutigeKarte.n}</span></>
-              : <>Deine Tageskarte wartet auf dich</>}
-          </div>
-        </div>
-        {!heutigeKarte && <span style={{ color: C.gold, fontSize: 20 }}>›</span>}
       </Card>
 
       {/* Dein heutiger Sonnenstrahl */}
@@ -6691,16 +6688,17 @@ function Mehr({ go, addPunkte, openThema, bindung }) {
 
       {/* Was die Coachinnen anbieten steht vor dem eigenen Werkzeugkasten —
           das ist der Grund, warum es die Plattform gibt. */}
-      <H size={25} style={{ marginBottom: 6 }}>Was unsere Coachinnen anbieten</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, margin: "0 0 10px" }}>
-        Kurse, Pakete und Retreats — zuerst von deiner eigenen Coachin.
-      </p>
+      <H size={25} style={{ marginBottom: 10 }}>Was unsere Coachinnen anbieten</H>
       <Card onClick={() => go("kurse")} style={{ marginBottom: 24, display: "flex", gap: 13, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})`, border: `1px solid ${C.goldSoft}` }}>
         <div style={{ width: 46, height: 46, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🎓</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>Angebote ansehen</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>
+            {bindung?.coach_name || "Kurse, Pakete & Retreats"}
+          </div>
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
-            {bindung?.coach_name ? `Von ${bindung.coach_name} und aus der Plattform` : "Verbinde dich mit einer Coachin, dann erscheinen hier ihre Angebote"}
+            {bindung?.coach_name
+              ? "Kurse, Pakete und Retreats deiner Coachin"
+              : "Verbinde dich mit einer Coachin, dann steht hier ihr Angebot"}
           </div>
         </div>
         <span style={{ color: C.gold, fontSize: 20 }}>›</span>
@@ -9344,6 +9342,20 @@ export default function IlhoApp() {
                 padding: "11px 20px", borderRadius: 24, boxShadow: "0 8px 24px rgba(217,110,139,.45)",
                 animation: "fadeUp .35s ease",
               }}>{toast}</div>
+            )}
+
+            {/* Zurück: sichtbar, sobald man von einem Hauptbereich aus weitergegangen ist. */}
+            {stack.length > 0 && tab !== "luma" && (
+              <div style={{ padding: "10px 20px 0" }}>
+                <button onClick={back} style={{
+                  display: "inline-flex", alignItems: "center", gap: 7, minHeight: 40,
+                  padding: "8px 14px 8px 11px", cursor: "pointer",
+                  background: C.card, border: `1px solid ${C.line}`, borderRadius: 20,
+                  fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: C.plum,
+                }}>
+                  <span style={{ fontSize: 15 }}>‹</span> Zurück
+                </button>
+              </div>
             )}
 
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 172 : 86, animation: "fadeUp .45s ease" }}>
