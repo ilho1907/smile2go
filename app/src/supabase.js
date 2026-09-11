@@ -625,7 +625,7 @@ export async function ladeCoachProfil(coachId) {
   if (!supabase || !coachId) return null;
   const { data, error } = await supabase
     .from("coaches")
-    .select("id, name, instagram, youtube, pinterest, website")
+    .select("id, name, kurzprofil, email_oeffentlich, buchungslink, telefon, instagram, youtube, pinterest, website, tiktok, facebook, linkedin, schwerpunkte")
     .eq("id", coachId)
     .maybeSingle();
   if (error) { console.warn("ladeCoachProfil:", error.message); return null; }
@@ -743,7 +743,7 @@ export async function ladeCoachProfilSelbst() {
   if (!user) return null;
   const { data } = await supabase
     .from("coaches")
-    .select("id, name, instagram, youtube, pinterest, website")
+    .select("id, name, kurzprofil, email_oeffentlich, buchungslink, telefon, instagram, youtube, pinterest, website, tiktok, facebook, linkedin, schwerpunkte")
     .eq("id", user.id)
     .maybeSingle();
   return data || { id: user.id, name: null };

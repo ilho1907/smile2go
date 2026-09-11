@@ -6018,26 +6018,77 @@ function CoachingHub({ go, bindung, aufBindung }) {
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow>Deine Begleitung</Eyebrow>
 
-      {/* Wer dich begleitet */}
-      <Card style={{ marginBottom: 14, display: "flex", gap: 14, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
-        <div style={{
-          width: 58, height: 58, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-          background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
-          fontFamily: "Georgia, serif", fontSize: 21,
-        }}>{initialen || "C"}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso }}>{name}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3 }}>
-            {pausiert ? "⏸ Begleitung pausiert" : "✓ verbunden"}
-            {bindung.verbunden_am ? ` seit ${new Date(bindung.verbunden_am).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}` : ""}
-          </div>
-          {(profil?.website || profil?.instagram) && (
-            <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
-              {profil.website && <a href={profil.website} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum }}>Website</a>}
-              {profil.instagram && <a href={`https://instagram.com/${String(profil.instagram).replace("@", "")}`} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum }}>Instagram</a>}
+      {/* Wer dich begleitet — alles, was sie über sich hinterlegt hat */}
+      <Card style={{ marginBottom: 14, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          <div style={{
+            width: 58, height: 58, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+            background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
+            fontFamily: "Georgia, serif", fontSize: 21,
+          }}>{initialen || "C"}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso }}>{name}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3 }}>
+              {pausiert ? "⏸ Begleitung pausiert" : "✓ verbunden"}
+              {bindung.verbunden_am ? ` seit ${new Date(bindung.verbunden_am).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}` : ""}
             </div>
+          </div>
+        </div>
+
+        {profil?.kurzprofil && (
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 14.5, fontStyle: "italic", color: C.espresso, lineHeight: 1.6, margin: "12px 0 0" }}>
+            {profil.kurzprofil}
+          </p>
+        )}
+
+        {/* Die beiden Wege zu ihr */}
+        <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+          <Btn small onClick={() => go("coach")}>💌 Nachricht schreiben</Btn>
+          {profil?.buchungslink ? (
+            <a href={profil.buchungslink} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
+              <Btn small ghost>📅 Termin buchen</Btn>
+            </a>
+          ) : (
+            <Btn small ghost onClick={() => go("buchen")}>📅 Termin buchen</Btn>
           )}
         </div>
+
+        {/* Wo man sie sonst findet */}
+        {(() => {
+          const links = [
+            ["Website", profil?.website],
+            ["Instagram", profil?.instagram && (String(profil.instagram).startsWith("http") ? profil.instagram : `https://instagram.com/${String(profil.instagram).replace("@", "")}`)],
+            ["YouTube", profil?.youtube],
+            ["TikTok", profil?.tiktok],
+            ["Facebook", profil?.facebook],
+            ["Pinterest", profil?.pinterest],
+            ["LinkedIn", profil?.linkedin],
+          ].filter(([, u]) => u);
+          const direkt = [
+            ["✉️", profil?.email_oeffentlich, `mailto:${profil?.email_oeffentlich}`],
+            ["☎️", profil?.telefon, `tel:${String(profil?.telefon || "").replace(/\s/g, "")}`],
+          ].filter(([, t]) => t);
+          if (!links.length && !direkt.length) return null;
+          return (
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.line}` }}>
+              {direkt.length > 0 && (
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: links.length ? 8 : 0 }}>
+                  {direkt.map(([ic, t, href]) => (
+                    <a key={t} href={href} style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.plum, textDecoration: "none" }}>{ic} {t}</a>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {links.map(([t, u]) => (
+                  <a key={t} href={u} target="_blank" rel="noreferrer" style={{
+                    fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, textDecoration: "none",
+                    border: `1px solid ${C.goldSoft}`, borderRadius: 16, padding: "5px 11px", background: C.card,
+                  }}>{t}</a>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </Card>
 
       {/* Was ansteht */}

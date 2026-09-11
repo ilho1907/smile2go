@@ -693,15 +693,23 @@ function Beitraege({ coachId }) {
 
 function Profil({ profil, neuLaden }) {
   const [f, setF] = useState({
-    name: profil?.name || "", instagram: profil?.instagram || "",
-    youtube: profil?.youtube || "", pinterest: profil?.pinterest || "", website: profil?.website || "",
+    name: profil?.name || "", kurzprofil: profil?.kurzprofil || "",
+    email_oeffentlich: profil?.email_oeffentlich || "", telefon: profil?.telefon || "",
+    buchungslink: profil?.buchungslink || "",
+    instagram: profil?.instagram || "", youtube: profil?.youtube || "",
+    pinterest: profil?.pinterest || "", website: profil?.website || "",
+    tiktok: profil?.tiktok || "", facebook: profil?.facebook || "", linkedin: profil?.linkedin || "",
   });
   const [hinweis, setHinweis] = useState("");
 
   const speichern = async () => {
+    const putz = (x) => (x || "").trim() || null;
     const ok = await coachProfilSpeichern({
-      name: f.name.trim() || null, instagram: f.instagram.trim() || null,
-      youtube: f.youtube.trim() || null, pinterest: f.pinterest.trim() || null, website: f.website.trim() || null,
+      name: putz(f.name), kurzprofil: putz(f.kurzprofil),
+      email_oeffentlich: putz(f.email_oeffentlich), telefon: putz(f.telefon),
+      buchungslink: putz(f.buchungslink),
+      instagram: putz(f.instagram), youtube: putz(f.youtube), pinterest: putz(f.pinterest),
+      website: putz(f.website), tiktok: putz(f.tiktok), facebook: putz(f.facebook), linkedin: putz(f.linkedin),
     });
     setHinweis(ok ? "✓ Gespeichert — deine Klientinnen sehen die Änderung sofort." : "Speichern fehlgeschlagen.");
     if (ok) neuLaden();
@@ -712,14 +720,27 @@ function Profil({ profil, neuLaden }) {
     <>
       <Eyebrow color={C.plum}>Dein Profil in der App</Eyebrow>
       <Card style={{ marginBottom: 20 }}>
-        <Feld label="Name, den deine Klientinnen sehen" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+        <Feld label="Name, den deine Klientinnen sehen" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Vor- und Nachname" />
+        <Feld label="Ein, zwei Sätze über dich" value={f.kurzprofil} onChange={(e) => setF({ ...f, kurzprofil: e.target.value })} placeholder="Womit du arbeitest, in deinen Worten" />
         <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6, margin: "6px 0 12px" }}>
-          Nur ausgefüllte Links erscheinen in der App — leere Felder werden gar nicht angezeigt.
+          Nur ausgefüllte Felder erscheinen in der App — leere werden gar nicht angezeigt.
         </p>
+
+        <Feld label="E-Mail für Klientinnen" value={f.email_oeffentlich} onChange={(e) => setF({ ...f, email_oeffentlich: e.target.value })} placeholder="hallo@deine-praxis.de" />
+        <Feld label="Telefon (optional)" value={f.telefon} onChange={(e) => setF({ ...f, telefon: e.target.value })} placeholder="+49 â¦" />
+        <Feld label="Buchungslink" value={f.buchungslink} onChange={(e) => setF({ ...f, buchungslink: e.target.value })} placeholder="https://calendly.com/â¦ oder cal.com, eTermin â¦" />
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, lineHeight: 1.6, margin: "-4px 0 14px", opacity: .8 }}>
+          Der Termin entsteht in deinem eigenen Werkzeug. Trägst du hier nichts ein, buchen deine
+          Klientinnen über die freien Zeitfenster, die du unter „Termine" anlegst.
+        </p>
+
         <Feld label="Instagram" value={f.instagram} onChange={(e) => setF({ ...f, instagram: e.target.value })} placeholder="https://instagram.com/…" />
         <Feld label="YouTube" value={f.youtube} onChange={(e) => setF({ ...f, youtube: e.target.value })} placeholder="https://youtube.com/@…" />
         <Feld label="Pinterest" value={f.pinterest} onChange={(e) => setF({ ...f, pinterest: e.target.value })} placeholder="https://pinterest.com/…" />
         <Feld label="Website" value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} placeholder="https://…" />
+        <Feld label="TikTok" value={f.tiktok} onChange={(e) => setF({ ...f, tiktok: e.target.value })} placeholder="https://tiktok.com/@…" />
+        <Feld label="Facebook" value={f.facebook} onChange={(e) => setF({ ...f, facebook: e.target.value })} placeholder="https://facebook.com/…" />
+        <Feld label="LinkedIn" value={f.linkedin} onChange={(e) => setF({ ...f, linkedin: e.target.value })} placeholder="https://linkedin.com/in/…" />
         <Btn onClick={speichern}>Speichern</Btn>
         {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.plum, marginTop: 10 }}>{hinweis}</div>}
       </Card>
