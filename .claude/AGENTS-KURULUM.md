@@ -7,6 +7,27 @@ Sürüm (commit): `ad9264e309bd5e5422c04784372d7841b1e5d604` (2026-09-12), MIT l
 kurulu oldukları için bu depoda çalışan herkes (Claude Code CLI, web, IDE) aynı
 ajanlara erişir; `~/.claude` gerekmez.
 
+## Mac'te açma (tek seferlik)
+
+Terminal (⌘+Boşluk → "Terminal"):
+
+```bash
+cd ~/Downloads/smile2go-projekt
+git fetch origin claude/agency-agents-setup-ezcxn3
+git merge origin/claude/agency-agents-setup-ezcxn3
+ls .claude/agents | wc -l     # 279 yazmalı
+```
+
+Sonra aynı klasörde Claude Code'u aç:
+
+```bash
+cd ~/Downloads/smile2go-projekt
+claude
+```
+
+Ajanlar proje klasöründen otomatik yüklenir — ayrıca bir kurulum gerekmez.
+Claude Code'un web veya IDE sürümünde de aynı depoda çalıştığın sürece geçerli.
+
 ## Kullanım
 
 Claude Code oturumunda ajanı adıyla çağır:
