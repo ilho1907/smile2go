@@ -317,7 +317,7 @@ export async function ladeNachrichten(klientinId, limit = 200) {
   return data || [];
 }
 
-export async function sendeNachricht({ klientinId, text = null, audioPfad = null, audioSek = null }) {
+export async function sendeNachricht({ klientinId, text = null, audioPfad = null, audioSek = null, anCoachId = null, vonName = null }) {
   const user = await nutzerin();
   if (!user || !klientinId) return null;
   const { data, error } = await supabase
@@ -327,6 +327,15 @@ export async function sendeNachricht({ klientinId, text = null, audioPfad = null
     .select()
     .single();
   if (error) { console.warn("sendeNachricht:", error.message); return null; }
+  if (anCoachId) {
+    sendePush({
+      userId: anCoachId,
+      titel: vonName ? `Nachricht von ${vonName}` : "Neue Nachricht",
+      text: text || "🎙️ Eine Sprachnachricht",
+      url: "/#coach",
+      tag: `chat-${klientinId}`,
+    });
+  }
   return data;
 }
 
@@ -517,8 +526,11 @@ export async function loescheKonto(bestaetigung) {
 
 export async function passwortZuruecksetzen(email) {
   if (!supabase) throw new Error("Keine Verbindung");
+  // Kein Hash im redirectTo: Supabase haengt seine eigenen Token als Fragment an
+  // (#access_token=...&type=recovery) und ueberschreibt dabei ein vorhandenes Fragment.
+  // Deshalb steht die Markierung in der Query - die ueberlebt.
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${window.location.origin}${window.location.pathname}#passwort-neu`,
+    redirectTo: `${window.location.origin}${window.location.pathname}?pw=neu`,
   });
   if (error) throw new Error(error.message);
 }
@@ -583,6 +595,26 @@ export async function pushDeaktivieren() {
   await abo.unsubscribe();
   if (supabase) await supabase.from("push_abos").delete().eq("endpoint", endpoint);
   return true;
+}
+
+// ── Push verschicken ───────────────────────────────────────────────────────
+// Die Edge Function "push" ist genau dafuer gebaut: Aufruferin ist ein
+// angemeldeter Mensch (Coachin oder Klientin), der Versand laeuft mit ihrem JWT
+// — kein Service-Key im Browser, keine Datenbank-Trigger noetig.
+// Schlaegt der Versand fehl, bleibt die Nachricht trotzdem gueltig: sie liegt
+// schon in der Datenbank. Push ist ein Zuruf, keine Bedingung.
+export async function sendePush({ userId, titel = "smile2go", text, url = "/", tag = "smile2go" }) {
+  if (!supabase || !userId || !text) return 0;
+  try {
+    const { data, error } = await supabase.functions.invoke("push", {
+      body: { user_id: userId, titel, text: String(text).slice(0, 160), url, tag },
+    });
+    if (error) { console.warn("sendePush:", error.message); return 0; }
+    return data?.gesendet || 0;
+  } catch (e) {
+    console.warn("sendePush:", e?.message || e);
+    return 0;
+  }
 }
 
 // ── Erreichbarkeit der Cloud ───────────────────────────────────────────────
@@ -806,7 +838,7 @@ export async function codeUmschalten(code, aktiv) {
 
 // ── Nachrichten aus Coach-Sicht ────────────────────────────────────────────
 
-export async function sendeNachrichtAlsCoach({ klientinId, text }) {
+export async function sendeNachrichtAlsCoach({ klientinId, text, anKlientinUserId = null, vonName = null }) {
   const user = await nutzerin();
   if (!user || !klientinId) return null;
   const { data, error } = await supabase
@@ -815,6 +847,15 @@ export async function sendeNachrichtAlsCoach({ klientinId, text }) {
     .select()
     .single();
   if (error) { console.warn("sendeNachrichtAlsCoach:", error.message); return null; }
+  if (anKlientinUserId) {
+    sendePush({
+      userId: anKlientinUserId,
+      titel: vonName ? `${vonName} hat dir geschrieben` : "Deine Coachin hat dir geschrieben",
+      text,
+      url: "/",
+      tag: `chat-${klientinId}`,
+    });
+  }
   return data;
 }
 

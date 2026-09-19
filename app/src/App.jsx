@@ -4282,7 +4282,7 @@ function CoachChat({ bindung, aufBindung }) {
     const text = input.trim();
     if (!text || !klientinId) return;
     setInput("");
-    const gesendet = await sendeNachricht({ klientinId, text });
+    const gesendet = await sendeNachricht({ klientinId, text, anCoachId: bindung?.coach_id, vonName: bindung?.anzeigename });
     if (!gesendet) { setErr("Nachricht konnte nicht gesendet werden."); setInput(text); return; }
     setMsgs((m) => (m.some((x) => x.id === gesendet.id) ? m : [...m, gesendet]));
   };
@@ -4302,7 +4302,7 @@ function CoachChat({ bindung, aufBindung }) {
         const datei = new File([blob], `sprachnachricht-${Date.now()}.webm`, { type: blob.type });
         const hoch = await ladeDateiHoch(datei);
         if (!hoch) { setErr("Sprachnachricht konnte nicht hochgeladen werden."); return; }
-        const gesendet = await sendeNachricht({ klientinId, audioPfad: hoch.pfad, audioSek: sek });
+        const gesendet = await sendeNachricht({ klientinId, audioPfad: hoch.pfad, audioSek: sek, anCoachId: bindung?.coach_id, vonName: bindung?.anzeigename });
         if (gesendet) setMsgs((m) => (m.some((x) => x.id === gesendet.id) ? m : [...m, gesendet]));
       };
       recRef.current = rec;
@@ -6299,7 +6299,7 @@ function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, me
 
   const senden = async () => {
     setBusy(true);
-    const ok = await sendeNachricht({ klientinId: bindung.id, text });
+    const ok = await sendeNachricht({ klientinId: bindung.id, text, anCoachId: bindung.coach_id, vonName: bindung.anzeigename });
     setBusy(false);
     if (!ok) { setHinweis("Das hat gerade nicht geklappt — versuch es gleich noch einmal."); return; }
     try { localStorage.setItem("s2g_bericht_woche", dieseWoche); } catch {}
@@ -9080,7 +9080,14 @@ export default function IlhoApp() {
   const [user, setUser] = useState(null);
   const [bindung, setBindung] = useState(null);
   const [cloudAus, setCloudAus] = useState(false);
-  const [pwReset, setPwReset] = useState(typeof window !== "undefined" && window.location.hash === "#passwort-neu");
+  // Der Link aus der E-Mail kommt in zwei Formen zurueck: als Fragment mit
+  // type=recovery (impliziter Flow) oder als ?code= (PKCE). Beide erkennen.
+  const [pwReset, setPwReset] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const h = window.location.hash || "";
+    const q = window.location.search || "";
+    return h.includes("type=recovery") || h === "#passwort-neu" || /[?&]pw=neu(&|$)/.test(q);
+  });
   const [tab, setTab] = useState("heute");
   const [stack, setStack] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -9237,7 +9244,10 @@ export default function IlhoApp() {
       const sUser = data?.session?.user;
       if (sUser?.email) setUser(sUser.email);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      // Der verlaessliche Weg: Supabase meldet die Wiederherstellung selbst,
+      // egal in welcher Form der Link zurueckkam.
+      if (event === "PASSWORD_RECOVERY") setPwReset(true);
       if (session?.user?.email) setUser(session.user.email);
     });
     return () => sub?.subscription?.unsubscribe();
@@ -9312,7 +9322,7 @@ export default function IlhoApp() {
     const letzte = wochenNummer() - 1;
     if (zuletzt !== null && Number(zuletzt) >= letzte) return;
     const b = baueWochenbericht({ entries, achtsam, dank, qigong, metime, losgelassen, punkte }, -1);
-    sendeNachricht({ klientinId: bindung.id, text: berichtText(b, b.zeilen.map((z) => z.k), "") })
+    sendeNachricht({ klientinId: bindung.id, text: berichtText(b, b.zeilen.map((z) => z.k), ""), anCoachId: bindung.coach_id, vonName: bindung.anzeigename })
       .then((ok) => { if (ok) { try { localStorage.setItem("s2g_bericht_woche", String(letzte)); } catch {} } });
   }, [bindung?.id]); // eslint-disable-line
 
@@ -9367,7 +9377,7 @@ export default function IlhoApp() {
 
         {pwReset ? (
           <div style={{ animation: "fadeUp .5s ease" }}>
-            <PasswortNeu onFertig={() => { window.location.hash = ""; setPwReset(false); }} />
+            <PasswortNeu onFertig={() => { try { window.history.replaceState({}, "", window.location.pathname); } catch { window.location.hash = ""; } setPwReset(false); }} />
           </div>
         ) : !user ? (
           <div style={{ animation: "fadeUp .5s ease" }}><Auth onLogin={(mail, zeichen, ilho) => { setUser(mail); if (zeichen) setMeinZeichen(zeichen); if (typeof ilho === "boolean") setIlhoAktiv(ilho); }} /></div>
