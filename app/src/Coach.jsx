@@ -11,6 +11,7 @@ import {
   ladeAngebote, angebotAnlegen, angebotLoeschen, ladeKursModule, modulAnlegen, modulLoeschen,
   ladeCoachBeitraege, beitragAnlegen, beitragLoeschen,
   ladeAnfragenCoach, anfrageStatus,
+  pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren,
 } from "./supabase";
 
 /* ─────────────────────────────────────────────
@@ -201,7 +202,7 @@ function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
 
 /* ── Nachrichten ────────────────────────────────────────────────────────── */
 
-function Nachrichten({ klientinnen, offen, setOffen, ungelesenNeu }) {
+function Nachrichten({ klientinnen, offen, setOffen, ungelesenNeu, coachName }) {
   const [msgs, setMsgs] = useState([]);
   const [text, setText] = useState("");
   const [laedt, setLaedt] = useState(false);
@@ -237,7 +238,7 @@ function Nachrichten({ klientinnen, offen, setOffen, ungelesenNeu }) {
     const t = text.trim();
     if (!t || !offen) return;
     setText("");
-    const g = await sendeNachrichtAlsCoach({ klientinId: offen.id, text: t });
+    const g = await sendeNachrichtAlsCoach({ klientinId: offen.id, text: t, anKlientinUserId: offen.user_id, vonName: coachName });
     if (g) setMsgs((m) => (m.some((x) => x.id === g.id) ? m : [...m, g]));
     else setText(t);
   };
@@ -691,6 +692,58 @@ function Beitraege({ coachId }) {
 
 /* ── Profil ─────────────────────────────────────────────────────────────── */
 
+/* ── Benachrichtigungen ──
+   Ohne aktives Abo laeuft jeder Push ins Leere: Schreibt eine Klientin, bleibt
+   es still, bis die Coachin das Panel zufaellig oeffnet. Darum der Schalter. */
+function Benachrichtigungen() {
+  const [an, setAn] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [fehler, setFehler] = useState("");
+
+  useEffect(() => { pushStatus().then((st) => setAn(st === "aktiv")); }, []);
+  if (!pushMoeglich()) return null;
+
+  const umschalten = async () => {
+    setFehler(""); setBusy(true);
+    try {
+      if (an) { await pushDeaktivieren(); setAn(false); }
+      else { await pushAktivieren(); setAn(true); }
+    } catch (e) {
+      setFehler(e.message || "Das hat nicht geklappt.");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <>
+      <Eyebrow color={C.plum}>Benachrichtigungen</Eyebrow>
+      <Card style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>
+              Nachrichten deiner Klientinnen
+            </div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6, marginTop: 3 }}>
+              {an
+                ? "Du bekommst auf diesem Gerät Bescheid, sobald jemand schreibt."
+                : "Ohne Benachrichtigung siehst du neue Nachrichten erst, wenn du das Panel öffnest."}
+            </div>
+          </div>
+          <button onClick={umschalten} disabled={busy} style={{
+            border: "none", cursor: busy ? "wait" : "pointer", borderRadius: 14, padding: "11px 16px",
+            fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600,
+            background: an ? C.beige : `linear-gradient(135deg, ${C.gold}, ${C.rose})`,
+            color: an ? C.espresso : "#fff", whiteSpace: "nowrap",
+          }}>
+            {busy ? "…" : an ? "Aus" : "Einschalten"}
+          </button>
+        </div>
+        {fehler && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#A8552F", marginTop: 10 }}>{fehler}</div>}
+      </Card>
+    </>
+  );
+}
+
 function Profil({ profil, neuLaden }) {
   const [f, setF] = useState({
     name: profil?.name || "", kurzprofil: profil?.kurzprofil || "",
@@ -718,6 +771,7 @@ function Profil({ profil, neuLaden }) {
 
   return (
     <>
+      <Benachrichtigungen />
       <Eyebrow color={C.plum}>Dein Profil in der App</Eyebrow>
       <Card style={{ marginBottom: 20 }}>
         <Feld label="Name, den deine Klientinnen sehen" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Vor- und Nachname" />
@@ -745,6 +799,8 @@ function Profil({ profil, neuLaden }) {
         {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.plum, marginTop: 10 }}>{hinweis}</div>}
       </Card>
 
+      <Btn ghost onClick={() => { window.location.href = window.location.pathname; }}>← Zurück zur App</Btn>
+      <div style={{ height: 10 }} />
       <Btn ghost onClick={() => supabase.auth.signOut().then(() => window.location.reload())}>Abmelden</Btn>
     </>
   );
@@ -845,6 +901,7 @@ export default function CoachPanel() {
             offen={chat}
             setOffen={setChat}
             ungelesenNeu={() => ladeUngelesen().then(setUngelesen)}
+            coachName={profil?.name}
           />
         )}
         {tab === "termine" && <Termine />}

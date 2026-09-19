@@ -770,6 +770,55 @@ export async function coachProfilSichern(name = null) {
   return user.id;
 }
 
+// ── Coach-Rolle ────────────────────────────────────────────────────────────
+// "Ich bin Coachin" ist eine bewusste Entscheidung der Nutzerin — bei der
+// Registrierung oder spaeter im Profil. Sie schaltet nur den Coach-Bereich
+// frei, sie gibt keinerlei Zugriff auf fremde Daten (das regelt weiterhin RLS).
+
+export async function istCoachin() {
+  const user = await nutzerin();
+  if (!user) return false;
+  const { data } = await supabase
+    .from("coaches").select("ist_coach").eq("id", user.id).maybeSingle();
+  return !!data?.ist_coach;
+}
+
+export async function coachRolleSetzen(an, name = null) {
+  const user = await nutzerin();
+  if (!user) return false;
+  const zeile = { id: user.id, ist_coach: !!an };
+  if (name) zeile.name = name;
+  const { error } = await supabase.from("coaches").upsert(zeile, { onConflict: "id" });
+  if (error) { console.warn("coachRolleSetzen:", error.message); return false; }
+  return true;
+}
+
+// Bei der Registrierung gewaehlte Rolle wird lokal gemerkt, weil die
+// coaches-Zeile erst nach der E-Mail-Bestaetigung geschrieben werden kann.
+const ROLLE_SCHLUESSEL = "s2g_rolle_wunsch";
+
+export function rolleWunschMerken(rolle) {
+  try { localStorage.setItem(ROLLE_SCHLUESSEL, rolle); } catch {}
+}
+
+// Holt den gemerkten Wunsch nach, sobald es eine Sitzung gibt. Gibt zurueck,
+// ob die Nutzerin Coachin ist.
+export async function rolleAbgleichen() {
+  const user = await nutzerin();
+  if (!user) return false;
+  let wunsch = null;
+  try { wunsch = localStorage.getItem(ROLLE_SCHLUESSEL); } catch {}
+  const metaRolle = user.user_metadata?.rolle || null;
+  if (wunsch === "coach" || metaRolle === "coach") {
+    const schon = await istCoachin();
+    if (!schon) await coachRolleSetzen(true);
+    try { localStorage.removeItem(ROLLE_SCHLUESSEL); } catch {}
+    return true;
+  }
+  try { if (wunsch) localStorage.removeItem(ROLLE_SCHLUESSEL); } catch {}
+  return await istCoachin();
+}
+
 export async function ladeCoachProfilSelbst() {
   const user = await nutzerin();
   if (!user) return null;

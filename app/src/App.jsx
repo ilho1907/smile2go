@@ -13,7 +13,8 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren, cloudErreichbar,
   ladeCoachBeitraege, ladeCoachProfil, merkeEinladung, ladeTwinMeinerCoachin,
   ladeMaterialien, ladeAngebote, ladeKursModule, ladeKursFortschritt,
-  modulErledigt, modulZurueck, stelleAnfrage } from "./supabase";
+  modulErledigt, modulZurueck, stelleAnfrage,
+  rolleWunschMerken, rolleAbgleichen, coachRolleSetzen } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -758,6 +759,7 @@ function Auth({ onLogin }) {
   const [optin, setOptin] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [rolle, setRolle] = useState("klientin");
 
   const echterBackend = !!supabase;
 
@@ -794,7 +796,7 @@ function Auth({ onLogin }) {
 
     // Prototyp-Modus (kein Supabase konfiguriert): altes Simulationsverhalten, unverändert.
     if (!echterBackend) {
-      if (mode === "register") return setOptin(true);
+      if (mode === "register") { rolleWunschMerken(rolle); return setOptin(true); }
       onLogin(email);
       return;
     }
@@ -803,9 +805,10 @@ function Auth({ onLogin }) {
     setBusy(true);
     try {
       if (mode === "register") {
+        rolleWunschMerken(rolle);
         const { data, error } = await supabase.auth.signUp({
           email, password: pw,
-          options: { data: { geburtsdatum: geburt, ilho_aktiv: ilhoOn } },
+          options: { data: { geburtsdatum: geburt, ilho_aktiv: ilhoOn, rolle } },
         });
         if (error) { setErr(error.message); setBusy(false); return; }
         if (data?.session) {
@@ -909,6 +912,41 @@ function Auth({ onLogin }) {
           }}>{label}</button>
         ))}
       </div>
+
+      {mode === "register" && (
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginBottom: 7 }}>
+            Wer bist du?
+          </label>
+          <div style={{ display: "flex", gap: 9 }}>
+            {[
+              { k: "klientin", e: "\u{1F33F}", t: "Ich suche Begleitung", s: "Journal, Rituale, Kurse" },
+              { k: "coach", e: "\u{1F91D}", t: "Ich bin Coachin", s: "Eigener Coach-Bereich" },
+            ].map((r) => {
+              const aktiv = rolle === r.k;
+              return (
+                <button key={r.k} type="button" onClick={() => setRolle(r.k)} style={{
+                  flex: 1, textAlign: "left", cursor: "pointer",
+                  padding: "12px 13px", borderRadius: 14, minHeight: 78,
+                  border: `1.5px solid ${aktiv ? C.rose : C.line}`,
+                  background: aktiv ? "#fff" : C.card,
+                  boxShadow: aktiv ? "0 2px 10px rgba(217,110,139,.15)" : "none",
+                }}>
+                  <div style={{ fontSize: 19, marginBottom: 4 }}>{r.e}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: aktiv ? C.plum : C.espresso, lineHeight: 1.3 }}>{r.t}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 3, lineHeight: 1.35 }}>{r.s}</div>
+                </button>
+              );
+            })}
+          </div>
+          {rolle === "coach" && (
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, lineHeight: 1.55, marginTop: 9, opacity: .85 }}>
+              Du bekommst zusätzlich deinen Coach-Bereich: Klientinnen, Nachrichten, Termine,
+              Material und dein öffentliches Profil. Die App selbst kannst du weiterhin ganz normal nutzen.
+            </p>
+          )}
+        </div>
+      )}
 
       <input style={input} type="email" placeholder="E-Mail-Adresse" value={email} onChange={(e) => setEmail(e.target.value)} />
       <input style={input} type="password" placeholder="Passwort (min. 8 Zeichen)" value={pw} onChange={(e) => setPw(e.target.value)} />
@@ -3766,7 +3804,7 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
 
 /* ── Profil ── */
 
-function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, aufBindung }) {
+function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, aufBindung, istCoach, setIstCoach }) {
   const [time, setTime] = useState("07:00");
   const [push, setPush] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -3935,6 +3973,31 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
           </Card>
         ) : (
           <div style={{ marginTop: 8 }}><CoachVerbinden onVerbunden={aufBindung} /></div>
+        )}
+
+        {/* Coach-Bereich — nur fuer Nutzerinnen, die selbst begleiten */}
+        <Eyebrow color={C.plum}>Als Coachin arbeiten</Eyebrow>
+        {istCoach ? (
+          <Card style={{ marginTop: 8, marginBottom: 16, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, marginBottom: 4 }}>Dein Coach-Bereich</div>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+              Klientinnen, Nachrichten, Termine, Material und dein öffentliches Profil — alles
+              an einem Ort. Du kommst jederzeit wieder hierher zurück.
+            </p>
+            <Btn small onClick={() => { window.location.hash = "#coach"; }}>🤝 Zum Coach-Bereich</Btn>
+          </Card>
+        ) : (
+          <Card style={{ marginTop: 8, marginBottom: 16 }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
+              Begleitest du selbst Frauen? Dann schalten wir dir deinen eigenen Coach-Bereich frei —
+              mit Klientinnenliste, Nachrichten, Terminen und deinem öffentlichen Profil.
+              Deine eigene App bleibt genau so, wie sie ist.
+            </p>
+            <Btn small ghost onClick={async () => {
+              const ok = await coachRolleSetzen(true, alias || null);
+              if (ok && setIstCoach) setIstCoach(true);
+            }}>Ich bin Coachin — Bereich freischalten</Btn>
+          </Card>
         )}
 
         {/* Persönlich */}
@@ -9079,6 +9142,7 @@ const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
   const [bindung, setBindung] = useState(null);
+  const [istCoach, setIstCoach] = useState(false);
   const [cloudAus, setCloudAus] = useState(false);
   // Der Link aus der E-Mail kommt in zwei Formen zurueck: als Fragment mit
   // type=recovery (impliziter Flow) oder als ?code= (PKCE). Beide erkennen.
@@ -9310,6 +9374,15 @@ export default function IlhoApp() {
     else setBindung(null);
   }, [user]); // eslint-disable-line
 
+  // Coach-Rolle: bei der Registrierung gewaehlt, hier nachgetragen, sobald es
+  // eine Sitzung gibt (bei Double-Opt-in passiert das erst nach der Bestaetigung).
+  useEffect(() => {
+    if (!user || !supabase) { setIstCoach(false); return; }
+    let aktiv = true;
+    rolleAbgleichen().then((ok) => { if (aktiv) setIstCoach(!!ok); }).catch(() => {});
+    return () => { aktiv = false; };
+  }, [user]); // eslint-disable-line
+
   // Wochenbericht: montags von allein an die Coachin — nur wenn eingeschaltet.
   useEffect(() => {
     if (!bindung?.id) return;
@@ -9471,7 +9544,7 @@ export default function IlhoApp() {
               {tab === "fragebogen" && <><MediaBanner video={S2GVID.fragebogen} poster={S2GIMG.fragebogen} title="Fragebogen" subtitle="Lerne dich kennen" height={190} /><Fragebogen intake={intake} setIntake={setIntake} addPunkte={addPunkte} /></>}
               {tab === "pakete" && <><MediaBanner video={S2GVID.pakete} poster={S2GIMG.pakete} title="Pakete" subtitle="Wähle dein Geschenk an dich" height={190} /><Pakete addPunkte={addPunkte} go={go} /></>}
               {tab === "office" && <Office office={office} setOffice={setOffice} addPunkte={addPunkte} />}
-              {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} bindung={bindung} aufBindung={aufBindung} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
+              {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} bindung={bindung} aufBindung={aufBindung} istCoach={istCoach} setIstCoach={setIstCoach} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
               {tab === "coachdash" && <CoachDashboard name={anzeigeName} streak={streak} entries={entries} ch369={ch369} drawn={drawn} horo={horo} energie={energie} aufgaben={aufgaben} checkins={checkins} />}
               {tab === "coachtwin" && <CoachTwinInterview addPunkte={addPunkte} />}
               {tab === "sessionnotiz" && <SessionIntelligenz addPunkte={addPunkte} />}
