@@ -30,7 +30,7 @@ Test/lint kurulu değil — doğrulama `npm run build` ve tarayıcıda elle kont
 
 | Yol | İçerik |
 |---|---|
-| `app/src/` | React kaynak (aşağıya bak) |
+| `app/src/` | React kaynak — `ui/` `lib/` `daten/` `screens/` (aşağıya bak) |
 | `app/public/media/` | Video/ses/görsel — **okuma, 39 MB** |
 | `backend/supabase/migrations/` | 16 SQL migration, tarih öneki ile sıralı |
 | `backend/supabase/functions/` | Edge Functions: `ai`, `tts`, `push`, `konto-loeschen` |
@@ -42,52 +42,57 @@ Test/lint kurulu değil — doğrulama `npm run build` ve tarayıcıda elle kont
 
 ## app/src — dosya haritası
 
+`App.jsx` eskiden 9.572 satırlık tek dosyaydı; 2026-09'da modüllere bölündü.
+Artık kök bileşen 525 satır, geri kalan her ekran kendi dosyasında.
+
+**Kök**
+
 | Dosya | Satır | Ne yapar |
 |---|---|---|
-| `App.jsx` | **9.572** | Üye uygulamasının tamamı — tüm ekranlar tek dosyada |
+| `App.jsx` | 525 | `ROOTS`, `TITLES`, `IlhoApp` — tüm state ve yönlendirme burada |
 | `supabase.js` | 1.020 | Tüm veri erişimi, 86 export'luk API katmanı |
-| `Coach.jsx` | 858 | Coach paneli |
-| `Admin.jsx` | 343 | Admin dashboard |
-| `OrakelReveal.jsx` `MediaScreens.jsx` `HeuteHero.jsx` `BookOpen.jsx` `MediaBanner.jsx` | <260 | Ayrık görsel bileşenler |
-| `media.js` | 140 | Medya manifestosu (kart görselleri, video/ses yolları) |
-| `sprache.js` | 66 | Web Speech API ile sesli okuma |
-| `lib/energy.js` | 49 | Enerji hesabı |
+| `Coach.jsx` | 858 | Coach paneli (`#coach`) |
+| `Admin.jsx` | 343 | Admin dashboard (`#admin`) |
+| `media.js` `sprache.js` | 140 / 66 | Medya manifestosu, sesli okuma |
 
-### App.jsx'te gezinme — ÖNEMLİ
+**Paylaşılan katman** — ekranlar buradan besleniyor, ters yönde bağımlılık yok:
 
-`App.jsx` 692 KB. **Tamamını okuma** (~175.000 token). Önce konumu bul, sonra
-sadece o aralığı oku:
+| Dosya | İçerik |
+|---|---|
+| `ui/tema.js` | Renk paleti `C` — 80 yerde kullanılıyor |
+| `ui/basis.jsx` | `Card` `Btn` `H` `Eyebrow` `Mikro` `TeilenBtn` `Hoerknopf` `Hoerspur` `QRCode` `Absatz` `RechtSeite` |
+| `lib/zeit.js` | `dayIndex` `kalenderwoche` `mondphase` `wochenNummer` `useSekundenTakt` … |
+| `lib/ki.js` | `askLuma` `ILHO_SYSTEM` `tonalitaetsZusatz` — **tek KI giriş noktası** |
+| `lib/wetter.js` | open-meteo sorgusu, `wmoIcon` |
+| `lib/farben.js` | Marka renk matematiği (yalnız `Office` kullanıyor) |
+| `lib/energy.js` | Enerji hesabı |
+| `daten/inhalte.js` | `MOTIVATION` `SPRUECHE` `AFFIRMATIONEN` `KURSE` `TRACKS` `BADGES` `ENERGIE` |
 
+**Ekranlar** (`screens/`) — hangi işi arıyorsan doğrudan o dosyayı aç:
+
+| Dosya | Satır | İçindekiler |
+|---|---|---|
+| `Uebungen.jsx` | 1.287 | Qigong, Achtsamkeit, Dankbarkeit, Loslassen, MeTime, Mondrituale, Intuition, Reisen, Jahreskreis, WochenOrakel, RitualDerLeere, Flamme, FreundinnenKreis, Jahresrueckblick |
+| `CoachIntelligenz.jsx` | 860 | WissensSuche, SessionIntelligenz, StimmProfil, CoachTwinInterview, CoachDashboard, CoachReflexion, WochenCheckin, Wochenbild |
+| `Journal.jsx` | 652 | Journal, JournalHeute, Rituale, Challenge369, DankbarkeitsChallenge, Brief, MoneyMind |
+| `Profil.jsx` | 646 | Profil, CoachVerbinden, Buchen, CoachChat |
+| `Orakel.jsx` | 624 | Orakel, Horoskop, Mystik, KartenArt, göttin/tarot verileri, sternzeichen |
+| `SOS.jsx` | 594 | SOSOverlay, ArchetypTest, Schattenspiegel, ZukunftsIch |
+| `CoachingHub.jsx` | 514 | CoachingHub, Wochenbericht |
+| `Mehr.jsx` | 492 | Mehr, ThemaScreen, WochenChallenge, THEMEN |
+| `Office.jsx` | 442 | Marken-Baukasten |
+| `Info.jsx` | 440 | Community, AppGuide, Fragebogen, Pakete, Impressum, Datenschutz |
+| `Fortschritt.jsx` | 414 | Fortschritt, PunkteModal, abzeichen/ödül sistemi |
+| `Mediathek.jsx` | 412 | Mediathek, Musik, Meditation, Podcast |
+| `Heute.jsx` | 342 | Heute, Luma (ilho sohbeti), EnergieKompass, HeuteWidget |
+| `Auth.jsx` | 279 | Anmeldung, Registrierung, PasswortNeu |
+| `Kurse.jsx` | 265 | Kurse, KursDetail |
+| `Ziele.jsx` | 117 | Ziele, Aufgaben |
+
+Bir bileşeni nerede olduğunu bilmiyorsan:
 ```bash
-grep -n "^function Orakel" app/src/App.jsx      # → satır no
+grep -rn "^export function Orakel" app/src/screens/
 ```
-sonra Read ile `offset`/`limit` vererek o bölümü aç.
-
-Kabaca bölgeler (satır numaraları değişir, grep'e güven):
-
-- **1–750** sabitler: renk paleti `C`, motivasyon/affirmasyon/göttin listeleri,
-  tarot & karta ait veriler, hava durumu, ay evresi, ortak UI parçaları
-  (`Card`, `Btn`, `H`, `Hoerknopf`, `Hoerspur`, `Mikro`, `TeilenBtn`)
-- **391 `askLuma`** — tek KI giriş noktası
-- **751–1200** `Auth`, `EnergieKompass`, `HeuteWidget`, `Heute`, `Luma`
-- **1290–1800** burç, tarot, `Horoskop`, `Mystik`, `Orakel`
-- **1816–2065** kurslar/teklifler (`KursDetail`, `Kurse`)
-- **2066–2770** günlük & ritüeller (`Journal`, `Rituale`, `Challenge369`,
-  `Brief`, `MoneyMind`, `Musik`)
-- **2767–3620** coach tarafı zekâsı (`WissensSuche`, `SessionIntelligenz`,
-  `StimmProfil`, `CoachTwinInterview`, `CoachDashboard`, `Wochenbild`)
-- **3618–4520** `Fortschritt`, `Profil`, `Buchen`, `CoachChat`
-- **4407–5230** marka/`Office` üretimi, `Mediathek`
-- **5231–5930** `Ziele`, `Aufgaben`, hukuk sayfaları, `Meditation`,
-  `Community`, `AppGuide`, `Fragebogen`, `Pakete`, `Podcast`
-- **5925–6600** `CoachingHub`, `Wochenbericht`, `ThemaScreen`, `WochenChallenge`
-- **6714–7350** `Mehr`, puan/rozet sistemi, `PunkteModal`, `Schattenspiegel`,
-  `ZukunftsIch`
-- **7350–9020** `SOSOverlay`, arketip testi ve tüm ritüel modülleri
-  (`Qigong`, `Achtsamkeit`, `Dankbarkeit`, `Loslassen`, `MeTime`,
-  `Mondrituale`, `Intuition`, `Reisen`, `Jahreskreis`, `WochenOrakel`)
-- **9076–sonu** yönlendirme: `ROOTS`, `TITLES`, `IlhoApp` (kök bileşen, tüm
-  state burada)
 
 ## Mimari kurallar
 
