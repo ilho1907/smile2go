@@ -631,7 +631,7 @@ export function CoachReflexion({ ci, checkins, streak }) {
   );
 }
 
-export function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, aufgaben, checkins }) {
+export function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, aufgaben, checkins, go }) {
   const ci = coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 });
   const heuteStr = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" });
   const tasks = [

@@ -414,7 +414,7 @@ export default function IlhoApp() {
               {tab === "pakete" && <><MediaBanner video={S2GVID.pakete} poster={S2GIMG.pakete} title="Pakete" subtitle="Wähle dein Geschenk an dich" height={190} /><Pakete addPunkte={addPunkte} go={go} /></>}
               {tab === "office" && <Office office={office} setOffice={setOffice} addPunkte={addPunkte} />}
               {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} bindung={bindung} aufBindung={aufBindung} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
-              {tab === "coachdash" && <CoachDashboard name={anzeigeName} streak={streak} entries={entries} ch369={ch369} drawn={drawn} horo={horo} energie={energie} aufgaben={aufgaben} checkins={checkins} />}
+              {tab === "coachdash" && <CoachDashboard name={anzeigeName} streak={streak} entries={entries} ch369={ch369} drawn={drawn} horo={horo} energie={energie} aufgaben={aufgaben} checkins={checkins} go={go} />}
               {tab === "coachtwin" && <CoachTwinInterview addPunkte={addPunkte} />}
               {tab === "sessionnotiz" && <SessionIntelligenz addPunkte={addPunkte} />}
               {tab === "wissen" && <WissensSuche addPunkte={addPunkte} />}
