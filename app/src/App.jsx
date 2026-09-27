@@ -776,9 +776,14 @@ function Auth({ onLogin }) {
     setBusy(true);
     try {
       await passwortZuruecksetzen(email);
-      setResetHinweis(`Wir haben dir einen Link an ${email} geschickt — er gilt 60 Minuten.`);
+      setResetHinweis(`Wir haben dir einen Link an ${email} geschickt — er gilt 60 Minuten. Nichts da? Schau bitte auch im Spam-Ordner nach.`);
     } catch (e) {
-      setErr(e.message || "Das hat gerade nicht geklappt.");
+      const m = String(e.message || "");
+      setErr(/rate limit|too many/i.test(m)
+        ? "Es wurden gerade zu viele E-Mails angefordert. Bitte versuch es in einer Stunde noch einmal."
+        : /not authorized|not allowed/i.test(m)
+          ? "Diese E-Mail-Adresse kann gerade keine Nachricht von uns empfangen. Bitte melde dich beim smile2go-Team."
+          : m || "Das hat gerade nicht geklappt.");
     }
     setBusy(false);
   };
