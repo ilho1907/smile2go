@@ -30,8 +30,28 @@ Deno.serve(async (req) => {
   try {
     const { user_id, titel, text, url = "/", tag = "smile2go" } = await req.json();
     if (!user_id || !text) return json({ error: "user_id und text erforderlich" }, 400);
+    if (!/^[0-9a-f-]{36}$/i.test(String(user_id))) return json({ error: "ungültige user_id" }, 400);
 
     const admin = createClient(URL_, SERVICE);
+
+    // Nur an verbundene Personen: Aufruferin und Empfängerin müssen über eine
+    // aktive Bindung verknüpft sein (Coachin → Klientin oder Klientin → Coachin).
+    // Der Service-Key (n8n/Automation) darf an alle senden.
+    const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+    if (token !== SERVICE) {
+      const { data: auth } = await admin.auth.getUser(token);
+      const aufruferin = auth?.user?.id;
+      if (!aufruferin) return json({ error: "nicht angemeldet" }, 401);
+      if (aufruferin !== user_id) {
+        const { count } = await admin
+          .from("klientinnen")
+          .select("id", { count: "exact", head: true })
+          .in("status", ["aktiv", "pausiert"])
+          .or(`and(coach_id.eq.${aufruferin},user_id.eq.${user_id}),and(user_id.eq.${aufruferin},coach_id.eq.${user_id})`);
+        if (!count) return json({ error: "keine Verbindung zu dieser Person" }, 403);
+      }
+    }
+
     const { data: abos, error } = await admin
       .from("push_abos")
       .select("endpoint, p256dh, auth_key")

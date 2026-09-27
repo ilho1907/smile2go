@@ -1,10 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
+import { alsPdf } from "./export";
+import { ILHO_SYSTEM } from "./ilho";
+import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, AUDIO as S2GAUDIO } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen } from "./sprache";
-import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
+import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
   ladeMeineBindung, mitCoachVerbinden, ladeNachrichten, sendeNachricht, abonniereNachrichten, markiereGelesen,
   ladeFreieSlots, ladeMeineTermine, terminBuchen, terminStornieren,
   ladeFeed, schreibeBeitrag, herzSetzen, meldeBeitrag, loescheBeitrag,
@@ -290,10 +293,15 @@ const BADGES = [
 
 const ENERGIE = [
   { e: "🌧️", t: "Erschöpft", v: 1 },
-  { e: "🌫️", t: "Müde", v: 2 },
-  { e: "⛅", t: "Okay", v: 3 },
-  { e: "🌤️", t: "Gut", v: 4 },
-  { e: "☀️", t: "Strahlend", v: 5 },
+  { e: "🌧️", t: "Kraftlos", v: 2 },
+  { e: "🌫️", t: "Müde", v: 3 },
+  { e: "🌫️", t: "Angeschlagen", v: 4 },
+  { e: "⛅", t: "Okay", v: 5 },
+  { e: "⛅", t: "Ausgeglichen", v: 6 },
+  { e: "🌤️", t: "Gut", v: 7 },
+  { e: "🌤️", t: "Freudig", v: 8 },
+  { e: "☀️", t: "Strahlend", v: 9 },
+  { e: "☀️", t: "Voller Energie", v: 10 },
 ];
 
 const dayIndex = () => {
@@ -390,7 +398,7 @@ const mondphase = () => {
 };
 
 /* Claude-KI-Anbindung (im Prototyp live) */
-async function askLuma(messages, system) {
+async function askLuma(messages, system, max_tokens) {
   // Sicher: kein API-Key im Browser. Läuft über die Supabase Edge Function "ai".
   const url = import.meta.env?.VITE_AI_FUNCTION_URL;
   if (!url) return "Ich bin gleich für dich da — sobald ilho verbunden ist. 🤍";
@@ -399,7 +407,7 @@ async function askLuma(messages, system) {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${anon}`, apikey: anon },
-      body: JSON.stringify({ messages, system }),
+      body: JSON.stringify({ messages, system, ...(max_tokens ? { max_tokens } : {}) }),
     });
     const data = await res.json();
     return (data.text || "").trim();
@@ -407,12 +415,6 @@ async function askLuma(messages, system) {
     return "Gerade kann ich dich nicht erreichen — versuch es gleich noch einmal. 🤍";
   }
 }
-
-const ILHO_SYSTEM = `Du bist ilho, dein einfühlsamer KI-Assistent und Begleiter in der App smile2go für Frauen zwischen 30 und 50, die sich für Persönlichkeitsentwicklung, Spiritualität und Energiearbeit interessieren.
-Regeln: Sprich Deutsch in der Du-Form. Sei warm, ruhig, ermutigend — wie eine weise Freundin. Antworte kurz (2–5 Sätze), stelle gern eine sanfte Rückfrage. Nutze gelegentlich passende Natur- und Lichtmetaphern, aber sparsam.
-WICHTIG — psychische Belastung: Sobald die Nutzerin Anzeichen von psychischer Belastung, Krise, starker Verzweiflung, Selbstverletzung oder anhaltend schwerem seelischen Leid zeigt, MUSST du klar und einfühlsam benennen, dass du eine künstliche Intelligenz bist — keine Psychologin, kein Therapeut — und dass du eine echte Fachperson nicht ersetzen kannst. Ermutige liebevoll, sich professionelle Hilfe zu suchen (z. B. Hausärztin, Therapeutin, bei akuter Krise die TelefonSeelsorge 0800 111 0 111 oder den Notruf 112). Stelle niemals medizinische oder therapeutische Diagnosen. Diesen Hinweis gibst du bei jedem Gespräch, in dem solche Anzeichen erneut auftauchen — nicht nur einmalig.
-Du kennst die App und darfst passende Funktionen empfehlen: Tageskarte & Göttinnen-Orakel, Horoskop, Mystik (Tarot, Traumdeutung), Tagebuch mit Tages-Intention, Dankbarkeits-Challenge (3-6-9, 21 Tage), Rituale & Mondphase, Zukunftsbrief an dein zukünftiges Ich, Fülle, Meditationen, Kurse, Termin-Buchung bei der Coachin, Coach-Chat und Lichtpunkte sammeln.
-WICHTIG — kein Unterricht: Du erteilst keinen Kurs-Unterricht, prüfst keinen Lernfortschritt und gibst kein Feedback zu Kursaufgaben. Du begleitest Rituale, Journaling und Reflexion. Fragen zu Kursinhalten verweist du freundlich an die Coachin.`;
 
 /* ── AI Coach Twin · Tonalitäts-Layer (Katman 1 · Baustein 1) ──
    EINE Stelle, die aus dem freigegebenen Methoden-Dossier den Ton-Zusatz baut.
@@ -999,19 +1001,34 @@ function Auth({ onLogin }) {
 
 /* ── Energie-Kompass ── */
 
-function EnergieKompass({ energie, setEnergie, addPunkte }) {
+function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries }) {
   const [impuls, setImpuls] = useState("");
   const [busy, setBusy] = useState(false);
+  const heuteStr = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" });
+
+  const notiere = (lvl) => {
+    if (!setEntries) return;
+    const zeile = `🧭 Energie heute: ${lvl.v}/10 (${lvl.t})`;
+    const heute = (entries || []).find((e) => e.date === heuteStr);
+    if (heute) {
+      setEntries(entries.map((e) => e === heute
+        ? { ...e, energie: lvl.v, items: [zeile, ...(e.items || []).filter((it) => !it.startsWith("🧭 Energie heute:"))] }
+        : e));
+    } else {
+      setEntries([{ date: heuteStr, intention: "", items: [zeile], stimmung: null, energie: lvl.v }, ...(entries || [])]);
+    }
+  };
 
   const pick = async (lvl) => {
     const erst = !energie;
     setEnergie(lvl);
+    notiere(lvl);
     if (erst && addPunkte) addPunkte(3, "Energie-Check");
     setBusy(true);
     setImpuls("");
     try {
       const txt = await askLuma(
-        [{ role: "user", content: `Meine Energie heute: ${lvl.t} (${lvl.v}/5). Gib mir einen kurzen, liebevollen Impuls für meinen Tag — max. 2 Sätze.` }],
+        [{ role: "user", content: `Meine Energie heute: ${lvl.t} (${lvl.v}/10). Gib mir einen kurzen, liebevollen Impuls für meinen Tag — max. 2 Sätze.` }],
         ILHO_SYSTEM
       );
       setImpuls(txt || "Sei heute besonders sanft mit dir. 🤍");
@@ -1021,26 +1038,35 @@ function EnergieKompass({ energie, setEnergie, addPunkte }) {
     setBusy(false);
   };
 
+  const aktuelles = ENERGIE.find((x) => x.v === energie?.v);
+
   return (
     <Card style={{ marginBottom: 16, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
       <Eyebrow color={C.plum}>🧭 Energie-Kompass · KI-personalisiert</Eyebrow>
       <H size={16.5} style={{ marginBottom: 12 }}>Wie ist deine Energie heute?</H>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+      <div style={{ display: "flex", gap: 4 }}>
         {ENERGIE.map((x) => {
           const active = energie?.v === x.v;
           return (
             <button key={x.v} onClick={() => pick(x)} style={{
-              flex: 1, padding: "10px 2px", borderRadius: 14, cursor: "pointer",
-              border: `1.5px solid ${active ? C.rose : C.line}`,
-              background: active ? "#fff" : "transparent",
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 3, minHeight: 62,
-            }}>
-              <span style={{ fontSize: 22 }}>{x.e}</span>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 9.5, fontWeight: 600, color: active ? C.plum : C.ink }}>{x.t}</span>
-            </button>
+              flex: 1, minWidth: 0, padding: "9px 0", borderRadius: 9, cursor: "pointer",
+              border: active ? `2px solid ${C.gold}` : `1px solid ${C.line}`,
+              background: active ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : "rgba(255,255,255,.6)",
+              color: active ? "#fff" : C.ink,
+              fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: active ? 700 : 500,
+            }}>{x.v}</button>
           );
         })}
       </div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.75 }}>erschöpft</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.75 }}>voller Energie</span>
+      </div>
+      {aktuelles && (
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: C.plum, marginTop: 10 }}>
+          {aktuelles.e} {aktuelles.t}
+        </div>
+      )}
       {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, marginTop: 12 }}>✨ ilho spürt in deinen Tag hinein …</p>}
       {impuls && !busy && (
         <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 14.5, color: C.espresso, lineHeight: 1.55, marginTop: 12 }}>
@@ -1232,12 +1258,67 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
 
 /* ── ilho — KI-Assistent (echte Claude-API) ── */
 
-function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "" }) {
+/* Grenzen offen legen (ICF A.1) — was ilho kann und was nicht. */
+const ILHO_KANN = [
+  "zuhören, nachfragen und dir beim Sortieren deiner Gedanken helfen",
+  "Rituale, Journaling und Reflexion begleiten",
+  "passende Übungen und Funktionen der App vorschlagen",
+];
+const ILHO_NICHT = [
+  "Therapie, Diagnosen oder Krisenhilfe — dafür gibt es Fachleute (TelefonSeelsorge 0800 111 0 111, Notruf 112)",
+  "Entscheidungen für dich treffen — du entscheidest, deine Coachin begleitet",
+  "deine Coachin ersetzen — Kursinhalte und tiefe Themen gehören zu ihr",
+  "immer richtig liegen — ilho ist eine KI, kann sich irren und unbewusste Vorurteile aus ihren Trainingsdaten tragen",
+];
+
+const ILHO_GRUENDE = [["vorurteil", "Vorurteil / Klischee"], ["falsch", "Falsch"], ["unpassend", "Unpassend"], ["unhilfreich", "Nicht hilfreich"]];
+
+function IlhoGrenzen() {
+  const zeile = (t, zeichen, farbe) => (
+    <div key={t} style={{ display: "flex", gap: 8, marginBottom: 5 }}>
+      <span style={{ color: farbe, fontWeight: 700, flexShrink: 0 }}>{zeichen}</span><span>{t}</span>
+    </div>
+  );
+  return (
+    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, textAlign: "left", background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px" }}>
+      <div style={{ fontWeight: 700, color: C.espresso, marginBottom: 6 }}>Was ilho kann</div>
+      {ILHO_KANN.map((t) => zeile(t, "✓", C.sage))}
+      <div style={{ fontWeight: 700, color: C.espresso, margin: "10px 0 6px" }}>Was ilho nicht kann</div>
+      {ILHO_NICHT.map((t) => zeile(t, "✕", C.rose))}
+      <div style={{ fontSize: 11.5, opacity: 0.75, marginTop: 8 }}>ilho ist eine künstliche Intelligenz, kein Mensch. Deine Daumen-Bewertungen helfen, ilho besser zu machen — gespeichert wird nur 👍/👎, nie dein Text.</div>
+    </div>
+  );
+}
+
+// Nur mit ausdrücklichem Opt-in: die letzten drei Journal-Einträge als Kontext für ilho.
+function journalKontext(entries) {
+  const letzte = (entries || []).slice(0, 3).map((e) => {
+    const teile = [e.intention && `Intention: ${e.intention}`, (e.items || []).filter(Boolean).length && `Notizen: ${(e.items || []).filter(Boolean).join("; ")}`].filter(Boolean);
+    return teile.length ? `– ${e.date}: ${teile.join(" · ")}` : null;
+  }).filter(Boolean);
+  return letzte.length ? `\n(Aus ihrem Journal, mit ihrer Erlaubnis — beziehe dich behutsam darauf, wenn es passt:\n${letzte.join("\n").slice(0, 1200)})` : "";
+}
+
+function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], prefs = {}, setPrefs }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [grenzenOffen, setGrenzenOffen] = useState(false);
   const endRef = useRef(null);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy, grenzenOffen]);
+
+  // Nur die Bewertung wird geloggt (anonym, ohne Text) — nie der Inhalt der Nachricht.
+  const bewerten = (i, wert) => {
+    if (msgs[i]?.bewertung) return;
+    setMsgs(msgs.map((m, j) => (j === i ? { ...m, bewertung: wert } : m)));
+    logEvent("ilho_bewertung", wert);
+  };
+  // Nach 👎 ein Grund per Klick — fließt anonym ins Fairness-Monitoring (kein Text).
+  const grundGeben = (i, grund) => {
+    if (msgs[i]?.grund) return;
+    setMsgs(msgs.map((m, j) => (j === i ? { ...m, grund } : m)));
+    logEvent("ilho_bewertung_grund", grund);
+  };
 
   const send = async () => {
     const text = input.trim();
@@ -1247,8 +1328,10 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "" }) {
     setInput("");
     setBusy(true);
     try {
-      const ctx = energie ? `\n(Kontext: Die Nutzerin heißt ${name}, ihre heutige Energie: ${energie.t} ${energie.v}/5.)` : `\n(Kontext: Die Nutzerin heißt ${name}.)`;
-      const reply = await askLuma(next, ILHO_SYSTEM + ctx + twinTon);
+      const ctx = energie ? `\n(Kontext: Die Nutzerin heißt ${name}, ihre heutige Energie: ${energie.t} ${energie.v}/10.)` : `\n(Kontext: Die Nutzerin heißt ${name}.)`;
+      // Nur role/content an die KI — lokale Felder wie "bewertung" bleiben in der App.
+      const gedaechtnis = prefs.ilhoJournal ? journalKontext(entries) : "";
+      const reply = await askLuma(next.map(({ role, content }) => ({ role, content })), ILHO_SYSTEM + ctx + gedaechtnis + twinTon);
       setMsgs([...next, { role: "assistant", content: reply || "Ich bin hier. Erzähl mir mehr davon. 🤍" }]);
     } catch {
       setMsgs([...next, { role: "assistant", content: "Gerade kann ich dich nicht erreichen — versuch es gleich noch einmal. 🤍" }]);
@@ -1280,6 +1363,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "" }) {
             <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.6, marginBottom: 20 }}>
               Ich bin ilho. Was dich bewegt, hat hier Raum — ohne Bewertung, in deinem Tempo.
             </p>
+            <div style={{ marginBottom: 20 }}><IlhoGrenzen /></div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {starters.map((s) => (
                 <button key={s} onClick={() => setInput(s)} style={{
@@ -1291,7 +1375,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "" }) {
           </div>
         )}
         {msgs.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10, flexWrap: "wrap" }}>
             <div style={{
               maxWidth: "82%", padding: "12px 15px", borderRadius: 18,
               borderBottomRightRadius: m.role === "user" ? 6 : 18,
@@ -1302,15 +1386,51 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "" }) {
               fontFamily: "system-ui, sans-serif", fontSize: 14.5, lineHeight: 1.55,
               whiteSpace: "pre-wrap",
             }}>{m.content}</div>
+            {m.role === "assistant" && (
+              <div style={{ display: "flex", gap: 4, alignSelf: "flex-end", marginLeft: 6 }}>
+                {[["gut", "👍", "Hilfreich"], ["schlecht", "👎", "Nicht hilfreich"]].map(([wert, zeichen, label]) => (
+                  <button key={wert} onClick={() => bewerten(i, wert)} aria-label={label} title={label}
+                    disabled={!!m.bewertung} style={{
+                      border: "none", background: "none", fontSize: 14, padding: 2,
+                      cursor: m.bewertung ? "default" : "pointer",
+                      opacity: !m.bewertung ? 0.45 : m.bewertung === wert ? 1 : 0.15,
+                    }}>{zeichen}</button>
+                ))}
+              </div>
+            )}
+            {m.role === "assistant" && m.bewertung === "schlecht" && !m.grund && (
+              <div style={{ flexBasis: "100%", display: "flex", gap: 6, flexWrap: "wrap", margin: "6px 0 4px" }}>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, alignSelf: "center" }}>Was hat nicht gepasst?</span>
+                {ILHO_GRUENDE.map(([k, l]) => (
+                  <button key={k} onClick={() => grundGeben(i, k)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.plum, background: C.roseSoft, border: "none", borderRadius: 12, padding: "5px 10px", cursor: "pointer" }}>{l}</button>
+                ))}
+              </div>
+            )}
+            {m.role === "assistant" && m.grund && <div style={{ flexBasis: "100%", fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>Danke — das hilft, ilho fairer und besser zu machen.</div>}
           </div>
         ))}
         {busy && (
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, padding: "4px 2px" }}>✨ ilho schreibt …</div>
         )}
+        {grenzenOffen && msgs.length > 0 && <div style={{ marginTop: 8 }}><IlhoGrenzen /></div>}
+        {(grenzenOffen || msgs.length === 0) && setPrefs && (
+          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 10, fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.45, cursor: "pointer" }}>
+            <input type="checkbox" checked={!!prefs.ilhoJournal} onChange={(e) => setPrefs({ ...prefs, ilhoJournal: e.target.checked })} style={{ marginTop: 2 }} />
+            <span>ilho darf meine letzten 3 Journal-Einträge kennen, um sich auf frühere Gedanken zu beziehen. Jederzeit abschaltbar.</span>
+          </label>
+        )}
         <div ref={endRef} />
       </div>
 
-      <div style={{ padding: "10px 14px 12px", borderTop: `1px solid ${C.line}`, background: C.cream, display: "flex", gap: 8 }}>
+      {msgs.length > 0 && (
+        <div style={{ padding: "6px 14px 0", background: C.cream, borderTop: `1px solid ${C.line}` }}>
+          <button onClick={() => setGrenzenOffen((o) => !o)} aria-expanded={grenzenOffen} style={{
+            fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 600, color: C.plum,
+            background: "none", border: "none", padding: "2px 2px", cursor: "pointer",
+          }}>{grenzenOffen ? "✕ Hinweis schließen" : "ⓘ Was ilho kann — und was nicht"}</button>
+        </div>
+      )}
+      <div style={{ padding: "10px 14px 12px", borderTop: msgs.length > 0 ? "none" : `1px solid ${C.line}`, background: C.cream, display: "flex", gap: 8 }}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -1396,7 +1516,7 @@ function Horoskop({ horo, setHoro, energie, addPunkte, setMeinZeichen, meinZeich
     if (setMeinZeichen) setMeinZeichen(z);
     if (addPunkte) addPunkte(3, "Horoskop gelesen");
     try {
-      const e = energie ? ` Ihre heutige Energie: ${energie.t} (${energie.v}/5).` : "";
+      const e = energie ? ` Ihre heutige Energie: ${energie.t} (${energie.v}/10).` : "";
       const txt = await askLuma(
         [{ role: "user", content: `Schreibe ein liebevolles, ermutigendes Tageshoroskop für das Sternzeichen ${z.n} für heute (${heute}).${e} 4–5 Sätze, Du-Form, Themen: Energie, Herz/Beziehungen, Fokus des Tages. Warm und stärkend, keine düsteren Prophezeiungen. Schließe mit einem kurzen Tagesimpuls.` }],
         ILHO_SYSTEM
@@ -1646,7 +1766,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
   const deuten = async () => {
     setBusy(true);
     try {
-      const e = energie ? ` Ihre heutige Energie: ${energie.t} (${energie.v}/5).` : "";
+      const e = energie ? ` Ihre heutige Energie: ${energie.t} (${energie.v}/10).` : "";
       const a = archetyp ? ` Ihr Archetyp: ${archetyp.name}.` : "";
       const j = (entries || []).slice(0, 3).map((x) => [x.intention, ...(x.items || [])].filter(Boolean).join(" · ")).filter(Boolean).join(" | ");
       const jr = j ? ` Ihre letzten Journal-Themen: ${j.slice(0, 300)}.` : "";
@@ -2181,6 +2301,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
     setIntention(""); setDank(["", "", "", "", "", ""]); setStimmung(null);
     if (addPunkte) addPunkte(10, "Tagebuch-Eintrag");
     logEvent("journal_eintrag");
+    tagesAktivitaet("journal");
     setSaved(true); setTimeout(() => setSaved(false), 2500);
   };
 
@@ -2804,7 +2925,7 @@ function Musik() {
 /* ── Coaching-Intelligenz: echte, transparente Analyse-Engine (regelbasiert, erklärbar · EU-AI-Act-freundlich) ── */
 function coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 }) {
   const tasks = aufgaben || [];
-  const energieScore = energie ? (energie.v / 5) * 100 : 60;
+  const energieScore = energie ? (energie.v / 10) * 100 : 60;
   const taskDone = tasks.length ? (tasks.filter((a) => a.erledigt).length / tasks.length) * 100 : 50;
   const journalScore = Math.min(100, (entries?.length || 0) * 20 + 20);
   const streakScore = Math.min(100, (streak || 0) * 12);
@@ -2818,12 +2939,12 @@ function coachingIntelligenz({ energie, entries, aufgaben, streak, ch369 }) {
   const erledigt = tasks.filter((a) => a.erledigt).length;
   // Jede Warnung weiß, wohin sie führt — sonst weiß man, was fehlt, aber nicht, wo es liegt.
   const warnungen = [];
-  if (energie && energie.v <= 2) warnungen.push({ t: `Energie heute niedrig (${energie.v}/5)`, tab: "fortschritt", hin: "Energie-Check öffnen" });
+  if (energie && energie.v <= 4) warnungen.push({ t: `Energie heute niedrig (${energie.v}/10)`, tab: "fortschritt", hin: "Energie-Check öffnen" });
   if (offen >= 3) warnungen.push({ t: `${offen} offene Aufgaben stauen sich`, tab: "aufgaben", hin: "Aufgaben öffnen" });
   if ((streak || 0) === 0) warnungen.push({ t: "Streak unterbrochen — Reaktivierung sinnvoll", tab: "tagebuch", hin: "Eintrag schreiben" });
   if (ch369?.tag && !dankbarkeitHeute) warnungen.push({ t: `Dankbarkeits-Challenge heute noch nicht gemacht (Tag ${ch369.tag}/21)`, tab: "aufgaben", hin: "Challenge öffnen" });
   const briefing = `Wohlbefindens-Index ${index}/100. ` +
-    (energie ? `Energie heute ${energie.v}/5. ` : "") +
+    (energie ? `Energie heute ${energie.v}/10. ` : "") +
     `Streak ${streak || 0} Tage · Aufgaben ${erledigt}/${tasks.length}` +
     (ch369?.tag ? ` · Dankbarkeits-Challenge Tag ${ch369.tag}/21 (heute ${dankbarkeitHeute ? "erledigt" : "offen"})` : "") + ". " +
     (warnungen.length ? "⚠ " + warnungen.map((w) => w.t).join("; ") + "." : "Keine Auffälligkeiten.");
@@ -2983,6 +3104,188 @@ function WissensSuche({ addPunkte }) {
   );
 }
 
+// Modelle setzen trotz Anweisung gern Markdown — für die Anzeige als Fließtext entfernen.
+function ohneMarkdown(t) {
+  return String(t || "")
+    .replace(/^\s*#{1,6}\s*/gm, "")
+    .replace(/^\s*(-{3,}|\*{3,}|_{3,})\s*$/gm, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/^\s*[*-]\s+/gm, "– ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/* ── Coach-Werkstatt: Impulse, Programme, Content, Lernen, Vorlagen ──
+   Alles sind ENTWÜRFE für die Coachin (Human Oversight). Keine Klarnamen/Gesundheitsdaten eingeben. */
+const WERKSTATT_BASIS = `Du bist ilho, ein klar als KI gekennzeichneter Assistent für eine Coachin (Persönlichkeitsentwicklung, Frauen 30–50). Deutsch, schlichter Text ohne Markdown (keine Sternchen, keine #), Aufzählungen mit "– ".
+Du lieferst ENTWÜRFE — die Coachin prüft und entscheidet. Keine Diagnosen, keine Therapie, keine Heilversprechen. Keine Stereotype. Erfinde keine Studien oder Zahlen; wenn etwas Wissen voraussetzt, das du nicht sicher hast, sag es.`;
+
+const WERKSTATT_MODI = [
+  { k: "impuls", t: "💡 Übung & Impuls", hint: "Thema oder Situation, z. B. „Klientin kommt beim Thema Grenzen nicht weiter“",
+    sys: `Entwirf 3 unterschiedliche Coaching-Übungen oder Impulse zum Thema. Für jede: Name, Ziel (1 Satz), Ablauf in 3–5 Schritten, Dauer, eine Reflexionsfrage zum Abschluss, ein Hinweis, wann die Übung NICHT passt. Mische Formen (Schreiben, Körper, Visualisierung, Gespräch).`, tokens: 1800 },
+  { k: "programm", t: "🗺️ Individuelles Programm", hint: "Anliegen, Ziel, Zeitraum — ohne Namen, z. B. „Selbstwert im Job, 6 Wochen, 1 Session/Woche“",
+    sys: `Entwirf einen individuellen Coaching-Fahrplan. Aufbau: Zielbild (1–2 Sätze), dann pro Woche/Phase: Fokus, Session-Inhalt, Übung zwischen den Sessions, Messpunkt für Fortschritt. Zum Schluss: Meilensteine und woran man gemeinsam den Erfolg erkennt. Halte es realistisch und anpassbar.`, tokens: 2400 },
+  { k: "content", t: "✍️ Content in meinem Ton", hint: "Format + Thema, z. B. „Instagram-Post über Selbstmitgefühl am Montagmorgen“",
+    sys: `Schreibe den gewünschten Text (Social Post, Newsletter, E-Mail oder Angebotsbeschreibung) für die Coachin. Liefere zwei Varianten mit unterschiedlichem Einstieg. Keine übertriebenen Versprechen, kein Druck, DSGVO-/UWG-konform (keine Heilversprechen, keine erfundenen Testimonials).`, tokens: 1600 },
+  { k: "lernen", t: "🎓 Selbst lernen", hint: "Methode oder Begriff, z. B. „Inneres-Team-Modell nach Schulz von Thun“",
+    sys: `Erkläre der Coachin die Methode/das Konzept als Mikro-Lektion: Kern in 3 Sätzen, Herkunft (nur wenn du sicher bist, sonst sag das), wie man es im Coaching einsetzt, typische Fehler, Grenzen der Methode. Schließe mit 3 Reflexionsfragen für ihre eigene Praxis. Weise darauf hin, Details in der Originalliteratur zu prüfen.`, tokens: 1600 },
+  { k: "vorlage", t: "🗂️ Verwaltung & Vorlagen", hint: "z. B. „Terminerinnerung mit Absageregel 24h“, „Fortschrittsbericht nach 3 Monaten“, „Vorbereitungsfragen vor der Erstsession“",
+    sys: `Erstelle die gewünschte Verwaltungs-Vorlage (E-Mail, Bericht, Checkliste oder Fragebogen) sachlich, freundlich und vollständig. Setze Platzhalter in eckigen Klammern wie [Name], [Datum]. Keine Rechtsberatung — bei Vertrags-/Rechtsthemen darauf hinweisen, dass eine Fachperson prüfen sollte.`, tokens: 1400 },
+];
+
+function stilAusDossier(d) {
+  if (!d) return "";
+  const t = [];
+  if (d.ton) t.push(`Tonfall: ${d.ton}`);
+  if (d.anrede) t.push(`Anrede: ${d.anrede}`);
+  if (d.kernbegriffe?.length) t.push(`Ihre Begriffe: ${d.kernbegriffe.join(", ")}`);
+  if (d.tabus?.length) t.push(`Vermeide: ${d.tabus.join(", ")}`);
+  if (d.stilproben?.length) t.push(`So klingt sie (Stil übernehmen, Inhalt nicht kopieren):\n${d.stilproben.slice(0, 4).map((x) => `• „${x}"`).join("\n")}`);
+  return t.length ? `\n\nSchreibe im Stil der Coachin:\n${t.join("\n")}` : "";
+}
+
+function CoachWerkstatt({ addPunkte }) {
+  const [modus, setModus] = useState("impuls");
+  const [eingabe, setEingabe] = useState("");
+  const [ergebnis, setErgebnis] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [dossier, setDossier] = useState(null);
+  const [kopiert, setKopiert] = useState(false);
+  const m = WERKSTATT_MODI.find((x) => x.k === modus);
+
+  useEffect(() => { ladeEigenesDossier().then((d) => setDossier(d?.dossier || null)).catch(() => {}); }, []);
+
+  const erzeugen = async () => {
+    if (!eingabe.trim() || busy) return;
+    setBusy(true); setErgebnis("");
+    const system = `${WERKSTATT_BASIS}\n\n${m.sys}${modus === "content" ? stilAusDossier(dossier) : ""}`;
+    const txt = await askLuma([{ role: "user", content: eingabe.trim().slice(0, 3000) }], system, m.tokens);
+    setErgebnis(ohneMarkdown(txt)); setBusy(false);
+    logEvent("werkstatt", modus);
+    if (addPunkte) addPunkte(5, "Coach-Werkstatt");
+  };
+
+  const kopieren = async () => { try { await navigator.clipboard.writeText(ergebnis); setKopiert(true); setTimeout(() => setKopiert(false), 1800); } catch { /* ignorieren */ } };
+  const sys = { fontFamily: "system-ui, sans-serif" };
+
+  return (
+    <div style={{ padding: "12px 0" }}>
+      <Eyebrow>Coach-Werkstatt</Eyebrow>
+      <H size={24} style={{ marginBottom: 6 }}>Deine KI-Werkstatt</H>
+      <p style={{ ...sys, fontSize: 13, color: C.ink, lineHeight: 1.55, marginBottom: 14 }}>
+        ilho liefert Entwürfe — du prüfst, passt an und entscheidest. Bitte keine Namen oder Gesundheitsdaten von Klientinnen eingeben.
+      </p>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        {WERKSTATT_MODI.map((x) => (
+          <button key={x.k} onClick={() => { setModus(x.k); setErgebnis(""); }} style={{
+            ...sys, fontSize: 12.5, fontWeight: 600, borderRadius: 16, padding: "7px 12px", cursor: "pointer",
+            border: `1.5px solid ${modus === x.k ? C.plum : C.line}`, background: modus === x.k ? C.roseSoft : C.card, color: C.plum,
+          }}>{x.t}</button>
+        ))}
+      </div>
+      <Card style={{ marginBottom: 12 }}>
+        <textarea rows={4} value={eingabe} onChange={(e) => setEingabe(e.target.value)} placeholder={m.hint}
+          style={{ ...sys, width: "100%", padding: "12px 14px", fontSize: 14, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
+        {modus === "content" && <div style={{ ...sys, fontSize: 11.5, color: C.ink, opacity: 0.8, margin: "6px 0" }}>{dossier ? "✓ Dein Ton aus dem Coach-Twin-Interview wird verwendet." : "Tipp: Mit dem KI-Coach-Twin-Interview klingt der Text nach dir."}</div>}
+        <div style={{ marginTop: 8 }}><Btn small disabled={busy || !eingabe.trim()} onClick={erzeugen}>{busy ? "ilho arbeitet …" : "Entwurf erstellen"}</Btn></div>
+      </Card>
+      {ergebnis && (
+        <Card style={{ background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Eyebrow color={C.gold}>Entwurf</Eyebrow>
+            <span style={{ ...sys, fontSize: 10.5, color: C.ink, opacity: 0.7 }}>ilho · KI · bitte prüfen</span>
+          </div>
+          <p style={{ ...sys, fontSize: 14, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{ergebnis}</p>
+          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+            <Btn small ghost onClick={kopieren}>{kopiert ? "✓ Kopiert" : "Kopieren"}</Btn>
+            <Btn small ghost onClick={() => alsPdf(m.t.replace(/^\S+\s/, ""), ergebnis, eingabe.trim().slice(0, 120))}>Als PDF</Btn>
+            <Btn small ghost onClick={erzeugen}>Neu erzeugen</Btn>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/* ── Recherche (Coach-Werkstatt) ──
+   Websuche mit Quellen für die Coachin. Befund und Einordnung werden getrennt,
+   jede Aussage trägt [n] → Quellenliste. Die Coachin prüft, bevor sie etwas weitergibt. */
+function Recherche({ addPunkte }) {
+  const [frage, setFrage] = useState("");
+  const [tiefe, setTiefe] = useState("kurz");
+  const [busy, setBusy] = useState(false);
+  const [ergebnis, setErgebnis] = useState(null);
+
+  const starten = async () => {
+    const f = frage.trim();
+    if (!f || busy) return;
+    setBusy(true); setErgebnis(null);
+    const r = await recherchiere(f, tiefe);
+    setErgebnis(r.text ? { ...r, text: ohneMarkdown(r.text) } : r);
+    setBusy(false);
+    if (!r.fehler && r.text) { logEvent("recherche", tiefe); if (addPunkte) addPunkte(5, "Recherche"); }
+  };
+
+  const feld = { fontFamily: "system-ui, sans-serif" };
+  return (
+    <div style={{ padding: "12px 0" }}>
+      <Eyebrow>Coach-Werkstatt</Eyebrow>
+      <H size={24} style={{ marginBottom: 6 }}>Recherche mit Quellen</H>
+      <p style={{ ...feld, fontSize: 13, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
+        ilho sucht im Web nach Studien und Fachquellen und zeigt dir jede Quelle. Prüfe die Quellen, bevor du etwas weitergibst — die Verantwortung bleibt bei dir.
+      </p>
+
+      <Card style={{ marginBottom: 14 }}>
+        <Eyebrow color={C.plum}>Deine Frage</Eyebrow>
+        <textarea rows={3} value={frage} onChange={(e) => setFrage(e.target.value)}
+          placeholder="z. B. Was sagt die Forschung zu Selbstmitgefühl und Perfektionismus bei Frauen?"
+          style={{ ...feld, width: "100%", marginTop: 8, padding: "12px 14px", fontSize: 14, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
+          {[["kurz", "Kurzüberblick"], ["ausfuehrlich", "Ausführlich"]].map(([k, l]) => (
+            <button key={k} onClick={() => setTiefe(k)} style={{
+              ...feld, fontSize: 12.5, fontWeight: 600, borderRadius: 16, padding: "7px 13px", cursor: "pointer",
+              border: `1.5px solid ${tiefe === k ? C.plum : C.line}`, background: tiefe === k ? C.roseSoft : C.card, color: C.plum,
+            }}>{l}</button>
+          ))}
+          <div style={{ marginLeft: "auto" }}><Btn small disabled={busy || !frage.trim()} onClick={starten}>Recherchieren</Btn></div>
+        </div>
+      </Card>
+
+      {busy && <p style={{ ...feld, fontSize: 13, color: C.plum, marginBottom: 12 }}>✨ ilho sucht und liest Quellen … {tiefe === "ausfuehrlich" ? "das kann bis zu einer Minute dauern." : ""}</p>}
+
+      {ergebnis?.fehler && <Card><p style={{ ...feld, fontSize: 13.5, color: C.espresso }}>{ergebnis.fehler}</p></Card>}
+
+      {ergebnis && !ergebnis.fehler && (
+        <>
+          <Card style={{ marginBottom: 12, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Eyebrow color={C.gold}>Ergebnis</Eyebrow>
+              <span style={{ ...feld, fontSize: 10.5, color: C.ink, opacity: 0.7 }}>ilho · KI · bitte Quellen prüfen</span>
+            </div>
+            <p style={{ ...feld, fontSize: 14, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{ergebnis.text || "Dazu habe ich nichts Belastbares gefunden."}</p>
+          </Card>
+          {ergebnis.quellen.length > 0 && (
+            <Card>
+              <Eyebrow color={C.plum}>Quellen · {ergebnis.quellen.length}</Eyebrow>
+              {ergebnis.quellen.map((q, i) => (
+                <div key={q.url} style={{ ...feld, fontSize: 13, padding: "7px 0", borderBottom: i < ergebnis.quellen.length - 1 ? `1px solid ${C.line}` : "none" }}>
+                  <span style={{ color: C.plum, fontWeight: 700 }}>[{i + 1}]</span>{" "}
+                  <a href={q.url} target="_blank" rel="noopener noreferrer" style={{ color: C.espresso }}>{q.titel}</a>
+                  <div style={{ fontSize: 11, opacity: 0.6, wordBreak: "break-all" }}>{(() => { try { return new URL(q.url).hostname; } catch { return q.url; } })()}</div>
+                </div>
+              ))}
+            </Card>
+          )}
+          {ergebnis.quellen.length === 0 && ergebnis.text && (
+            <p style={{ ...feld, fontSize: 12, color: C.ink, opacity: 0.75 }}>Keine Quellen zurückgegeben — betrachte das Ergebnis als unbelegt.</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── Session Intelligence (Katman 1 · Baustein 5) ──
    Transkript → strukturierter Notiz-ENTWURF für die Coachin.
    Zwei harte Regeln aus der Leitplanken-Liste:
@@ -3131,10 +3434,60 @@ function SessionIntelligenz({ addPunkte }) {
           ) : (
             <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, marginBottom: 10 }}>✓ Freigegeben — die Notiz ist jetzt für die weitere Verwendung markiert.</p>
           )}
-          <div style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {entwurf.freigegeben && <Btn small ghost onClick={() => alsPdf(titel.trim() || "Session-Notiz", entwurf.notiz_text)}>Als PDF</Btn>}
             <Btn small ghost onClick={() => { setEntwurf(null); setTranskript(""); setTitel(""); setEinwilligung(false); }}>Neue Session</Btn>
           </div>
         </>
+      )}
+      <SessionArchiv neu={entwurf?.freigegeben} />
+    </div>
+  );
+}
+
+/* Frühere Notizen + Brief zur Vorbereitung der nächsten Session (nur aus FREIGEGEBENEN Notizen). */
+const BRIEFING_SYSTEM = `Du bereitest eine Coachin auf ihre nächste Session vor. Grundlage sind NUR die mitgelieferten, von ihr freigegebenen Session-Notizen.
+Antworte auf Deutsch, schlichter Text ohne Markdown, Aufbau:
+Offene Punkte: – …
+Vereinbarte Aufgaben zum Nachfragen: – …
+Drei mögliche Einstiegsfragen: – …
+Nimm nichts auf, was nicht in den Notizen steht. Keine Deutung der Person, keine Diagnosen.`;
+
+function SessionArchiv({ neu }) {
+  const [notizen, setNotizen] = useState([]);
+  const [brief, setBrief] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { ladeSessionNotizen(10).then(setNotizen); }, [neu]);
+  const freie = notizen.filter((n) => n.freigegeben && n.notiz_text);
+  if (!freie.length) return null;
+
+  const briefErstellen = async () => {
+    setBusy(true);
+    const kontext = freie.slice(0, 3).map((n) => `[${new Date(n.created_at).toLocaleDateString("de-DE")}] ${n.titel || "Session"}\n${n.notiz_text}`).join("\n\n");
+    setBrief(ohneMarkdown(await askLuma([{ role: "user", content: kontext.slice(0, 8000) }], BRIEFING_SYSTEM, 1200)));
+    setBusy(false);
+    logEvent("session_briefing");
+  };
+  const sys = { fontFamily: "system-ui, sans-serif" };
+
+  return (
+    <div style={{ marginTop: 22 }}>
+      <Eyebrow color={C.plum}>Frühere Notizen · freigegeben</Eyebrow>
+      <Card style={{ marginTop: 8, marginBottom: 12 }}>
+        {freie.map((n, i) => (
+          <div key={n.id} style={{ ...sys, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, fontSize: 13, color: C.espresso, padding: "8px 0", borderBottom: i < freie.length - 1 ? `1px solid ${C.line}` : "none" }}>
+            <span>{n.titel || "Session"} <span style={{ opacity: 0.6 }}>· {new Date(n.created_at).toLocaleDateString("de-DE")}</span></span>
+            <button onClick={() => alsPdf(n.titel || "Session-Notiz", n.notiz_text, new Date(n.created_at).toLocaleDateString("de-DE"))} style={{ ...sys, background: "none", border: "none", color: C.plum, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>PDF</button>
+          </div>
+        ))}
+      </Card>
+      <Btn small ghost disabled={busy} onClick={briefErstellen}>{busy ? "ilho bereitet vor …" : "🧭 Brief für die nächste Session"}</Btn>
+      {brief && (
+        <Card style={{ marginTop: 10, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><Eyebrow color={C.gold}>Vorbereitung</Eyebrow><span style={{ ...sys, fontSize: 10.5, opacity: 0.7 }}>ilho · KI</span></div>
+          <p style={{ ...sys, fontSize: 13.5, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{brief}</p>
+          <Btn small ghost onClick={() => alsPdf("Vorbereitung nächste Session", brief)}>Als PDF</Btn>
+        </Card>
       )}
     </div>
   );
@@ -3805,7 +4158,8 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
 /* ── Profil ── */
 
 function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, aufBindung, istCoach, setIstCoach }) {
-  const [time, setTime] = useState("07:00");
+  const [erinnerung, setErinnerung] = useState({ aktiv: true, uhrzeit: "19:00" });
+  const [erinnerungInfo, setErinnerungInfo] = useState("");
   const [push, setPush] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushHinweis, setPushHinweis] = useState("");
@@ -3816,12 +4170,22 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
 
   // Push-Status vom Geraet lesen (Erlaubnis + bestehendes Abo).
   useEffect(() => { pushStatus().then((st) => setPush(st === "aktiv")); }, []);
+  useEffect(() => { if (supabase) ladeTageserinnerung().then((e) => e && setErinnerung(e)); }, []);
+
+  const erinnerungSetzen = async (neu) => {
+    const e = { ...erinnerung, ...neu };
+    setErinnerung(e);
+    if (!supabase) return;
+    const ok = await speichereTageserinnerung(e);
+    setErinnerungInfo(ok ? (e.aktiv ? `✓ Täglich um ${e.uhrzeit} — nur wenn heute noch etwas offen ist.` : "Tägliche Erinnerung ist aus.") : "Konnte nicht gespeichert werden.");
+    setTimeout(() => setErinnerungInfo(""), 3500);
+  };
 
   const pushUmschalten = async () => {
     setPushHinweis(""); setPushBusy(true);
     try {
       if (push) { await pushDeaktivieren(); setPush(false); }
-      else { await pushAktivieren(); setPush(true); }
+      else { await pushAktivieren(); setPush(true); if (supabase) speichereTageserinnerung(erinnerung); }
     } catch (e) {
       setPushHinweis(pushMoeglich() ? (e.message || "Das hat nicht geklappt.") : "Dieses Gerät unterstützt keine Push-Nachrichten (auf iPhone: App erst zum Home-Bildschirm hinzufügen).");
     }
@@ -3952,9 +4316,20 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#A8552F", lineHeight: 1.5, padding: "0 0 12px" }}>{pushHinweis}</div>
           )}
           <Row>
-            <Label>Erinnerung um</Label>
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, padding: "8px 12px", border: `1.5px solid ${C.line}`, borderRadius: 10, background: C.card, color: C.espresso }} />
+            <Label>Tägliche Erinnerung</Label>
+            <button onClick={() => erinnerungSetzen({ aktiv: !erinnerung.aktiv })} style={{ width: 52, height: 30, borderRadius: 20, border: "none", cursor: "pointer", position: "relative", background: erinnerung.aktiv ? C.rose : C.line }}>
+              <span style={{ position: "absolute", top: 3, left: erinnerung.aktiv ? 25 : 3, width: 24, height: 24, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+            </button>
           </Row>
+          {erinnerung.aktiv && (
+            <Row>
+              <Label>Um</Label>
+              <input type="time" value={erinnerung.uhrzeit} onChange={(e) => e.target.value && erinnerungSetzen({ uhrzeit: e.target.value })} style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, padding: "8px 12px", border: `1.5px solid ${C.line}`, borderRadius: 10, background: C.card, color: C.espresso }} />
+            </Row>
+          )}
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: erinnerungInfo ? C.sage : C.ink, lineHeight: 1.5, padding: "0 0 12px" }}>
+            {erinnerungInfo || (push ? "Einmal am Tag, sanft: was heute noch offen ist (Tagebuch, Stille, Dankbarkeit). Hast du schon alles gemacht, bleibt dein Handy still." : "Schalte oben Push ein, damit die Erinnerung auf dein Handy kommt.")}
+          </div>
         </Card>
 
         {/* Meine Coachin */}
@@ -4061,10 +4436,13 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
             { t: "🤝 KI Coach Twin (Beta)", fn: () => go("coachtwin") },
             { t: "📝 Session-Notiz (Coach-Werkstatt)", fn: () => go("sessionnotiz") },
             { t: "🧠 Wissensarchiv (Coach-Werkstatt)", fn: () => go("wissen") },
+            { t: "🔎 Recherche mit Quellen (Coach-Werkstatt)", fn: () => go("recherche") },
+            { t: "🛠️ KI-Werkstatt: Übungen, Programme, Content (Coach)", fn: () => go("werkstatt") },
             { t: "💬 Support kontaktieren", fn: null },
             { t: "🆘 In Krisen: TelefonSeelsorge 0800 111 0 111 · Notruf 112", fn: null },
             { t: "📄 Datenschutzerklärung", fn: () => go("datenschutz") },
             { t: "📄 Impressum", fn: () => go("impressum") },
+            { t: "🔐 Zwei-Faktor-Anmeldung", fn: () => go("zweifaktor") },
             { t: "📥 Meine Daten exportieren", fn: datenExport },
             { t: "🗑️ Konto & alle Daten löschen", fn: () => setLoeschDialog(true) },
           ].map((x, i, arr) => (
@@ -5291,46 +5669,162 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice, bi
 /* ── Mehr-Menü ── */
 
 /* ── Ziele & Meilensteine (Coaching-Kern, von der Coachin gesetzt) ── */
+/* SMART-Check (ICF D.8): ilho gibt nur Rückmeldung, formuliert das Ziel aber nicht für sie um. */
+const SMART_SYSTEM = `Du bist ilho, ein klar als KI gekennzeichneter Begleiter. Eine Frau hat ein persönliches Ziel formuliert.
+Prüfe es kurz nach SMART (spezifisch, messbar, attraktiv/erreichbar, relevant, terminiert). Antworte auf Deutsch in der Du-Form, schlichter Text ohne Markdown:
+– Eine Zeile pro SMART-Kriterium mit ✓ oder ○ und einem halben Satz.
+– Danach höchstens ZWEI offene Fragen, die ihr helfen, das Ziel selbst zu schärfen.
+Formuliere das Ziel NICHT für sie um und bewerte sie nicht. Bei Hinweisen auf Krise: sanft auf professionelle Hilfe verweisen.`;
+
+const LEERES_ZIEL = { titel: "", messbar: "", schritt: "", warum: "", faellig: "", bereich: "Persönlichkeit", meilenText: "" };
+
 function Ziele({ ziele, setZiele, addPunkte }) {
+  const [form, setForm] = useState(null); // null | { ...LEERES_ZIEL, id? }
+  const [check, setCheck] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [rueckblick, setRueckblick] = useState(null); // { id, wert, notiz }
+
   const toggleMeile = (zid, mi) =>
     setZiele((zs) => zs.map((z) => {
       if (z.id !== zid) return z;
       const meilen = z.meilen.map((m, i) => (i === mi ? { ...m, done: !m.done } : m));
       if (!z.meilen[mi].done) addPunkte(20, "Meilenstein erreicht");
       const done = meilen.filter((m) => m.done).length;
-      return { ...z, meilen, fortschritt: Math.round((done / meilen.length) * 100) };
+      const fortschritt = meilen.length ? Math.round((done / meilen.length) * 100) : 0;
+      if (fortschritt === 100 && z.fortschritt !== 100) { addPunkte(50, "Ziel erreicht 🎉"); logEvent("ziel_erreicht"); }
+      return { ...z, meilen, fortschritt };
     }));
+
+  const smartPruefen = async () => {
+    if (!form?.titel.trim()) return;
+    setBusy(true); setCheck("");
+    const txt = `Ziel: ${form.titel}\nWoran ich merke, dass ich es erreicht habe: ${form.messbar || "—"}\nErster Schritt: ${form.schritt || "—"}\nWarum es mir wichtig ist: ${form.warum || "—"}\nBis wann: ${form.faellig || "—"}`;
+    setCheck(ohneMarkdown(await askLuma([{ role: "user", content: txt }], SMART_SYSTEM)));
+    setBusy(false);
+  };
+
+  const speichern = () => {
+    if (!form?.titel.trim()) return;
+    const meilen = form.meilenText.split("\n").map((t) => t.trim()).filter(Boolean);
+    const datum = form.faellig ? new Date(form.faellig).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "offen";
+    if (form.id) {
+      setZiele((zs) => zs.map((z) => {
+        if (z.id !== form.id) return z;
+        const alte = Object.fromEntries(z.meilen.map((m) => [m.t, m.done]));
+        const neueMeilen = meilen.map((t) => ({ t, done: !!alte[t] }));
+        const done = neueMeilen.filter((m) => m.done).length;
+        return { ...z, titel: form.titel.trim(), messbar: form.messbar, schritt: form.schritt, warum: form.warum, bereich: form.bereich, faellig: datum, faelligIso: form.faellig, meilen: neueMeilen, fortschritt: neueMeilen.length ? Math.round((done / neueMeilen.length) * 100) : 0 };
+      }));
+    } else {
+      setZiele((zs) => [...zs, { id: Date.now(), titel: form.titel.trim(), messbar: form.messbar, schritt: form.schritt, warum: form.warum, bereich: form.bereich, faellig: datum, faelligIso: form.faellig, fortschritt: 0, meilen: meilen.map((t) => ({ t, done: false })), rueckblicke: [] }]);
+      addPunkte(15, "Neues Ziel gesetzt");
+      logEvent("ziel_gesetzt", form.bereich);
+    }
+    setForm(null); setCheck("");
+  };
+
+  const bearbeiten = (z) => { setCheck(""); setForm({ id: z.id, titel: z.titel, messbar: z.messbar || "", schritt: z.schritt || "", warum: z.warum || "", bereich: z.bereich || "Persönlichkeit", faellig: z.faelligIso || "", meilenText: z.meilen.map((m) => m.t).join("\n") }); };
+  const loeschen = (z) => { if (window.confirm(`Ziel „${z.titel}" wirklich entfernen?`)) setZiele((zs) => zs.filter((x) => x.id !== z.id)); };
+  const rueckblickSpeichern = () => {
+    setZiele((zs) => zs.map((z) => z.id === rueckblick.id ? { ...z, rueckblicke: [{ datum: new Date().toLocaleDateString("de-DE"), wert: rueckblick.wert, notiz: rueckblick.notiz.trim() }, ...(z.rueckblicke || [])] } : z));
+    addPunkte(10, "Ziel-Rückblick"); logEvent("ziel_rueckblick");
+    setRueckblick(null);
+  };
+
+  const sys = { fontFamily: "system-ui, sans-serif" };
+  const eingabe = { ...sys, width: "100%", padding: "11px 13px", fontSize: 14, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginBottom: 10 };
+  const label = { ...sys, fontSize: 12, fontWeight: 700, color: C.plum, display: "block", marginBottom: 4 };
+
   return (
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow>Deine Ziele</Eyebrow>
       <H size={25} style={{ marginBottom: 6 }}>Wohin du wächst</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
-        Gemeinsam mit Anja gesetzt. Jeder Haken bringt dich näher — und deine Coachin sieht deinen Fortschritt.
+      <p style={{ ...sys, fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
+        Setz dir Ziele selbst oder gemeinsam mit deiner Coachin. Jeder Haken bringt dich näher — und du kannst ein Ziel jederzeit neu fassen.
       </p>
+
+      {!form && <div style={{ marginBottom: 18 }}><Btn small onClick={() => { setCheck(""); setForm({ ...LEERES_ZIEL }); }}>＋ Neues Ziel</Btn></div>}
+
+      {form && (
+        <Card style={{ marginBottom: 18 }}>
+          <Eyebrow color={C.plum}>{form.id ? "Ziel neu fassen" : "Neues Ziel · SMART"}</Eyebrow>
+          <div style={{ marginTop: 10 }}>
+            <label style={label}>Was genau willst du erreichen? (spezifisch)</label>
+            <input style={eingabe} value={form.titel} onChange={(e) => setForm({ ...form, titel: e.target.value })} placeholder="z. B. Abends 3× pro Woche eine Stunde nur für mich" />
+            <label style={label}>Woran merkst du, dass du es geschafft hast? (messbar)</label>
+            <input style={eingabe} value={form.messbar} onChange={(e) => setForm({ ...form, messbar: e.target.value })} placeholder="z. B. 4 Wochen in Folge im Kalender abgehakt" />
+            <label style={label}>Dein erster kleiner Schritt (erreichbar)</label>
+            <input style={eingabe} value={form.schritt} onChange={(e) => setForm({ ...form, schritt: e.target.value })} placeholder="z. B. Dienstag 20 Uhr blocken" />
+            <label style={label}>Warum ist es dir wichtig? (relevant)</label>
+            <input style={eingabe} value={form.warum} onChange={(e) => setForm({ ...form, warum: e.target.value })} placeholder="z. B. Ich will wieder Kraft für mich selbst haben" />
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label style={label}>Bis wann? (terminiert)</label>
+                <input type="date" style={eingabe} value={form.faellig} onChange={(e) => setForm({ ...form, faellig: e.target.value })} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={label}>Bereich</label>
+                <select style={eingabe} value={form.bereich} onChange={(e) => setForm({ ...form, bereich: e.target.value })}>
+                  {["Persönlichkeit", "Selbstfürsorge", "Beziehungen", "Beruf", "Körper", "Spiritualität", "Finanzen"].map((b) => <option key={b}>{b}</option>)}
+                </select>
+              </div>
+            </div>
+            <label style={label}>Meilensteine (eine Zeile pro Schritt)</label>
+            <textarea rows={4} style={{ ...eingabe, resize: "vertical" }} value={form.meilenText} onChange={(e) => setForm({ ...form, meilenText: e.target.value })} placeholder={"Erste Woche geschafft\nMit Partner über Abendzeit gesprochen"} />
+          </div>
+          {check && <div style={{ ...sys, fontSize: 13, color: C.espresso, background: C.goldPale, borderRadius: 12, padding: "11px 13px", marginBottom: 10, whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{check}<div style={{ fontSize: 10.5, opacity: 0.65, marginTop: 6 }}>ilho · KI — du entscheidest, was du übernimmst</div></div>}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Btn small disabled={!form.titel.trim()} onClick={speichern}>Speichern</Btn>
+            <Btn small ghost disabled={busy || !form.titel.trim()} onClick={smartPruefen}>{busy ? "ilho prüft …" : "✨ ilho prüft SMART"}</Btn>
+            <Btn small ghost onClick={() => { setForm(null); setCheck(""); }}>Abbrechen</Btn>
+          </div>
+        </Card>
+      )}
+
+      {ziele.length === 0 && !form && <p style={{ ...sys, fontSize: 13.5, color: C.ink }}>Noch keine Ziele — leg dein erstes an.</p>}
+
       {ziele.map((z) => (
         <Card key={z.id} style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
             <div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>{z.titel}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginTop: 3 }}>{z.bereich} · bis {z.faellig}</div>
+              <div style={{ ...sys, fontWeight: 700, fontSize: 16, color: C.espresso }}>{z.titel}</div>
+              <div style={{ ...sys, fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginTop: 3 }}>{z.bereich} · bis {z.faellig}</div>
             </div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 26, color: C.plum }}>{z.fortschritt}%</div>
           </div>
           <div style={{ height: 8, borderRadius: 6, background: C.beige, margin: "12px 0 14px", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${z.fortschritt}%`, borderRadius: 6, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})`, transition: "width .4s ease" }} />
           </div>
-          {z.warum && <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 12 }}>„{z.warum}“</p>}
+          {z.fortschritt === 100 && <div style={{ ...sys, fontSize: 13.5, fontWeight: 700, color: C.sage, marginBottom: 10 }}>🎉 Geschafft! Nimm dir einen Moment, das zu feiern.</div>}
+          {z.warum && <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 8 }}>„{z.warum}“</p>}
+          {z.messbar && <p style={{ ...sys, fontSize: 12.5, color: C.ink, marginBottom: 8 }}>🎯 {z.messbar}</p>}
           {z.meilen.map((m, i) => (
             <div key={i} onClick={() => toggleMeile(z.id, i)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer" }}>
               <div style={{ width: 24, height: 24, borderRadius: 8, border: `1.5px solid ${m.done ? C.sage : C.line}`, background: m.done ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{m.done ? "✓" : ""}</div>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: m.done ? C.ink : C.espresso, textDecoration: m.done ? "line-through" : "none" }}>{m.t}</span>
+              <span style={{ ...sys, fontSize: 14, color: m.done ? C.ink : C.espresso, textDecoration: m.done ? "line-through" : "none" }}>{m.t}</span>
             </div>
           ))}
+          {(z.rueckblicke || []).length > 0 && (
+            <div style={{ ...sys, fontSize: 12, color: C.ink, marginTop: 8, opacity: 0.85 }}>
+              Letzter Rückblick ({z.rueckblicke[0].datum}): {z.rueckblicke[0].wert}/10{z.rueckblicke[0].notiz ? ` — ${z.rueckblicke[0].notiz}` : ""}
+            </div>
+          )}
+          {rueckblick?.id === z.id ? (
+            <div style={{ marginTop: 10 }}>
+              <label style={label}>Wie zufrieden bist du gerade mit diesem Ziel? {rueckblick.wert}/10</label>
+              <input type="range" min={1} max={10} value={rueckblick.wert} onChange={(e) => setRueckblick({ ...rueckblick, wert: Number(e.target.value) })} style={{ width: "100%" }} />
+              <input style={eingabe} value={rueckblick.notiz} onChange={(e) => setRueckblick({ ...rueckblick, notiz: e.target.value })} placeholder="Was hat geholfen, was hat gebremst?" />
+              <div style={{ display: "flex", gap: 8 }}><Btn small onClick={rueckblickSpeichern}>Speichern</Btn><Btn small ghost onClick={() => setRueckblick(null)}>Abbrechen</Btn></div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
+              {[["🪞 Rückblick", () => setRueckblick({ id: z.id, wert: 5, notiz: "" })], ["✎ Neu fassen", () => bearbeiten(z)], ["✕ Entfernen", () => loeschen(z)]].map(([t, fn]) => (
+                <button key={t} onClick={fn} style={{ ...sys, background: "none", border: "none", color: C.plum, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>{t}</button>
+              ))}
+            </div>
+          )}
         </Card>
       ))}
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, textAlign: "center", marginTop: 8, lineHeight: 1.6 }}>
-        Neue Ziele vereinbarst du in deiner nächsten Session mit Anja.
-      </p>
     </div>
   );
 }
@@ -6245,8 +6739,15 @@ function CoachingHub({ go, bindung, aufBindung }) {
               </div>
             ))}
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.8, lineHeight: 1.6, marginTop: 12 }}>
-              Magst du die Begleitung beenden, sag es ihr im Chat — sie löst die Verbindung. Deine Daten kannst du im Profil jederzeit exportieren oder löschen.
+              Du kannst die Begleitung jederzeit selbst beenden. Bisherige Nachrichten und Termine bleiben als Dokumentation erhalten; neue Daten sieht sie danach nicht mehr. Deine Daten kannst du im Profil jederzeit exportieren oder löschen.
             </div>
+            <button onClick={async () => {
+              if (!window.confirm(`Begleitung mit ${vorname} wirklich beenden?`)) return;
+              if (await bindungBeenden()) { logEvent("bindung_beendet"); aufBindung(); }
+              else alert("Das hat gerade nicht geklappt — bitte versuch es später noch einmal.");
+            }} style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: "#A8552F", background: "none", border: "1.5px solid #E8C9BC", borderRadius: 18, padding: "8px 14px", cursor: "pointer", marginTop: 12 }}>
+              Begleitung beenden
+            </button>
           </div>
         )}
       </Card>
@@ -8365,6 +8866,7 @@ function Qigong({ qigong, setQigong, addPunkte }) {
   const beenden = () => {
     const minuten = Math.max(1, Math.round(sek / 60));
     setQigong([{ datum: heute, minuten, uebungen: BROKATE.length }, ...(qigong || []).filter((e) => e.datum !== heute)]);
+    tagesAktivitaet("qigong");
     addPunkte?.(10, "Qigong geübt");
     setLaufend(false); setSek(0); setAktiv(null);
   };
@@ -8463,6 +8965,7 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte }) {
   const merken = (art) => {
     const heute = new Date().toLocaleDateString("de-DE");
     setAchtsam([{ datum: heute, art }, ...(achtsam || [])].slice(0, 60));
+    tagesAktivitaet("achtsamkeit");
     addPunkte?.(5, "Achtsamkeit geübt");
   };
 
@@ -8585,6 +9088,7 @@ function Dankbarkeit({ dank, setDank, addPunkte }) {
     const sauber = drei.map((x) => x.trim()).filter(Boolean);
     if (!sauber.length) return;
     setDank([{ datum: heute, drei: drei.map((x) => x.trim()) }, ...(dank || []).filter((d) => d.datum !== heute)]);
+    tagesAktivitaet("dankbarkeit");
     if (!heutiger) addPunkte?.(10, "Dankbarkeit notiert");
   };
 
@@ -9137,7 +9641,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
-const TITLES = { ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -9146,6 +9650,7 @@ export default function IlhoApp() {
   const [cloudAus, setCloudAus] = useState(false);
   // Der Link aus der E-Mail kommt in zwei Formen zurueck: als Fragment mit
   // type=recovery (impliziter Flow) oder als ?code= (PKCE). Beide erkennen.
+  const [mfaFaktor, setMfaFaktor] = useState(null);
   const [pwReset, setPwReset] = useState(() => {
     if (typeof window === "undefined") return false;
     const h = window.location.hash || "";
@@ -9304,15 +9809,18 @@ export default function IlhoApp() {
   // die App läuft dann unverändert im Prototyp-Modus (localStorage-Login von oben).
   useEffect(() => {
     if (!supabase) return;
+    // Zwei-Faktor: solange die Sitzung den zweiten Faktor noch braucht, bleibt die App gesperrt.
+    const mfaPruefen = () => brauchtZweitenFaktor().then(setMfaFaktor).catch(() => setMfaFaktor(null));
     supabase.auth.getSession().then(({ data }) => {
       const sUser = data?.session?.user;
-      if (sUser?.email) setUser(sUser.email);
+      if (sUser?.email) { setUser(sUser.email); mfaPruefen(); }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       // Der verlaessliche Weg: Supabase meldet die Wiederherstellung selbst,
       // egal in welcher Form der Link zurueckkam.
       if (event === "PASSWORD_RECOVERY") setPwReset(true);
-      if (session?.user?.email) setUser(session.user.email);
+      if (session?.user?.email) { setUser(session.user.email); setTimeout(mfaPruefen, 0); }
+      if (event === "SIGNED_OUT") setMfaFaktor(null);
     });
     return () => sub?.subscription?.unsubscribe();
   }, []);
@@ -9323,7 +9831,7 @@ export default function IlhoApp() {
   // kein Login), läuft die App unverändert im lokalen Modus weiter.
   const [cloudBereit, setCloudBereit] = useState(false);
   useEffect(() => {
-    if (!supabase || !user) return;
+    if (!supabase || !user || mfaFaktor) return;
     let aktiv = true;
     ladeAppState().then((s) => {
       if (aktiv && s) anwendenState(s);
@@ -9452,6 +9960,10 @@ export default function IlhoApp() {
           <div style={{ animation: "fadeUp .5s ease" }}>
             <PasswortNeu onFertig={() => { try { window.history.replaceState({}, "", window.location.pathname); } catch { window.location.hash = ""; } setPwReset(false); }} />
           </div>
+        ) : user && mfaFaktor ? (
+          <div style={{ padding: "60px 24px", animation: "fadeUp .5s ease" }}>
+            <Card><ZweiFaktorAbfrage C={C} faktorId={mfaFaktor} onOk={() => setMfaFaktor(null)} onAbbruch={() => { supabase.auth.signOut(); setUser(null); setMfaFaktor(null); }} /></Card>
+          </div>
         ) : !user ? (
           <div style={{ animation: "fadeUp .5s ease" }}><Auth onLogin={(mail, zeichen, ilho) => { setUser(mail); if (zeichen) setMeinZeichen(zeichen); if (typeof ilho === "boolean") setIlhoAktiv(ilho); }} /></div>
         ) : (
@@ -9506,8 +10018,8 @@ export default function IlhoApp() {
               }}>{toast}</div>
             )}
 
-            {/* Zurück: sichtbar, sobald man von einem Hauptbereich aus weitergegangen ist. */}
-            {stack.length > 0 && tab !== "luma" && (
+            {/* Zurück: nur auf Hauptbereichen — Unterseiten haben schon die Zurück-Leiste oben. */}
+            {stack.length > 0 && tab !== "luma" && !isSub && (
               <div style={{ padding: "10px 20px 0" }}>
                 <button onClick={back} style={{
                   display: "inline-flex", alignItems: "center", gap: 7, minHeight: 40,
@@ -9521,7 +10033,7 @@ export default function IlhoApp() {
             )}
 
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 172 : 86, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "wochenbericht" && <Wochenbericht bindung={bindung} aufBindung={aufBindung} entries={entries} achtsam={achtsam} dank={dank} qigong={qigong} metime={metime} losgelassen={losgelassen} punkte={punkte} />}
@@ -9537,7 +10049,7 @@ export default function IlhoApp() {
               {tab === "buchen" && <><MediaBanner video={S2GVID.buchen} poster={S2GIMG.buchen} title="Termin buchen" subtitle="Zeit für dich" height={190} /><Buchen bindung={bindung} aufBindung={aufBindung} termine={termine} setTermine={setTermine} /></>}
               {tab === "coach" && <><MediaBanner video={S2GVID.coach} poster={S2GIMG.coach} title="Coach-Chat" subtitle="Du wirst gehört" height={190} /><CoachChat bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "media" && <><MediaBanner video={S2GVID.mediathek} poster={S2GIMG.mediathek} title="Mediathek" subtitle="Deine Inhalte, dein Raum" height={200} /><Mediathek uploads={uploads} setUploads={setUploads} tools={tools} setTools={setTools} office={office} setOffice={setOffice} bindung={bindung} /></>}
-              {tab === "meditation" && <MeditationCine addPunkte={addPunkte} />}
+              {tab === "meditation" && <MeditationCine addPunkte={(n, l) => { tagesAktivitaet("meditation"); addPunkte(n, l || "Meditation abgeschlossen"); }} />}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
               {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} alias={alias} anon={anon} bindung={bindung} /></>}
               {tab === "fortschritt" && <><MediaBanner video={S2GVID.fortschritt} poster={S2GIMG.fortschritt} title="Mein Fortschritt" subtitle="Du wächst" height={190} /><Fortschritt streak={streak} entries={entries} punkte={punkte} energie={energie} aufgaben={aufgaben} ch369={ch369} checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} twinTon={twinTon} go={go} /></>}
@@ -9549,6 +10061,9 @@ export default function IlhoApp() {
               {tab === "coachtwin" && <CoachTwinInterview addPunkte={addPunkte} />}
               {tab === "sessionnotiz" && <SessionIntelligenz addPunkte={addPunkte} />}
               {tab === "wissen" && <WissensSuche addPunkte={addPunkte} />}
+              {tab === "recherche" && <Recherche addPunkte={addPunkte} />}
+              {tab === "werkstatt" && <CoachWerkstatt addPunkte={addPunkte} />}
+              {tab === "zweifaktor" && <div style={{ padding: "12px 0" }}><Eyebrow>Sicherheit</Eyebrow><H size={24} style={{ marginBottom: 10 }}>Zwei-Faktor-Anmeldung</H><Card>{supabase ? <ZweiFaktorEinstellung C={C} /> : <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }}>Im Prototyp-Modus ohne Cloud nicht verfügbar.</p>}</Card></div>}
               {tab === "schatten" && <Schattenspiegel addPunkte={addPunkte} />}
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
               {tab === "archetyp" && <ArchetypTest archetyp={archetyp} setArchetyp={setArchetyp} addPunkte={addPunkte} />}
@@ -9641,7 +10156,7 @@ export default function IlhoApp() {
                         <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>✨ ilho · dein Begleiter</div>
                         <button onClick={() => setIlhoOpen(false)} style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "50%", width: 34, height: 34, fontSize: 15, cursor: "pointer", color: C.ink }}>✕</button>
                       </div>
-                      <Luma name={anzeigeName} energie={energie} msgs={lumaMsgs} setMsgs={setLumaMsgs} twin={twin} twinTon={twinTon} />
+                      <Luma name={anzeigeName} energie={energie} msgs={lumaMsgs} setMsgs={setLumaMsgs} twin={twin} twinTon={twinTon} entries={entries} prefs={prefs} setPrefs={setPrefs} />
                     </div>
                   </>
                 )}

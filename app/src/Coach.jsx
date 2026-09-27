@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
+import { brauchtZweitenFaktor, terminStatus, ladeKursFortschritt } from "./supabase";
+import { alsPdf, alsCsv } from "./export";
 import {
   supabase,
   ladeCoachProfilSelbst, coachProfilSpeichern, coachProfilSichern,
@@ -127,6 +130,36 @@ function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
     } catch (e) { setErr(e.message); }
   };
 
+  // Fortschrittsbericht aus dem, was die Coachin ohnehin sehen darf: Termine + Kurs-Fortschritt.
+  // Bewusst keine Journal-/App-Daten der Klientin.
+  const berichtPdf = async (k) => {
+    const [alle, kurs] = await Promise.all([ladeTermineCoach(), ladeKursFortschritt(k.id)]);
+    const t = alle.filter((x) => x.klientin_id === k.id);
+    const erledigt = t.filter((x) => x.status === "erledigt");
+    const naechster = t.find((x) => x.status === "gebucht" && new Date(x.beginn) > new Date());
+    const module = Object.keys(kurs || {}).length;
+    const text = [
+      `Klientin: ${k.anzeigename || "Ohne Namen"}`,
+      `Status: ${k.status} · verbunden seit ${new Date(k.verbunden_am).toLocaleDateString("de-DE")}`,
+      "",
+      "Sessions",
+      `– stattgefunden: ${erledigt.length}`,
+      `– abgesagt: ${t.filter((x) => x.status === "storniert").length}`,
+      `– geplant: ${t.filter((x) => x.status === "gebucht").length}`,
+      `– nächste: ${naechster ? datumZeit(naechster.beginn) : "keine gebucht"}`,
+      "",
+      "Verlauf",
+      ...(erledigt.length ? erledigt.map((x) => `– ${datumZeit(x.beginn)} · ${x.dauer_min} Min · ${x.kanal}`) : ["– noch keine abgeschlossene Session"]),
+      "",
+      `Kurs: ${module} Modul(e) abgeschlossen`,
+      "",
+      "Eigene Einschätzung / nächste Schritte:",
+      "_______________________________________________",
+      "_______________________________________________",
+    ].join("\n");
+    alsPdf(`Fortschrittsbericht · ${k.anzeigename || "Klientin"}`, text, `Stand ${new Date().toLocaleDateString("de-DE")}`);
+  };
+
   const vorschlag = () => {
     const teil = Math.random().toString(36).slice(2, 6).toUpperCase();
     setNeuerCode(`S2G-${teil}`);
@@ -190,6 +223,7 @@ function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
               </div>
             </div>
             <Btn small ghost onClick={() => oeffneChat(k)}>Chat</Btn>
+            <Btn small ghost onClick={() => berichtPdf(k)}>Bericht</Btn>
             <Btn small ghost onClick={async () => { await klientinStatus(k.id, k.status === "aktiv" ? "pausiert" : "aktiv"); neuLaden(); }}>
               {k.status === "aktiv" ? "pausieren" : "aktivieren"}
             </Btn>
@@ -346,6 +380,21 @@ function Termine() {
   };
 
   const gebucht = termine.filter((t) => t.status === "gebucht");
+  const vergangen = termine.filter((t) => t.status !== "gebucht");
+
+  const setzeStatus = async (t, status) => {
+    if (status === "storniert" && !window.confirm(`Session mit ${t.klientin_name} am ${datumZeit(t.beginn)} absagen?`)) return;
+    if (await terminStatus(t.id, status)) laden();
+  };
+
+  const csv = () => alsCsv(`sessions-${new Date().toISOString().slice(0, 10)}.csv`, [
+    ["Datum", "Uhrzeit", "Klientin", "Dauer (Min)", "Kanal", "Status"],
+    ...termine.map((t) => [
+      new Date(t.beginn).toLocaleDateString("de-DE"),
+      new Date(t.beginn).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+      t.klientin_name, t.dauer_min, t.kanal, t.status,
+    ]),
+  ]);
 
   return (
     <>
@@ -387,8 +436,30 @@ function Termine() {
             />
             <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>wird beim Verlassen des Feldes gespeichert</span>
           </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            {new Date(t.beginn) < new Date() && <Btn small onClick={() => setzeStatus(t, "erledigt")}>✓ Stattgefunden</Btn>}
+            <Btn small ghost onClick={() => setzeStatus(t, "storniert")}>Absagen</Btn>
+          </div>
         </Card>
       ))}
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, margin: "4px 0 16px" }}>
+        🔔 Deine Klientinnen und du bekommt automatisch eine Push-Erinnerung 24 Stunden und 1 Stunde vor jeder Session.
+      </div>
+
+      {vergangen.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <Eyebrow color={C.plum}>Dokumentation ({vergangen.length})</Eyebrow>
+          <Card>
+            {vergangen.slice().reverse().slice(0, 20).map((t) => (
+              <div key={t.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso }}>
+                <span style={{ flex: 1 }}>{datumZeit(t.beginn)} · {t.klientin_name}</span>
+                <span style={{ color: t.status === "erledigt" ? C.sage : C.rot, fontWeight: 700, fontSize: 12 }}>{t.status}</span>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+      {termine.length > 0 && <div style={{ marginTop: 12 }}><Btn small ghost onClick={csv}>Alle Sessions als CSV (Excel)</Btn></div>}
 
       <div style={{ marginTop: 22 }}>
         <Eyebrow color={C.plum}>Offene Zeitfenster ({slots.filter((s) => s.aktiv).length})</Eyebrow>
@@ -799,6 +870,11 @@ function Profil({ profil, neuLaden }) {
         {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.plum, marginTop: 10 }}>{hinweis}</div>}
       </Card>
 
+      <Card>
+        <Eyebrow>Sicherheit · Zwei-Faktor-Anmeldung</Eyebrow>
+        <ZweiFaktorEinstellung C={C} />
+      </Card>
+
       <Btn ghost onClick={() => { window.location.href = window.location.pathname; }}>← Zurück zur App</Btn>
       <div style={{ height: 10 }} />
       <Btn ghost onClick={() => supabase.auth.signOut().then(() => window.location.reload())}>Abmelden</Btn>
@@ -810,6 +886,7 @@ function Profil({ profil, neuLaden }) {
 
 export default function CoachPanel() {
   const [bereit, setBereit] = useState(false);
+  const [mfaFaktor, setMfaFaktor] = useState(null);
   const [session, setSession] = useState(null);
   const [profil, setProfil] = useState(null);
   const [klientinnen, setKlientinnen] = useState([]);
@@ -824,14 +901,20 @@ export default function CoachPanel() {
 
   useEffect(() => {
     if (!supabase) { setBereit(true); return; }
-    supabase.auth.getSession().then(({ data }) => {
+    // Erst wenn der zweite Faktor (falls eingerichtet) bestätigt ist, werden Daten geladen.
+    const weiter = async (s) => {
+      const f = s ? await brauchtZweitenFaktor().catch(() => null) : null;
+      setMfaFaktor(f);
+      if (s && !f) alles();
+    };
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
+      await weiter(data.session);
       setBereit(true);
-      if (data.session) alles();
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      if (s) alles();
+      setTimeout(() => weiter(s), 0);
     });
     return () => sub?.subscription?.unsubscribe();
   }, []);
@@ -850,7 +933,15 @@ export default function CoachPanel() {
     );
 
   if (!bereit) return <div style={{ minHeight: "100vh", background: C.cream }} />;
-  if (!session) return <Anmeldung onFertig={alles} />;
+  if (!session) return <Anmeldung onFertig={() => {}} />;
+  if (mfaFaktor)
+    return (
+      <div style={{ minHeight: "100vh", background: C.cream, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div style={{ width: "100%", maxWidth: 380 }}><Card>
+          <ZweiFaktorAbfrage C={C} faktorId={mfaFaktor} onOk={() => { setMfaFaktor(null); alles(); }} onAbbruch={() => supabase.auth.signOut()} />
+        </Card></div>
+      </div>
+    );
 
   const TABS = [
     ["klientinnen", "Klientinnen"],

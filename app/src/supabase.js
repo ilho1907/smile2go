@@ -276,6 +276,14 @@ async function nutzerin() {
 
 // ── Bindung Coachin ↔ Klientin ─────────────────────────────────────────────
 
+// Die Klientin beendet ihre Begleitung selbst (RPC, Migration 20260925_bindung_absichern.sql).
+export async function bindungBeenden() {
+  if (!supabase) return false;
+  const { error } = await supabase.rpc("bindung_beenden");
+  if (error) { console.warn("bindungBeenden:", error.message); return false; }
+  return true;
+}
+
 // Liefert { id, coach_id, status, coach_name } oder null, wenn noch keine Coachin verbunden ist.
 export async function ladeMeineBindung() {
   const user = await nutzerin();
@@ -554,6 +562,38 @@ export function pushMoeglich() {
     && !!import.meta.env?.VITE_VAPID_PUBLIC_KEY;
 }
 
+// ── Tägliche Erinnerung ────────────────────────────────────────────────────
+// Die App meldet anonym, WAS heute erledigt ist (nur ein Stichwort, einmal pro Tag),
+// damit die Abend-Erinnerung nur Offenes nennt — und schweigt, wenn alles getan ist.
+export function tagesAktivitaet(tag) {
+  const heute = new Date().toDateString();
+  try {
+    const k = `s2g_tag_${tag}`;
+    if (localStorage.getItem(k) === heute) return;
+    localStorage.setItem(k, heute);
+  } catch { /* ohne Speicher trotzdem melden */ }
+  logEvent("tages_aktivitaet", tag);
+}
+
+export async function ladeTageserinnerung() {
+  const user = await nutzerin();
+  if (!user) return null;
+  const { data } = await supabase.from("tageserinnerung").select("aktiv, uhrzeit").eq("user_id", user.id).maybeSingle();
+  return data ? { aktiv: data.aktiv, uhrzeit: String(data.uhrzeit).slice(0, 5) } : null;
+}
+
+export async function speichereTageserinnerung({ aktiv, uhrzeit }) {
+  const user = await nutzerin();
+  if (!user) return false;
+  const zeitzone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Berlin";
+  const { error } = await supabase.from("tageserinnerung").upsert(
+    { user_id: user.id, aktiv, uhrzeit, zeitzone, updated_at: new Date().toISOString() },
+    { onConflict: "user_id" },
+  );
+  if (error) console.warn("speichereTageserinnerung:", error.message);
+  return !error;
+}
+
 export async function pushStatus() {
   if (!pushMoeglich()) return "nicht_moeglich";
   if (Notification.permission === "denied") return "blockiert";
@@ -614,6 +654,99 @@ export async function sendePush({ userId, titel = "smile2go", text, url = "/", t
   } catch (e) {
     console.warn("sendePush:", e?.message || e);
     return 0;
+  }
+}
+
+// ── Zwei-Faktor-Anmeldung (TOTP, Supabase MFA) ─────────────────────────────
+// Einrichtung im Profil, Abfrage direkt nach dem Passwort-Login.
+export async function zweiFaktorStatus() {
+  if (!supabase) return { aktiv: false, faktorId: null };
+  const { data } = await supabase.auth.mfa.listFactors();
+  const f = (data?.totp || []).find((x) => x.status === "verified");
+  return { aktiv: !!f, faktorId: f?.id || null };
+}
+
+// Liefert die Faktor-ID, wenn die Sitzung noch den zweiten Faktor braucht — sonst null.
+export async function brauchtZweitenFaktor() {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (data?.nextLevel !== "aal2" || data?.currentLevel === "aal2") return null;
+  return (await zweiFaktorStatus()).faktorId;
+}
+
+export async function zweiFaktorPruefen(faktorId, code) {
+  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: faktorId, code: String(code).trim() });
+  return !error;
+}
+
+export async function zweiFaktorEinrichten() {
+  // Halbfertige Einrichtungen vorher aufräumen, sonst lehnt Supabase eine neue ab.
+  const { data: liste } = await supabase.auth.mfa.listFactors();
+  for (const f of (liste?.all || []).filter((x) => x.status === "unverified")) await supabase.auth.mfa.unenroll({ factorId: f.id });
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "smile2go" });
+  if (error) return { fehler: error.message };
+  return { faktorId: data.id, qr: data.totp.qr_code, geheimnis: data.totp.secret };
+}
+
+export async function zweiFaktorEntfernen(faktorId) {
+  const { error } = await supabase.auth.mfa.unenroll({ factorId: faktorId });
+  return !error;
+}
+
+// ── KI-Qualität & Fairness (Admin-Dashboard) ───────────────────────────────
+export async function istAdmin() {
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc("ist_admin");
+  return !error && data === true;
+}
+
+// Admin-Dashboard: alle Abfragen laufen über Admin-RPCs (Prüfung ist_admin() in der DB).
+async function adminRpc(name, args) {
+  const { data, error } = await supabase.rpc(name, args);
+  if (error) { console.warn(name + ":", error.message); return null; }
+  return data;
+}
+export const adminKennzahlen = () => adminRpc("admin_kennzahlen");
+export const adminWachstum = () => adminRpc("admin_wachstum").then((d) => d || []);
+export const adminMitglieder = (suche = "", limit = 100) => adminRpc("admin_mitglieder", { p_suche: suche, p_limit: limit }).then((d) => d || []);
+export const adminSessions = () => adminRpc("admin_sessions").then((d) => d || []);
+export const adminMeldungen = () => adminRpc("admin_meldungen").then((d) => d || []);
+export const adminMeldungErledigen = (postId, ausblenden) => adminRpc("admin_meldung_erledigen", { p_post: postId, p_ausblenden: ausblenden });
+export const adminSystem = () => adminRpc("admin_system");
+
+export async function ladeKiQualitaet(tage = 90) {
+  const { data, error } = await supabase.rpc("ki_qualitaet", { p_tage: tage });
+  if (error) { console.warn("ladeKiQualitaet:", error.message); return []; }
+  return data || [];
+}
+
+export async function ladeFairnessChecks(limit = 60) {
+  const { data, error } = await supabase
+    .from("fairness_checks")
+    .select("id, lauf_id, lauf_am, merkmal, variante_a, variante_b, frage, antwort_a, antwort_b, unterschied, stereotyp, begruendung, auffaellig")
+    .order("lauf_am", { ascending: false })
+    .limit(limit);
+  if (error) { console.warn("ladeFairnessChecks:", error.message); return []; }
+  return data || [];
+}
+
+export async function starteFairnessCheck(system) {
+  const { data, error } = await supabase.functions.invoke("fairness", { body: { system } });
+  if (error) return { fehler: "Prüfung fehlgeschlagen — bist du als Admin angemeldet?" };
+  return data;
+}
+
+// ── Recherche (Coach-Werkstatt) ────────────────────────────────────────────
+// Websuche mit Quellen über die Edge Function "ai" (modus "recherche").
+// Läuft mit dem JWT der angemeldeten Person — ohne Anmeldung kein Aufruf.
+export async function recherchiere(frage, tiefe = "kurz") {
+  if (!supabase) return { fehler: "Recherche braucht die Cloud-Verbindung." };
+  try {
+    const { data, error } = await supabase.functions.invoke("ai", { body: { modus: "recherche", frage, tiefe } });
+    if (error) return { fehler: error.message?.includes("401") ? "Bitte melde dich an, um zu recherchieren." : "Die Recherche ist gerade nicht erreichbar." };
+    return { text: data?.text || "", quellen: data?.quellen || [], limit: !!data?.limit_erreicht };
+  } catch (e) {
+    return { fehler: "Die Recherche ist gerade nicht erreichbar." };
   }
 }
 
@@ -971,6 +1104,13 @@ export async function ladeTermineCoach() {
     .eq("coach_id", user.id)
     .order("beginn", { ascending: true });
   return (data || []).map((t) => ({ ...t, klientin_name: t.klientinnen?.anzeigename || "Klientin" }));
+}
+
+// Coachin schließt eine Session ab oder sagt sie ab (Dokumentation).
+export async function terminStatus(terminId, status) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("termine").update({ status }).eq("id", terminId);
+  return !error;
 }
 
 export async function terminVideoLink(terminId, url) {

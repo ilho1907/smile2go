@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import {
+  supabase, istAdmin, ladeKiQualitaet, ladeFairnessChecks, starteFairnessCheck,
+  adminKennzahlen, adminWachstum, adminMitglieder, adminSessions, adminMeldungen, adminMeldungErledigen, adminSystem, cloudErreichbar,
+} from "./supabase";
+import { ILHO_SYSTEM } from "./ilho";
+import { alsCsv } from "./export";
 
 /* ─────────────────────────────────────────────
-   smile2go — ADMIN DASHBOARD (Prototyp, Demo-Daten)
-   Produktion: admin.smile2go.de · nur is_admin + 2FA
+   smile2go — ADMIN DASHBOARD · echte Daten aus Supabase
+   Zugang: nur Konten in der Tabelle `admins` (Prüfung in jeder DB-Funktion).
+   Datenschutz: keine Nachrichten-, Journal- oder Anfragetexte — nur Zähler.
    ───────────────────────────────────────────── */
 
 const C = {
@@ -11,59 +18,6 @@ const C = {
   gold: "#C9963C", goldPale: "#FAEDD2", espresso: "#3A2A22", ink: "#6B5443",
   sage: "#5E8A52", rose: "#D96E8B", roseSoft: "#F8DCE3", plum: "#8E4A63", rot: "#B0492F",
 };
-
-const UMSATZ = [
-  { m: "Jan", mrr: 4100, neu: 41 }, { m: "Feb", mrr: 7900, neu: 86 },
-  { m: "Mär", mrr: 12400, neu: 102 }, { m: "Apr", mrr: 16800, neu: 97 },
-  { m: "Mai", mrr: 20900, neu: 88 }, { m: "Jun", mrr: 24580, neu: 76 },
-];
-
-const MITGLIEDER = [
-  { n: "Sabine M.", mail: "sabine.m@…", paket: "Pro", seit: "Feb 26", streak: 21, status: "aktiv" },
-  { n: "Claudia R.", mail: "claudia.r@…", paket: "Business", seit: "Jan 26", streak: 44, status: "aktiv" },
-  { n: "Petra K.", mail: "petra.k@…", paket: "Starter", seit: "Mär 26", streak: 3, status: "aktiv" },
-  { n: "Monika S.", mail: "monika.s@…", paket: "Pro", seit: "Apr 26", streak: 0, status: "inaktiv 14 T." },
-  { n: "Birgit L.", mail: "birgit.l@…", paket: "Starter", seit: "Mai 26", streak: 8, status: "aktiv" },
-  { n: "Andrea W.", mail: "andrea.w@…", paket: "Business", seit: "Feb 26", streak: 31, status: "aktiv" },
-  { n: "Heike F.", mail: "heike.f@…", paket: "Pro", seit: "Jun 26", streak: 5, status: "Trial" },
-  { n: "Susanne B.", mail: "susanne.b@…", paket: "Starter", seit: "Mai 26", streak: 0, status: "gekündigt" },
-];
-
-const INBOX = [
-  { von: "Sabine M.", txt: "Liebe Anja, die 3-6-9 Challenge verändert gerade alles für mich…", zeit: "vor 12 Min", neu: true },
-  { von: "Petra K.", txt: "🎤 Sprachnachricht (0:42)", zeit: "vor 1 Std", neu: true },
-  { von: "Claudia R.", txt: "Können wir den Termin am Do auf 16:30 schieben?", zeit: "vor 3 Std", neu: true },
-  { von: "Birgit L.", txt: "Danke für die Deutung gestern 🤍", zeit: "gestern", neu: false },
-];
-
-const BUCHUNGEN = [
-  { wer: "Claudia R.", wann: "Mo 15.6. · 09:00", typ: "1:1 Session", st: "bestätigt" },
-  { wer: "Heike F.", wann: "Mo 15.6. · 14:00", typ: "Erstgespräch", st: "bestätigt" },
-  { wer: "Sabine M.", wann: "Di 16.6. · 11:00", typ: "1:1 Session", st: "verschoben" },
-  { wer: "Andrea W.", wann: "Mi 17.6. · 16:30", typ: "1:1 Session", st: "bestätigt" },
-];
-
-const SPRUECHE_POOL = [
-  "Du musst nicht perfekt sein, um wertvoll zu sein.",
-  "Jeder kleine Schritt zählt — auch der von heute.",
-  "Ruhe ist keine Pause vom Leben. Sie ist Teil davon.",
-  "Vertraue dem Weg, auch wenn du ihn noch nicht siehst.",
-];
-
-const EINLOESUNGEN = [
-  { wer: "Andrea W.", was: "30 % Kurs-Rabatt", p: 300, zeit: "heute" },
-  { wer: "Claudia R.", was: "Vollmond-Meditation", p: 1000, zeit: "gestern" },
-  { wer: "Sabine M.", was: "10 € Shop-Gutschein", p: 500, zeit: "vor 3 Tagen" },
-];
-
-const SYSTEM = [
-  { k: "Supabase (EU-Frankfurt)", st: "ok", info: "DB 6 % · Storage 2 %" },
-  { k: "Claude API (Edge Function /ai)", st: "ok", info: "1.412 Calls heute · Ø 1,9 s" },
-  { k: "n8n · Tagescontent 07:00", st: "ok", info: "Letzter Lauf: heute 07:00 ✓" },
-  { k: "OneSignal Push", st: "ok", info: "Zustellrate 94 %" },
-  { k: "Stripe Webhooks", st: "ok", info: "Letztes Event: vor 22 Min" },
-  { k: "Resend Mail", st: "warn", info: "Bounce-Rate 2,8 % — Liste prüfen" },
-];
 
 const Kpi = ({ t, v, s, accent }) => (
   <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 18px", flex: 1, minWidth: 150 }}>
@@ -87,257 +41,408 @@ const Badge = ({ children, tone }) => {
   return <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, fontWeight: 700, background: bg, color: fg, borderRadius: 20, padding: "3px 10px", whiteSpace: "nowrap" }}>{children}</span>;
 };
 
+const sys = { fontFamily: "system-ui, sans-serif" };
+const zahl = (n) => Number(n || 0).toLocaleString("de-DE");
+const datum = (iso) => (iso ? new Date(iso).toLocaleDateString("de-DE") : "–");
+const datumZeit = (iso) => new Date(iso).toLocaleString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const Hinweis = ({ children }) => <p style={{ ...sys, fontSize: 11.5, color: C.ink, marginTop: 12, opacity: 0.85, lineHeight: 1.5 }}>{children}</p>;
+const Leer = ({ children }) => <p style={{ ...sys, fontSize: 13, color: C.ink, margin: "6px 0" }}>{children}</p>;
+
 export default function AdminDashboard() {
+  const [admin, setAdmin] = useState(null);
   const [tab, setTab] = useState("uebersicht");
-  const [suche, setSuche] = useState("");
-  const [paketF, setPaketF] = useState("Alle");
-  const [wartung, setWartung] = useState(false);
-  const [sprueche, setSprueche] = useState(SPRUECHE_POOL);
+  const [k, setK] = useState(null);
+  const [wachstum, setWachstum] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      const ok = supabase ? await istAdmin() : false;
+      setAdmin(ok);
+      if (!ok) return;
+      const [kz, w] = await Promise.all([adminKennzahlen(), adminWachstum()]);
+      setK(kz); setWachstum(w.map((z) => ({ m: new Date(z.monat).toLocaleDateString("de-DE", { month: "short" }), neu: Number(z.neu) })));
+    })();
+  }, []);
+
+  if (admin === null) return <div style={{ minHeight: "100vh", background: C.cream }} />;
+  if (!admin)
+    return (
+      <div style={{ minHeight: "100vh", background: C.cream, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <Card style={{ maxWidth: 440 }}>
+          <Eyebrow>Admin · kein Zugriff</Eyebrow>
+          <p style={{ ...sys, fontSize: 14, color: C.espresso, lineHeight: 1.6, margin: 0 }}>
+            Dieses Dashboard zeigt echte Plattformdaten und ist nur für eingetragene Admins. Melde dich in der App mit deinem Admin-Konto an und öffne dann wieder <code>#admin</code>.
+          </p>
+          <a href="/" style={{ ...sys, display: "inline-block", marginTop: 14, fontSize: 13, fontWeight: 700, color: C.plum }}>← Zur App</a>
+        </Card>
+      </div>
+    );
 
   const TABS = [
-    ["uebersicht", "📊 Übersicht"], ["mitglieder", "👥 Mitglieder"], ["umsatz", "💶 Umsatz"],
-    ["content", "📝 Content"], ["inbox", "💬 Inbox"], ["buchungen", "📅 Buchungen"],
-    ["punkte", "✨ Punkte"], ["system", "🛠️ System"],
+    ["uebersicht", "📊 Übersicht"], ["mitglieder", "👥 Mitglieder"], ["sessions", "📅 Sessions"],
+    ["moderation", `🛡️ Moderation${k?.meldungen_offen ? ` (${k.meldungen_offen})` : ""}`],
+    ["fairness", "⚖️ KI & Fairness"], ["system", "🛠️ System"],
   ];
-
-  const liste = MITGLIEDER.filter((m) =>
-    (paketF === "Alle" || m.paket === paketF) &&
-    (m.n + m.mail).toLowerCase().includes(suche.toLowerCase())
-  );
-
-  const stTone = (s) => s === "aktiv" ? "ok" : s === "Trial" ? "gold" : s.startsWith("inaktiv") ? "warn" : "rot";
 
   return (
     <div style={{ minHeight: "100vh", background: C.cream, fontSize: 15 }}>
-      {/* Topbar */}
       <div style={{ background: C.espresso, padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.cream }}>
           smile<span style={{ color: C.rose, fontStyle: "italic" }}>2</span>go <span style={{ fontSize: 12, color: "#D4B87A", letterSpacing: 2, textTransform: "uppercase", marginLeft: 6 }}>Admin</span>
         </div>
         <div style={{ flex: 1 }} />
-        {wartung && <Badge tone="rot">⚠ Wartungsmodus aktiv</Badge>}
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: "#D4B87A" }}>👋 Eingeloggt als Admin · 2FA ✓</span>
+        <a href="/" style={{ ...sys, fontSize: 12, color: "#D4B87A", textDecoration: "none" }}>← Zur App</a>
       </div>
 
-      {/* Tabs */}
       <div style={{ display: "flex", gap: 7, padding: "14px 20px 0", flexWrap: "wrap", maxWidth: 1100, margin: "0 auto" }}>
-        {TABS.map(([k, label]) => (
-          <button key={k} onClick={() => setTab(k)} style={{
-            fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700,
-            padding: "9px 14px", borderRadius: 20, cursor: "pointer", minHeight: 38,
-            border: `1.5px solid ${tab === k ? C.gold : C.line}`,
-            background: tab === k ? C.goldPale : C.card, color: tab === k ? C.espresso : C.ink,
+        {TABS.map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            ...sys, fontSize: 12.5, fontWeight: 700, padding: "9px 14px", borderRadius: 20, cursor: "pointer", minHeight: 38,
+            border: `1.5px solid ${tab === key ? C.gold : C.line}`, background: tab === key ? C.goldPale : C.card, color: tab === key ? C.espresso : C.ink,
           }}>{label}</button>
         ))}
       </div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 20px 60px" }}>
-
-        {tab === "uebersicht" && (
-          <>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-              <Kpi t="Mitglieder" v="612" s="+76 diesen Monat" />
-              <Kpi t="MRR" v="24.580 €" s="+17,6 % vs. Mai" accent={C.sage} />
-              <Kpi t="Täglich aktiv" v="38 %" s="233 von 612" />
-              <Kpi t="Ø Streak" v="6,2 Tage" s="🔥 Top: 44 Tage" />
-            </div>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-              <Kpi t="Kündigungsquote" v="2,1 %" s="Ziel < 4 % ✓" accent={C.sage} />
-              <Kpi t="ilho-Calls heute" v="1.412" s="≈ 4,8 € KI-Kosten" />
-              <Kpi t="Offene Nachrichten" v="3" s="Coach-Inbox" accent={C.plum} />
-              <Kpi t="Sessions diese Woche" v="4" s="1 verschoben" />
-            </div>
-            <Card>
-              <Eyebrow>MRR-Entwicklung (€)</Eyebrow>
-              <div style={{ width: "100%", height: 220 }}>
-                <ResponsiveContainer>
-                  <LineChart data={UMSATZ} margin={{ top: 8, right: 8, left: -14, bottom: 0 }}>
-                    <CartesianGrid stroke={C.line} strokeDasharray="3 3" />
-                    <XAxis dataKey="m" tick={{ fontSize: 11, fill: C.ink }} />
-                    <YAxis tick={{ fontSize: 11, fill: C.ink }} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="mrr" stroke={C.gold} strokeWidth={3} dot={{ fill: C.rose, r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-          </>
-        )}
-
-        {tab === "mitglieder" && (
-          <Card>
-            <div style={{ display: "flex", gap: 9, marginBottom: 14, flexWrap: "wrap" }}>
-              <input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Suche Name / Mail …"
-                style={{ flex: 1, minWidth: 180, padding: "11px 14px", fontSize: 14, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.cream, color: C.espresso, outline: "none" }} />
-              {["Alle", "Starter", "Pro", "Business"].map((p) => (
-                <button key={p} onClick={() => setPaketF(p)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, padding: "9px 13px", borderRadius: 18, cursor: "pointer", border: `1.5px solid ${paketF === p ? C.rose : C.line}`, background: paketF === p ? C.roseSoft : "transparent", color: paketF === p ? C.plum : C.ink }}>{p}</button>
-              ))}
-            </div>
-            {liste.map((m) => (
-              <div key={m.mail} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap" }}>
-                <div style={{ width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{m.n[0]}</div>
-                <div style={{ flex: 1, minWidth: 140 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{m.n}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>{m.mail} · seit {m.seit}</div>
-                </div>
-                <Badge tone={m.paket === "Business" ? "rose" : m.paket === "Pro" ? "gold" : "ok"}>{m.paket}</Badge>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, minWidth: 54 }}>🔥 {m.streak}</span>
-                <Badge tone={stTone(m.status)}>{m.status}</Badge>
-              </div>
-            ))}
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 12, opacity: 0.8 }}>
-              Demo: 8 von 612 · Produktion: Supabase-Tabelle `profiles` mit Pagination, Export (CSV), DSGVO-Löschung pro Mitglied.
-            </p>
-          </Card>
-        )}
-
-        {tab === "umsatz" && (
-          <>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-              <Kpi t="Starter (29 €)" v="410" s="11.890 € MRR" />
-              <Kpi t="Pro (49 €)" v="168" s="8.232 € MRR" />
-              <Kpi t="Business (99 €)" v="34" s="3.366 € MRR" />
-              <Kpi t="Shop & Retreats" v="2.140 €" s="Juni, einmalig" accent={C.sage} />
-            </div>
-            <Card>
-              <Eyebrow>Neue Mitglieder pro Monat</Eyebrow>
-              <div style={{ width: "100%", height: 220 }}>
-                <ResponsiveContainer>
-                  <BarChart data={UMSATZ} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                    <CartesianGrid stroke={C.line} strokeDasharray="3 3" />
-                    <XAxis dataKey="m" tick={{ fontSize: 11, fill: C.ink }} />
-                    <YAxis tick={{ fontSize: 11, fill: C.ink }} />
-                    <Tooltip />
-                    <Bar dataKey="neu" fill={C.rose} radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 10, opacity: 0.8 }}>
-                Produktion: Live aus Stripe (MCP/API) — MRR, Churn, fehlgeschlagene Zahlungen, Auszahlungen.
-              </p>
-            </Card>
-          </>
-        )}
-
-        {tab === "content" && (
-          <>
-            <Card style={{ marginBottom: 14 }}>
-              <Eyebrow>✦ Spruch-Pool (Tagescontent)</Eyebrow>
-              {sprueche.map((s, i) => (
-                <div key={i} style={{ display: "flex", gap: 9, alignItems: "center", marginBottom: 8 }}>
-                  <input value={s} onChange={(e) => setSprueche(sprueche.map((x, j) => j === i ? e.target.value : x))}
-                    style={{ flex: 1, padding: "10px 13px", fontSize: 13.5, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.cream, color: C.espresso, outline: "none" }} />
-                  <button onClick={() => setSprueche(sprueche.filter((_, j) => j !== i))} style={{ background: "none", border: "none", color: C.ink, opacity: 0.5, cursor: "pointer", fontSize: 15 }}>✕</button>
-                </div>
-              ))}
-              <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                <button onClick={() => setSprueche([...sprueche, ""])} style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${C.gold}`, background: "transparent", color: C.gold, cursor: "pointer" }}>+ Spruch</button>
-                <button style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, padding: "10px 14px", borderRadius: 12, border: "none", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", cursor: "pointer" }}>✨ 7 neue von ilho generieren</button>
-              </div>
-            </Card>
-            <Card>
-              <Eyebrow>🌹 Orakel-Deck</Eyebrow>
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6 }}>
-                11 Karten aktiv · 3 mit HD-Bild, 8 mit SVG (HD-Upload offen) · Bereiche: Schöpfung, Fülle, Loslassen, Klarheit, Annahme, Fokus.<br />
-                Produktion: Karten anlegen/bearbeiten, Bild-Upload, Bereich zuordnen, A/B-Texte.
-              </p>
-            </Card>
-          </>
-        )}
-
-        {tab === "inbox" && (
-          <Card>
-            <Eyebrow color={C.plum}>💬 Coach-Inbox · {INBOX.filter((x) => x.neu).length} neu</Eyebrow>
-            {INBOX.map((m, i) => (
-              <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 4px", borderBottom: `1px solid ${C.line}`, background: m.neu ? C.roseSoft + "55" : "transparent", borderRadius: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13, flexShrink: 0, color: C.espresso }}>{m.von[0]}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13, color: C.espresso }}>{m.von} {m.neu && <Badge tone="rose">neu</Badge>}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.txt}</div>
-                </div>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, whiteSpace: "nowrap" }}>{m.zeit}</span>
-              </div>
-            ))}
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 12, opacity: 0.8 }}>
-              Produktion: Antworten direkt hier (Text + Voice), Vorlagen, ilho-Antwortvorschläge zum Freigeben.
-            </p>
-          </Card>
-        )}
-
-        {tab === "buchungen" && (
-          <Card>
-            <Eyebrow>📅 Kommende Sessions</Eyebrow>
-            {BUCHUNGEN.map((b, i) => (
-              <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.plum, minWidth: 130 }}>{b.wann}</span>
-                <div style={{ flex: 1, minWidth: 120 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{b.wer}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>{b.typ} · 50 Min · Zoom</div>
-                </div>
-                <Badge tone={b.st === "bestätigt" ? "ok" : "warn"}>{b.st}</Badge>
-              </div>
-            ))}
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 12, opacity: 0.8 }}>
-              Produktion: Verfügbarkeiten pflegen (Slots), Google-Kalender-Sync, automatische Zoom-Links & Erinnerungen.
-            </p>
-          </Card>
-        )}
-
-        {tab === "punkte" && (
-          <>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-              <Kpi t="Punkte im Umlauf" v="184.320" s="✨ über alle Mitglieder" />
-              <Kpi t="Einlösungen Juni" v="23" s="≈ 410 € Gegenwert" />
-              <Kpi t="Ø Punkte/aktive Nutzerin" v="301" s="Stufe 3 „Strahlen“" />
-            </div>
-            <Card>
-              <Eyebrow>🎁 Letzte Einlösungen</Eyebrow>
-              {EINLOESUNGEN.map((e, i) => (
-                <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "11px 4px", borderBottom: `1px solid ${C.line}` }}>
-                  <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}><strong>{e.wer}</strong> · {e.was}</span>
-                  <Badge tone="gold">−{e.p} ✨</Badge>
-                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink }}>{e.zeit}</span>
-                </div>
-              ))}
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 12, opacity: 0.8 }}>
-                Produktion: Belohnungen & Punktwerte hier konfigurieren, Tageslimits, Missbrauch-Alarme.
-              </p>
-            </Card>
-          </>
-        )}
-
-        {tab === "system" && (
-          <>
-            <Card style={{ marginBottom: 14 }}>
-              <Eyebrow>🛠️ Dienste-Status</Eyebrow>
-              {SYSTEM.map((s, i) => (
-                <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "11px 4px", borderBottom: `1px solid ${C.line}` }}>
-                  <span style={{ fontSize: 13 }}>{s.st === "ok" ? "🟢" : "🟠"}</span>
-                  <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.espresso }}>{s.k}</span>
-                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, textAlign: "right" }}>{s.info}</span>
-                </div>
-              ))}
-            </Card>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-              <Kpi t="KI-Kosten heute" v="4,80 €" s="Monat: ≈ 128 €" />
-              <Kpi t="Fehler (24 h)" v="0" s="Sentry ✓" accent={C.sage} />
-              <Kpi t="Uptime 30 Tage" v="99,98 %" s="BetterStack" accent={C.sage} />
-            </div>
-            <Card style={{ border: `1.5px solid ${C.rot}40` }}>
-              <Eyebrow color={C.rot}>⚠ Gefahrenzone</Eyebrow>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 13.5, color: C.espresso }}>Wartungsmodus</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>App zeigt allen Nutzerinnen eine liebevolle Pause-Seite.</div>
-                </div>
-                <button onClick={() => setWartung(!wartung)} style={{ width: 52, height: 30, borderRadius: 20, border: "none", cursor: "pointer", position: "relative", background: wartung ? C.rot : C.line }}>
-                  <span style={{ position: "absolute", top: 3, left: wartung ? 25 : 3, width: 24, height: 24, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
-                </button>
-              </div>
-            </Card>
-          </>
-        )}
+        {tab === "uebersicht" && <Uebersicht k={k} wachstum={wachstum} />}
+        {tab === "mitglieder" && <Mitglieder />}
+        {tab === "sessions" && <Sessions />}
+        {tab === "moderation" && <Moderation />}
+        {tab === "fairness" && <KiFairness />}
+        {tab === "system" && <SystemTab k={k} />}
       </div>
     </div>
+  );
+}
+
+function Uebersicht({ k, wachstum }) {
+  if (!k) return <Card>Lade Kennzahlen …</Card>;
+  return (
+    <>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+        <Kpi t="Mitglieder" v={zahl(k.mitglieder)} s={`+${zahl(k.neu_30)} in 30 Tagen`} />
+        <Kpi t="Aktiv heute" v={zahl(k.aktiv_1)} s={`${zahl(k.aktiv_7)} in 7 Tagen`} />
+        <Kpi t="Coachinnen" v={zahl(k.coaches)} s={`${zahl(k.bindungen_aktiv)} aktive Begleitungen`} />
+        <Kpi t="Sessions (7 Tage)" v={zahl(k.sessions_7)} s={`${zahl(k.sessions_storniert_30)} abgesagt in 30 T.`} />
+      </div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+        <Kpi t="Ungelesen bei Coachinnen" v={zahl(k.nachrichten_offen)} s={`${zahl(k.anfragen_offen)} offene Anfragen`} accent={k.nachrichten_offen ? C.plum : undefined} />
+        <Kpi t="ilho-Nachrichten heute" v={zahl(k.ki_heute)} s={`${zahl(k.ki_30)} in 30 Tagen`} />
+        <Kpi t="Lichtpunkte gesamt" v={zahl(k.punkte_summe)} s={`Ø ${zahl(k.punkte_schnitt)} pro Nutzerin`} />
+        <Kpi t="Interessentinnen" v={zahl(k.interessentinnen_30)} s="neu in 30 Tagen" />
+      </div>
+      <Card>
+        <Eyebrow>Neue Mitglieder pro Monat</Eyebrow>
+        {wachstum.length === 0 ? <Leer>Noch keine Daten.</Leer> : (
+          <div style={{ width: "100%", height: 220 }}>
+            <ResponsiveContainer>
+              <BarChart data={wachstum} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid stroke={C.line} vertical={false} />
+                <XAxis dataKey="m" tick={{ fontSize: 11, fill: C.ink }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: C.ink }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v) => [v, "Neue Mitglieder"]} cursor={{ fill: C.beige }} />
+                <Bar dataKey="neu" fill={C.rose} radius={[4, 4, 0, 0]} barSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        <Hinweis>Umsatz und Abos erscheinen hier, sobald Zahlungen (z. B. Stripe) angebunden sind — bis dahin zeigt das Dashboard bewusst keine geschätzten Beträge.</Hinweis>
+      </Card>
+    </>
+  );
+}
+
+function Mitglieder() {
+  const [suche, setSuche] = useState("");
+  const [liste, setListe] = useState(null);
+  const [filter, setFilter] = useState("Alle");
+  useEffect(() => {
+    const t = setTimeout(() => adminMitglieder(suche.trim(), 200).then(setListe), 250);
+    return () => clearTimeout(t);
+  }, [suche]);
+
+  const gefiltert = (liste || []).filter((m) =>
+    filter === "Alle" || (filter === "Coachinnen" && m.ist_coach) || (filter === "Mit Coachin" && m.hat_coach) ||
+    (filter === "Inaktiv 30 T." && (!m.letzter_login || Date.now() - new Date(m.letzter_login) > 30 * 864e5)));
+
+  const csv = () => alsCsv(`mitglieder-${new Date().toISOString().slice(0, 10)}.csv`, [
+    ["E-Mail", "Mitglied seit", "Letzter Login", "Coachin", "Hat Coachin", "Lichtpunkte"],
+    ...gefiltert.map((m) => [m.email, datum(m.seit), datum(m.letzter_login), m.ist_coach ? "ja" : "", m.hat_coach ? "ja" : "", m.punkte ?? ""]),
+  ]);
+
+  return (
+    <Card>
+      <div style={{ display: "flex", gap: 9, marginBottom: 14, flexWrap: "wrap" }}>
+        <input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Suche nach E-Mail …"
+          style={{ flex: 1, minWidth: 180, padding: "11px 14px", fontSize: 14, ...sys, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.cream, color: C.espresso, outline: "none" }} />
+        {["Alle", "Coachinnen", "Mit Coachin", "Inaktiv 30 T."].map((p) => (
+          <button key={p} onClick={() => setFilter(p)} style={{ ...sys, fontSize: 12, fontWeight: 700, padding: "9px 13px", borderRadius: 18, cursor: "pointer", border: `1.5px solid ${filter === p ? C.gold : C.line}`, background: filter === p ? C.goldPale : C.card, color: C.espresso }}>{p}</button>
+        ))}
+        <button onClick={csv} style={{ ...sys, fontSize: 12, fontWeight: 700, padding: "9px 13px", borderRadius: 18, cursor: "pointer", border: "none", background: C.espresso, color: C.cream }}>CSV</button>
+      </div>
+      {liste === null ? <Leer>Lade …</Leer> : gefiltert.length === 0 ? <Leer>Keine Treffer.</Leer> : gefiltert.map((m) => (
+        <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap" }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...sys, fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{(m.email || "?").charAt(0).toUpperCase()}</div>
+          <div style={{ flex: 1, minWidth: 160 }}>
+            <div style={{ ...sys, fontWeight: 700, fontSize: 13.5, color: C.espresso, wordBreak: "break-all" }}>{m.email}</div>
+            <div style={{ ...sys, fontSize: 11.5, color: C.ink }}>seit {datum(m.seit)} · letzter Login {datum(m.letzter_login)}</div>
+          </div>
+          {m.ist_coach && <Badge tone="rose">Coachin</Badge>}
+          {m.hat_coach && <Badge tone="ok">begleitet</Badge>}
+          <span style={{ ...sys, fontSize: 12, color: C.ink, minWidth: 64, textAlign: "right" }}>✨ {m.punkte == null ? "–" : zahl(m.punkte)}</span>
+        </div>
+      ))}
+      <Hinweis>Angezeigt werden bis zu 200 Konten. Löschen einer Nutzerin bitte über ihren eigenen „Konto löschen“-Weg oder das Supabase-Dashboard (DSGVO-Protokoll).</Hinweis>
+    </Card>
+  );
+}
+
+function Sessions() {
+  const [liste, setListe] = useState(null);
+  useEffect(() => { adminSessions().then(setListe); }, []);
+  return (
+    <Card>
+      <Eyebrow>📅 Sessions ab heute</Eyebrow>
+      {liste === null ? <Leer>Lade …</Leer> : liste.length === 0 ? <Leer>Keine anstehenden Sessions.</Leer> : liste.map((b, i) => (
+        <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "11px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.plum, minWidth: 150 }}>{datumZeit(b.beginn)}</span>
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <div style={{ ...sys, fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{b.klientin || "Klientin"} <span style={{ fontWeight: 400, color: C.ink }}>bei {b.coach || "Coachin"}</span></div>
+            <div style={{ ...sys, fontSize: 11.5, color: C.ink }}>{b.dauer_min} Min · {b.kanal}{b.kanal === "video" && !b.hat_videolink ? " · ⚠ noch kein Videolink" : ""}</div>
+          </div>
+          <Badge tone={b.status === "gebucht" ? "ok" : b.status === "erledigt" ? "gold" : "rot"}>{b.status}</Badge>
+        </div>
+      ))}
+      <Hinweis>Erinnerungen gehen automatisch 24 h und 1 h vorher per Push an Klientin und Coachin.</Hinweis>
+    </Card>
+  );
+}
+
+function Moderation() {
+  const [liste, setListe] = useState(null);
+  const laden = () => adminMeldungen().then(setListe);
+  useEffect(() => { laden(); }, []);
+  const erledigen = async (m, ausblenden) => { await adminMeldungErledigen(m.post_id, ausblenden); laden(); };
+  return (
+    <Card>
+      <Eyebrow color={C.plum}>🛡️ Gemeldete Community-Beiträge</Eyebrow>
+      {liste === null ? <Leer>Lade …</Leer> : liste.length === 0 ? <Leer>Keine offenen Meldungen. 🤍</Leer> : liste.map((m) => (
+        <div key={m.post_id} style={{ padding: "12px 4px", borderBottom: `1px solid ${C.line}` }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
+            <span style={{ ...sys, fontWeight: 700, fontSize: 13, color: C.espresso }}>{m.alias}</span>
+            <Badge tone="rot">{m.anzahl}× gemeldet</Badge>
+            {!m.sichtbar && <Badge tone="warn">ausgeblendet</Badge>}
+            <span style={{ ...sys, fontSize: 11, color: C.ink }}>{datumZeit(m.gemeldet_am)}</span>
+          </div>
+          <div style={{ ...sys, fontSize: 13.5, color: C.espresso, lineHeight: 1.55, background: C.cream, borderRadius: 10, padding: "10px 12px", whiteSpace: "pre-wrap" }}>{m.text}</div>
+          <div style={{ ...sys, fontSize: 12, color: C.ink, margin: "6px 0 8px" }}>Grund: {m.grund}</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => erledigen(m, true)} style={{ ...sys, fontSize: 12.5, fontWeight: 700, padding: "8px 14px", borderRadius: 16, border: "none", background: C.rot, color: "#fff", cursor: "pointer" }}>Ausblenden</button>
+            <button onClick={() => erledigen(m, false)} style={{ ...sys, fontSize: 12.5, fontWeight: 700, padding: "8px 14px", borderRadius: 16, border: `1.5px solid ${C.line}`, background: C.card, color: C.espresso, cursor: "pointer" }}>Ist in Ordnung</button>
+          </div>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+function SystemTab({ k }) {
+  const [st, setSt] = useState(null);
+  const [cloud, setCloud] = useState(null);
+  const [ki, setKi] = useState(null);
+  useEffect(() => {
+    adminSystem().then(setSt);
+    cloudErreichbar().then(setCloud).catch(() => setCloud(false));
+    // Nur ein CORS-Preflight (OPTIONS) — erreicht die Function, löst aber keinen KI-Aufruf aus.
+    const url = import.meta.env?.VITE_AI_FUNCTION_URL;
+    if (url) fetch(url, { method: "OPTIONS" }).then((r) => setKi(r.ok)).catch(() => setKi(false)); else setKi(false);
+  }, []);
+  const minutenSeit = (iso) => (iso ? Math.round((Date.now() - new Date(iso)) / 60000) : null);
+  const cron = st?.cron_letzter;
+  const cronAlt = cron ? minutenSeit(cron.start) : null;
+  const fairTage = st?.fairness_letzter ? Math.floor((Date.now() - new Date(st.fairness_letzter)) / 864e5) : null;
+  const zeilen = [
+    { k: "Supabase (EU-Frankfurt)", ok: cloud, info: cloud == null ? "prüfe …" : cloud ? `erreichbar · DB ${st?.db_groesse_mb ?? "?"} MB` : "nicht erreichbar" },
+    { k: "KI-Function /ai", ok: ki, info: ki == null ? "prüfe …" : ki ? "erreichbar" : "nicht erreichbar" },
+    { k: "Termin-Erinnerungen (Cron, alle 15 Min)", ok: cron ? cron.status === "succeeded" && cronAlt < 30 : null,
+      info: cron ? `letzter Lauf vor ${cronAlt} Min · ${cron.status} · ${st.cron_fehler_24h} Fehler / ${st.cron_laeufe_24h} Läufe in 24 h` : "noch kein Lauf" },
+    { k: "Push-Geräte", ok: true, info: `${zahl(k?.push_geraete)} registriert` },
+    { k: "Fairness-Test", ok: fairTage != null && fairTage <= 30, info: fairTage == null ? "noch nie — im Tab „KI & Fairness“ starten" : `vor ${fairTage} Tagen` },
+  ];
+  return (
+    <Card>
+      <Eyebrow>🛠️ Dienste-Status (live)</Eyebrow>
+      {zeilen.map((z) => (
+        <div key={z.k} style={{ display: "flex", gap: 12, alignItems: "center", padding: "11px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13 }}>{z.ok == null ? "⚪" : z.ok ? "🟢" : "🟠"}</span>
+          <span style={{ flex: 1, minWidth: 180, ...sys, fontSize: 13.5, fontWeight: 700, color: C.espresso }}>{z.k}</span>
+          <span style={{ ...sys, fontSize: 11.5, color: C.ink, textAlign: "right" }}>{z.info}</span>
+        </div>
+      ))}
+      {cron && cron.status !== "succeeded" && cron.meldung && <Hinweis>Letzte Cron-Meldung: {cron.meldung}</Hinweis>}
+      <Hinweis>Kosten der KI siehst du exakt in der Anthropic-Konsole; hier nur die Anzahl der ilho-Nachrichten (Übersicht).</Hinweis>
+    </Card>
+  );
+}
+
+/* ── KI-Qualität & Fairness (ICF A.1 / E.10) — echte Daten, nur für Admins ──
+   1) Bewertungen der Nutzerinnen (👍/👎 + Grund) — anonym, nur Zähler.
+   2) Paar-Tests: gleiche Frage, ein Merkmal anders — ein zweites Modell prüft auf ungleiche Behandlung. */
+const GRUND_LABEL = { vorurteil: "Vorurteil / Klischee", falsch: "Falsch", unpassend: "Unpassend", unhilfreich: "Nicht hilfreich" };
+
+function KiFairness() {
+  const [admin, setAdmin] = useState(null);
+  const [zeilen, setZeilen] = useState([]);
+  const [checks, setChecks] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState("");
+  const [offen, setOffen] = useState(null);
+
+  const laden = async () => {
+    const ok = await istAdmin();
+    setAdmin(ok);
+    if (!ok) return;
+    const [q, f] = await Promise.all([ladeKiQualitaet(90), ladeFairnessChecks(60)]);
+    setZeilen(q); setChecks(f);
+  };
+  useEffect(() => { laden(); }, []);
+
+  if (admin === null) return <Card>Lade …</Card>;
+  if (!supabase || !admin)
+    return (
+      <Card>
+        <Eyebrow>Kein Zugriff</Eyebrow>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+          Echte KI-Daten sieht nur, wer als Admin eingetragen ist. Melde dich in der App mit deinem Admin-Konto an und öffne dann wieder <code>#admin</code>.
+        </p>
+      </Card>
+    );
+
+  // Wochenreihe: Anteil 👍 an allen Bewertungen.
+  const wochen = {};
+  const gruende = {};
+  for (const z of zeilen) {
+    const w = z.woche;
+    if (z.event_type === "ilho_bewertung") {
+      wochen[w] = wochen[w] || { gut: 0, schlecht: 0 };
+      if (z.topic_tag === "gut" || z.topic_tag === "schlecht") wochen[w][z.topic_tag] += Number(z.anzahl);
+    } else if (z.event_type === "ilho_bewertung_grund") {
+      gruende[z.topic_tag] = (gruende[z.topic_tag] || 0) + Number(z.anzahl);
+    }
+  }
+  const reihe = Object.entries(wochen).sort(([a], [b]) => a.localeCompare(b)).map(([w, v]) => ({
+    w: new Date(w).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }),
+    anteil: v.gut + v.schlecht ? Math.round((v.gut / (v.gut + v.schlecht)) * 100) : null,
+    n: v.gut + v.schlecht,
+  }));
+  const summe = reihe.reduce((a, r) => a + r.n, 0);
+  const gut = Object.values(wochen).reduce((a, v) => a + v.gut, 0);
+  const balken = Object.keys(GRUND_LABEL).map((k) => ({ k: GRUND_LABEL[k], n: gruende[k] || 0 }));
+  const vorurteile = gruende.vorurteil || 0;
+
+  const letzterLauf = checks[0]?.lauf_am ? new Date(checks[0].lauf_am) : null;
+  const laeufe = [...new Set(checks.map((c) => c.lauf_id))];
+  const aktuell = checks.filter((c) => c.lauf_id === laeufe[0]);
+  const tageSeit = letzterLauf ? Math.floor((Date.now() - letzterLauf.getTime()) / 864e5) : null;
+
+  const pruefen = async () => {
+    setBusy(true); setInfo("");
+    const r = await starteFairnessCheck(ILHO_SYSTEM);
+    setBusy(false);
+    setInfo(r?.fehler || (r?.error ? `Fehler: ${r.error}` : `✓ ${r.gesamt} Paare geprüft · ${r.auffaellig} auffällig`));
+    laden();
+  };
+
+  const sys = { fontFamily: "system-ui, sans-serif" };
+  return (
+    <>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+        <Kpi t="Bewertungen (90 T.)" v={summe} s="👍 + 👎 in ilho" />
+        <Kpi t="Hilfreich" v={summe ? `${Math.round((gut / summe) * 100)} %` : "–"} s="Anteil 👍" />
+        <Kpi t="Vorurteil gemeldet" v={vorurteile} s="👎 mit Grund „Klischee“" accent={vorurteile ? C.rot : undefined} />
+        <Kpi t="Letzter Fairness-Test" v={tageSeit === null ? "nie" : tageSeit === 0 ? "heute" : `vor ${tageSeit} T.`} s={aktuell.length ? `${aktuell.filter((c) => c.auffaellig).length} von ${aktuell.length} auffällig` : "Empfehlung: monatlich"} accent={tageSeit === null || tageSeit > 30 ? "#9A6A1F" : undefined} />
+      </div>
+
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+        <Card style={{ flex: "1 1 420px" }}>
+          <Eyebrow>Anteil hilfreicher Antworten pro Woche</Eyebrow>
+          {reihe.length === 0 ? <p style={{ ...sys, fontSize: 13, color: C.ink }}>Noch keine Bewertungen.</p> : (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={reihe} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+                <CartesianGrid stroke={C.line} vertical={false} />
+                <XAxis dataKey="w" tick={{ fontSize: 11, fill: C.ink }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: C.ink }} axisLine={false} tickLine={false} unit=" %" />
+                <Tooltip formatter={(v, _n, p) => [`${v} % (${p.payload.n} Bewertungen)`, "Hilfreich"]} />
+                <Line type="monotone" dataKey="anteil" stroke={C.plum} strokeWidth={2} dot={{ r: 4, fill: C.plum, stroke: C.card, strokeWidth: 2 }} connectNulls />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+        <Card style={{ flex: "1 1 320px" }}>
+          <Eyebrow>Gründe für 👎</Eyebrow>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={balken} layout="vertical" margin={{ top: 4, right: 16, left: 20, bottom: 0 }}>
+              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: C.ink }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="k" width={120} tick={{ fontSize: 11.5, fill: C.espresso }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(v) => [v, "Meldungen"]} cursor={{ fill: C.beige }} />
+              <Bar dataKey="n" fill={C.rose} radius={[0, 4, 4, 0]} barSize={16} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <Eyebrow>Fairness-Test · Paarvergleich</Eyebrow>
+            <p style={{ ...sys, fontSize: 12.5, color: C.ink, lineHeight: 1.55, margin: 0, maxWidth: 620 }}>
+              ilho bekommt sechsmal dieselbe Frage in zwei Varianten — nur ein Merkmal ändert sich (Religion, Herkunft, Familienform, Alter, Behinderung, Einkommen). Ein zweites Modell prüft, ob beide gleich warm, ermutigend und klischeefrei beantwortet werden. Dauer ca. 1 Minute, Kosten wenige Cent.
+            </p>
+          </div>
+          <button onClick={pruefen} disabled={busy} style={{ ...sys, fontSize: 13, fontWeight: 700, borderRadius: 20, padding: "10px 18px", border: "none", cursor: busy ? "default" : "pointer", background: C.espresso, color: C.cream, opacity: busy ? 0.6 : 1 }}>
+            {busy ? "Prüfe …" : "Jetzt prüfen"}
+          </button>
+        </div>
+        {info && <div style={{ ...sys, fontSize: 13, color: C.plum, marginTop: 10 }}>{info}</div>}
+
+        {aktuell.length > 0 && (
+          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 14, ...sys, fontSize: 13 }}>
+            <thead>
+              <tr style={{ textAlign: "left", color: C.ink, fontSize: 11.5 }}>
+                <th style={{ padding: "6px 4px" }}>Merkmal</th><th>Varianten</th><th>Unterschied</th><th>Klischee</th><th>Einschätzung</th>
+              </tr>
+            </thead>
+            <tbody>
+              {aktuell.map((c) => (
+                <Fragment key={c.id}>
+                  <tr onClick={() => setOffen(offen === c.id ? null : c.id)} style={{ borderTop: `1px solid ${C.line}`, cursor: "pointer", verticalAlign: "top" }}>
+                    <td style={{ padding: "8px 4px", fontWeight: 700, color: C.espresso }}>{c.merkmal}</td>
+                    <td style={{ padding: "8px 4px", color: C.ink }}>{c.variante_a} / {c.variante_b}</td>
+                    <td style={{ padding: "8px 4px" }}>{c.unterschied == null ? "–" : <Badge tone={c.unterschied >= 3 ? "rot" : c.unterschied === 2 ? "warn" : "ok"}>{c.unterschied}/5</Badge>}</td>
+                    <td style={{ padding: "8px 4px" }}>{c.stereotyp == null ? "–" : c.stereotyp ? <Badge tone="rot">⚠ ja</Badge> : <Badge tone="ok">✓ nein</Badge>}</td>
+                    <td style={{ padding: "8px 4px", color: C.espresso }}>{c.begruendung}</td>
+                  </tr>
+                  {offen === c.id && c.antwort_a && (
+                    <tr>
+                      <td colSpan={5} style={{ padding: "4px 4px 14px" }}>
+                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                          {[[c.variante_a, c.antwort_a], [c.variante_b, c.antwort_b]].map(([v, a]) => (
+                            <div key={v} style={{ flex: "1 1 300px", background: C.cream, borderRadius: 12, padding: 12 }}>
+                              <div style={{ fontWeight: 700, fontSize: 12, color: C.plum, marginBottom: 6 }}>„{c.frage.replace("{X}", v)}“</div>
+                              <div style={{ whiteSpace: "pre-wrap", fontSize: 12.5, color: C.espresso, lineHeight: 1.55 }}>{a}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {aktuell.length > 0 && <div style={{ ...sys, fontSize: 11.5, color: C.ink, marginTop: 8 }}>Zeile anklicken, um beide Antworten nebeneinander zu sehen. Auffällige Paare → ilho-Prompt in <code>src/ilho.js</code> nachschärfen und erneut prüfen.</div>}
+      </Card>
+    </>
   );
 }
