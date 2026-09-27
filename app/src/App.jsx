@@ -1175,7 +1175,7 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
           <div style={{ fontFamily: "Georgia, serif", fontSize: 13, color: C.sage, marginBottom: 2 }}>✨ ilho hat deinen Tag vorbereitet</div>
           <H size={26} style={{ marginBottom: 4 }}>{gruss}{name ? `, ${name}` : ""} 🤍</H>
         </div>
-        <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", fontSize: 22, color: C.gold, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(58,42,34,.1)" }}>👤</button>
+        <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", fontSize: 22, color: C.gold, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(58,42,34,.1)", overflow: "hidden", padding: 0 }}>{prefs?.avatar ? <img src={prefs.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "👤"}</button>
       </div>
 
 
@@ -4162,7 +4162,41 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
 
 /* ── Profil ── */
 
-function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, aufBindung, istCoach, setIstCoach }) {
+// Profilfoto: quadratisch zuschneiden und auf 320 px verkleinern (≈ 20–40 KB),
+// damit es im App-Zustand geräteübergreifend mitgespeichert werden kann.
+function profilbildAusDatei(datei, kante = 320) {
+  return new Promise((ok, fehler) => {
+    const url = URL.createObjectURL(datei);
+    const img = new Image();
+    img.onload = () => {
+      const seite = Math.min(img.width, img.height);
+      const c = document.createElement("canvas");
+      c.width = c.height = kante;
+      c.getContext("2d").drawImage(img, (img.width - seite) / 2, (img.height - seite) / 2, seite, seite, 0, 0, kante, kante);
+      URL.revokeObjectURL(url);
+      ok(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); fehler(new Error("Bild konnte nicht gelesen werden")); };
+    img.src = url;
+  });
+}
+
+function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, aufBindung, istCoach, setIstCoach, prefs = {}, setPrefs }) {
+  const fotoRef = useRef(null);
+  const [fotoHinweis, setFotoHinweis] = useState("");
+  const fotoGewaehlt = async (e) => {
+    const datei = e.target.files?.[0];
+    e.target.value = "";
+    if (!datei) return;
+    if (!datei.type.startsWith("image/")) { setFotoHinweis("Bitte ein Foto auswählen."); return; }
+    try {
+      const avatar = await profilbildAusDatei(datei);
+      setPrefs && setPrefs({ ...prefs, avatar });
+      setFotoHinweis("");
+    } catch {
+      setFotoHinweis("Dieses Foto konnte nicht geladen werden — bitte ein anderes (JPG oder PNG) versuchen.");
+    }
+  };
   const [erinnerung, setErinnerung] = useState({ aktiv: true, uhrzeit: "19:00" });
   const [erinnerungInfo, setErinnerungInfo] = useState("");
   const [push, setPush] = useState(false);
@@ -4271,14 +4305,19 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
       {/* Avatar-Banner */}
       <div style={{ position: "relative", height: 178, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft} 65%, ${C.beige})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ position: "relative" }}>
-          <div style={{ width: 116, height: 116, borderRadius: "50%", background: C.card, border: `3px solid ${C.gold}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 52, color: C.gold, boxShadow: "0 6px 20px rgba(58,42,34,.15)" }}>👤</div>
-          <button aria-label="Foto ändern" style={{ position: "absolute", bottom: 2, right: 2, width: 34, height: 34, borderRadius: "50%", border: "none", background: C.card, boxShadow: "0 2px 8px rgba(58,42,34,.25)", cursor: "pointer", fontSize: 15 }}>✏️</button>
+          <div style={{ width: 116, height: 116, borderRadius: "50%", background: C.card, border: `3px solid ${C.gold}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 52, color: C.gold, boxShadow: "0 6px 20px rgba(58,42,34,.15)", overflow: "hidden" }}>{prefs.avatar ? <img src={prefs.avatar} alt="Profilfoto" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "👤"}</div>
+          <button aria-label="Foto ändern" onClick={() => fotoRef.current?.click()} style={{ position: "absolute", bottom: 2, right: 2, width: 34, height: 34, borderRadius: "50%", border: "none", background: C.card, boxShadow: "0 2px 8px rgba(58,42,34,.25)", cursor: "pointer", fontSize: 15 }}>✏️</button>
+          <input ref={fotoRef} type="file" accept="image/*" onChange={fotoGewaehlt} style={{ display: "none" }} />
         </div>
       </div>
 
       <div style={{ padding: "14px 20px 4px", textAlign: "center" }}>
         <H size={22}>{nameShown}</H>
         <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>{email}</p>
+        {fotoHinweis && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#A8552F", marginTop: 6 }}>{fotoHinweis}</p>}
+        {prefs.avatar && (
+          <button onClick={() => setPrefs && setPrefs({ ...prefs, avatar: null })} style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, background: "none", border: "none", cursor: "pointer", marginTop: 4, textDecoration: "underline" }}>Foto entfernen</button>
+        )}
       </div>
 
       <div style={{ padding: "16px 20px 26px" }}>
@@ -10061,7 +10100,7 @@ export default function IlhoApp() {
               {tab === "fragebogen" && <><MediaBanner video={S2GVID.fragebogen} poster={S2GIMG.fragebogen} title="Fragebogen" subtitle="Lerne dich kennen" height={190} /><Fragebogen intake={intake} setIntake={setIntake} addPunkte={addPunkte} /></>}
               {tab === "pakete" && <><MediaBanner video={S2GVID.pakete} poster={S2GIMG.pakete} title="Pakete" subtitle="Wähle dein Geschenk an dich" height={190} /><Pakete addPunkte={addPunkte} go={go} /></>}
               {tab === "office" && <Office office={office} setOffice={setOffice} addPunkte={addPunkte} />}
-              {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} bindung={bindung} aufBindung={aufBindung} istCoach={istCoach} setIstCoach={setIstCoach} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
+              {tab === "profil" && <><MediaBanner video={S2GVID.profil} poster={S2GIMG.profil} title="Profil" subtitle="Dein Spiegel" height={190} /><Profil prefs={prefs} setPrefs={setPrefs} email={user} go={go} alias={alias} setAlias={setAlias} anon={anon} setAnon={setAnon} bindung={bindung} aufBindung={aufBindung} istCoach={istCoach} setIstCoach={setIstCoach} onLogout={() => { if (supabase) supabase.auth.signOut(); setUser(null); setStack([]); setTab("heute"); }} /></>}
               {tab === "coachdash" && <CoachDashboard name={anzeigeName} streak={streak} entries={entries} ch369={ch369} drawn={drawn} horo={horo} energie={energie} aufgaben={aufgaben} checkins={checkins} />}
               {tab === "coachtwin" && <CoachTwinInterview addPunkte={addPunkte} />}
               {tab === "sessionnotiz" && <SessionIntelligenz addPunkte={addPunkte} />}
