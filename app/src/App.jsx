@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
+import IlhoHero from "./IlhoHero";
 import Landing from "./Landing";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
@@ -1311,13 +1312,24 @@ function journalKontext(entries) {
   return letzte.length ? `\n(Aus ihrem Journal, mit ihrer Erlaubnis — beziehe dich behutsam darauf, wenn es passt:\n${letzte.join("\n").slice(0, 1200)})` : "";
 }
 
-function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], prefs = {}, setPrefs }) {
+// Dunkle Farben für das ilho-Gespräch (Stil wie die Tony-Robbins-AI-App, Töne aus der Startseite).
+const D = {
+  nacht: "#22150F", nacht2: "#2C1B15", hell: "#F7EEE5", gedimmt: "#D2BFB1", leise: "#A8907F",
+  goldhell: "#E6BE6C", rand: "rgba(230,190,108,.2)", flaeche: "rgba(255,255,255,.06)",
+  orb: "radial-gradient(circle at 38% 32%, #F8E0A0 0%, #E2B45C 50%, #B98030 100%)",
+};
+
+function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], prefs = {}, setPrefs, onClose, startFrage, onStartVerbraucht }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [grenzenOffen, setGrenzenOffen] = useState(false);
   const endRef = useRef(null);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy, grenzenOffen]);
+  // Leeres Gespräch bleibt oben (Orb und Begrüßung sichtbar); sonst zur neuesten Nachricht.
+  useEffect(() => {
+    if (msgs.length === 0 && !busy) return;
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs, busy, grenzenOffen]);
 
   // Nur die Bewertung wird geloggt (anonym, ohne Text) — nie der Inhalt der Nachricht.
   const bewerten = (i, wert) => {
@@ -1332,12 +1344,13 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
     logEvent("ilho_bewertung_grund", grund);
   };
 
-  const send = async () => {
-    const text = input.trim();
+  // vorgabe: Text aus einem Thema (Heute-Startbereich oder Vorschlag) — sonst das Eingabefeld.
+  const send = async (vorgabe) => {
+    const text = (typeof vorgabe === "string" ? vorgabe : input).trim();
     if (!text || busy) return;
     const next = [...msgs, { role: "user", content: text }];
     setMsgs(next);
-    setInput("");
+    if (typeof vorgabe !== "string") setInput("");
     setBusy(true);
     try {
       const ctx = energie ? `\n(Kontext: Die Nutzerin heißt ${name}, ihre heutige Energie: ${energie.t} ${energie.v}/10.)` : `\n(Kontext: Die Nutzerin heißt ${name}.)`;
@@ -1351,39 +1364,57 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
     setBusy(false);
   };
 
+  // Thema vom Heute-Startbereich: einmal senden, dann zurückmelden, damit es nicht doppelt geht.
+  useEffect(() => {
+    if (!startFrage) return;
+    onStartVerbraucht?.();
+    send(startFrage);
+  }, [startFrage]); // eslint-disable-line
+
   const starters = ["Ich fühle mich heute unruhig", "Hilf mir, eine Intention zu setzen", "Wie lasse ich Grübeln los?"];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 86px)", maxHeight: "calc(100vh - 86px)" }}>
-      <div style={{ padding: "20px 20px 12px", borderBottom: `1px solid ${C.line}`, background: C.cream }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={{ width: 46, height: 46, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>✨</div>
-          <div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>ilho</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.sage, fontWeight: 600 }}>
-              ● Dein KI-Assistent · {twinTon ? "im Ton deiner Coachin" : "immer für dich da"}
-            </div>
+    <div style={{
+      display: "flex", flexDirection: "column", height: "100%", color: D.hell,
+      background: `radial-gradient(130% 55% at 50% 0%, #4E2537 0%, ${D.nacht2} 55%, ${D.nacht} 100%)`,
+    }}>
+      <style>{`.s2g-ilho-eingabe::placeholder { color: ${D.leise}; } .s2g-ilho button:focus-visible, .s2g-ilho-eingabe:focus-visible { outline: 3px solid ${D.goldhell}; outline-offset: 2px; }`}</style>
+      <div className="s2g-ilho" style={{ display: "flex", gap: 12, alignItems: "center", padding: "16px 18px 14px", borderBottom: `1px solid ${D.rand}` }}>
+        <div aria-hidden="true" style={{ width: 42, height: 42, borderRadius: "50%", background: D.orb, boxShadow: "0 0 22px rgba(230,190,108,.55)", flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: D.hell }}>ilho</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: D.goldhell, fontWeight: 600 }}>
+            Dein KI-Begleiter, {twinTon ? "im Ton deiner Coachin" : "immer für dich da"}
           </div>
         </div>
+        {onClose && (
+          <button onClick={onClose} aria-label="ilho schließen" style={{
+            width: 38, height: 38, borderRadius: "50%", border: `1px solid ${D.rand}`, background: D.flaeche,
+            color: D.hell, fontSize: 15, cursor: "pointer", flexShrink: 0,
+          }}>✕</button>
+        )}
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
+      <div className="s2g-ilho" style={{ flex: 1, overflowY: "auto", padding: "18px 18px" }}>
         {msgs.length === 0 && (
-          <div style={{ textAlign: "center", padding: "30px 10px" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✨</div>
-            <H size={19} style={{ marginBottom: 8 }}>Hallo{name ? ` ${name}` : ""} 🤍</H>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.6, marginBottom: 20 }}>
+          <div style={{ textAlign: "center", padding: "18px 4px 6px" }}>
+            <div aria-hidden="true" style={{
+              width: 84, height: 84, margin: "0 auto 18px", borderRadius: "50%", background: D.orb,
+              boxShadow: "0 0 50px rgba(230,190,108,.5), 0 0 110px rgba(217,110,139,.32)", animation: "floaty 5s ease-in-out infinite",
+            }} />
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 24, lineHeight: 1.2, color: D.hell, marginBottom: 8 }}>Hallo{name ? ` ${name}` : ""} 🤍</div>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: D.gedimmt, lineHeight: 1.6, margin: "0 0 20px" }}>
               Ich bin ilho. Was dich bewegt, hat hier Raum — ohne Bewertung, in deinem Tempo.
             </p>
-            <div style={{ marginBottom: 20 }}><IlhoGrenzen /></div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
               {starters.map((s) => (
-                <button key={s} onClick={() => setInput(s)} style={{
-                  fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum,
-                  background: C.roseSoft, border: "none", borderRadius: 20, padding: "12px 16px", cursor: "pointer",
+                <button key={s} onClick={() => send(s)} style={{
+                  fontFamily: "system-ui, sans-serif", fontSize: 14, color: D.hell, textAlign: "left",
+                  background: D.flaeche, border: `1px solid ${D.rand}`, borderRadius: 18, padding: "13px 16px", cursor: "pointer",
                 }}>{s}</button>
               ))}
             </div>
+            <IlhoGrenzen />
           </div>
         )}
         {msgs.map((m, i) => (
@@ -1392,9 +1423,9 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
               maxWidth: "82%", padding: "12px 15px", borderRadius: 18,
               borderBottomRightRadius: m.role === "user" ? 6 : 18,
               borderBottomLeftRadius: m.role === "user" ? 18 : 6,
-              background: m.role === "user" ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.card,
-              border: m.role === "user" ? "none" : `1px solid ${C.line}`,
-              color: m.role === "user" ? "#fff" : C.espresso,
+              background: m.role === "user" ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : D.flaeche,
+              border: m.role === "user" ? "none" : `1px solid ${D.rand}`,
+              color: m.role === "user" ? "#fff" : D.hell,
               fontFamily: "system-ui, sans-serif", fontSize: 14.5, lineHeight: 1.55,
               whiteSpace: "pre-wrap",
             }}>{m.content}</div>
@@ -1412,21 +1443,21 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
             )}
             {m.role === "assistant" && m.bewertung === "schlecht" && !m.grund && (
               <div style={{ flexBasis: "100%", display: "flex", gap: 6, flexWrap: "wrap", margin: "6px 0 4px" }}>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, alignSelf: "center" }}>Was hat nicht gepasst?</span>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: D.gedimmt, alignSelf: "center" }}>Was hat nicht gepasst?</span>
                 {ILHO_GRUENDE.map(([k, l]) => (
-                  <button key={k} onClick={() => grundGeben(i, k)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.plum, background: C.roseSoft, border: "none", borderRadius: 12, padding: "5px 10px", cursor: "pointer" }}>{l}</button>
+                  <button key={k} onClick={() => grundGeben(i, k)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: D.hell, background: D.flaeche, border: `1px solid ${D.rand}`, borderRadius: 12, padding: "5px 10px", cursor: "pointer" }}>{l}</button>
                 ))}
               </div>
             )}
-            {m.role === "assistant" && m.grund && <div style={{ flexBasis: "100%", fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>Danke — das hilft, ilho fairer und besser zu machen.</div>}
+            {m.role === "assistant" && m.grund && <div style={{ flexBasis: "100%", fontFamily: "system-ui, sans-serif", fontSize: 11, color: D.gedimmt, opacity: 0.8, marginTop: 4 }}>Danke — das hilft, ilho fairer und besser zu machen.</div>}
           </div>
         ))}
         {busy && (
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, padding: "4px 2px" }}>✨ ilho schreibt …</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: D.goldhell, padding: "4px 2px" }}>✨ ilho schreibt …</div>
         )}
         {grenzenOffen && msgs.length > 0 && <div style={{ marginTop: 8 }}><IlhoGrenzen /></div>}
         {(grenzenOffen || msgs.length === 0) && setPrefs && (
-          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 10, fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.45, cursor: "pointer" }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 12, fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: D.gedimmt, lineHeight: 1.45, cursor: "pointer", textAlign: "left" }}>
             <input type="checkbox" checked={!!prefs.ilhoJournal} onChange={(e) => setPrefs({ ...prefs, ilhoJournal: e.target.checked })} style={{ marginTop: 2 }} />
             <span>ilho darf meine letzten 3 Journal-Einträge kennen, um sich auf frühere Gedanken zu beziehen. Jederzeit abschaltbar.</span>
           </label>
@@ -1435,22 +1466,25 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
       </div>
 
       {msgs.length > 0 && (
-        <div style={{ padding: "6px 14px 0", background: C.cream, borderTop: `1px solid ${C.line}` }}>
+        <div className="s2g-ilho" style={{ padding: "6px 14px 0", background: D.nacht, borderTop: `1px solid ${D.rand}` }}>
           <button onClick={() => setGrenzenOffen((o) => !o)} aria-expanded={grenzenOffen} style={{
-            fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 600, color: C.plum,
+            fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 600, color: D.goldhell,
             background: "none", border: "none", padding: "2px 2px", cursor: "pointer",
           }}>{grenzenOffen ? "✕ Hinweis schließen" : "ⓘ Was ilho kann — und was nicht"}</button>
         </div>
       )}
-      <div style={{ padding: "10px 14px 12px", borderTop: msgs.length > 0 ? "none" : `1px solid ${C.line}`, background: C.cream, display: "flex", gap: 8 }}>
+      <div className="s2g-ilho" style={{ padding: "10px 14px max(12px, env(safe-area-inset-bottom))", borderTop: msgs.length > 0 ? "none" : `1px solid ${D.rand}`, background: D.nacht, display: "flex", gap: 8 }}>
         <input
+          className="s2g-ilho-eingabe"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="Schreib ilho …"
-          style={{ flex: 1, padding: "13px 16px", fontSize: 15, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 22, background: C.card, color: C.espresso, outline: "none" }}
+          aria-label="Nachricht an ilho"
+          enterKeyHint="send"
+          style={{ flex: 1, minWidth: 0, padding: "13px 16px", fontSize: 16, fontFamily: "system-ui, sans-serif", border: `1px solid ${D.rand}`, borderRadius: 22, background: D.flaeche, color: D.hell, outline: "none" }}
         />
-        <button onClick={send} disabled={busy} style={{
+        <button onClick={send} disabled={busy} aria-label="Senden" style={{
           width: 48, height: 48, borderRadius: "50%", border: "none", cursor: "pointer",
           background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 18, flexShrink: 0,
           opacity: busy ? 0.6 : 1,
@@ -9783,6 +9817,8 @@ export default function IlhoApp() {
   const [intake, setIntake] = useState(null);
   const [checkins, setCheckins] = useState([]);
   const [ilhoOpen, setIlhoOpen] = useState(false);
+  // Frage aus dem Heute-Startbereich (IlhoHero) — ilho sendet sie beim Öffnen sofort.
+  const [ilhoFrage, setIlhoFrage] = useState(null);
   const [ilhoAktiv, setIlhoAktiv] = useState(true);
   const [archetyp, setArchetyp] = useState(null);
   const [qigong, setQigong] = useState([]);
@@ -10130,7 +10166,9 @@ export default function IlhoApp() {
             )}
 
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 172 : 86, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "heute" && <>{ilhoAktiv
+                ? <IlhoHero name={anzeigeName} onFrage={(t) => { setIlhoFrage(t || null); setIlhoOpen(true); }} />
+                : <HeuteHero name={anzeigeName} punkte={punkte} />}<EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "wochenbericht" && <Wochenbericht bindung={bindung} aufBindung={aufBindung} entries={entries} achtsam={achtsam} dank={dank} qigong={qigong} metime={metime} losgelassen={losgelassen} punkte={punkte} />}
@@ -10234,26 +10272,22 @@ export default function IlhoApp() {
             {ilhoAktiv && (
               <div style={{ position: "fixed", left: 0, right: 0, top: 0, bottom: 0, margin: "0 auto", maxWidth: 430, pointerEvents: "none", zIndex: ilhoOpen ? 26 : 22 }}>
                 {!ilhoOpen && (
-                  <button onClick={() => setIlhoOpen(true)} style={{
+                  <button onClick={() => setIlhoOpen(true)} aria-label="ilho öffnen" style={{
                     position: "absolute", right: 16, bottom: 96, pointerEvents: "auto",
-                    width: 58, height: 58, borderRadius: "50%", cursor: "pointer",
-                    background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, border: "3px solid " + C.card, color: "#fff",
-                    boxShadow: "0 8px 24px rgba(217,110,139,.45)", animation: "glowPulse 2.6s ease-in-out infinite",
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <span style={{ fontSize: 21 }}>✨</span>
-                    <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 8.5, fontWeight: 700 }}>ilho</span>
-                  </button>
+                    width: 60, height: 60, borderRadius: "50%", cursor: "pointer",
+                    background: D.orb, border: "3px solid " + C.card, color: "#4A3410",
+                    boxShadow: "0 0 22px rgba(230,190,108,.6), 0 8px 24px rgba(217,110,139,.4)", animation: "glowPulse 2.6s ease-in-out infinite",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontFamily: "Georgia, serif", fontSize: 15,
+                  }}>ilho</button>
                 )}
                 {ilhoOpen && (
                   <>
-                    <div onClick={() => setIlhoOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(58,42,34,.35)", backdropFilter: "blur(2px)", pointerEvents: "auto" }} />
-                    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, pointerEvents: "auto", background: C.cream, borderRadius: "22px 22px 0 0", maxHeight: "82vh", overflowY: "auto", boxShadow: "0 -8px 30px rgba(58,42,34,.22)", animation: "fadeUp .3s ease" }}>
-                      <div style={{ position: "sticky", top: 0, zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", background: C.cream, borderBottom: `1px solid ${C.line}` }}>
-                        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>✨ ilho · dein Begleiter</div>
-                        <button onClick={() => setIlhoOpen(false)} style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "50%", width: 34, height: 34, fontSize: 15, cursor: "pointer", color: C.ink }}>✕</button>
-                      </div>
-                      <Luma name={anzeigeName} energie={energie} msgs={lumaMsgs} setMsgs={setLumaMsgs} twin={twin} twinTon={twinTon} entries={entries} prefs={prefs} setPrefs={setPrefs} />
+                    <div onClick={() => setIlhoOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(23,14,10,.55)", backdropFilter: "blur(3px)", pointerEvents: "auto" }} />
+                    {/* ilho im Stil der Tony-Robbins-AI-App: dunkles Gespräch fast über den ganzen Bildschirm */}
+                    <div style={{ position: "absolute", left: 0, right: 0, top: 24, bottom: 0, pointerEvents: "auto", borderRadius: "26px 26px 0 0", overflow: "hidden", boxShadow: "0 -10px 40px rgba(23,14,10,.45)", animation: "fadeUp .3s ease" }}>
+                      <Luma name={anzeigeName} energie={energie} msgs={lumaMsgs} setMsgs={setLumaMsgs} twin={twin} twinTon={twinTon} entries={entries} prefs={prefs} setPrefs={setPrefs}
+                        onClose={() => setIlhoOpen(false)} startFrage={ilhoFrage} onStartVerbraucht={() => setIlhoFrage(null)} />
                     </div>
                   </>
                 )}
