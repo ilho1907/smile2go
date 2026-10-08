@@ -5,19 +5,94 @@
 // Fragen, Schluss. Farben und Schriften kommen aus der App selbst.
 // Inhalte bewusst nur aus echten Funktionen: keine erfundenen Bewertungen, keine Preise.
 import { useEffect, useRef, useState } from "react";
-import { IMG, KARTEN } from "./media";
+import { KARTEN } from "./media";
 
 const BEGRUESSUNG_VIDEO = "/begruessung_klein.mp4";
 const BEGRUESSUNG_POSTER = "/media/img/begruessung.jpg";
 
-const MOMENTE = [
-  { wann: "Nachts, wenn das Gedankenkarussell nicht anhält", was: "ilho atmet mit dir. Zwei Minuten, bis du wieder bei dir ankommst." },
-  { wann: "Vor einer Entscheidung, bei der du dich im Kreis drehst", was: "ilho fragt nach, bis du klarer siehst, was du wirklich willst." },
-  { wann: "Am Morgen, bevor der Tag dich übernimmt", was: "Deine Tageskarte und ein Sonnenstrahl geben dir eine Richtung für heute." },
-  { wann: "Nach einem Streit, der noch nachhallt", was: "Im Journal darfst du alles aufschreiben. Nur du entscheidest, was du teilst." },
-  { wann: "Wenn du dranbleiben willst", was: "Challenges, Ziele und Lichtpunkte zeigen dir, wie weit du schon gekommen bist." },
-  { wann: "Zwischen zwei Coaching-Terminen", was: "Schreib deiner Coachin direkt in der App oder buch deinen nächsten Termin." },
+// Echte Screens aus der App (Prototyp-Modus, Demo-Nutzerin „Lena“), siehe /public/media/app.
+const EINBLICKE = [
+  { bild: "/media/app/heute.jpg", t: "ilho im Mittelpunkt", s: "Frag ilho, was dich bewegt, oder wähl ein Thema. Das Gespräch beginnt sofort." },
+  { bild: "/media/app/vorbereitet.jpg", t: "ilho hat deinen Tag vorbereitet", s: "Wochen-Orakel, Tageskarte, Mantra, 2-Min-Atemritual, Sonnenstrahl und dein einziger Schritt heute." },
+  { bild: "/media/app/orakel.jpg", t: "Deine Tageskarte", s: "44 Göttinnen-Karten. Auf Wunsch zeigt ilho dir, was deine Karte für dich bedeutet." },
+  { bild: "/media/app/journal.jpg", t: "Dein täglicher Raum", s: "Journaling, Rituale, Zukunftsbrief und Fülle. Deine Intention kannst du auch einsprechen." },
+  { bild: "/media/app/themen.jpg", t: "Was beschäftigt dich gerade?", s: "Zehn Themen, dazu Kurse, Pakete und Retreats deiner Coachinnen." },
 ];
+
+// Die zehn Themen genau wie in der App (THEMEN in App.jsx).
+const THEMEN = [
+  { icon: "🕯️", t: "Trauer", s: "Wenn jemand fehlt" },
+  { icon: "🍂", t: "Trennung & Liebeskummer", s: "Wenn ein Kapitel endet" },
+  { icon: "🤍", t: "Beziehung", s: "Nähe, Abstand, Wiederholungen" },
+  { icon: "💗", t: "Selbstwert", s: "Ich bin genug" },
+  { icon: "🛡️", t: "Grenzen", s: "Dein klares Nein" },
+  { icon: "🌱", t: "Neuanfang", s: "Was jetzt kommt" },
+  { icon: "🪙", t: "Geld & Fülle", s: "Dein Verhältnis zu Geld" },
+  { icon: "🍃", t: "Loslassen", s: "Was nicht mehr dir gehört" },
+  { icon: "🌊", t: "Unruhe & Anspannung", s: "Wenn es innen zu laut ist" },
+  { icon: "🔒", t: "Nach dem Betrug", s: "Scham, Vertrauen, weitermachen" },
+];
+
+// Alle Bereiche der App, gruppiert wie im Menü „Mehr“ (MEHR_GRUPPEN), mit den Texten aus der App.
+const BEREICHE = [
+  { g: "Jeden Tag", items: [
+    ["✨", "ilho", "Dein KI-Begleiter, jederzeit für dich da"],
+    ["🎴", "Tageskarte", "44 Göttinnen-Karten, auf Wunsch mit Deutung"],
+    ["☀️", "Sonnenstrahl & Mantra", "Ein Satz, der dich durch den Tag trägt"],
+    ["🌬️", "2-Min-Atemritual", "Kurz ankommen, bevor der Tag losgeht"],
+    ["🧭", "Energie-Kompass", "Wie ist deine Energie heute? KI-personalisiert"],
+    ["👣", "Dein einziger Schritt", "Ein Fokus für heute statt einer langen Liste"],
+    ["⭐", "Horoskop", "Dein Tag in den Sternen"],
+    ["🛁", "Me-Time", "Ein Termin mit dir selbst"],
+  ] },
+  { g: "Dein täglicher Raum", items: [
+    ["📔", "Journaling", "Dein Raum. Kein richtig, kein falsch."],
+    ["🔮", "Rituale", "Kleine Rituale, große Wirkung. Mit Mondphase und wöchentlichem Energie-Update"],
+    ["💌", "Zukunftsbrief", "Ein Brief an dich selbst"],
+    ["💰", "Fülle", "Du darfst empfangen"],
+  ] },
+  { g: "Üben & Ankommen", items: [
+    ["🌿", "Qigong", "Die Acht Brokate, zehn ruhige Minuten"],
+    ["🖐️", "Achtsamkeit", "Atem, Sinne & Körperreise für zwischendurch"],
+    ["🤍", "Dankbarkeit", "Drei Dinge am Tag, dein Rückblick"],
+    ["🕊️", "Loslassen", "Was darf gehen? Ablegen & freigeben"],
+    ["🎵", "Meditation", "Geführte Ruhe zum Anhören"],
+    ["🎧", "Podcast", "Impulse zum Hören, wann immer du magst"],
+  ] },
+  { g: "Seele & Rituale", items: [
+    ["🦋", "Archetypen-Test", "Welche innere Kraft leitet dich?"],
+    ["🕰️", "Zukunfts-Ich", "Sprich mit dir in 10 Jahren"],
+    ["🖤", "Schattenspiegel", "Schreiben & verbrennen, nichts wird gespeichert"],
+    ["🕯️", "Gemeinsame Flamme", "Das Licht, das uns allen gehört"],
+    ["🌕", "Mondrituale", "Loslassen & manifestieren im Mondrhythmus"],
+    ["🎡", "Jahreskreis", "Die acht Feste des Jahres"],
+    ["🃏", "Wochen-Orakel", "Die Karte deiner Coachin, jede Woche neu"],
+    ["🕊️", "Ritual der Leere", "24 Stunden ohne App, bewusst"],
+  ] },
+  { g: "Wachsen & Fortschritt", items: [
+    ["🛤️", "Transformations-Reisen", "21 & 40 Tage zu einem Thema"],
+    ["🏆", "Challenges & Ziele", "Aufgaben, Meilensteine & deine Ziele"],
+    ["✨", "Abzeichen & Statistiken", "Lichtpunkte, Abzeichen und deine Zahlen"],
+    ["📊", "Mein Fortschritt", "Wohlbefindens-Index & Trend"],
+    ["🔮", "Intuitions-Training", "Trainiere dein Gefühl, mit Trefferquote"],
+    ["📖", "Jahres-Rückblick", "Dein Jahr in Karten & Worten"],
+  ] },
+  { g: "Deine Coachin", items: [
+    ["🌸", "Coaching", "Deine Begleitung, Pakete & Fortschritt"],
+    ["💬", "Coach-Chat", "Schreib ihr, wenn dich etwas bewegt"],
+    ["📅", "Termin buchen", "Zeit für dich"],
+    ["📁", "Mediathek", "Materialien deiner Coachin & deine Dateien"],
+    ["🎓", "Kurse, Pakete & Retreats", "Was die Coachinnen anbieten"],
+    ["📬", "Wochenbericht", "Deine Woche auf einen Blick, auf Wunsch für deine Coachin"],
+  ] },
+  { g: "Gemeinschaft & Schutz", items: [
+    ["💗", "Frauen unterstützen Frauen", "Community-Feed, teilen & stärken"],
+    ["👯‍♀️", "Freundinnen-Kreis", "Dein privater Kreis, gemeinsam 21 Tage"],
+    ["🤍", "Halt-Knopf", "Sofort Hilfe, wenn es zu viel wird"],
+    ["🔐", "Sicherheit", "Zwei-Faktor-Anmeldung, Daten exportieren oder löschen"],
+  ] },
+];
+const ANZAHL_FUNKTIONEN = BEREICHE.reduce((n, b) => n + b.items.length, 0);
 
 const VORTEILE = [
   { icon: "💬", t: "Persönliche Antworten", s: "ilho geht auf deine Situation ein, mit Fragen, die weiterführen, statt mit Floskeln." },
@@ -36,13 +111,6 @@ const SCHRITTE = [
   { t: "Dranbleiben", s: "deine Serie, Lichtpunkte und dein Wochenbericht halten dich in Bewegung, auf Wunsch gemeinsam mit deiner Coachin." },
 ];
 
-const FUNKTIONEN = [
-  { bild: IMG.orakel, t: "Orakel & Tageskarte", s: "44 Göttinnen-Karten mit persönlicher Deutung." },
-  { bild: IMG.meditation, t: "Meditation & Körperreise", s: "Geführte Ruhemomente zum Anhören." },
-  { bild: IMG.podcast, t: "Podcast & Mediathek", s: "Impulse zum Hören, wann immer du magst." },
-  { bild: IMG.lichtpunkte, t: "Challenges & Lichtpunkte", s: "Kleine Erfolge sichtbar machen und feiern." },
-];
-
 const WOCHEN_KARTEN = [
   { bild: KARTEN["Freya"], name: "Freya" },
   { bild: KARTEN["Die Göttin der lebendigen Schöpfung"], name: "Die Göttin der lebendigen Schöpfung" },
@@ -51,10 +119,12 @@ const WOCHEN_KARTEN = [
 
 const ENTHALTEN = [
   "ilho, dein KI-Begleiter",
-  "Tageskarte, Orakel und Sonnenstrahlen",
-  "Journal, Rituale und Meditationen",
-  "Challenges, Ziele und Lichtpunkte",
-  "Nachrichten und Termine mit deiner Coachin",
+  "Tageskarte, Sonnenstrahl, Mantra und Atemritual",
+  "Journal, Rituale, Zukunftsbrief und Fülle",
+  "Zehn Themen von Trauer bis Neuanfang",
+  "Challenges, Ziele und Transformations-Reisen",
+  "Coach-Chat und Termine mit deiner Coachin",
+  "Community und Freundinnen-Kreis",
   "Auf allen Geräten, auch ohne Netz",
 ];
 
@@ -112,7 +182,8 @@ export default function Landing({ onStart, angemeldet = false, rechtsSeite }) {
   const [phase, setPhase] = useState("einatmen");
   const [videoAn, setVideoAn] = useState(false);
   const [recht, setRecht] = useState(null);
-  const momenteRef = useRef(null);
+  const [bereich, setBereich] = useState(BEREICHE[0].g);
+  const einblickRef = useRef(null);
 
   // Atem-Orb: 8 Sekunden pro Atemzug, 4 ein, 4 aus — synchron zur CSS-Animation.
   useEffect(() => {
@@ -133,12 +204,13 @@ export default function Landing({ onStart, angemeldet = false, rechtsSeite }) {
   }, [recht]);
 
   const blaettern = (richtung) => {
-    const band = momenteRef.current;
+    const band = einblickRef.current;
     if (!band) return;
-    const karte = band.querySelector(".lp-moment");
-    const schritt = karte ? karte.getBoundingClientRect().width + 16 : band.clientWidth * 0.8;
+    const karte = band.querySelector(".lp-screen");
+    const schritt = karte ? karte.getBoundingClientRect().width + 20 : band.clientWidth * 0.8;
     band.scrollBy({ left: richtung * schritt, behavior: "smooth" });
   };
+  const aktiverBereich = BEREICHE.find((b) => b.g === bereich) || BEREICHE[0];
 
   const registrieren = () => onStart("register", "klientin");
   const anmelden = () => onStart("login", "klientin");
@@ -185,7 +257,8 @@ export default function Landing({ onStart, angemeldet = false, rechtsSeite }) {
           </h1>
           <p className="lp-lead">
             ilho ist dein KI-Begleiter in smile2go. ilho hört zu, stellt die richtigen Fragen und zeigt dir den
-            nächsten kleinen Schritt. Dazu kommen Tageskarte, Rituale, Journal und echte Coachinnen, alles in einer App.
+            nächsten kleinen Schritt. Dazu kommen Tageskarte, Journal, Rituale, zehn Themen von Trauer bis Neuanfang
+            und echte Coachinnen, alles in einer App.
           </p>
           <div className="lp-cta-reihe">
             <button className="lp-btn" onClick={registrieren}>{angemeldet ? "Zur App" : "Kostenlos starten"}</button>
@@ -247,22 +320,50 @@ export default function Landing({ onStart, angemeldet = false, rechtsSeite }) {
         </div>
       </section>
 
-      {/* ── Momente ── */}
+      {/* ── Einblick in die App (echte Screens) ── */}
       <section className="lp-sek lp-sand">
         <div className="lp-wrap">
           <div className="lp-kopfzeile">
-            <h2 className="lp-h2">Für die Momente dazwischen</h2>
-            <div className="lp-pfeile">
+            <div>
+              <h2 className="lp-h2">So sieht smile2go aus</h2>
+              <p className="lp-lead">Echte Bildschirme aus der App, so wie du sie auf deinem Handy siehst.</p>
+            </div>
+            <div className="lp-pfeile lp-nur-schmal">
               <button className="lp-pfeil" onClick={() => blaettern(-1)} aria-label="Zurück blättern"><Pfeil links /></button>
               <button className="lp-pfeil" onClick={() => blaettern(1)} aria-label="Weiter blättern"><Pfeil /></button>
             </div>
           </div>
-          <div className="lp-band" ref={momenteRef}>
-            {MOMENTE.map((m) => (
-              <article className="lp-moment" key={m.wann}>
-                <h3 className="lp-moment-wann">{m.wann}</h3>
-                <p className="lp-moment-was">{m.was}</p>
-              </article>
+          <div className="lp-band lp-screens" ref={einblickRef}>
+            {EINBLICKE.map((e) => (
+              <figure className="lp-screen" key={e.t}>
+                <div className="lp-screen-rahmen">
+                  <img src={e.bild} alt={`Bildschirm der App: ${e.t}`} width="585" height="1266" loading="lazy" decoding="async" />
+                </div>
+                <figcaption>
+                  <span className="lp-screen-titel">{e.t}</span>
+                  <span className="lp-screen-text">{e.s}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Themen & Bereiche (wie in der App) ── */}
+      <section className="lp-sek">
+        <div className="lp-wrap">
+          <h2 className="lp-h2 lp-mitte">Was beschäftigt dich gerade?</h2>
+          <p className="lp-lead lp-mitte-text">
+            smile2go sortiert nicht nach Funktionen, sondern nach dem, was gerade los ist. Jedes Thema bündelt passende
+            Übungen, Rituale und Impulse.
+          </p>
+          <div className="lp-themen">
+            {THEMEN.map((t) => (
+              <div className="lp-thema" key={t.t}>
+                <span className="lp-thema-icon" aria-hidden="true">{t.icon}</span>
+                <span className="lp-thema-titel">{t.t}</span>
+                <span className="lp-thema-text">{t.s}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -310,22 +411,37 @@ export default function Landing({ onStart, angemeldet = false, rechtsSeite }) {
         </div>
       </section>
 
-      {/* ── Funktionen ── */}
+      {/* ── Alle Funktionen, gruppiert wie in der App ── */}
       <section className="lp-sek lp-sand">
         <div className="lp-wrap">
           <h2 className="lp-h2">Mehr als ein Chat</h2>
-          <p className="lp-lead lp-abstand">Über 25 Funktionen begleiten dich durch den Tag. Vier davon:</p>
-          <div className="lp-kacheln">
-            {FUNKTIONEN.map((f) => (
-              <article className="lp-kachel" key={f.t}>
-                <img src={f.bild} alt="" loading="lazy" decoding="async" />
-                <div className="lp-kachel-text">
-                  <h3 className="lp-h3">{f.t}</h3>
-                  <p>{f.s}</p>
-                </div>
-              </article>
+          <p className="lp-lead lp-abstand">
+            {ANZAHL_FUNKTIONEN} Funktionen in sieben Bereichen, genau so sortiert wie in der App. Tipp auf einen Bereich:
+          </p>
+          <div className="lp-chips" role="tablist" aria-label="Bereiche der App">
+            {BEREICHE.map((b) => (
+              <button
+                key={b.g}
+                role="tab"
+                aria-selected={b.g === bereich}
+                className={"lp-chip" + (b.g === bereich ? " aktiv" : "")}
+                onClick={() => setBereich(b.g)}
+              >
+                {b.g} <span className="lp-chip-zahl">{b.items.length}</span>
+              </button>
             ))}
           </div>
+          <ul className="lp-funktionen" role="tabpanel" aria-label={aktiverBereich.g}>
+            {aktiverBereich.items.map(([icon, t, s]) => (
+              <li className="lp-funktion" key={t}>
+                <span className="lp-funktion-icon" aria-hidden="true">{icon}</span>
+                <span>
+                  <span className="lp-funktion-titel">{t}</span>
+                  <span className="lp-funktion-text">{s}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -583,13 +699,29 @@ const CSS = `
   padding: 4px 20px 24px; margin: 0 -20px; scrollbar-width: none;
 }
 .lp-band::-webkit-scrollbar { display: none; }
-.lp-moment {
-  flex: 0 0 min(82%, 330px); scroll-snap-align: start; min-height: 240px; gap: 22px;
-  display: flex; flex-direction: column; background: var(--karte); border-radius: 24px; padding: 30px 26px 26px;
-  box-shadow: 0 10px 30px rgba(58,42,34,.07);
+
+/* Echte App-Screens */
+.lp-screens { gap: 20px; }
+.lp-screen { flex: 0 0 min(66%, 250px); scroll-snap-align: start; margin: 0; }
+.lp-screen-rahmen {
+  border-radius: 34px; overflow: hidden; border: 7px solid #24170F; background: #24170F;
+  box-shadow: 0 22px 50px rgba(58,42,34,.22);
 }
-.lp-moment-wann { font-size: 1.32rem; line-height: 1.32; color: var(--espresso); }
-.lp-moment-was { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--linie); color: var(--tinte); line-height: 1.6; }
+.lp-screen-rahmen img { display: block; width: 100%; height: auto; }
+.lp-screen figcaption { display: grid; gap: 4px; padding: 16px 4px 0; }
+.lp-screen-titel { font-family: Georgia, serif; font-size: 1.12rem; line-height: 1.3; color: var(--espresso); }
+.lp-screen-text { font-size: .92rem; line-height: 1.55; color: var(--tinte); }
+
+/* Themen */
+.lp-mitte-text { text-align: center; margin: 16px auto 0; }
+.lp-themen { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 40px; }
+.lp-thema {
+  display: grid; gap: 4px; align-content: start; padding: 18px 16px; border-radius: 20px;
+  background: var(--karte); border: 1px solid var(--linie);
+}
+.lp-thema-icon { font-size: 1.5rem; line-height: 1.2; margin-bottom: 6px; }
+.lp-thema-titel { font-family: Georgia, serif; font-size: 1.08rem; line-height: 1.3; color: var(--espresso); }
+.lp-thema-text { font-size: .9rem; line-height: 1.45; color: var(--tinte); }
 
 /* Sonnenstrahl */
 .lp-strahl { background: linear-gradient(120deg, var(--gold) 0%, var(--rose) 100%); color: #fff; text-align: center; padding: 84px 0; }
@@ -611,23 +743,26 @@ const CSS = `
 .lp-liste strong { color: var(--hell); font-weight: 600; }
 .lp-schluss { margin-top: 28px; font-family: Georgia, serif; font-size: 1.25rem; line-height: 1.4; color: var(--goldhell); max-width: 28ch; text-wrap: balance; }
 
-/* Funktionen */
-.lp-kacheln {
-  display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px;
-  padding: 4px 20px 20px; margin: 36px -20px 0; scrollbar-width: none;
+/* Alle Funktionen */
+.lp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+.lp-chip {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+  font: 600 .92rem system-ui, -apple-system, sans-serif; color: var(--tinte);
+  background: transparent; border: 1.5px solid var(--linie);
 }
-.lp-kacheln::-webkit-scrollbar { display: none; }
-.lp-kachel {
-  position: relative; flex: 0 0 min(72%, 270px); scroll-snap-align: start; aspect-ratio: 3 / 4;
-  border-radius: 22px; overflow: hidden; background: var(--linie);
+.lp-chip.aktiv { color: var(--pflaume); background: var(--rosehell); border-color: var(--rose); }
+.lp-chip-zahl { font-weight: 700; font-size: .8rem; opacity: .75; }
+.lp-funktionen { list-style: none; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 10px; }
+.lp-funktion {
+  display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: 18px;
+  background: var(--karte); border: 1px solid var(--linie);
 }
-.lp-kachel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.lp-kachel-text {
-  position: absolute; left: 0; right: 0; bottom: 0; padding: 70px 20px 20px; color: #fff;
-  background: linear-gradient(180deg, rgba(34,21,15,0) 0%, rgba(34,21,15,.85) 100%);
+.lp-funktion-icon {
+  width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center;
+  font-size: 1.3rem; background: var(--creme);
 }
-.lp-kachel-text .lp-h3 { font-size: 1.18rem; margin-bottom: 4px; }
-.lp-kachel-text p { font-size: .92rem; line-height: 1.5; opacity: .92; }
+.lp-funktion-titel { display: block; font-weight: 700; color: var(--espresso); line-height: 1.35; }
+.lp-funktion-text { display: block; margin-top: 2px; font-size: .94rem; line-height: 1.5; color: var(--tinte); }
 
 /* Wochen-Karte */
 .lp-faecher { position: relative; height: 330px; display: flex; justify-content: center; align-items: center; }
@@ -711,6 +846,14 @@ const CSS = `
 
 @media (min-width: 640px) {
   .lp-vorteile { grid-template-columns: 1fr 1fr; }
+  .lp-themen { grid-template-columns: repeat(3, 1fr); }
+  .lp-funktionen { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1000px) {
+  .lp-themen { grid-template-columns: repeat(5, 1fr); }
+  .lp-funktionen { grid-template-columns: repeat(3, 1fr); }
+  .lp-screens { display: grid; grid-template-columns: repeat(5, 1fr); overflow: visible; margin: 0; padding: 4px 0 0; }
+  .lp-nur-schmal { display: none; }
 }
 @media (max-width: 520px) {
   .lp-nur-breit { display: none; }
@@ -726,7 +869,6 @@ const CSS = `
   .lp-split-mitte { align-items: center; }
   .lp-video-text { text-align: left; }
   .lp-vorteile { grid-template-columns: repeat(3, 1fr); }
-  .lp-kacheln { display: grid; grid-template-columns: repeat(4, 1fr); overflow: visible; padding: 0; margin: 48px 0 0; }
   .lp-faecher { height: 430px; }
   .lp-faecher img { width: 196px; }
   .lp-faecher img:nth-child(1) { transform: translateX(-136px) rotate(-11deg); }
