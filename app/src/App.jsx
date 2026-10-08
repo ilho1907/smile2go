@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
+import Landing from "./Landing";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
@@ -751,8 +752,8 @@ const Btn = ({ children, onClick, ghost, full, small, disabled }) => (
 
 /* ── Auth ── */
 
-function Auth({ onLogin }) {
-  const [mode, setMode] = useState("login");
+function Auth({ onLogin, startMode = "login", startRolle = "klientin", onBack }) {
+  const [mode, setMode] = useState(startMode);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [dsgvo, setDsgvo] = useState(false);
@@ -761,7 +762,7 @@ function Auth({ onLogin }) {
   const [optin, setOptin] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const [rolle, setRolle] = useState("klientin");
+  const [rolle, setRolle] = useState(startRolle);
 
   const echterBackend = !!supabase;
 
@@ -869,7 +870,13 @@ function Auth({ onLogin }) {
     );
 
   return (
-    <div style={{ padding: "48px 24px 40px" }}>
+    <div style={{ padding: onBack ? "18px 24px 40px" : "48px 24px 40px" }}>
+      {onBack && (
+        <button onClick={onBack} style={{
+          background: "none", border: "none", cursor: "pointer", padding: "8px 0", marginBottom: 14,
+          fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, color: C.ink,
+        }}>‹ Zur Startseite</button>
+      )}
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <Eyebrow>smile2go · München</Eyebrow>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 40, color: C.espresso, letterSpacing: 1 }}>
@@ -9687,8 +9694,32 @@ function PasswortNeu({ onFertig }) {
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
 const TITLES = { recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
+// Öffentliche Startseite (Landing.jsx): nur für Besucherinnen ohne gespeicherte Anmeldung.
+// Nicht in der installierten App und nicht, während ein Login-/Bestätigungs-Link verarbeitet wird —
+// sonst blitzt die Startseite auf, bevor die Sitzung wiederhergestellt ist.
+function landingZeigen() {
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true) return false;
+    const h = window.location.hash || "";
+    const q = window.location.search || "";
+    if (/access_token=|type=(signup|recovery|magiclink|invite)|passwort-neu/.test(h) || /[?&](code|pw)=/.test(q)) return false;
+    const s = JSON.parse(localStorage.getItem("s2g_state") || "null");
+    if (s && s.user) return false;
+    for (let i = 0; i < localStorage.length; i++) {
+      if (/^sb-.+-auth-token$/.test(localStorage.key(i) || "")) return false;
+    }
+  } catch (e) { /* ohne localStorage: Startseite zeigen */ }
+  return true;
+}
+// Unter /start ist die Startseite immer erreichbar, auch mit Anmeldung.
+const landingAdresse = () => typeof window !== "undefined" && /^\/start\/?$/.test(window.location.pathname);
+
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
+  const [landing, setLanding] = useState(landingZeigen);
+  const [landingDirekt, setLandingDirekt] = useState(landingAdresse);
+  const [authStart, setAuthStart] = useState({ mode: "login", rolle: "klientin" });
   const [bindung, setBindung] = useState(null);
   const [istCoach, setIstCoach] = useState(false);
   const [cloudAus, setCloudAus] = useState(false);
@@ -9977,6 +10008,28 @@ export default function IlhoApp() {
     { k: "mehr", icon: "✦", t: "Mehr" },
   ];
 
+  // Öffentliche Startseite: für Besucherinnen ohne Konto unter "/", für alle unter "/start".
+  // Alle Knöpfe führen von dort zur Anmeldung bzw. Registrierung — oder, wer schon
+  // angemeldet ist, direkt in die App.
+  if (!pwReset && (landingDirekt || (!user && landing))) {
+    const zurApp = (mode = "login", rolle = "klientin") => {
+      if (landingDirekt) {
+        try { window.history.replaceState({}, "", "/"); } catch (e) { /* egal */ }
+        setLandingDirekt(false);
+      }
+      setAuthStart({ mode, rolle });
+      setLanding(false);
+      window.scrollTo(0, 0);
+    };
+    return (
+      <Landing
+        angemeldet={!!user}
+        onStart={zurApp}
+        rechtsSeite={(k) => (k === "impressum" ? <Impressum /> : <Datenschutz />)}
+      />
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: C.beige, display: "flex", justifyContent: "center", fontSize: 16 }}>
       <style>{`
@@ -10009,7 +10062,7 @@ export default function IlhoApp() {
             <Card><ZweiFaktorAbfrage C={C} faktorId={mfaFaktor} onOk={() => setMfaFaktor(null)} onAbbruch={() => { supabase.auth.signOut(); setUser(null); setMfaFaktor(null); }} /></Card>
           </div>
         ) : !user ? (
-          <div style={{ animation: "fadeUp .5s ease" }}><Auth onLogin={(mail, zeichen, ilho) => { setUser(mail); if (zeichen) setMeinZeichen(zeichen); if (typeof ilho === "boolean") setIlhoAktiv(ilho); }} /></div>
+          <div style={{ animation: "fadeUp .5s ease" }}><Auth startMode={authStart.mode} startRolle={authStart.rolle} onBack={() => { setLanding(true); window.scrollTo(0, 0); }} onLogin={(mail, zeichen, ilho) => { setUser(mail); if (zeichen) setMeinZeichen(zeichen); if (typeof ilho === "boolean") setIlhoAktiv(ilho); }} /></div>
         ) : (
           <>
             {/* Zurück-Leiste für Unterseiten */}
