@@ -1,0 +1,92 @@
+/* ─────────────────────────────────────────────
+   smile2go · Premium-Look
+   Nur Optik: Schrift, Tiefe, Licht, Bewegung.
+   Inhalte, Farben (C-Palette) und Logik bleiben unverändert.
+   Entfernen = Import in main.jsx löschen → alter Look ist zurück.
+   ───────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --s2g-gold: #C9963C;
+  --s2g-rose: #D96E8B;
+  --s2g-shadow: 0 16px 34px -22px rgba(110, 80, 45, 0.38), 0 2px 6px -2px rgba(110, 80, 45, 0.08);
+  --s2g-shadow-hover: 0 22px 40px -22px rgba(110, 80, 45, 0.45), 0 3px 8px -2px rgba(110, 80, 45, 0.1);
+}
+
+html, body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: hidden; }
+* { -webkit-tap-highlight-color: transparent; }
+
+/* ── Schrift: system-ui → Inter, Georgia → Fraunces ── */
+body, input, textarea, select, button { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+[style*="system-ui"] { font-family: 'Inter', system-ui, -apple-system, sans-serif !important; }
+[style*="Georgia"] {
+  font-family: 'Fraunces', Georgia, serif !important;
+  font-optical-sizing: auto;
+  letter-spacing: -0.005em;
+}
+
+/* ── Bühne hinter der App (Desktop): warmes Licht + feines Punktraster ── */
+.s2g-stage {
+  background:
+    radial-gradient(60% 50% at 15% 25%, rgba(201, 150, 60, 0.16) 0%, rgba(201, 150, 60, 0) 70%),
+    radial-gradient(55% 45% at 85% 80%, rgba(217, 110, 139, 0.14) 0%, rgba(217, 110, 139, 0) 70%),
+    radial-gradient(70% 40% at 50% 0%, rgba(230, 190, 108, 0.22) 0%, rgba(230, 190, 108, 0) 70%),
+    #F5E9DB !important;
+  position: relative;
+}
+.s2g-stage::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(168, 120, 44, 0.16) 1.1px, transparent 1.1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(80% 70% at 50% 40%, #000 20%, transparent 100%);
+  mask-image: radial-gradient(80% 70% at 50% 40%, #000 20%, transparent 100%);
+}
+.s2g-shell {
+  background:
+    radial-gradient(120% 40% at 50% 0%, rgba(230, 190, 108, 0.16) 0%, rgba(230, 190, 108, 0) 60%),
+    #FBF6EE !important;
+  box-shadow: 0 40px 100px -30px rgba(90, 60, 30, 0.35), 0 0 0 1px rgba(235, 216, 198, 0.7) !important;
+  overflow-x: clip;
+}
+
+/* ── Karten: weiche Tiefe ── */
+.s2g-card { transition: transform 0.2s ease, box-shadow 0.25s ease; max-width: 100%; box-sizing: border-box; }
+.s2g-card[data-klickbar="1"]:hover { transform: translateY(-2px); box-shadow: var(--s2g-shadow-hover) !important; }
+.s2g-card[data-klickbar="1"]:active { transform: translateY(0) scale(0.99); }
+
+/* ── Buttons: taktiles Feedback ── */
+button { transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease; }
+button:not(:disabled):active { transform: scale(0.97); }
+.s2g-btn:not(:disabled):hover { filter: brightness(1.05); }
+.s2g-btn { max-width: 100%; }
+
+/* ── Eingabefelder: nie breiter als ihr Platz + goldener Fokus-Ring ── */
+input, textarea, select { box-sizing: border-box; max-width: 100%; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+textarea:focus, select:focus {
+  border-color: var(--s2g-gold) !important;
+  box-shadow: 0 0 0 4px rgba(201, 150, 60, 0.16) !important;
+  outline: none !important;
+}
+::placeholder { color: #B5A391; }
+
+/* ── Navigation: Glas-Effekt ── */
+.s2g-nav {
+  background: rgba(255, 255, 254, 0.86) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 -12px 30px -22px rgba(90, 60, 30, 0.35);
+}
+
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ── Sanftes Einblenden von Karten ── */
+@keyframes s2gRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.s2g-card { animation: s2gRise 0.55s cubic-bezier(0.22, 0.9, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .s2g-card { animation: none; }
+  button:not(:disabled):active { transform: none; }
+}

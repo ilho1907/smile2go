@@ -566,11 +566,14 @@ function Hoerspur({ src, titel = "Anhören", beiEnde, dunkel = false }) {
 const Card = ({ children, style, onClick }) => (
   <div
     onClick={onClick}
+    className="s2g-card"
+    data-klickbar={onClick ? "1" : undefined}
     style={{
-      background: C.card,
+      background: `linear-gradient(165deg, #FFFFFF 0%, ${C.card} 55%, #FFFCF7 100%)`,
       border: `1px solid ${C.line}`,
-      borderRadius: 18,
+      borderRadius: 22,
       padding: 18,
+      boxShadow: "0 16px 34px -22px rgba(110,80,45,.38), 0 2px 6px -2px rgba(110,80,45,.08)",
       cursor: onClick ? "pointer" : "default",
       ...style,
     }}
@@ -717,27 +720,31 @@ function TeilenBtn({ eyebrow, titel, text, klein = true, beschriftung = "Teilen"
 }
 
 const Eyebrow = ({ children, color = C.gold }) => (
-  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2.5, textTransform: "uppercase", color, fontWeight: 600, marginBottom: 6 }}>
+  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2.8, textTransform: "uppercase", color, fontWeight: 600, marginBottom: 7 }}>
     {children}
   </div>
 );
 
 const H = ({ children, size = 22, style }) => (
-  <div style={{ fontFamily: "Georgia, serif", fontSize: size, color: C.espresso, lineHeight: 1.25, ...style }}>{children}</div>
+  <div style={{ fontFamily: "Georgia, serif", fontSize: size, fontWeight: 500, color: C.espresso, lineHeight: 1.2, letterSpacing: "-0.01em", ...style }}>{children}</div>
 );
 
 const Btn = ({ children, onClick, ghost, full, small, disabled }) => (
   <button
     onClick={onClick}
     disabled={disabled}
+    className="s2g-btn"
     style={{
       fontFamily: "system-ui, sans-serif",
       fontSize: small ? 13 : 15.5,
       fontWeight: 600,
       padding: small ? "10px 16px" : "15px 22px",
-      borderRadius: 14,
+      borderRadius: 999,
       border: ghost ? `1.5px solid ${C.gold}` : "none",
-      background: ghost ? "transparent" : `linear-gradient(135deg, ${C.gold}, ${C.rose})`,
+      background: ghost ? "rgba(255,255,255,.7)" : `linear-gradient(120deg, ${C.gold}, ${C.rose})`,
+      boxShadow: ghost
+        ? "0 10px 24px -16px rgba(201,150,60,.6), inset 0 1px 0 #fff"
+        : "0 14px 28px -12px rgba(217,110,139,.6), 0 2px 6px -2px rgba(160,90,60,.3), inset 0 1px 0 rgba(255,255,255,.35)",
       color: ghost ? C.gold : "#fff",
       width: full ? "100%" : "auto",
       cursor: disabled ? "wait" : "pointer",
@@ -4565,7 +4572,7 @@ function CoachVerbinden({ onVerbunden, kompakt = false }) {
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           onKeyDown={(e) => e.key === "Enter" && einloesen()}
           placeholder="z. B. S2G-2026"
-          style={{ flex: 1, padding: "13px 14px", fontSize: 15, letterSpacing: 1, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }}
+          style={{ flex: 1, minWidth: 0, padding: "13px 14px", fontSize: 15, letterSpacing: 1, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }}
         />
         <Btn small onClick={einloesen} disabled={busy}>{busy ? "…" : "Verbinden"}</Btn>
       </div>
@@ -9978,7 +9985,7 @@ export default function IlhoApp() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: C.beige, display: "flex", justifyContent: "center", fontSize: 16 }}>
+    <div className="s2g-stage" style={{ minHeight: "100vh", background: C.beige, display: "flex", justifyContent: "center", fontSize: 16 }}>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
@@ -9987,7 +9994,7 @@ export default function IlhoApp() {
         @keyframes breathe { 0%,100% { transform: scale(0.58); } 50% { transform: scale(1); } }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
       `}</style>
-      <div style={{ width: "100%", maxWidth: 430, background: C.cream, minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
+      <div className="s2g-shell" style={{ width: "100%", maxWidth: 430, background: C.cream, minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
         {cloudAus && (
           <div style={{
             position: "sticky", top: 0, zIndex: 40,
@@ -10127,7 +10134,7 @@ export default function IlhoApp() {
               {tab === "rueckblick" && <Jahresrueckblick entries={entries} qigong={qigong} dank={dank} losgelassen={losgelassen} punkte={punkte} streak={streak} drawn={drawn} reisen={reisen} feste={feste} />}
             </div>
 
-            <nav style={{
+            <nav className="s2g-nav" style={{
               position: "fixed", bottom: 0, left: 0, right: 0, margin: "0 auto", maxWidth: 430,
               background: C.card, borderTop: `1px solid ${C.line}`,
               display: "flex", justifyContent: "space-around", alignItems: "flex-end",
@@ -10150,7 +10157,7 @@ export default function IlhoApp() {
                   );
                 return (
                   <button key={n.k} onClick={() => goRoot(n.k)} style={{
-                    background: "none", border: "none", cursor: "pointer",
+                    background: active ? "rgba(217,110,139,.1)" : "none", borderRadius: 16, border: "none", cursor: "pointer",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
                     minWidth: 56, minHeight: 50, padding: "6px 4px",
                     color: active ? C.plum : C.ink, opacity: active ? 1 : 0.7,

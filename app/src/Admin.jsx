@@ -32,7 +32,7 @@ const Eyebrow = ({ children, color = C.gold }) => (
 );
 
 const Card = ({ children, style }) => (
-  <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, ...style }}>{children}</div>
+  <div className="s2g-card" style={{ background: `linear-gradient(165deg, #FFFFFF 0%, ${C.card} 55%, #FFFCF7 100%)`, border: `1px solid ${C.line}`, borderRadius: 20, padding: 18, boxShadow: "0 16px 34px -22px rgba(110,80,45,.38), 0 2px 6px -2px rgba(110,80,45,.08)", ...style }}>{children}</div>
 );
 
 const Badge = ({ children, tone }) => {

@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import "./premium.css";
 import App from "./App.jsx";
 import Admin from "./Admin.jsx";
 import Coach from "./Coach.jsx";

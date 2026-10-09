@@ -36,13 +36,14 @@ const Eyebrow = ({ children, color = C.gold }) => (
 );
 
 const Card = ({ children, style }) => (
-  <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18, ...style }}>{children}</div>
+  <div className="s2g-card" style={{ background: `linear-gradient(165deg, #FFFFFF 0%, ${C.card} 55%, #FFFCF7 100%)`, border: `1px solid ${C.line}`, borderRadius: 20, padding: 18, boxShadow: "0 16px 34px -22px rgba(110,80,45,.38), 0 2px 6px -2px rgba(110,80,45,.08)", ...style }}>{children}</div>
 );
 
 const Btn = ({ children, onClick, ghost, small, disabled, ton }) => (
-  <button onClick={onClick} disabled={disabled} style={{
+  <button onClick={onClick} disabled={disabled} className="s2g-btn" style={{
     fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: small ? 13 : 14.5,
-    padding: small ? "9px 14px" : "12px 20px", borderRadius: 12, cursor: disabled ? "default" : "pointer",
+    padding: small ? "9px 16px" : "12px 22px", borderRadius: 999, cursor: disabled ? "default" : "pointer",
+    boxShadow: ghost ? "none" : "0 12px 24px -12px rgba(217,110,139,.55), inset 0 1px 0 rgba(255,255,255,.3)",
     border: ghost ? `1.5px solid ${C.line}` : "none",
     background: ghost ? "transparent" : ton === "rot" ? C.rot : `linear-gradient(135deg, ${C.gold}, ${C.rose})`,
     color: ghost ? C.plum : "#fff", opacity: disabled ? 0.5 : 1, minHeight: 40,
