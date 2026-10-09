@@ -27,19 +27,19 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
    ───────────────────────────────────────────── */
 
 const C = {
-  cream: "#FBF6EE",
-  card: "#FFFFFE",
-  beige: "#F5E9DB",
-  line: "#EBD8C6",
-  gold: "#C9963C",
-  goldSoft: "#E6BE6C",
-  goldPale: "#FAEDD2",
-  espresso: "#3A2A22",
-  ink: "#6B5443",
+  cream: "#F4EDE2",
+  card: "#FFFDF9",
+  beige: "#ECE2D1",
+  line: "#E3D6C2",
+  gold: "#C1913C",
+  goldSoft: "#D9B26A",
+  goldPale: "#F6EAD3",
+  espresso: "#3A332B",
+  ink: "#6F6355",
   sage: "#93B07F",
-  rose: "#D96E8B",
-  roseSoft: "#F8DCE3",
-  plum: "#8E4A63",
+  rose: "#C2526E",
+  roseSoft: "#F5DBE1",
+  plum: "#8A3F5A",
 };
 
 const MOTIVATION = [
@@ -165,7 +165,7 @@ const GOETTINNEN = [
   { n: "Kali", b: "Loslassen", sub: "Urkraft der Transformation", hue: ["#6E3A52", "#2E1F33"], sym: "flamme", txt: "Heute öffnet sich eine Tür, sobald du aufhörst, an der falschen festzuhalten." },
   { n: "Athene", b: "Klarheit", sub: "Göttin der Weisheit", hue: ["#5C7A99", "#2E4A66"], sym: "auge", txt: "Heute ruft dich dein höheres Selbst nicht lauter, sondern klarer. Achte auf das, was sich friedlich und wahr anfühlt." },
   { n: "Saraswati", b: "Klarheit", sub: "Göttin der Erkenntnis", hue: ["#7A99B8", "#4A6E8E"], sym: "welle", txt: "Deine Klarheit wird stärker, wenn du aufhörst, dich für die Wahrheit deines Herzens zu entschuldigen." },
-  { n: "Aphrodite", b: "Annahme", sub: "Göttin der Liebe", hue: ["#D96E8B", "#A8455E"], sym: "herz", txt: "Dein Herz weiß längst, was dein Verstand noch verhandeln möchte. Höre heute leiser, aber tiefer." },
+  { n: "Aphrodite", b: "Annahme", sub: "Göttin der Liebe", hue: ["#C2526E", "#A8455E"], sym: "herz", txt: "Dein Herz weiß längst, was dein Verstand noch verhandeln möchte. Höre heute leiser, aber tiefer." },
   { n: "Kuan Yin", b: "Annahme", sub: "Göttin des Mitgefühls", hue: ["#C98BA0", "#8E5A78"], sym: "lotus", txt: "Was du fühlst, will nicht gegen dich arbeiten. Es will gesehen, gehalten und verwandelt werden." },
   { n: "Artemis", b: "Fokus", sub: "Göttin der Zielklarheit", hue: ["#6E8B6A", "#2E4A38"], sym: "pfeil", txt: "Du darfst heute wählen: alte Angst oder neue Führung. Beides beginnt in deinem Inneren." },
   { n: "Hestia", b: "Fokus", sub: "Hüterin der inneren Mitte", hue: ["#8E7A5C", "#5C4A33"], sym: "feuer", txt: "Die Antwort kommt nicht aus Druck. Sie kommt, wenn dein Nervensystem wieder Frieden spürt." },
@@ -177,11 +177,11 @@ const GOETTINNEN = [
   { n: "Pachamama", b: "Schöpfung", sub: "Mutter Erde", hue: ["#C57A44", "#5C7A3E"], sym: "sonne", txt: "Du musst nicht alles selbst tragen. Auch du darfst dich manchmal einfach tragen lassen." },
   { n: "Danu", b: "Schöpfung", sub: "Urmutter der Flüsse", hue: ["#7FB5C9", "#3E6C8E"], sym: "welle", txt: "Nicht jeder Umweg ist ein Fehler im Fluss. Manchmal formt gerade er das Ufer, das dich später trägt." },
   // — Fülle —
-  { n: "Lakshmi", b: "Fülle", sub: "Göttin des Reichtums", hue: ["#E8B64C", "#D96E8B"], sym: "lotus", txt: "Reichtum beginnt mit dem Blick, der sieht, was schon da ist, bevor er nach mehr fragt." },
+  { n: "Lakshmi", b: "Fülle", sub: "Göttin des Reichtums", hue: ["#E8B64C", "#C2526E"], sym: "lotus", txt: "Reichtum beginnt mit dem Blick, der sieht, was schon da ist, bevor er nach mehr fragt." },
   { n: "Demeter", b: "Fülle", sub: "Göttin der Ernte", hue: ["#E0B040", "#B8842E"], sym: "sonne", txt: "Was du heute nährst, wird morgen stärker. Wähle bewusst, welche Realität deine Energie bekommt." },
   { n: "Ops", b: "Fülle", sub: "Göttin des Überflusses", hue: ["#E0A040", "#B84C3C"], sym: "sonne", txt: "Überfluss ist kein Ziel in der Ferne. Er beginnt in dem Moment, in dem du aufhörst zu vergleichen." },
   { n: "Rosmerta", b: "Fülle", sub: "Göttin der Fülle", hue: ["#D9A441", "#5C8E4A"], sym: "rad", txt: "Was für dich bestimmt ist, braucht keine Selbstverleugnung. Es erkennt dich, wenn du echt wirst." },
-  { n: "Juno Moneta", b: "Fülle", sub: "Hüterin des Wohlstands", hue: ["#C9963C", "#2E5C8E"], sym: "rad", txt: "Dein Wert war nie verhandelbar. Wohlstand darf leicht zu dir kommen, wenn du aufhörst, ihn dir zu erschweren." },
+  { n: "Juno Moneta", b: "Fülle", sub: "Hüterin des Wohlstands", hue: ["#C1913C", "#2E5C8E"], sym: "rad", txt: "Dein Wert war nie verhandelbar. Wohlstand darf leicht zu dir kommen, wenn du aufhörst, ihn dir zu erschweren." },
   // — Loslassen —
   { n: "Hekate", b: "Loslassen", sub: "Hüterin der Schwellen", hue: ["#8E6EA8", "#3E2E5C"], sym: "mond", txt: "Was du loslässt, verlierst du nicht immer. Manchmal gibst du nur zurück, was nie wirklich zu deinem Weg gehört hat." },
   { n: "Morrigan", b: "Loslassen", sub: "Göttin des Wandels", hue: ["#6E5C6E", "#B83C3C"], sym: "auge", txt: "Heute darfst du aus der alten Rolle aussteigen. Du bist nicht mehr die Frau, die alles tragen muss." },
@@ -190,21 +190,21 @@ const GOETTINNEN = [
   { n: "Ereshkigal", b: "Loslassen", sub: "Herrin der Tiefe", hue: ["#8E3C3C", "#2E1E1E"], sym: "feuer", txt: "Was dich triggert, zeigt dir nicht deine Schwäche. Es zeigt dir den Ort, an dem deine Heilung ruft." },
   // — Klarheit —
   { n: "Sophia", b: "Klarheit", sub: "Göttliche Weisheit", hue: ["#E6D08C", "#8E7AA8"], sym: "sonne", txt: "Heute darfst du aufhören, dich selbst zu überholen. Deine Seele kennt den Weg, auch wenn dein Kopf noch nach Sicherheit sucht." },
-  { n: "Seshat", b: "Klarheit", sub: "Göttin des Wissens", hue: ["#4A8E6E", "#C9963C"], sym: "auge", txt: "Dein nächster Schritt muss nicht perfekt sein. Er muss nur wahr sein." },
-  { n: "Minerva", b: "Klarheit", sub: "Göttin der Strategie", hue: ["#5C7A9E", "#C9963C"], sym: "auge", txt: "Kluge Klarheit entsteht nicht im Kopf allein. Sie entsteht, wenn Verstand und Herz sich einig sind." },
+  { n: "Seshat", b: "Klarheit", sub: "Göttin des Wissens", hue: ["#4A8E6E", "#C1913C"], sym: "auge", txt: "Dein nächster Schritt muss nicht perfekt sein. Er muss nur wahr sein." },
+  { n: "Minerva", b: "Klarheit", sub: "Göttin der Strategie", hue: ["#5C7A9E", "#C1913C"], sym: "auge", txt: "Kluge Klarheit entsteht nicht im Kopf allein. Sie entsteht, wenn Verstand und Herz sich einig sind." },
   { n: "Metis", b: "Klarheit", sub: "Titanin der Weisheit", hue: ["#3E8E8E", "#8EA0A8"], sym: "welle", txt: "Deine leiseste Ahnung ist oft klarer als jede laute Meinung. Vertraue ihr." },
   { n: "Nisaba", b: "Klarheit", sub: "Göttin der Schrift", hue: ["#D9B441", "#2E4C8E"], sym: "sonne", txt: "Was du klar benennst, verliert seine Macht über dich. Sprich aus, was du wirklich siehst." },
   // — Annahme —
   { n: "Hathor", b: "Annahme", sub: "Göttin der Freude & Liebe", hue: ["#3FA9A0", "#E0A45C"], sym: "sonne", txt: "Du bist nicht zu viel. Du bist nur nicht mehr bereit, dich zu halbieren, damit andere sich sicher fühlen." },
-  { n: "Tara", b: "Annahme", sub: "Göttin des Mitgefühls", hue: ["#3E9E6E", "#C9963C"], sym: "lotus", txt: "Du musst nicht alles allein durchstehen. Mitgefühl beginnt, wenn du dir selbst die Hand reichst." },
-  { n: "Parvati", b: "Annahme", sub: "Göttin der Hingabe", hue: ["#D96E8B", "#E0A45C"], sym: "herz", txt: "Du darfst weich bleiben, auch wenn du Grenzen setzt. Deine Sanftheit ist keine Einladung zur Selbstaufgabe." },
+  { n: "Tara", b: "Annahme", sub: "Göttin des Mitgefühls", hue: ["#3E9E6E", "#C1913C"], sym: "lotus", txt: "Du musst nicht alles allein durchstehen. Mitgefühl beginnt, wenn du dir selbst die Hand reichst." },
+  { n: "Parvati", b: "Annahme", sub: "Göttin der Hingabe", hue: ["#C2526E", "#E0A45C"], sym: "herz", txt: "Du darfst weich bleiben, auch wenn du Grenzen setzt. Deine Sanftheit ist keine Einladung zur Selbstaufgabe." },
   { n: "Oshun", b: "Annahme", sub: "Göttin der Liebe & Süße", hue: ["#E0B040", "#3FA9A0"], sym: "welle", txt: "Lass dir heute etwas Süßes gönnen — ein Gedanke, ein Moment, eine Geste, die nur dir gehört." },
-  { n: "Venus", b: "Annahme", sub: "Göttin der Schönheit", hue: ["#E0A0B0", "#C9963C"], sym: "herz", txt: "Du bist nicht hier, um dich zu beweisen. Du bist hier, um dich zu erinnern." },
-  { n: "Radha", b: "Annahme", sub: "Göttin der reinen Liebe", hue: ["#7FA0C9", "#D96E8B"], sym: "lotus", txt: "Manche Antworten kommen erst, wenn du aufhörst, dich selbst zu verlassen, um geliebt zu werden." },
+  { n: "Venus", b: "Annahme", sub: "Göttin der Schönheit", hue: ["#E0A0B0", "#C1913C"], sym: "herz", txt: "Du bist nicht hier, um dich zu beweisen. Du bist hier, um dich zu erinnern." },
+  { n: "Radha", b: "Annahme", sub: "Göttin der reinen Liebe", hue: ["#7FA0C9", "#C2526E"], sym: "lotus", txt: "Manche Antworten kommen erst, wenn du aufhörst, dich selbst zu verlassen, um geliebt zu werden." },
   // — Fokus —
   { n: "Diana", b: "Fokus", sub: "Göttin der Jagd", hue: ["#9EA8B5", "#3E5C3E"], sym: "mond", txt: "Die Kraft, nach der du suchst, kommt nicht durch Kontrolle. Sie kommt durch Vertrauen in deinen eigenen Weg." },
   { n: "Durga", b: "Fokus", sub: "Göttin der Kraft", hue: ["#C93C3C", "#E0A040"], sym: "feuer", txt: "Du musst nicht stärker werden. Du darfst dich daran erinnern, wie viel Kraft längst in dir wohnt." },
-  { n: "Nike", b: "Fokus", sub: "Göttin des Sieges", hue: ["#E6E0C8", "#C9963C"], sym: "pfeil", txt: "Der nächste Durchbruch beginnt nicht im Außen. Er beginnt in dem Moment, in dem du dir selbst wieder glaubst." },
+  { n: "Nike", b: "Fokus", sub: "Göttin des Sieges", hue: ["#E6E0C8", "#C1913C"], sym: "pfeil", txt: "Der nächste Durchbruch beginnt nicht im Außen. Er beginnt in dem Moment, in dem du dir selbst wieder glaubst." },
   { n: "Vesta", b: "Fokus", sub: "Hüterin des heiligen Feuers", hue: ["#E0A040", "#B8481E"], sym: "flamme", txt: "Deine Energie ist kostbar. Gib sie nicht länger an Gedanken, Menschen oder Geschichten, die dich kleiner machen." },
   { n: "Skadi", b: "Fokus", sub: "Göttin der Winterklarheit", hue: ["#9EC9D9", "#5C7A8E"], sym: "mond", txt: "Manchmal ist der mutigste Schritt nicht nach vorne, sondern zurück in deinen eigenen Körper." },
   { n: "Sekhmet", b: "Fokus", sub: "Göttin der Löwinnenkraft", hue: ["#C93C3C", "#E0A040"], sym: "sonne", txt: "Deine Grenze ist keine Härte. Sie ist die Würde, die dein Feuer schützt." },
@@ -516,7 +516,7 @@ function Hoerspur({ src, titel = "Anhören", beiEnde, dunkel = false }) {
   if (fehler) return null;
 
   const rand = dunkel ? "#5A473C" : C.line;
-  const schrift = dunkel ? "#F5E9DB" : C.espresso;
+  const schrift = dunkel ? "#ECE2D1" : C.espresso;
   const leise = dunkel ? "#C0AC98" : C.ink;
 
   return (
@@ -641,7 +641,7 @@ async function erzeugeTeilbild({ eyebrow, titel, text, fuss = "smile2go" }) {
   const x = c.getContext("2d");
 
   const g = x.createLinearGradient(0, 0, B, H);
-  g.addColorStop(0, "#FBF6EE"); g.addColorStop(0.55, "#F7E7DC"); g.addColorStop(1, "#EEDCC6");
+  g.addColorStop(0, "#F4EDE2"); g.addColorStop(0.55, "#F7E7DC"); g.addColorStop(1, "#EEDCC6");
   x.fillStyle = g; x.fillRect(0, 0, B, H);
 
   // heller Kartenkörper
@@ -657,7 +657,7 @@ async function erzeugeTeilbild({ eyebrow, titel, text, fuss = "smile2go" }) {
 
   x.textAlign = "center";
 
-  x.fillStyle = "#C9963C";
+  x.fillStyle = "#C1913C";
   x.font = "600 30px system-ui, sans-serif";
   x.fillText(String(eyebrow || "").toUpperCase(), M, ky + 110);
 
@@ -743,8 +743,8 @@ const Btn = ({ children, onClick, ghost, full, small, disabled }) => (
       border: ghost ? `1.5px solid ${C.gold}` : "none",
       background: ghost ? "rgba(255,255,255,.7)" : `linear-gradient(120deg, ${C.gold}, ${C.rose})`,
       boxShadow: ghost
-        ? "0 10px 24px -16px rgba(201,150,60,.6), inset 0 1px 0 #fff"
-        : "0 14px 28px -12px rgba(217,110,139,.6), 0 2px 6px -2px rgba(160,90,60,.3), inset 0 1px 0 rgba(255,255,255,.35)",
+        ? "0 10px 24px -16px rgba(193,145,60,.6), inset 0 1px 0 #fff"
+        : "0 14px 28px -12px rgba(194,82,110,.6), 0 2px 6px -2px rgba(160,90,60,.3), inset 0 1px 0 rgba(255,255,255,.35)",
       color: ghost ? C.gold : "#fff",
       width: full ? "100%" : "auto",
       cursor: disabled ? "wait" : "pointer",
@@ -944,7 +944,7 @@ function Auth({ onLogin }) {
                   padding: "12px 13px", borderRadius: 14, minHeight: 78,
                   border: `1.5px solid ${aktiv ? C.rose : C.line}`,
                   background: aktiv ? "#fff" : C.card,
-                  boxShadow: aktiv ? "0 2px 10px rgba(217,110,139,.15)" : "none",
+                  boxShadow: aktiv ? "0 2px 10px rgba(194,82,110,.15)" : "none",
                 }}>
                   <div style={{ fontSize: 19, marginBottom: 4 }}>{r.e}</div>
                   <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: aktiv ? C.plum : C.espresso, lineHeight: 1.3 }}>{r.t}</div>
@@ -1579,7 +1579,7 @@ function Horoskop({ horo, setHoro, energie, addPunkte, setMeinZeichen, meinZeich
             const di2 = dayIndex();
             const idx = STERNZEICHEN.findIndex((z) => z.n === horo.sign.n);
             const zahl = ((di2 * 7 + idx * 3) % 21) + 1;
-            const farben = [["Gold", "#C9963C"], ["Rosé", "#D96E8B"], ["Salbeigrün", "#93B07F"], ["Himmelblau", "#7A99B8"], ["Lavendel", "#9B8AC4"], ["Pflaume", "#8E4A63"], ["Creme", "#EFE0C8"]];
+            const farben = [["Gold", "#C1913C"], ["Rosé", "#C2526E"], ["Salbeigrün", "#93B07F"], ["Himmelblau", "#7A99B8"], ["Lavendel", "#9B8AC4"], ["Pflaume", "#8E4A63"], ["Creme", "#EFE0C8"]];
             const gf = farben[(di2 + idx) % farben.length];
             return (
               <Card style={{ marginTop: 12, background: C.goldPale, border: `1px solid ${C.goldSoft}` }}>
@@ -2396,7 +2396,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
               onChange={(e) => setDank(dank.map((x, j) => (j === i ? e.target.value : x)))}
               style={{
                 width: "100%", border: "none", outline: "none", resize: "none",
-                background: "repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, rgba(201,150,60,.38) 31px, rgba(201,150,60,.38) 32px)",
+                background: "repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, rgba(193,145,60,.38) 31px, rgba(193,145,60,.38) 32px)",
                 fontFamily: '"Snell Roundhand", "Savoye LET", "Bradley Hand", "Segoe Script", cursive',
                 fontSize: 19, lineHeight: "32px", color: "#4A3320",
                 padding: "0 2px", caretColor: C.plum,
@@ -4902,7 +4902,7 @@ const VORLAGEN = [
   { icon: "🧾", t: "Einzelsession", typ: "Rechnung", pos: [{ t: "1:1 Coaching-Session (60 Min)", p: "120" }], wunsch: "Kurz, herzlich, mit Dank." },
   { icon: "✨", t: "Paket-Abschluss", typ: "Rechnung", pos: [{ t: "Coaching-Paket „Innere Klarheit“ (4 Sessions)", p: "480" }], wunsch: "" },
 ];
-const FARBEN = ["#C9963C", "#D96E8B", "#8E4A63", "#6E8B6A", "#5C7A99", "#3A2A22"];
+const FARBEN = ["#C1913C", "#C2526E", "#8E4A63", "#6E8B6A", "#5C7A99", "#3A2A22"];
 
 // ── Markenerstellung ───────────────────────────────────────────────────────
 // Aus dem hochgeladenen Logo werden Farben gelesen (Canvas, im Browser, kostenlos —
@@ -6013,7 +6013,7 @@ function Meditation({ addPunkte }) {
       <Card style={{ marginBottom: 18, textAlign: "center", background: `linear-gradient(160deg, ${C.card}, ${C.roseSoft})` }}>
         <Eyebrow color={C.plum}>🌬️ Atemübung · 4-4-4-4</Eyebrow>
         <div style={{ height: 176, display: "flex", alignItems: "center", justifyContent: "center", margin: "6px 0" }}>
-          <div style={{ width: 130, height: 130, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "Georgia, serif", fontSize: 16, animation: atmung ? "breathe 8s ease-in-out infinite" : "none", boxShadow: "0 8px 30px rgba(217,110,139,.35)" }}>
+          <div style={{ width: 130, height: 130, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "Georgia, serif", fontSize: 16, animation: atmung ? "breathe 8s ease-in-out infinite" : "none", boxShadow: "0 8px 30px rgba(194,82,110,.35)" }}>
             {phase}
           </div>
         </div>
@@ -6199,7 +6199,7 @@ function AppGuide() {
       <Card style={{ marginBottom: 20, padding: 10, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
         {!ab ? (
           <button onClick={() => setAb(true)} style={{ display: "flex", alignItems: "center", gap: 13, width: "100%", background: "none", border: "none", cursor: "pointer", padding: 6 }}>
-            <span style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 14px rgba(217,110,139,.35)" }}>▶</span>
+            <span style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 14px rgba(194,82,110,.35)" }}>▶</span>
             <span style={{ textAlign: "left" }}>
               <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso }}>Begrüßungsvideo ansehen</span>
               <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>Anja begrüßt dich persönlich · 1 Video</span>
@@ -6454,7 +6454,7 @@ function Podcast({ addPunkte }) {
   const neueste = PODCAST.find((p) => p.neu) || PODCAST[0];
   const toggle = (t) => { const on = playing === t; setPlaying(on ? null : t); if (!on && addPunkte) addPunkte(4, "Podcast gehört"); };
   const PlayBtn = ({ t, big }) => (
-    <button onClick={() => toggle(t)} style={{ width: big ? 54 : 42, height: big ? 54 : 42, borderRadius: "50%", border: "none", cursor: "pointer", flexShrink: 0, background: playing === t ? C.plum : `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: big ? 22 : 17, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(217,110,139,.35)" }}>{playing === t ? "❚❚" : "▶"}</button>
+    <button onClick={() => toggle(t)} style={{ width: big ? 54 : 42, height: big ? 54 : 42, borderRadius: "50%", border: "none", cursor: "pointer", flexShrink: 0, background: playing === t ? C.plum : `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: big ? 22 : 17, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(194,82,110,.35)" }}>{playing === t ? "❚❚" : "▶"}</button>
   );
   return (
     <div style={{ padding: "26px 20px" }}>
@@ -7042,7 +7042,7 @@ const THEMEN = [
     ],
   },
   {
-    id: "beziehung", icon: "🤍", t: "Beziehung", farbe: "#D96E8B",
+    id: "beziehung", icon: "🤍", t: "Beziehung", farbe: "#C2526E",
     was: "Nähe, Abstand, Wiederholungen",
     text: "In Beziehungen wiederholt sich oft dasselbe Muster mit verschiedenen Menschen. Das Muster zu sehen ist der erste Schritt, es nicht mehr mitzuspielen.",
     tabs: [
@@ -7052,7 +7052,7 @@ const THEMEN = [
     ],
   },
   {
-    id: "selbstwert", icon: "💗", t: "Selbstwert", farbe: "#C9963C",
+    id: "selbstwert", icon: "💗", t: "Selbstwert", farbe: "#C1913C",
     was: "Ich bin genug",
     text: "Selbstwert ist keine Stimmung, die man sich holt, sondern etwas, das man täglich in kleinen Sätzen zu sich selbst aufbaut oder abträgt.",
     tabs: [
@@ -7082,7 +7082,7 @@ const THEMEN = [
     ],
   },
   {
-    id: "geld", icon: "🪙", t: "Geld & Fülle", farbe: "#C9963C",
+    id: "geld", icon: "🪙", t: "Geld & Fülle", farbe: "#C1913C",
     was: "Dein Verhältnis zu Geld",
     text: "Wie du über Geld denkst, hast du meistens früh gelernt und nie überprüft. Hier geht es nicht ums Rechnen, sondern um die Sätze dahinter.",
     tabs: [
@@ -7377,7 +7377,7 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte }) {
 
   return (
     <div style={{ padding: "26px 20px" }}>
-      <style>{`@keyframes wocheGlanz { 0%,100% { box-shadow: 0 4px 16px rgba(201,150,60,.22); } 50% { box-shadow: 0 6px 26px rgba(201,150,60,.5); } }`}</style>
+      <style>{`@keyframes wocheGlanz { 0%,100% { box-shadow: 0 4px 16px rgba(193,145,60,.22); } 50% { box-shadow: 0 6px 26px rgba(193,145,60,.5); } }`}</style>
       <Eyebrow>Mehr</Eyebrow>
 
       {/* Was die Coachinnen anbieten steht vor dem eigenen Werkzeugkasten —
@@ -8106,7 +8106,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
         {phase === "wahl" && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 18 }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: "#F5E9DB" }}>Ich bin bei dir.</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: "#ECE2D1" }}>Ich bin bei dir.</div>
               <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: "#D8C4AE", marginTop: 6, lineHeight: 1.6 }}>
                 Was ist gerade los? Ich such den passenden Weg für dich.
               </div>
@@ -8121,11 +8121,11 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
                 display: "flex", alignItems: "center", gap: 13, width: "100%", textAlign: "left", marginBottom: 9,
                 padding: "14px 16px", borderRadius: 16, cursor: "pointer",
                 border: w.k === "dunkel" ? `2px solid ${C.rose}` : "1.5px solid #5A473C",
-                background: w.k === "dunkel" ? "rgba(217,110,139,.16)" : "rgba(251,246,238,.07)",
+                background: w.k === "dunkel" ? "rgba(194,82,110,.16)" : "rgba(251,246,238,.07)",
               }}>
                 <span style={{ fontSize: 25 }}>{w.icon}</span>
                 <span style={{ flex: 1 }}>
-                  <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: "#F5E9DB" }}>{w.t}</span>
+                  <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: "#ECE2D1" }}>{w.t}</span>
                   <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#C0AC98", marginTop: 2 }}>{w.s}</span>
                 </span>
                 <span style={{ color: "#C0AC98", fontSize: 19 }}>›</span>
@@ -8139,7 +8139,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
 
         {phase === "atmen" && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 21, color: "#F5E9DB", marginBottom: 6 }}>Atme mit mir</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 21, color: "#ECE2D1", marginBottom: 6 }}>Atme mit mir</div>
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#C0AC98", marginBottom: 26 }}>4 Sekunden ein · 7 halten · 8 aus</div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200, marginBottom: 22 }}>
               <div style={{
@@ -8235,10 +8235,10 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
 /* ── Der 36-Fragen-Archetypen-Test — 12 Archetypen, je 3 Aussagen, Likert-Skala 1–5 ── */
 const ARCHETYPEN = {
   herrscherin: { name: "Die Herrscherin", icon: "👑", farbe: "#8A6D3B", satz: "Ich übernehme Verantwortung und schaffe Ordnung.", text: "Du fühlst dich wohl, wenn du die Fäden in der Hand hältst. Deine Kraft ist Struktur und Führung. Dein Wachstum: Kontrolle auch mal loslassen können, ohne dass alles zusammenbricht." },
-  schoepferin: { name: "Die Schöpferin", icon: "🎨", farbe: "#C9963C", satz: "Ich bringe Neues in die Welt.", text: "Ideen fliegen dir zu, und du machst daraus etwas Echtes. Deine Kraft ist Ausdruck. Dein Wachstum: fertig machen statt nur anfangen — und dein Werk zeigen." },
+  schoepferin: { name: "Die Schöpferin", icon: "🎨", farbe: "#C1913C", satz: "Ich bringe Neues in die Welt.", text: "Ideen fliegen dir zu, und du machst daraus etwas Echtes. Deine Kraft ist Ausdruck. Dein Wachstum: fertig machen statt nur anfangen — und dein Werk zeigen." },
   fuersorgliche: { name: "Die Fürsorgliche", icon: "🌿", farbe: "#6E8B6A", satz: "Ich halte Raum — auch für mich.", text: "Bei dir finden andere Halt und Wärme. Deine Kraft ist Fürsorge. Dein Wachstum: dich selbst genauso liebevoll zu halten wie alle anderen." },
   bodenstaendige: { name: "Die Bodenständige", icon: "🏡", farbe: "#9C8465", satz: "Ich gehöre dazu, ohne mich zu verstellen.", text: "Du bist echt, fair und nahbar — das gibt anderen Halt. Deine Kraft ist Verlässlichkeit. Dein Wachstum: dir erlauben, auch mal aufzufallen." },
-  liebende: { name: "Die Liebende", icon: "🌹", farbe: "#D96E8B", satz: "Ich öffne mein Herz — zuerst für mich.", text: "Du fühlst tief und verbindest Menschen. Deine Kraft ist Empathie. Dein Wachstum: Grenzen setzen, ohne dich schuldig zu fühlen." },
+  liebende: { name: "Die Liebende", icon: "🌹", farbe: "#C2526E", satz: "Ich öffne mein Herz — zuerst für mich.", text: "Du fühlst tief und verbindest Menschen. Deine Kraft ist Empathie. Dein Wachstum: Grenzen setzen, ohne dich schuldig zu fühlen." },
   frohnatur: { name: "Die Frohnatur", icon: "🎭", farbe: "#E0A23C", satz: "Ich nehme das Leben leicht.", text: "Du bringst Humor in ernste Momente und lebst im Hier und Jetzt. Deine Kraft ist Leichtigkeit. Dein Wachstum: auch schwere Gefühle dalassen, statt sie wegzulachen." },
   heldin: { name: "Die Heldin", icon: "🔥", farbe: "#B0503C", satz: "Ich kämpfe für das, was mir wichtig ist.", text: "Du gehst voran, auch wenn es unbequem wird. Deine Kraft ist Mut. Dein Wachstum: nicht jeden Kampf allein austragen zu müssen." },
   rebellin: { name: "Die Rebellin", icon: "⚡", farbe: "#A6483C", satz: "Ich stelle infrage, was längst überholt ist.", text: "Regeln sind für dich Diskussionsgrundlage, nicht Gesetz. Deine Kraft ist Veränderung. Dein Wachstum: Provokation gezielt einsetzen statt aus Reflex." },
@@ -8633,7 +8633,7 @@ function Intuition({ intu, setIntu, addPunkte }) {
 
 /* ── Transformations-Reisen (21/40 Tage) ── */
 const REISEN = [
-  { id: "selbstwert", t: "Ich bin genug", tage: 21, icon: "💗", farbe: "#D96E8B", was: "21 Tage für dein Selbstwertgefühl", impulse: ["Was hast du heute gut gemacht — auch wenn es klein war?", "Wessen Stimme hörst du, wenn du dich kritisierst?", "Schreib drei Sätze, die mit „Ich darf“ beginnen.", "Was würdest du einer Freundin sagen, die so über sich spricht wie du?", "Welche Eigenschaft an dir magst du insgeheim sehr?", "Wo hast du dich heute kleiner gemacht als du bist?", "Wofür bist du dir heute dankbar?"] },
+  { id: "selbstwert", t: "Ich bin genug", tage: 21, icon: "💗", farbe: "#C2526E", was: "21 Tage für dein Selbstwertgefühl", impulse: ["Was hast du heute gut gemacht — auch wenn es klein war?", "Wessen Stimme hörst du, wenn du dich kritisierst?", "Schreib drei Sätze, die mit „Ich darf“ beginnen.", "Was würdest du einer Freundin sagen, die so über sich spricht wie du?", "Welche Eigenschaft an dir magst du insgeheim sehr?", "Wo hast du dich heute kleiner gemacht als du bist?", "Wofür bist du dir heute dankbar?"] },
   { id: "loslassen", t: "Loslassen lernen", tage: 21, icon: "🍃", farbe: "#6E8B6A", was: "21 Tage sanftes Loslassen", impulse: ["Was trägst du mit dir, das dir längst nicht mehr gehört?", "Welche Erwartung darf heute gehen?", "Was würde leichter, wenn du aufhörst zu kämpfen?", "Wem darfst du innerlich vergeben — vielleicht dir selbst?", "Was hältst du fest aus Angst, nicht aus Liebe?", "Was möchtest du am Ende dieser Reise nicht mehr tragen?", "Wie fühlt sich Leichtigkeit in deinem Körper an?"] },
   { id: "grenzen", t: "Grenzen setzen", tage: 40, icon: "🛡️", farbe: "#B0503C", was: "40 Tage für dein klares Nein", impulse: ["Wo hast du heute Ja gesagt, obwohl du Nein meintest?", "Was macht dir Angst an einem klaren Nein?", "Wie klingt ein liebevolles Nein in deinen Worten?", "Wer respektiert deine Grenzen — und wer nicht?", "Welche Grenze darfst du heute laut aussprechen?", "Was gewinnst du, wenn du dich schützt?", "Wo brauchst du Abstand statt Erklärung?"] },
 ];
@@ -9989,7 +9989,7 @@ export default function IlhoApp() {
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-        @keyframes glowPulse { 0%,100% { box-shadow: 0 6px 18px rgba(217,110,139,.38); } 50% { box-shadow: 0 6px 30px rgba(217,110,139,.7); } }
+        @keyframes glowPulse { 0%,100% { box-shadow: 0 6px 18px rgba(194,82,110,.38); } 50% { box-shadow: 0 6px 30px rgba(194,82,110,.7); } }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         @keyframes breathe { 0%,100% { transform: scale(0.58); } 50% { transform: scale(1); } }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
@@ -10064,7 +10064,7 @@ export default function IlhoApp() {
                 position: "fixed", top: 14, left: 0, right: 0, margin: "0 auto", width: "fit-content",
                 zIndex: 30, background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
                 fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 700,
-                padding: "11px 20px", borderRadius: 24, boxShadow: "0 8px 24px rgba(217,110,139,.45)",
+                padding: "11px 20px", borderRadius: 24, boxShadow: "0 8px 24px rgba(194,82,110,.45)",
                 animation: "fadeUp .35s ease",
               }}>{toast}</div>
             )}
@@ -10157,7 +10157,7 @@ export default function IlhoApp() {
                   );
                 return (
                   <button key={n.k} onClick={() => goRoot(n.k)} style={{
-                    background: active ? "rgba(217,110,139,.1)" : "none", borderRadius: 16, border: "none", cursor: "pointer",
+                    background: active ? "rgba(194,82,110,.1)" : "none", borderRadius: 16, border: "none", cursor: "pointer",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
                     minWidth: 56, minHeight: 50, padding: "6px 4px",
                     color: active ? C.plum : C.ink, opacity: active ? 1 : 0.7,
@@ -10192,7 +10192,7 @@ export default function IlhoApp() {
                     position: "absolute", right: 16, bottom: 96, pointerEvents: "auto",
                     width: 58, height: 58, borderRadius: "50%", cursor: "pointer",
                     background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, border: "3px solid " + C.card, color: "#fff",
-                    boxShadow: "0 8px 24px rgba(217,110,139,.45)", animation: "glowPulse 2.6s ease-in-out infinite",
+                    boxShadow: "0 8px 24px rgba(194,82,110,.45)", animation: "glowPulse 2.6s ease-in-out infinite",
                     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                   }}>
                     <span style={{ fontSize: 21 }}>✨</span>

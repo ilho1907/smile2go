@@ -7,8 +7,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --s2g-gold: #C9963C;
-  --s2g-rose: #D96E8B;
+  --s2g-gold: #C1913C;
+  --s2g-rose: #C2526E;
   --s2g-shadow: 0 16px 34px -22px rgba(110, 80, 45, 0.38), 0 2px 6px -2px rgba(110, 80, 45, 0.08);
   --s2g-shadow-hover: 0 22px 40px -22px rgba(110, 80, 45, 0.45), 0 3px 8px -2px rgba(110, 80, 45, 0.1);
 }
@@ -28,10 +28,10 @@ body, input, textarea, select, button { font-family: 'Inter', system-ui, -apple-
 /* ── Bühne hinter der App (Desktop): warmes Licht + feines Punktraster ── */
 .s2g-stage {
   background:
-    radial-gradient(60% 50% at 15% 25%, rgba(201, 150, 60, 0.16) 0%, rgba(201, 150, 60, 0) 70%),
-    radial-gradient(55% 45% at 85% 80%, rgba(217, 110, 139, 0.14) 0%, rgba(217, 110, 139, 0) 70%),
+    radial-gradient(60% 50% at 15% 25%, rgba(193, 145, 60, 0.16) 0%, rgba(193, 145, 60, 0) 70%),
+    radial-gradient(55% 45% at 85% 80%, rgba(194, 82, 110, 0.14) 0%, rgba(194, 82, 110, 0) 70%),
     radial-gradient(70% 40% at 50% 0%, rgba(230, 190, 108, 0.22) 0%, rgba(230, 190, 108, 0) 70%),
-    #F5E9DB !important;
+    #ECE2D1 !important;
   position: relative;
 }
 .s2g-stage::before {
@@ -46,7 +46,7 @@ body, input, textarea, select, button { font-family: 'Inter', system-ui, -apple-
 .s2g-shell {
   background:
     radial-gradient(120% 40% at 50% 0%, rgba(230, 190, 108, 0.16) 0%, rgba(230, 190, 108, 0) 60%),
-    #FBF6EE !important;
+    #F4EDE2 !important;
   box-shadow: 0 40px 100px -30px rgba(90, 60, 30, 0.35), 0 0 0 1px rgba(235, 216, 198, 0.7) !important;
   overflow-x: clip;
 }
@@ -67,7 +67,7 @@ input, textarea, select { box-sizing: border-box; max-width: 100%; transition: b
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
 textarea:focus, select:focus {
   border-color: var(--s2g-gold) !important;
-  box-shadow: 0 0 0 4px rgba(201, 150, 60, 0.16) !important;
+  box-shadow: 0 0 0 4px rgba(193, 145, 60, 0.16) !important;
   outline: none !important;
 }
 ::placeholder { color: #B5A391; }

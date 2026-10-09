@@ -14,9 +14,9 @@ import { alsCsv } from "./export";
    ───────────────────────────────────────────── */
 
 const C = {
-  cream: "#FBF6EE", card: "#FFFFFE", beige: "#F5E9DB", line: "#EBD8C6",
-  gold: "#C9963C", goldPale: "#FAEDD2", espresso: "#3A2A22", ink: "#6B5443",
-  sage: "#5E8A52", rose: "#D96E8B", roseSoft: "#F8DCE3", plum: "#8E4A63", rot: "#B0492F",
+  cream: "#F4EDE2", card: "#FFFDF9", beige: "#ECE2D1", line: "#E3D6C2",
+  gold: "#C1913C", goldPale: "#F6EAD3", espresso: "#3A332B", ink: "#6F6355",
+  sage: "#5E8A52", rose: "#C2526E", roseSoft: "#F5DBE1", plum: "#8A3F5A", rot: "#B0492F",
 };
 
 const Kpi = ({ t, v, s, accent }) => (

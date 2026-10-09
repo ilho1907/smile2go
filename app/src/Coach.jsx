@@ -26,9 +26,9 @@ import {
    ───────────────────────────────────────────── */
 
 const C = {
-  cream: "#FBF6EE", card: "#FFFFFE", beige: "#F5E9DB", line: "#EBD8C6",
-  gold: "#C9963C", goldPale: "#FAEDD2", espresso: "#3A2A22", ink: "#6B5443",
-  sage: "#5E8A52", rose: "#D96E8B", roseSoft: "#F8DCE3", plum: "#8E4A63", rot: "#B0492F",
+  cream: "#F4EDE2", card: "#FFFDF9", beige: "#ECE2D1", line: "#E3D6C2",
+  gold: "#C1913C", goldPale: "#F6EAD3", espresso: "#3A332B", ink: "#6F6355",
+  sage: "#5E8A52", rose: "#C2526E", roseSoft: "#F5DBE1", plum: "#8A3F5A", rot: "#B0492F",
 };
 
 const Eyebrow = ({ children, color = C.gold }) => (
@@ -43,7 +43,7 @@ const Btn = ({ children, onClick, ghost, small, disabled, ton }) => (
   <button onClick={onClick} disabled={disabled} className="s2g-btn" style={{
     fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: small ? 13 : 14.5,
     padding: small ? "9px 16px" : "12px 22px", borderRadius: 999, cursor: disabled ? "default" : "pointer",
-    boxShadow: ghost ? "none" : "0 12px 24px -12px rgba(217,110,139,.55), inset 0 1px 0 rgba(255,255,255,.3)",
+    boxShadow: ghost ? "none" : "0 12px 24px -12px rgba(194,82,110,.55), inset 0 1px 0 rgba(255,255,255,.3)",
     border: ghost ? `1.5px solid ${C.line}` : "none",
     background: ghost ? "transparent" : ton === "rot" ? C.rot : `linear-gradient(135deg, ${C.gold}, ${C.rose})`,
     color: ghost ? C.plum : "#fff", opacity: disabled ? 0.5 : 1, minHeight: 40,
