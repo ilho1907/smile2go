@@ -90,3 +90,49 @@ textarea:focus, select:focus {
   .s2g-card { animation: none; }
   button:not(:disabled):active { transform: none; }
 }
+
+/* ── Replika-Look: Logo, Punktraster, warmes Licht (nur Optik) ── */
+.s2g-shell {
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(232, 201, 138, 0.32) 0%, rgba(232, 201, 138, 0) 55%),
+    radial-gradient(90% 55% at 90% 110%, rgba(194, 82, 110, 0.14) 0%, rgba(194, 82, 110, 0) 60%),
+    radial-gradient(80% 50% at 5% 100%, rgba(193, 145, 60, 0.12) 0%, rgba(193, 145, 60, 0) 60%),
+    #FFFDF9 !important;
+}
+.s2g-shell::before {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(168, 132, 44, 0.16) 1.1px, transparent 1.1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: linear-gradient(#000 0, rgba(0,0,0,.55) 600px, transparent 1400px);
+  mask-image: linear-gradient(#000 0, rgba(0,0,0,.55) 600px, transparent 1400px);
+  z-index: 0;
+}
+.s2g-shell > * { position: relative; z-index: 1; }
+.s2g-shell > nav { position: fixed; z-index: 50; }
+
+.s2g-logo-halo {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(232, 201, 138, 0.6), rgba(232, 201, 138, 0) 72%);
+  filter: blur(4px);
+  animation: s2gGlow 4.5s ease-in-out infinite;
+}
+.s2g-logo-mark {
+  position: relative; display: grid; place-items: center; border-radius: 26%;
+  background:
+    radial-gradient(80% 80% at 30% 20%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 42%),
+    conic-gradient(from 210deg, #e8c98a, #c1913c 30%, #c97352 55%, #c2526e 78%, #e8c98a);
+  box-shadow:
+    0 0 50px 4px rgba(193, 145, 60, 0.4),
+    0 20px 60px -10px rgba(194, 82, 110, 0.45),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.5),
+    inset 0 -12px 26px rgba(120, 30, 50, 0.25);
+  animation: s2gFloat 7s ease-in-out infinite;
+}
+.s2g-rise { animation: s2gRise 0.7s cubic-bezier(0.22, 0.9, 0.3, 1) both; }
+@keyframes s2gGlow { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes s2gFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@media (prefers-reduced-motion: reduce) {
+  .s2g-logo-halo, .s2g-logo-mark, .s2g-rise { animation: none; }
+}

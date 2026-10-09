@@ -758,6 +758,39 @@ const Btn = ({ children, onClick, ghost, full, small, disabled }) => (
 
 /* ── Auth ── */
 
+/* ── Logo & Eingabefeld mit Icon (nur Optik) ── */
+
+function LogoMark({ size = 72 }) {
+  return (
+    <div style={{ position: "relative", width: size * 1.9, height: size * 1.9, margin: "-18px auto -14px", display: "grid", placeItems: "center" }}>
+      <div className="s2g-logo-halo" />
+      <div className="s2g-logo-mark" style={{ width: size, height: size }}>
+        <span style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontWeight: 600, color: "#fff", fontSize: size * 0.4, textShadow: "0 2px 10px rgba(90,40,20,.35)", letterSpacing: "-0.02em" }}>
+          s<span style={{ color: "#fff1c9" }}>2</span>g
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const FELD_ICONS = {
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
+  lock: <><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
+  kalender: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></>,
+};
+
+function FeldMitIcon({ icon, children }) {
+  return (
+    <div style={{ position: "relative", marginBottom: 14 }}>
+      <svg viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+        style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", width: 20, height: 20, pointerEvents: "none", zIndex: 1 }}>
+        {FELD_ICONS[icon]}
+      </svg>
+      {children}
+    </div>
+  );
+}
+
 function Auth({ onLogin }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -796,10 +829,11 @@ function Auth({ onLogin }) {
   };
 
   const input = {
-    width: "100%", padding: "15px 16px", fontSize: 16,
+    width: "100%", minHeight: 54, padding: "14px 16px 14px 48px", fontSize: 16,
     fontFamily: "system-ui, sans-serif",
-    border: `1.5px solid ${C.line}`, borderRadius: 14,
-    background: C.card, color: C.espresso, marginBottom: 12, outline: "none",
+    border: `1px solid ${C.line}`, borderRadius: 18,
+    background: "#fff", color: C.espresso, marginBottom: 0, outline: "none",
+    boxShadow: "0 8px 20px -16px rgba(120,90,50,.4), inset 0 1px 0 #fff",
   };
 
   const submit = async () => {
@@ -876,13 +910,14 @@ function Auth({ onLogin }) {
     );
 
   return (
-    <div style={{ padding: "48px 24px 40px" }}>
-      <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <Eyebrow>smile2go · München</Eyebrow>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 40, color: C.espresso, letterSpacing: 1 }}>
+    <div className="s2g-auth" style={{ padding: "28px 24px 40px", position: "relative" }}>
+      <div style={{ textAlign: "center", marginBottom: 30 }}>
+        <LogoMark />
+        <div className="s2g-rise" style={{ animationDelay: ".1s" }}><Eyebrow>smile2go · München</Eyebrow></div>
+        <div className="s2g-rise" style={{ fontFamily: "Georgia, serif", fontSize: 46, fontWeight: 600, color: C.espresso, lineHeight: 1.05, letterSpacing: "-0.01em", animationDelay: ".16s" }}>
           smile<span style={{ color: C.rose, fontStyle: "italic" }}>2</span>go
         </div>
-        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.ink, marginTop: 8 }}>
+        <p className="s2g-rise" style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.ink, marginTop: 10, animationDelay: ".22s" }}>
           Dein Raum für Ruhe & Wachstum
         </p>
       </div>
@@ -915,14 +950,14 @@ function Auth({ onLogin }) {
       </div>
       </>)}
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 18, background: C.beige, borderRadius: 14, padding: 5 }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 22, background: "rgba(236,226,209,.7)", border: `1px solid ${C.line}`, borderRadius: 999, padding: 6 }}>
         {[["login", "Anmelden"], ["register", "Registrieren"]].map(([k, label]) => (
           <button key={k} onClick={() => { setMode(k); setErr(""); }} style={{
-            flex: 1, padding: "12px 0", borderRadius: 11, border: "none", cursor: "pointer",
+            flex: 1, minHeight: 46, padding: "12px 0", borderRadius: 999, border: "none", cursor: "pointer",
             fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600,
-            background: mode === k ? C.card : "transparent",
+            background: mode === k ? "#fff" : "transparent",
             color: mode === k ? C.espresso : C.ink,
-            boxShadow: mode === k ? "0 2px 8px rgba(58,42,34,.08)" : "none",
+            boxShadow: mode === k ? "0 6px 16px -6px rgba(120,90,50,.35)" : "none",
           }}>{label}</button>
         ))}
       </div>
@@ -962,13 +997,13 @@ function Auth({ onLogin }) {
         </div>
       )}
 
-      <input style={input} type="email" placeholder="E-Mail-Adresse" value={email} onChange={(e) => setEmail(e.target.value)} />
-      <input style={input} type="password" placeholder="Passwort (min. 8 Zeichen)" value={pw} onChange={(e) => setPw(e.target.value)} />
+      <FeldMitIcon icon="mail"><input style={input} type="email" placeholder="E-Mail-Adresse" value={email} onChange={(e) => setEmail(e.target.value)} /></FeldMitIcon>
+      <FeldMitIcon icon="lock"><input style={input} type="password" placeholder="Passwort (min. 8 Zeichen)" value={pw} onChange={(e) => setPw(e.target.value)} /></FeldMitIcon>
 
       {mode === "register" && (
         <>
           <label style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginBottom: 5 }}>Geburtsdatum <span style={{ color: C.plum }}>· für dein persönliches Sternzeichen</span></label>
-          <input style={input} type="date" value={geburt} onChange={(e) => setGeburt(e.target.value)} />
+          <FeldMitIcon icon="kalender"><input style={input} type="date" value={geburt} onChange={(e) => setGeburt(e.target.value)} /></FeldMitIcon>
         </>
       )}
 
@@ -995,8 +1030,8 @@ function Auth({ onLogin }) {
       {mode === "login" && (
         <button onClick={passwortVergessen} disabled={busy} style={{
           width: "100%", background: "none", border: "none", cursor: "pointer", marginTop: 14,
-          fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, fontWeight: 600,
-          textDecoration: "underline", minHeight: 44,
+          fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.rose, fontWeight: 500,
+          textDecoration: "underline", textUnderlineOffset: 3, minHeight: 44,
         }}>Passwort vergessen?</button>
       )}
 
