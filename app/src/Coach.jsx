@@ -14,6 +14,8 @@ import {
   ladeAngebote, angebotAnlegen, angebotLoeschen, ladeKursModule, modulAnlegen, modulLoeschen,
   ladeCoachBeitraege, beitragAnlegen, beitragLoeschen,
   ladeAnfragenCoach, anfrageStatus,
+  ladeMeineBeitraegeGem, gemeinschaftAnlegen, gemeinschaftLoeschen,
+  gemeinschaftAudioHochladen, gemeinschaftDateiUrl,
   pushMoeglich, pushStatus, pushAktivieren, pushDeaktivieren,
 } from "./supabase";
 
@@ -703,6 +705,199 @@ function Angebote({ coachId }) {
 
 /* ── Beiträge ───────────────────────────────────────────────────────────── */
 
+/* ── Gemeinschaft ───────────────────────────────────────────────────────────
+   Der Eintritt ins System: ein freier Beitrag für alle Frauen, auch die ohne
+   Begleitung. Das ist kein Gefallen an uns — es ist der Weg, auf dem eine
+   neue Coachin überhaupt gefunden wird. Wer etwas einbringt, wird sichtbar:
+   ihr Profil und ihre Angebote sieht ab dann jede Frau in der App. */
+
+const GEM_BEDUERFNISSE = [
+  ["schlaflos", "Ich kann nicht schlafen"],
+  ["kraftlos", "Ich habe keine Kraft"],
+  ["unruhig", "Mein Kopf kommt nicht zur Ruhe"],
+  ["angst", "Ich habe Angst"],
+  ["liebeskummer", "Ich komme nicht über ihn weg"],
+  ["trennung", "Ich bin dabei zu gehen"],
+  ["trauer", "Ich habe jemanden verloren"],
+  ["wut", "Ich bin voller Wut"],
+  ["einsam", "Ich fühle mich allein"],
+  ["selbstzweifel", "Ich glaube nicht an mich"],
+  ["grenzen", "Ich kann nicht Nein sagen"],
+  ["geld", "Geld macht mir Druck"],
+  ["betrug", "Mir wurde online etwas angetan"],
+  ["neuanfang", "Ich fange neu an"],
+  ["koerper", "Ich bin nicht zuhause in meinem Körper"],
+];
+
+function GemeinschaftCoach({ onGeaendert }) {
+  const [liste, setListe] = useState([]);
+  const [formAuf, setFormAuf] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [hinweis, setHinweis] = useState("");
+  const leer = { titel: "", einleitung: "", typ: "uebung", beduerfnis: "schlaflos", dauer_min: "", extern_url: "", text: "" };
+  const [f, setF] = useState(leer);
+  const [audio, setAudio] = useState(null);
+
+  const laden = () => ladeMeineBeitraegeGem().then((d) => { setListe(d); onGeaendert?.(d.length); });
+  useEffect(() => { laden(); }, []); // eslint-disable-line
+
+  const speichern = async () => {
+    setHinweis("");
+    if (!f.titel.trim()) return setHinweis("Gib deinem Beitrag einen Titel.");
+    if (f.typ === "video" && !f.extern_url.trim())
+      return setHinweis("Für ein Video brauchen wir den Link — YouTube, Vimeo oder wo du es liegen hast.");
+    if (f.typ === "audio" && !audio)
+      return setHinweis("Wähle die Audiodatei aus.");
+    if ((f.typ === "text" || f.typ === "uebung") && !f.text.trim())
+      return setHinweis("Schreib den Text der Übung hinein.");
+
+    setBusy(true);
+    let pfad = null;
+    if (f.typ === "audio" && audio) {
+      pfad = await gemeinschaftAudioHochladen(audio);
+      if (!pfad) { setBusy(false); return setHinweis("Das Hochladen hat nicht geklappt. Versuch es noch einmal."); }
+    }
+    const ok = await gemeinschaftAnlegen({
+      titel: f.titel.trim(),
+      einleitung: f.einleitung.trim() || null,
+      typ: f.typ,
+      beduerfnis: f.beduerfnis,
+      dauer_min: f.dauer_min ? Number(f.dauer_min) : null,
+      datei_pfad: pfad,
+      extern_url: f.extern_url.trim() || null,
+      text: (f.typ === "text" || f.typ === "uebung") ? f.text.trim() : null,
+    });
+    setBusy(false);
+    if (!ok) return setHinweis("Das hat gerade nicht geklappt.");
+    setF(leer); setAudio(null); setFormAuf(false); setHinweis("");
+    laden();
+  };
+
+  const loeschen = async (id) => {
+    if (await gemeinschaftLoeschen(id)) laden();
+  };
+
+  return (
+    <>
+      {liste.length === 0 && (
+        <Card style={{ marginBottom: 16, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+          <Eyebrow color={C.plum}>Dein Eintritt</Eyebrow>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 8 }}>
+            Ein Geschenk an die anderen Frauen
+          </div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.65, margin: "0 0 12px" }}>
+            Bring eine Übung, ein Audio, einen Text oder ein Video ein — frei für jede Frau in der App,
+            auch für die, die noch keine Begleitung hat. Die meisten haben keine.
+          </p>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.65, margin: "0 0 14px" }}>
+            Ab dem ersten Beitrag bist du sichtbar: dein Profil und deine Angebote erscheinen bei jeder Frau,
+            der dein Beitrag geholfen hat. <strong>So findet dich deine erste Klientin</strong> — ohne Werbebudget.
+          </p>
+          <Btn onClick={() => setFormAuf(true)}>Meinen ersten Beitrag einbringen</Btn>
+        </Card>
+      )}
+
+      {liste.length > 0 && (
+        <>
+          <Eyebrow color={C.plum}>Deine Beiträge in der Gemeinschaft</Eyebrow>
+          <div style={{ display: "grid", gap: 10, marginTop: 8, marginBottom: 16 }}>
+            {liste.map((b) => (
+              <Card key={b.id}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso }}>{b.titel}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 3 }}>
+                      {GEM_BEDUERFNISSE.find(([k]) => k === b.beduerfnis)?.[1] || b.beduerfnis} · {b.typ}
+                      {b.dauer_min ? ` · ${b.dauer_min} Min` : ""}
+                    </div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, marginTop: 6, fontWeight: 600 }}>
+                      {b.aufrufe} mal geöffnet · {b.herzen} 🤍
+                      {b.anteil_anzahl > 0 && ` · ${Math.round(b.anteil_schnitt)} % zu Ende gehört`}
+                    </div>
+                  </div>
+                  <Btn small ghost onClick={() => loeschen(b.id)}>Entfernen</Btn>
+                </div>
+              </Card>
+            ))}
+          </div>
+          {!formAuf && <Btn ghost onClick={() => setFormAuf(true)}>+ Noch einen Beitrag</Btn>}
+        </>
+      )}
+
+      {formAuf && (
+        <Card style={{ marginTop: 14 }}>
+          <Eyebrow>Neuer Beitrag</Eyebrow>
+
+          <label style={{ display: "block", marginBottom: 10 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>
+              Wem hilft das gerade?
+            </div>
+            <select value={f.beduerfnis} onChange={(e) => setF({ ...f, beduerfnis: e.target.value })} style={feldStil}>
+              {GEM_BEDUERFNISSE.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
+            </select>
+          </label>
+
+          <label style={{ display: "block", marginBottom: 10 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Art</div>
+            <select value={f.typ} onChange={(e) => { setF({ ...f, typ: e.target.value }); setAudio(null); }} style={feldStil}>
+              <option value="uebung">Übung zum Lesen & Machen</option>
+              <option value="audio">Audio (Meditation, Impuls …)</option>
+              <option value="video">Video (Link zu deinem Kanal)</option>
+              <option value="text">Text</option>
+            </select>
+          </label>
+
+          <Feld label="Titel" value={f.titel} onChange={(e) => setF({ ...f, titel: e.target.value })}
+            placeholder="z. B. Abendritual bei kreisenden Gedanken" />
+          <Feld label="Ein, zwei Sätze — für wen ist das?" value={f.einleitung}
+            onChange={(e) => setF({ ...f, einleitung: e.target.value })}
+            placeholder="Für die Abende, an denen der Kopf nicht aufhört." />
+          <Feld label="Dauer in Minuten (optional)" type="number" value={f.dauer_min}
+            onChange={(e) => setF({ ...f, dauer_min: e.target.value })} placeholder="8" />
+
+          {f.typ === "video" && (
+            <>
+              <Feld label="Link zum Video" value={f.extern_url}
+                onChange={(e) => setF({ ...f, extern_url: e.target.value })}
+                placeholder="https://youtube.com/watch?v=…" />
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, lineHeight: 1.6, margin: "-4px 0 12px", opacity: .85 }}>
+                Videos bleiben auf deinem eigenen Kanal — die Aufrufe und die Abonnentinnen gehören dir,
+                nicht uns. Wir zeigen nur den Weg dorthin.
+              </p>
+            </>
+          )}
+
+          {f.typ === "audio" && (
+            <label style={{ display: "block", marginBottom: 12 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Audiodatei</div>
+              <input type="file" accept="audio/*" onChange={(e) => setAudio(e.target.files?.[0] || null)}
+                style={{ ...feldStil, padding: 9 }} />
+            </label>
+          )}
+
+          {(f.typ === "text" || f.typ === "uebung") && (
+            <label style={{ display: "block", marginBottom: 12 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Der Text</div>
+              <textarea value={f.text} onChange={(e) => setF({ ...f, text: e.target.value })} rows={9}
+                style={{ ...feldStil, resize: "vertical", lineHeight: 1.6 }}
+                placeholder={"Schritt für Schritt, so wie du es einer Freundin sagen würdest.\n\n1. …\n2. …"} />
+            </label>
+          )}
+
+          {hinweis && (
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.rot, lineHeight: 1.5, marginBottom: 12 }}>{hinweis}</div>
+          )}
+
+          <div style={{ display: "flex", gap: 9 }}>
+            <Btn onClick={speichern} disabled={busy}>{busy ? "Einen Moment …" : "Einbringen"}</Btn>
+            <Btn ghost onClick={() => { setFormAuf(false); setHinweis(""); }}>Abbrechen</Btn>
+          </div>
+        </Card>
+      )}
+    </>
+  );
+}
+
 function Beitraege({ coachId }) {
   const [liste, setListe] = useState([]);
   const [form, setForm] = useState({ titel: "", text: "", quelle: "app", url: "" });
@@ -893,11 +1088,15 @@ export default function CoachPanel() {
   const [klientinnen, setKlientinnen] = useState([]);
   const [ungelesen, setUngelesen] = useState({});
   const [tab, setTab] = useState("klientinnen");
+  // 0 Beitraege = sie ist fuer niemanden sichtbar. Das muss auffallen.
+  const [gemAnzahl, setGemAnzahl] = useState(null);
   const [chat, setChat] = useState(null);
 
   const alles = async () => {
-    const [p, k, u] = await Promise.all([ladeCoachProfilSelbst(), ladeMeineKlientinnen(), ladeUngelesen()]);
-    setProfil(p); setKlientinnen(k); setUngelesen(u);
+    const [p, k, u, g] = await Promise.all([
+      ladeCoachProfilSelbst(), ladeMeineKlientinnen(), ladeUngelesen(), ladeMeineBeitraegeGem(),
+    ]);
+    setProfil(p); setKlientinnen(k); setUngelesen(u); setGemAnzahl(g.length);
   };
 
   useEffect(() => {
@@ -945,6 +1144,7 @@ export default function CoachPanel() {
     );
 
   const TABS = [
+    ["gemeinschaft", `Gemeinschaft${gemAnzahl === 0 ? " ●" : ""}`],
     ["klientinnen", "Klientinnen"],
     ["nachrichten", `Nachrichten${Object.values(ungelesen).reduce((a, b) => a + b, 0) ? ` (${Object.values(ungelesen).reduce((a, b) => a + b, 0)})` : ""}`],
     ["termine", "Termine"],
@@ -979,6 +1179,7 @@ export default function CoachPanel() {
           ))}
         </div>
 
+        {tab === "gemeinschaft" && <GemeinschaftCoach onGeaendert={setGemAnzahl} />}
         {tab === "klientinnen" && (
           <Klientinnen
             klientinnen={klientinnen}

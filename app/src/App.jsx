@@ -17,7 +17,9 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   ladeCoachBeitraege, ladeCoachProfil, merkeEinladung, ladeTwinMeinerCoachin,
   ladeMaterialien, ladeAngebote, ladeKursModule, ladeKursFortschritt,
   modulErledigt, modulZurueck, stelleAnfrage,
-  rolleWunschMerken, rolleAbgleichen, coachRolleSetzen } from "./supabase";
+  rolleWunschMerken, rolleAbgleichen, coachRolleSetzen,
+  ladeGemeinschaft, zaehleGemeinschaft, gemeinschaftDateiUrl, gemeinschaftGesehen,
+  gemeinschaftHerz, ladeMeineHerzen, beduerfnisMerken, beduerfnisVergessen } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -7053,6 +7055,243 @@ function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, me
    Nicht nach Funktion sortiert, sondern nach dem, was gerade los ist.
    Ein Thema bündelt, was in der App schon da ist — und später das, was
    die eigene Coachin dazu hinterlegt hat. */
+/* ── Beduerfnisse ───────────────────────────────────────────────────────────
+   EIN gemeinsames Vokabular fuer Mediathek, Live, Wochenbericht und Profil.
+   Nicht nach Thema sortiert, sondern danach, wonach eine Frau um 23 Uhr
+   sucht. Wer hier ein Wort aendert, aendert es ueberall — das ist Absicht. */
+
+const BEDUERFNISSE = [
+  { id: "schlaflos",     icon: "\u{1F319}", t: "Ich kann nicht schlafen" },
+  { id: "kraftlos",      icon: "\u{1FAAB}", t: "Ich habe keine Kraft" },
+  { id: "unruhig",       icon: "\u{1F32A}️", t: "Mein Kopf kommt nicht zur Ruhe" },
+  { id: "angst",         icon: "\u{1F6E1}️", t: "Ich habe Angst" },
+  { id: "liebeskummer",  icon: "\u{1F494}", t: "Ich komme nicht über ihn weg" },
+  { id: "trennung",      icon: "\u{1F6AA}", t: "Ich bin dabei zu gehen" },
+  { id: "trauer",        icon: "\u{1F56F}️", t: "Ich habe jemanden verloren" },
+  { id: "wut",           icon: "\u{1F30B}", t: "Ich bin voller Wut" },
+  { id: "einsam",        icon: "\u{1F342}", t: "Ich fühle mich allein" },
+  { id: "selbstzweifel", icon: "\u{1FA9E}", t: "Ich glaube nicht an mich" },
+  { id: "grenzen",       icon: "✋", t: "Ich kann nicht Nein sagen" },
+  { id: "geld",          icon: "\u{1F9FE}", t: "Geld macht mir Druck" },
+  { id: "betrug",        icon: "\u{1F6A9}", t: "Mir wurde online etwas angetan" },
+  { id: "neuanfang",     icon: "\u{1F331}", t: "Ich fange neu an" },
+  { id: "koerper",       icon: "\u{1FAC2}", t: "Ich bin nicht zuhause in meinem Körper" },
+];
+
+const BED = Object.fromEntries(BEDUERFNISSE.map((b) => [b.id, b]));
+
+const GEM_TYP_ICON = { video: "▶️", audio: "\u{1F3A7}", uebung: "\u{1F9F6}", text: "\u{1F4D6}" };
+
+/* ── Gemeinschaft ───────────────────────────────────────────────────────────
+   Die freie Mediathek. Jede Coachin bringt beim Start mindestens einen
+   Beitrag ein; jede Frau sieht alles — ohne Bindung, ohne Bezahlung. Wer
+   hier etwas findet, das hilft, erfaehrt auch, von wem es kommt. So
+   begegnen sich die beiden Seiten ueber Inhalte statt ueber Werbung. */
+
+function Gemeinschaft({ go, bindung }) {
+  const [bed, setBed] = useState(null);
+  const [zahlen, setZahlen] = useState({});
+  const [liste, setListe] = useState(null);
+  const [herzen, setHerzen] = useState([]);
+  const [offen, setOffen] = useState(null);
+
+  useEffect(() => {
+    zaehleGemeinschaft().then(setZahlen);
+    ladeMeineHerzen().then(setHerzen);
+  }, []);
+
+  useEffect(() => {
+    if (!bed) { setListe(null); return; }
+    let aktiv = true;
+    setListe(null);
+    ladeGemeinschaft(bed).then((d) => { if (aktiv) setListe(d); });
+    // Sie hat diese Tuer bewusst geoeffnet — das ist ein leises Signal.
+    beduerfnisMerken(bed, 2);
+    return () => { aktiv = false; };
+  }, [bed]);
+
+  const oeffnen = async (b) => {
+    setOffen(offen?.id === b.id ? null : b);
+    if (offen?.id === b.id) return;
+    gemeinschaftGesehen(b.id, b.typ === "text" || b.typ === "uebung" ? 100 : 10);
+    beduerfnisMerken(b.beduerfnis, 3);
+  };
+
+  const herz = async (b) => {
+    const an = !herzen.includes(b.id);
+    setHerzen(an ? [...herzen, b.id] : herzen.filter((x) => x !== b.id));
+    await gemeinschaftHerz(b.id, an);
+    if (an) beduerfnisMerken(b.beduerfnis, 5);
+  };
+
+  /* ── Übersicht: nur Türen, hinter denen wirklich etwas liegt ── */
+  if (!bed) {
+    const offeneTueren = BEDUERFNISSE.filter((b) => (zahlen[b.id] || 0) > 0);
+    const gesamt = Object.values(zahlen).reduce((a, n) => a + n, 0);
+    return (
+      <div style={{ padding: "0 0 24px" }}>
+        <Eyebrow color={C.plum}>Von Frauen für Frauen</Eyebrow>
+        <H size={23} style={{ marginBottom: 6 }}>Was brauchst du gerade?</H>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: "0 0 18px" }}>
+          {gesamt > 0
+            ? `${gesamt} Beiträge, geschenkt von Coachinnen aus ganz Deutschland. Frei für dich — ganz gleich, ob du eine Begleitung hast oder nicht.`
+            : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen. Bald ist der erste da."}
+        </p>
+
+        {offeneTueren.length === 0 ? (
+          <Card>
+            <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+              Noch ist es still hier. Die ersten Coachinnen tragen gerade ihre Geschenke ein. 🤍
+            </p>
+          </Card>
+        ) : (
+          <div style={{ display: "grid", gap: 10 }}>
+            {offeneTueren.map((b) => (
+              <Card key={b.id} onClick={() => setBed(b.id)}
+                style={{ display: "flex", alignItems: "center", gap: 13, cursor: "pointer" }}>
+                <span style={{ fontSize: 23, flexShrink: 0 }}>{b.icon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso, lineHeight: 1.35 }}>{b.t}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
+                    {zahlen[b.id]} {zahlen[b.id] === 1 ? "Beitrag" : "Beiträge"}
+                  </div>
+                </div>
+                <span style={{ color: C.gold, fontSize: 18 }}>›</span>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {!bindung?.coach_id && gesamt > 0 && (
+          <Card style={{ marginTop: 18, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, marginBottom: 5 }}>
+              Und wenn du mehr möchtest?
+            </div>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+              Jeder Beitrag hier kommt von einer echten Frau. Wenn dir eine gut tut, kannst du
+              unter ihrem Namen sehen, was sie sonst noch anbietet — ohne Druck, ohne Abo.
+            </p>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  /* ── Eine Tür ── */
+  const info = BED[bed];
+  return (
+    <div style={{ padding: "0 0 24px" }}>
+      <button onClick={() => { setBed(null); setOffen(null); }} style={{
+        background: "none", border: "none", cursor: "pointer", padding: "4px 0 12px",
+        fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, fontWeight: 600, minHeight: 40,
+      }}>‹ Alle Bereiche</button>
+
+      <Eyebrow color={C.plum}>{info?.icon} Gemeinschaft</Eyebrow>
+      <H size={21} style={{ marginBottom: 16 }}>{info?.t}</H>
+
+      {liste === null && (
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Einen Moment …</p>
+      )}
+
+      {liste?.length === 0 && (
+        <Card><p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 14.5, color: C.ink, margin: 0 }}>
+          Hierzu gibt es noch nichts. Schau bald wieder vorbei.
+        </p></Card>
+      )}
+
+      <div style={{ display: "grid", gap: 12 }}>
+        {(liste || []).map((b) => {
+          const auf = offen?.id === b.id;
+          const geherzt = herzen.includes(b.id);
+          return (
+            <Card key={b.id} style={{ padding: 0, overflow: "hidden" }}>
+              <div onClick={() => oeffnen(b)} style={{ padding: "15px 16px", cursor: "pointer" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 11 }}>
+                  <span style={{ fontSize: 19, flexShrink: 0, marginTop: 1 }}>{GEM_TYP_ICON[b.typ]}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.35 }}>{b.titel}</div>
+                    {b.einleitung && (
+                      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "5px 0 0" }}>{b.einleitung}</p>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 8, flexWrap: "wrap" }}>
+                      {b.coach_name && (
+                        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, fontWeight: 600 }}>
+                          von {b.coach_name}
+                        </span>
+                      )}
+                      {b.dauer_min ? (
+                        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>· {b.dauer_min} Min</span>
+                      ) : null}
+                      {b.herzen > 0 && (
+                        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>· {b.herzen} 🤍</span>
+                      )}
+                    </div>
+                  </div>
+                  <span style={{ color: C.gold, fontSize: 17, flexShrink: 0 }}>{auf ? "⌃" : "⌄"}</span>
+                </div>
+              </div>
+
+              {auf && (
+                <div style={{ padding: "0 16px 15px", borderTop: `1px solid ${C.line}` }}>
+                  {b.typ === "audio" && b.datei_pfad && (
+                    <audio controls src={gemeinschaftDateiUrl(b.datei_pfad)} style={{ width: "100%", marginTop: 13 }}
+                      onEnded={() => gemeinschaftGesehen(b.id, 100)}
+                      onTimeUpdate={(e) => {
+                        const el = e.currentTarget;
+                        if (el.duration > 0) {
+                          const p = Math.round((el.currentTime / el.duration) * 100);
+                          if (p > 0 && p % 25 === 0) gemeinschaftGesehen(b.id, p);
+                        }
+                      }} />
+                  )}
+
+                  {b.typ === "video" && b.extern_url && (
+                    <a href={b.extern_url} target="_blank" rel="noreferrer"
+                      onClick={() => gemeinschaftGesehen(b.id, 50)}
+                      style={{
+                        display: "block", marginTop: 13, padding: "13px 16px", borderRadius: 13,
+                        background: C.beige, textAlign: "center", textDecoration: "none",
+                        fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, color: C.espresso,
+                      }}>▶︎ Video ansehen</a>
+                  )}
+
+                  {(b.typ === "text" || b.typ === "uebung") && b.text && (
+                    <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap", margin: "13px 0 0" }}>{b.text}</p>
+                  )}
+
+                  {b.extern_url && b.typ !== "video" && (
+                    <a href={b.extern_url} target="_blank" rel="noreferrer" style={{
+                      display: "inline-block", marginTop: 11, fontFamily: "system-ui, sans-serif",
+                      fontSize: 13, color: C.plum, fontWeight: 600,
+                    }}>↗ Weiterlesen</a>
+                  )}
+
+                  <div style={{ display: "flex", gap: 9, marginTop: 14, alignItems: "center" }}>
+                    <button onClick={() => herz(b)} style={{
+                      padding: "9px 15px", borderRadius: 11, cursor: "pointer", minHeight: 42,
+                      border: `1.5px solid ${geherzt ? C.rose : C.line}`,
+                      background: geherzt ? C.roseSoft : "transparent",
+                      fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600,
+                      color: geherzt ? C.plum : C.ink,
+                    }}>{geherzt ? "🤍 Gemerkt" : "🤍 Hat mir gut getan"}</button>
+                  </div>
+                </div>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Transparenz: sie darf wissen, warum sie etwas sieht, und es abstellen. */}
+      <button onClick={async () => { await beduerfnisVergessen(bed); setBed(null); }} style={{
+        width: "100%", background: "none", border: "none", cursor: "pointer", marginTop: 20,
+        fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, minHeight: 44,
+        textDecoration: "underline", opacity: .75,
+      }}>Das beschäftigt mich nicht mehr — nicht mehr vorschlagen</button>
+    </div>
+  );
+}
+
 const THEMEN = [
   {
     id: "trauer", icon: "🕯️", t: "Trauer", farbe: "#8E4A63", krise: true,
@@ -7315,6 +7554,9 @@ function useSekundenTakt(aktiv = true) {
 }
 
 const MEHR_GRUPPEN = [
+    { g: "Von Frauen für Frauen", items: [
+      { icon: "\u{1F49D}", t: "Gemeinschaft", s: "Was Coachinnen für alle Frauen geschenkt haben", tab: "gemeinschaft" },
+    ] },
     { g: "Deine Coachin", items: [
       { icon: "🌸", t: "Coaching", s: "Deine Begleitung, Pakete & Fortschritt", tab: "coaching" },
       { icon: "💬", t: "Coach-Chat", s: "Schreib ihr, wenn dich etwas bewegt", tab: "coach" },
@@ -9727,7 +9969,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
-const TITLES = { recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { gemeinschaft: "Gemeinschaft", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -10121,6 +10363,7 @@ export default function IlhoApp() {
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 172 : 86, animation: "fadeUp .45s ease" }}>
               {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
+              {tab === "gemeinschaft" && <Gemeinschaft go={go} bindung={bindung} />}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "wochenbericht" && <Wochenbericht bindung={bindung} aufBindung={aufBindung} entries={entries} achtsam={achtsam} dank={dank} qigong={qigong} metime={metime} losgelassen={losgelassen} punkte={punkte} />}
               {tab === "impressum" && <Impressum />}

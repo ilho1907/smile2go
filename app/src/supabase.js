@@ -903,6 +903,152 @@ export async function coachProfilSichern(name = null) {
   return user.id;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Gemeinschaft — die freie Mediathek, die von den Coachinnen kommt.
+// Sichtbar fuer JEDE angemeldete Frau, auch ohne Bindung. Das ist der Punkt:
+// die meisten haben keine Coachin, und bisher sahen sie gar nichts.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Beitraege zu einem Beduerfnis. Reihenfolge: zuerst, was Frauen wirklich zu
+// Ende hoeren (anteil_schnitt), dann das Neue. Klicks und Herzen messen nur
+// das Vorschaubild, deshalb stehen sie nicht an erster Stelle.
+export async function ladeGemeinschaft(beduerfnis = null, limit = 40) {
+  if (!supabase) return [];
+  let q = supabase
+    .from("gemeinschaft")
+    .select("id, coach_id, titel, einleitung, typ, beduerfnis, dauer_min, datei_pfad, extern_url, text, aufrufe, herzen, anteil_schnitt, anteil_anzahl, created_at, coaches(name, kurzprofil)")
+    .eq("freigegeben", true);
+  if (beduerfnis) q = q.eq("beduerfnis", beduerfnis);
+  const { data, error } = await q
+    .order("anteil_schnitt", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) { console.warn("ladeGemeinschaft:", error.message); return []; }
+  return (data || []).map((b) => ({ ...b, coach_name: b.coaches?.name || null }));
+}
+
+// Wie viele Beitraege es je Beduerfnis gibt — fuer die Uebersicht, damit
+// leere Tueren gar nicht erst angeboten werden.
+export async function zaehleGemeinschaft() {
+  if (!supabase) return {};
+  const { data, error } = await supabase
+    .from("gemeinschaft").select("beduerfnis").eq("freigegeben", true).limit(2000);
+  if (error) return {};
+  const n = {};
+  for (const r of data || []) n[r.beduerfnis] = (n[r.beduerfnis] || 0) + 1;
+  return n;
+}
+
+export function gemeinschaftDateiUrl(pfad) {
+  if (!supabase || !pfad) return null;
+  return supabase.storage.from("gemeinschaft").getPublicUrl(pfad).data.publicUrl;
+}
+
+// Fortschritt melden. anteil = wie weit sie gekommen ist (0–100). Daraus
+// entsteht das Ranking; der Trigger in der Datenbank pflegt den Schnitt.
+export async function gemeinschaftGesehen(beitragId, anteil = 0) {
+  const user = await nutzerin();
+  if (!supabase || !user || !beitragId) return;
+  const wert = Math.max(0, Math.min(100, Math.round(anteil)));
+  const { data: alt } = await supabase
+    .from("gemeinschaft_gesehen").select("anteil")
+    .eq("beitrag_id", beitragId).eq("user_id", user.id).maybeSingle();
+  if (alt && wert <= alt.anteil) {
+    await supabase.from("gemeinschaft_gesehen")
+      .update({ zurueck: true, zuletzt: new Date().toISOString() })
+      .eq("beitrag_id", beitragId).eq("user_id", user.id);
+    return;
+  }
+  await supabase.from("gemeinschaft_gesehen").upsert(
+    { beitrag_id: beitragId, user_id: user.id, anteil: wert, zurueck: !!alt, zuletzt: new Date().toISOString() },
+    { onConflict: "beitrag_id,user_id" },
+  );
+}
+
+export async function gemeinschaftHerz(beitragId, an) {
+  const user = await nutzerin();
+  if (!supabase || !user) return false;
+  if (an) {
+    const { error } = await supabase.from("gemeinschaft_herz")
+      .upsert({ beitrag_id: beitragId, user_id: user.id }, { onConflict: "beitrag_id,user_id" });
+    return !error;
+  }
+  const { error } = await supabase.from("gemeinschaft_herz")
+    .delete().eq("beitrag_id", beitragId).eq("user_id", user.id);
+  return !error;
+}
+
+export async function ladeMeineHerzen() {
+  const user = await nutzerin();
+  if (!supabase || !user) return [];
+  const { data } = await supabase
+    .from("gemeinschaft_herz").select("beitrag_id").eq("user_id", user.id);
+  return (data || []).map((r) => r.beitrag_id);
+}
+
+// ── Beduerfnis-Profil ──────────────────────────────────────────────────────
+// Ein abklingender Zaehler je Beduerfnis, gespeist NUR aus dem, was sie
+// bewusst antippt. Tagebuchtext wird dafuer nie gelesen.
+
+export async function beduerfnisMerken(beduerfnis, punkte) {
+  if (!supabase || !beduerfnis) return null;
+  const { data, error } = await supabase.rpc("beduerfnis_merken", {
+    p_beduerfnis: beduerfnis, p_punkte: punkte,
+  });
+  if (error) { console.warn("beduerfnisMerken:", error.message); return null; }
+  return data;
+}
+
+export async function beduerfnisVergessen(beduerfnis) {
+  if (!supabase) return;
+  await supabase.rpc("beduerfnis_vergessen", { p_beduerfnis: beduerfnis });
+}
+
+export async function meineBeduerfnisse() {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("meine_beduerfnisse");
+  if (error) return [];
+  return data || [];
+}
+
+// ── Coach-Seite der Gemeinschaft ───────────────────────────────────────────
+
+export async function ladeMeineBeitraegeGem() {
+  const user = await nutzerin();
+  if (!supabase || !user) return [];
+  const { data } = await supabase
+    .from("gemeinschaft").select("*").eq("coach_id", user.id)
+    .order("created_at", { ascending: false });
+  return data || [];
+}
+
+// Audio hochladen. Video laden wir bewusst NICHT hoch — es bleibt auf ihrem
+// eigenen Kanal, dort gehoeren die Aufrufe und die Abonnentinnen auch hin.
+export async function gemeinschaftAudioHochladen(datei) {
+  const user = await nutzerin();
+  if (!supabase || !user || !datei) return null;
+  const pfad = `${user.id}/${Date.now()}-${datei.name.replace(/[^\w.\-]/g, "_")}`;
+  const { error } = await supabase.storage.from("gemeinschaft").upload(pfad, datei, { upsert: false });
+  if (error) { console.warn("gemeinschaftAudioHochladen:", error.message); return null; }
+  return pfad;
+}
+
+export async function gemeinschaftAnlegen(felder) {
+  const user = await nutzerin();
+  if (!supabase || !user) return null;
+  await supabase.from("coaches").upsert({ id: user.id, ist_coach: true }, { onConflict: "id" });
+  const { data, error } = await supabase
+    .from("gemeinschaft").insert({ ...felder, coach_id: user.id }).select().single();
+  if (error) { console.warn("gemeinschaftAnlegen:", error.message); return null; }
+  return data;
+}
+
+export async function gemeinschaftLoeschen(id) {
+  if (!supabase) return false;
+  const { error } = await supabase.from("gemeinschaft").delete().eq("id", id);
+  return !error;
+}
+
 // ── Coach-Rolle ────────────────────────────────────────────────────────────
 // "Ich bin Coachin" ist eine bewusste Entscheidung der Nutzerin — bei der
 // Registrierung oder spaeter im Profil. Sie schaltet nur den Coach-Bereich
