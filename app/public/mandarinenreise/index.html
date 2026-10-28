@@ -145,7 +145,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .station-media .scene{position:absolute;inset:0}
 .station-media{position:relative}
 .station-copy{min-width:0;display:grid;gap:22px;align-content:start}
-.station-head h2{font-size:clamp(2.1rem,6.4vw,3.2rem);margin-top:8px}
+.station-head h2{font-size:clamp(2.6rem,9vw,3.8rem);margin-top:6px;letter-spacing:-.01em}
+.station-sub{margin-top:6px;font-family:var(--f-display);font-style:italic;font-size:clamp(1.3rem,4.2vw,1.6rem);line-height:1.3;color:var(--orange-deep)}
 .guide{font-size:1.12rem;display:grid;gap:10px;color:var(--ink);border-left:2px solid var(--gold);padding-left:18px}
 .station-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 @media (min-width:860px){
@@ -474,7 +475,7 @@ const STATIONS = [
     guide: ['Betrachte deine Mandarine so, als würdest du sie zum ersten Mal sehen.'],
     questions: ['Welche verschiedenen Orangetöne kannst du erkennen?', 'Welche kleinen Unebenheiten fallen dir auf?', 'Ist die Mandarine vollkommen rund?', 'Was entdeckst du, wenn du sie besonders aufmerksam betrachtest?', 'Welche Details hättest du im Alltag wahrscheinlich übersehen?', 'Wie fühlt es sich an, etwas Gewöhnlichem so viel Aufmerksamkeit zu schenken?'],
     feature: { type: 'text', label: 'Was hast du heute zum ersten Mal bewusst wahrgenommen?' } },
-  { id: 's3', sense: 'Fühlen', art: 'touch', media: 'station3',
+  { id: 's3', sense: 'Berühren', art: 'touch', media: 'station3',
     title: 'Spüre den Augenblick.',
     guide: ['Schließe deine Augen und lasse deine Fingerspitzen die Mandarine entdecken.'],
     questions: ['Ist die Oberfläche glatt, rau oder uneben?', 'Wie fühlt sich die Temperatur an?', 'Wie schwer liegt die Mandarine in deiner Hand?', 'Was bemerkst du, wenn du sie sanft drückst?', 'Welche Empfindungen entstehen in deinen Fingerspitzen?', 'Wie verändert sich deine Aufmerksamkeit, wenn du deine Augen schließt?'],
@@ -663,8 +664,9 @@ STATIONS.forEach((s, idx) => {
 
   const copy = el('div', { class: 'station-copy' });
   const head = el('div', { class: 'station-head' });
-  head.appendChild(el('p', { class: 'eyebrow' }, `Station ${idx + 1} · ${s.sense}`));
-  head.appendChild(el('h2', { id: s.id + '-title', tabindex: '-1' }, stationTitle(s)));
+  head.appendChild(el('p', { class: 'eyebrow' }, `Station ${idx + 1} von ${STATIONS.length}`));
+  head.appendChild(el('h2', { id: s.id + '-title', tabindex: '-1' }, s.sense));
+  head.appendChild(el('p', { class: 'station-sub' }, stationTitle(s)));
   copy.appendChild(head);
 
   const guide = el('div', { class: 'guide', id: s.id + '-guide' });
@@ -951,7 +953,7 @@ document.addEventListener('click', e => {
   if (b.getAttribute('aria-pressed') === 'true') { stopSpeech(); return; }
   stopSpeech();
   const s = STATIONS.find(x => x.id === b.dataset.station);
-  const text = [stationTitle(s), ...s.guide.map(fill)].join(' ');
+  const text = [s.sense + '.', stationTitle(s), ...s.guide.map(fill)].join(' ');
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'de-DE'; u.rate = .86; u.pitch = 1; if (germanVoice) u.voice = germanVoice;
   u.onend = u.onerror = () => { b.textContent = '🔈 Anleitung vorlesen'; b.setAttribute('aria-pressed', 'false'); };
