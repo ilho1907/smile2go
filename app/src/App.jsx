@@ -7576,7 +7576,6 @@ const MEHR_GRUPPEN = [
     { g: "Üben & Ankommen", items: [
       { icon: "🌿", t: "Qigong", s: "Die Acht Brokate · zehn ruhige Minuten", tab: "qigong" },
       { icon: "🖐️", t: "Achtsamkeit", s: "Atem, Sinne & Körperreise für zwischendurch", tab: "achtsamkeit" },
-      { icon: "🍊", t: "Mandarinenreise", s: "Fünf Sinne, sechs Stationen · 10–15 Min nur für dich", tab: "mandarinenreise" },
       { icon: "🤍", t: "Dankbarkeit", s: "Drei Dinge am Tag · dein Rückblick", tab: "dankbarkeit" },
       { icon: "🕊️", t: "Loslassen", s: "Was darf gehen? · ablegen & freigeben", tab: "loslassen" },
     ] },
@@ -9309,7 +9308,7 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = 
       if (e.origin !== window.location.origin || e.data?.type !== "mandarinenreise:fertig") return;
       if (reiseGemerkt.current) return;
       reiseGemerkt.current = true;
-      merken("Mandarinenreise");
+      merken("Achtsamkeit mit der Mandarine");
     };
     window.addEventListener("message", empfang);
     const alterOverflow = document.body.style.overflow;
@@ -9334,30 +9333,31 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = 
         verlangt, dass du dabei etwas fühlst oder erreichst.
       </p>
 
-      {/* Mandarinenreise – geführte Übung mit den fünf Sinnen */}
+      {/* Achtsamkeit mit der Mandarine – geführte Übung mit den fünf Sinnen */}
       <Card style={{ marginBottom: 12, background: "linear-gradient(160deg, #FFF3E5, #FFFDF9 65%)", border: "1px solid #F1D4B2" }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>🍊 Die Mandarinenreise</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 2 }}>🍊 Achtsamkeit mit der Mandarine</div>
+        <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 14, color: C.plum, marginBottom: 6 }}>Wahrnehmen, ohne zu bewerten.</div>
         <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
           {name ? `${name}, eine` : "Eine"} kleine Mandarine, fünf Sinne, sechs ruhige Stationen. Etwa 10–15 Minuten
           nur für dich. Halte eine Mandarine bereit.
         </p>
-        <Btn small onClick={() => setReiseOffen(true)}>Reise beginnen</Btn>
+        <Btn small onClick={() => setReiseOffen(true)}>Übung beginnen</Btn>
       </Card>
 
       {reiseOffen && createPortal(
-        <div role="dialog" aria-modal="true" aria-label="Die Mandarinenreise" style={{
+        <div role="dialog" aria-modal="true" aria-label="Achtsamkeit mit der Mandarine" style={{
           position: "fixed", inset: 0, zIndex: 2147483000, background: "#FFF9F2", display: "flex", flexDirection: "column",
           paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px max(14px, env(safe-area-inset-right, 0px)) 8px max(14px, env(safe-area-inset-left, 0px))", borderBottom: `1px solid ${C.line}` }}>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso }}>🍊 Mandarinenreise</span>
+            <span style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso }}>🍊 Achtsamkeit mit der Mandarine</span>
             <button type="button" onClick={() => setReiseOffen(false)} style={{
               minHeight: 40, padding: "0 16px", borderRadius: 999, border: `1px solid ${C.line}`, background: C.card,
               color: C.espresso, fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer",
             }}>Schließen ✕</button>
           </div>
           <iframe
-            title="Die Mandarinenreise"
+            title="Achtsamkeit mit der Mandarine"
             src={`/mandarinenreise/index.html?name=${encodeURIComponent(name || "")}`}
             allow="autoplay; fullscreen"
             style={{ flex: 1, width: "100%", border: 0, display: "block" }}
@@ -10021,7 +10021,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
-const TITLES = { gemeinschaft: "Gemeinschaft", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", mandarinenreise: "Mandarinenreise", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { gemeinschaft: "Gemeinschaft", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -10452,7 +10452,6 @@ export default function IlhoApp() {
               {tab === "metime" && <MeTime metime={metime} setMetime={setMetime} addPunkte={addPunkte} />}
               {tab === "qigong" && <Qigong qigong={qigong} setQigong={setQigong} addPunkte={addPunkte} />}
               {tab === "achtsamkeit" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} name={anzeigeName} />}
-              {tab === "mandarinenreise" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} name={anzeigeName} reiseDirekt />}
               {tab === "dankbarkeit" && <Dankbarkeit dank={dank} setDank={setDank} addPunkte={addPunkte} />}
               {tab === "loslassen" && <Loslassen losgelassen={losgelassen} setLosgelassen={setLosgelassen} addPunkte={addPunkte} />}
               {tab === "kreis" && <FreundinnenKreis kreis={kreis} setKreis={setKreis} streak={streak} addPunkte={addPunkte} />}

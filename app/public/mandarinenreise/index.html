@@ -6,7 +6,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#FFF9F2">
-<title>Mandarinen-Achtsamkeitsreise</title>
+<title>Achtsamkeit mit der Mandarine</title>
 <style>
 /* Layout: eine ruhige Reise in Ansichten – Willkommen, Vorbereitung, sechs Stationen (Bild links / Text rechts ab Tablet), Abschluss.
    Alles bleibt lokal: Schriften aus assets/fonts, keine externen Anfragen. */
@@ -100,7 +100,7 @@ button,input,textarea{font:inherit;color:inherit}
 .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(255,249,242,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid rgba(226,214,200,.7)}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--cream)}
 .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px}
-.brand{font-family:var(--f-display);font-size:1.25rem;color:var(--ink);display:flex;align-items:center;gap:.45em;background:none;border:0;padding:6px 0;cursor:pointer}
+.brand{font-family:var(--f-display);font-size:clamp(1rem,3.6vw,1.25rem);text-align:left;line-height:1.15;min-width:0;color:var(--ink);display:flex;align-items:center;gap:.45em;background:none;border:0;padding:6px 0;cursor:pointer}
 .brand-dot{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFC277,var(--orange) 60%,#C9621A)}
 .tools{display:flex;align-items:center;gap:6px}
 .icon-btn{appearance:none;border:1px solid var(--line);background:var(--paper);color:var(--ink);min-height:44px;min-width:44px;padding:0 14px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:.45em;cursor:pointer;font-size:.92rem;font-weight:600}
@@ -278,7 +278,7 @@ textarea::placeholder,.word::placeholder{color:#9C8B7E}
       <span>Ton an</span>
     </button>
     <div class="wrap hero-content">
-      <p class="eyebrow" data-t="Ein Moment nur für dich"></p>
+      <p class="eyebrow" data-t="Achtsamkeit mit der Mandarine · ohne zu bewerten"></p>
       <h1 id="hero-title" class="hero-title" style="margin-top:14px"></h1>
       <p class="hero-sub">Eine kleine Mandarine. Fünf Sinne. Eine Reise zurück zu dir selbst.</p>
       <div class="btn-row">
@@ -310,7 +310,7 @@ textarea::placeholder,.word::placeholder{color:#9C8B7E}
 <header class="topbar" id="topbar" hidden>
   <div class="wrap">
     <div class="topbar-inner">
-      <button class="brand" type="button" data-go="hero" aria-label="Zur Begrüßung"><span class="brand-dot" aria-hidden="true"></span>Mandarinenreise</button>
+      <button class="brand" type="button" data-go="hero" aria-label="Zur Begrüßung"><span class="brand-dot" aria-hidden="true"></span><span class="brand-text">Achtsamkeit mit der Mandarine</span></button>
       <div class="tools">
         <button class="icon-btn" type="button" id="music-btn" aria-pressed="false" aria-controls="music-panel">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
@@ -338,6 +338,7 @@ textarea::placeholder,.word::placeholder{color:#9C8B7E}
       <h2 id="prep-title" tabindex="-1" style="margin-top:10px">Bevor deine Reise beginnt …</h2>
       <div class="prep-text">
         <p>Suche dir einen ruhigen Platz. Nimm eine Mandarine in deine Hand. Du musst nichts erreichen, nichts beweisen und nichts richtig machen.</p>
+        <p>Nimm wahr, was da ist, ohne es zu bewerten.</p>
         <p>Erlaube dir einfach, diesen Augenblick bewusst zu erleben.</p>
       </div>
       <ul class="checks">
@@ -1024,7 +1025,7 @@ function renderInsights() {
 function buildPrintSheet() {
   const sh = document.getElementById('print-sheet'); sh.textContent = '';
   const head = el('div', { class: 'p-head' });
-  head.appendChild(el('h1', {}, 'Meine Mandarinen-Achtsamkeitsreise'));
+  head.appendChild(el('h1', {}, 'Achtsamkeit mit der Mandarine'));
   head.appendChild(el('p', {}, `${hasName() ? 'Für ' + CONFIG.name : 'Für dich'} · ${new Date().toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}`));
   sh.appendChild(head);
   const groups = collect();
@@ -1093,7 +1094,8 @@ else ht.appendChild(el('em', {}, 'Dieser Moment'));
 ht.append(' gehört nur dir.');
 document.getElementById('letter-title').textContent = hasName() ? `Herzlich willkommen in unserer großen Familie, liebe ${CONFIG.name}! ❤️` : 'Herzlich willkommen in unserer großen Familie! ❤️';
 document.getElementById('finish-title').textContent = hasName() ? `${CONFIG.name}, danke, dass du dir Zeit für dich genommen hast. ❤️` : 'Danke, dass du dir Zeit für dich genommen hast. ❤️';
-document.title = hasName() ? `Ein Moment nur für dich, ${CONFIG.name} – Mandarinenreise` : 'Ein Moment nur für dich – Mandarinenreise';
+document.title = 'Achtsamkeit mit der Mandarine';
+if (inApp) { const bt = document.querySelector('.brand-text'); if (bt) bt.textContent = 'Zum Anfang'; }
 if (!storageOK) document.getElementById('storage-warning').hidden = false;
 refreshResume();
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseAllVideos(); else playScenesIn(document.querySelector(`.view[data-view="${current}"]`)); });
