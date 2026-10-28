@@ -64,7 +64,7 @@ button,input,textarea{font:inherit;color:inherit}
 @keyframes light{from{transform:translateX(-4%)}to{transform:translateX(5%)}}
 .scene .art{position:absolute;inset:0;z-index:1;display:flex;align-items:flex-end;justify-content:center}
 .scene .art svg{width:100%;height:100%}
-.scene video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;opacity:0;transition:opacity 1.4s var(--ease)}
+.scene video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 62%;z-index:2;opacity:0;transition:opacity 1.4s var(--ease)}
 .scene.has-video video{opacity:1}
 .breathe-art{transform-origin:50% 70%;animation:artBreath 9s ease-in-out infinite}
 @keyframes artBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
@@ -400,7 +400,7 @@ textarea::placeholder,.word::placeholder{color:#9C8B7E}
     <details id="privacy">
       <summary>Datenschutz &amp; deine gespeicherten Antworten</summary>
       <div class="privacy-body">
-        <p>Diese Seite hat kein Benutzerkonto, keine Tracking-Skripte und keine Analysewerkzeuge. Schriften und Medien liegen auf demselben Server wie die Seite.</p>
+        <p>Diese Seite hat kein Benutzerkonto, keine Tracking-Skripte und keine Analysewerkzeuge. Schriften liegen auf demselben Server wie die Seite. Videos und Klang werden, falls sie dort nicht liegen, vom Speicher des Videoanbieters (Higgsfield/Amazon CloudFront) geladen; dabei wird wie bei jedem Seitenaufruf technisch deine IP-Adresse übertragen, aber keine deiner Antworten.</p>
         <p>Deine Antworten und dein Fortschritt werden im lokalen Speicher deines Browsers (localStorage) auf diesem Gerät abgelegt, damit nichts verloren geht, wenn du die Seite schließt. Sie verlassen dein Gerät nicht. Auf einem anderen Gerät oder in einem anderen Browser siehst du sie nicht.</p>
         <p id="storage-warning" hidden><strong>Hinweis:</strong> Dein Browser erlaubt gerade kein Speichern (zum Beispiel im privaten Modus). Deine Antworten bleiben nur erhalten, solange diese Seite geöffnet ist.</p>
         <div class="confirm" id="delete-area">
@@ -431,14 +431,17 @@ const CONFIG = {
   timerMinutes: [1, 2, 3],
   media: {
     // Hero: Hochformat für Handys, Querformat für Desktop. Fehlt eine Datei, wird die andere bzw. die Illustration genutzt.
-    hero:     { portrait: 'assets/videos/hero-9x16.mp4', landscape: 'assets/videos/hero-16x9.mp4', poster: 'assets/images/hero-poster.jpg' },
-    station1: { portrait: 'assets/videos/station-1-ankommen-9x16.mp4',  poster: 'assets/images/station-1-poster.jpg' },
-    station2: { portrait: 'assets/videos/station-2-sehen-9x16.mp4',     poster: 'assets/images/station-2-poster.jpg' },
-    station3: { portrait: 'assets/videos/station-3-fuehlen-9x16.mp4',   poster: 'assets/images/station-3-poster.jpg' },
-    station4: { portrait: 'assets/videos/station-4-riechen-9x16.mp4',   poster: 'assets/images/station-4-poster.jpg' },
-    station5: { portrait: 'assets/videos/station-5-schmecken-9x16.mp4', poster: 'assets/images/station-5-poster.jpg' },
-    station6: { portrait: 'assets/videos/station-6-integration-9x16.mp4', poster: 'assets/images/station-6-poster.jpg' },
-    music: 'assets/audio/naturklang.mp3'   // Vogelgezwitscher & Blätterrauschen aus dem Hero-Video
+    // Jeder Eintrag darf eine Liste sein: zuerst die lokale Datei, danach die gehostete Kopie (Higgsfield-CDN).
+    hero:     { portrait:  ['assets/videos/hero-9x16.mp4', 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/304912e7-ee2e-48e9-befe-dca656bfdc45.mp4'],
+                landscape: ['assets/videos/hero-16x9.mp4', 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/459926d8-e020-4526-b7bd-a61870adbe27.mp4'],
+                poster: 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/314ba947-57f3-4e4a-833c-8c11e2fa3d2c.jpg' },
+    station1: { portrait: ['assets/videos/station-1-ankommen-9x16.mp4', 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/a7974639-c90a-4051-983f-e82067139e6d.mp4'] },
+    station2: { portrait: ['assets/videos/station-2-sehen-9x16.mp4', 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/24f3fc8d-d2e5-4a63-b1f7-0b9f2c2b8e15.mp4'] },
+    station3: { portrait: ['assets/videos/station-3-fuehlen-9x16.mp4', 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/bf35f084-8881-49b4-973b-6f2d0db9420c.mp4'] },
+    station4: { portrait: ['assets/videos/station-4-riechen-9x16.mp4', 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/14c5297d-a83d-4993-9a7d-c3c60bd9fab7.mp4'] },
+    station5: { portrait: ['assets/videos/station-5-schmecken-9x16.mp4', 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/c4e49a47-6ed3-43b4-8bcf-18ca0f62f7a0.mp4'] },
+    station6: { portrait: ['assets/videos/station-6-integration-9x16.mp4', 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/fb6099f2-865d-47b6-b779-69e8c93c6172.mp4'] },
+    music: ['assets/audio/naturklang.mp3', 'https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/5364dc5b-6747-4043-bba2-5166751e4da8.mp3']   // Vogelgezwitscher & Blätterrauschen aus dem Hero-Video
   }
 };
 
@@ -597,7 +600,7 @@ function setupScene(scene, artKind, mediaKey) {
   const m = CONFIG.media[mediaKey];
   if (!m) return;
   const portrait = matchMedia('(max-aspect-ratio: 1/1)').matches || mediaKey !== 'hero';
-  const sources = (portrait ? [m.portrait, m.landscape] : [m.landscape, m.portrait]).filter(Boolean);
+  const sources = (portrait ? [m.portrait, m.landscape] : [m.landscape, m.portrait]).flat().filter(Boolean);
   if (!sources.length) return;
   const v = document.createElement('video');
   v.muted = true; v.loop = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
@@ -972,15 +975,22 @@ function musicOff(msg) {
   document.getElementById('music-panel').hidden = true;
   musicNote.hidden = !msg; musicNote.textContent = msg || '';
 }
-audio.addEventListener('error', () => { if (musicBtn.getAttribute('aria-pressed') === 'true') musicOff('Es ist noch keine Klangdatei hinterlegt. Die Reise funktioniert auch ganz in Stille.'); });
+const musicSources = [CONFIG.media.music].flat().filter(Boolean);
+let musicIdx = 0;
+audio.addEventListener('error', () => {
+  if (musicBtn.getAttribute('aria-pressed') !== 'true') return;
+  musicIdx++;
+  if (musicIdx < musicSources.length) { audio.src = musicSources[musicIdx]; audio.play().catch(() => {}); }
+  else musicOff('Es ist noch keine Klangdatei hinterlegt. Die Reise funktioniert auch ganz in Stille.');
+});
 musicBtn.addEventListener('click', () => {
   if (musicBtn.getAttribute('aria-pressed') === 'true') { musicOff(); return; }
-  if (!audio.src) audio.src = CONFIG.media.music;
+  if (!audio.src) audio.src = musicSources[0];
   musicBtn.setAttribute('aria-pressed', 'true');
   document.getElementById('music-label').textContent = 'Klang aus';
   document.getElementById('music-panel').hidden = false;
   musicNote.hidden = true;
-  audio.play().catch(() => musicOff('Der Klang konnte nicht starten. Die Reise funktioniert auch ganz in Stille.'));
+  audio.play().catch(err => { if (err && err.name === 'NotAllowedError') musicOff('Der Klang konnte nicht starten. Die Reise funktioniert auch ganz in Stille.'); });
 });
 
 /* =========================================================================
