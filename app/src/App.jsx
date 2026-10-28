@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
 import { alsPdf } from "./export";
@@ -7575,6 +7576,7 @@ const MEHR_GRUPPEN = [
     { g: "Üben & Ankommen", items: [
       { icon: "🌿", t: "Qigong", s: "Die Acht Brokate · zehn ruhige Minuten", tab: "qigong" },
       { icon: "🖐️", t: "Achtsamkeit", s: "Atem, Sinne & Körperreise für zwischendurch", tab: "achtsamkeit" },
+      { icon: "🍊", t: "Mandarinenreise", s: "Fünf Sinne, sechs Stationen · 10–15 Min nur für dich", tab: "mandarinenreise" },
       { icon: "🤍", t: "Dankbarkeit", s: "Drei Dinge am Tag · dein Rückblick", tab: "dankbarkeit" },
       { icon: "🕊️", t: "Loslassen", s: "Was darf gehen? · ablegen & freigeben", tab: "loslassen" },
     ] },
@@ -9266,9 +9268,9 @@ function Qigong({ qigong, setQigong, addPunkte }) {
 
 const ATEM_TAKT = [["Einatmen", 4], ["Halten", 7], ["Ausatmen", 8]];
 
-function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "" }) {
+function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = false }) {
   const [modus, setModus] = useState(null);
-  const [reiseOffen, setReiseOffen] = useState(false);
+  const [reiseOffen, setReiseOffen] = useState(reiseDirekt);
   const reiseGemerkt = useRef(false);
   const [phase, setPhase] = useState(0);
   const [rest, setRest] = useState(4);
@@ -9342,9 +9344,9 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "" }) {
         <Btn small onClick={() => setReiseOffen(true)}>Reise beginnen</Btn>
       </Card>
 
-      {reiseOffen && (
+      {reiseOffen && createPortal(
         <div role="dialog" aria-modal="true" aria-label="Die Mandarinenreise" style={{
-          position: "fixed", inset: 0, zIndex: 9999, background: "#FFF9F2", display: "flex", flexDirection: "column",
+          position: "fixed", inset: 0, zIndex: 2147483000, background: "#FFF9F2", display: "flex", flexDirection: "column",
           paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px max(14px, env(safe-area-inset-right, 0px)) 8px max(14px, env(safe-area-inset-left, 0px))", borderBottom: `1px solid ${C.line}` }}>
@@ -9360,7 +9362,8 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "" }) {
             allow="autoplay; fullscreen"
             style={{ flex: 1, width: "100%", border: 0, display: "block" }}
           />
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 4-7-8 Atem */}
@@ -10018,7 +10021,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
-const TITLES = { gemeinschaft: "Gemeinschaft", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { gemeinschaft: "Gemeinschaft", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", mandarinenreise: "Mandarinenreise", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -10449,6 +10452,7 @@ export default function IlhoApp() {
               {tab === "metime" && <MeTime metime={metime} setMetime={setMetime} addPunkte={addPunkte} />}
               {tab === "qigong" && <Qigong qigong={qigong} setQigong={setQigong} addPunkte={addPunkte} />}
               {tab === "achtsamkeit" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} name={anzeigeName} />}
+              {tab === "mandarinenreise" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} name={anzeigeName} reiseDirekt />}
               {tab === "dankbarkeit" && <Dankbarkeit dank={dank} setDank={setDank} addPunkte={addPunkte} />}
               {tab === "loslassen" && <Loslassen losgelassen={losgelassen} setLosgelassen={setLosgelassen} addPunkte={addPunkte} />}
               {tab === "kreis" && <FreundinnenKreis kreis={kreis} setKreis={setKreis} streak={streak} addPunkte={addPunkte} />}
