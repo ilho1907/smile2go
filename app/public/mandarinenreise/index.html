@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#FFF9F2">
+<title>Mandarinen-Achtsamkeitsreise</title>
+<style>
+/* Layout: eine ruhige Reise in Ansichten – Willkommen, Vorbereitung, sechs Stationen (Bild links / Text rechts ab Tablet), Abschluss.
+   Alles bleibt lokal: Schriften aus assets/fonts, keine externen Anfragen. */
+@font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:500;font-display:swap;src:url("assets/fonts/cormorant-garamond-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Cormorant Garamond";font-style:italic;font-weight:500;font-display:swap;src:url("assets/fonts/cormorant-garamond-latin-500-italic.woff2") format("woff2")}
+@font-face{font-family:"Cormorant Garamond";font-style:normal;font-weight:600;font-display:swap;src:url("assets/fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Nunito Sans";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/nunito-sans-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Nunito Sans";font-style:italic;font-weight:400;font-display:swap;src:url("assets/fonts/nunito-sans-latin-400-italic.woff2") format("woff2")}
+@font-face{font-family:"Nunito Sans";font-style:normal;font-weight:600;font-display:swap;src:url("assets/fonts/nunito-sans-latin-600-normal.woff2") format("woff2")}
+
+:root{
+  --cream:#FFF9F2; --beige:#E9E1D8; --orange:#F28C28; --brown:#6F5A4B; --sage:#A8B5A2; --gold:#D6B88F;
+  --ink:#3B2C22;          /* tiefes Braun für Überschriften und Text auf Orange */
+  --orange-deep:#A9560E;  /* lesbares Orange für Text auf Creme */
+  --paper:#FFFDF9; --line:#E2D6C8; --shade:rgba(111,90,75,.10);
+  --f-display:"Cormorant Garamond","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --f-body:"Nunito Sans","Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+  --r-card:22px; --r-pill:999px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--brown);font-family:var(--f-body);font-size:17px;line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img,video,svg{max-width:100%;display:block}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--f-display);color:var(--ink);font-weight:500;line-height:1.12;margin:0;text-wrap:balance}
+p{margin:0}
+button,input,textarea{font:inherit;color:inherit}
+[tabindex="-1"]:focus{outline:none}
+:focus-visible{outline:3px solid var(--orange-deep);outline-offset:3px;border-radius:8px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{width:100%;max-width:1080px;margin-inline:auto;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.eyebrow{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--orange-deep);font-weight:600}
+
+/* Buttons */
+.btn{appearance:none;border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.55em;min-height:52px;padding:.8em 1.5em;border-radius:var(--r-pill);font-weight:600;font-size:1rem;line-height:1.2;text-align:center;text-decoration:none;transition:transform .25s var(--ease),background-color .25s,box-shadow .25s}
+.btn-primary{background:var(--orange);color:var(--ink);box-shadow:0 10px 24px -12px rgba(169,86,14,.65)}
+.btn-primary:hover{background:#F59A3E;transform:translateY(-1px)}
+.btn-soft{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+.btn-soft:hover{background:#fff}
+.btn-ghost{background:transparent;color:var(--brown);min-height:44px;padding:.5em 1em}
+.btn-ghost:hover{color:var(--ink);background:rgba(233,225,216,.6)}
+.btn-danger{background:#F6E1DA;color:#7A2E1C;border:1px solid #E8C2B5}
+.btn-row{display:flex;flex-wrap:wrap;gap:12px}
+
+/* Ansichten */
+.view{animation:viewIn .7s var(--ease) both}
+@keyframes viewIn{from{opacity:.001;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Szene / Platzhalter-Kunst */
+.scene{--hz:54%;position:relative;overflow:hidden;background:linear-gradient(180deg,#FCEFDC 0%,#F8E3C9 var(--hz),#E6CCA6 calc(var(--hz) + .4%),#D9BB92 100%)}
+.scene::before{content:"";position:absolute;inset:-20% -30%;background:repeating-linear-gradient(115deg,rgba(255,255,255,0) 0 60px,rgba(255,252,240,.55) 60px 110px,rgba(255,255,255,0) 110px 200px);filter:blur(18px);mix-blend-mode:soft-light;opacity:.9;animation:light 18s ease-in-out infinite alternate}
+.scene::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(111,90,75,0) 0 9px,rgba(111,90,75,.05) 9px 10px);-webkit-mask:linear-gradient(180deg,transparent calc(var(--hz) + .4%),#000 calc(var(--hz) + 1%));mask:linear-gradient(180deg,transparent calc(var(--hz) + .4%),#000 calc(var(--hz) + 1%))}
+@keyframes light{from{transform:translateX(-4%)}to{transform:translateX(5%)}}
+.scene .art{position:absolute;inset:0;z-index:1;display:flex;align-items:flex-end;justify-content:center}
+.scene .art svg{width:100%;height:100%}
+.scene video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;opacity:0;transition:opacity 1.4s var(--ease)}
+.scene.has-video video{opacity:1}
+.breathe-art{transform-origin:50% 70%;animation:artBreath 9s ease-in-out infinite}
+@keyframes artBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+.steam path{animation:steam 5s ease-in-out infinite}
+.steam path:nth-child(2){animation-delay:1.6s}
+@keyframes steam{0%,100%{opacity:0;transform:translateY(6px)}50%{opacity:.6;transform:translateY(-6px)}}
+
+/* HERO */
+#view-hero{display:block}
+.hero{position:relative;min-height:100vh;min-height:100svh;display:flex;align-items:flex-end}
+.hero .scene{position:absolute;inset:0}
+.hero .scene .art svg{width:min(150%,1100px);height:auto;max-width:none;margin-bottom:-4%}
+@media (max-aspect-ratio:1/1){.hero .scene{--hz:31%}.hero .scene .art{align-items:flex-start;padding-top:9vh}.hero .scene .art svg{width:150%;margin-bottom:0}}
+.hero-sound{position:absolute;z-index:5;top:calc(16px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));background:rgba(255,253,249,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.hero-veil{position:absolute;inset:0;z-index:3;background:linear-gradient(180deg,rgba(255,249,242,.0) 18%,rgba(255,249,242,.55) 52%,rgba(255,249,242,.95) 82%)}
+.hero-content{position:relative;z-index:4;padding-block:clamp(40px,10vh,96px) calc(32px + env(safe-area-inset-bottom,0px))}
+.hero-title{font-size:clamp(2.6rem,9vw,5.2rem);font-weight:500;letter-spacing:-.01em;max-width:13ch}
+.hero-title em{font-style:italic;color:var(--orange-deep)}
+.hero-sub{margin-top:18px;font-size:clamp(1.08rem,2.6vw,1.3rem);max-width:34ch;color:var(--brown)}
+.hero .btn-row{margin-top:30px}
+.scroll-cue{margin-top:28px;font-size:.85rem;color:var(--brown);display:flex;align-items:center;gap:.5em}
+.scroll-cue::before{content:"";width:28px;height:1px;background:var(--gold)}
+
+.letter{padding-block:clamp(56px,10vw,110px)}
+.letter-card{max-width:640px;margin-inline:auto;background:var(--paper);border-radius:var(--r-card);padding:clamp(28px,6vw,56px);box-shadow:0 30px 60px -40px rgba(111,90,75,.45);border:1px solid var(--line);position:relative}
+.letter-card::before{content:"";position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFC277,var(--orange) 55%,#C9621A);box-shadow:0 8px 18px -8px rgba(169,86,14,.7)}
+.letter-card h2{font-size:clamp(1.9rem,5vw,2.5rem);text-align:center}
+.letter-body{margin-top:22px;display:grid;gap:14px;font-size:1.06rem}
+.signature{font-family:var(--f-display);font-style:italic;font-size:1.6rem;color:var(--ink);margin-top:10px}
+.letter .btn-row{justify-content:center;margin-top:30px}
+
+/* Kopfleiste */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(255,249,242,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid rgba(226,214,200,.7)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--cream)}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px}
+.brand{font-family:var(--f-display);font-size:1.25rem;color:var(--ink);display:flex;align-items:center;gap:.45em;background:none;border:0;padding:6px 0;cursor:pointer}
+.brand-dot{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFC277,var(--orange) 60%,#C9621A)}
+.tools{display:flex;align-items:center;gap:6px}
+.icon-btn{appearance:none;border:1px solid var(--line);background:var(--paper);color:var(--ink);min-height:44px;min-width:44px;padding:0 14px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:.45em;cursor:pointer;font-size:.92rem;font-weight:600}
+.icon-btn[aria-pressed="true"]{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+.icon-btn svg{width:18px;height:18px}
+.music-panel{display:flex;align-items:center;gap:12px;padding-bottom:12px;font-size:.9rem}
+.music-panel input[type=range]{flex:1;max-width:260px;accent-color:var(--orange-deep);min-height:32px}
+.note{font-size:.9rem;color:var(--brown)}
+
+/* Fortschritt */
+.progress{padding-bottom:12px}
+.progress-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;list-style:none;margin:0;padding:0}
+.progress-steps button{appearance:none;border:0;background:none;padding:10px 0 4px;width:100%;cursor:pointer;display:grid;gap:6px;color:var(--brown);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
+.progress-steps .bar{height:5px;border-radius:5px;background:var(--beige);overflow:hidden;position:relative}
+.progress-steps .bar::after{content:"";position:absolute;inset:0;background:var(--orange);transform:scaleX(0);transform-origin:left;transition:transform .8s var(--ease)}
+.progress-steps .done .bar::after,.progress-steps .current .bar::after{transform:scaleX(1)}
+.progress-steps .current .bar::after{background:linear-gradient(90deg,var(--orange),var(--gold))}
+.progress-steps .lbl{display:none}
+.progress-steps .current{color:var(--ink);font-weight:600}
+.progress-text{font-size:.88rem;margin-top:4px}
+@media (min-width:760px){.progress-steps .lbl{display:block}.progress-text{display:none}}
+
+/* Vorbereitung */
+.prep{padding-block:clamp(40px,8vw,90px)}
+.prep-card{max-width:620px;margin-inline:auto;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-card);padding:clamp(26px,6vw,52px);box-shadow:0 24px 50px -38px rgba(111,90,75,.5)}
+.prep-card h2{font-size:clamp(2rem,6vw,2.7rem)}
+.prep-text{margin-top:18px;display:grid;gap:12px;font-size:1.06rem}
+.checks{list-style:none;padding:0;margin:26px 0 0;display:grid;gap:10px}
+.check{display:flex;align-items:center;gap:14px;min-height:56px;padding:10px 16px;border-radius:16px;background:var(--cream);border:1px solid var(--line);cursor:pointer;transition:background .3s,border-color .3s}
+.check input{appearance:none;width:26px;height:26px;flex:none;border-radius:50%;border:2px solid var(--gold);background:#fff;display:grid;place-items:center;transition:all .3s;cursor:pointer}
+.check input:checked{background:var(--orange);border-color:var(--orange)}
+.check input:checked::after{content:"";width:7px;height:12px;border:solid var(--ink);border-width:0 2.5px 2.5px 0;transform:translateY(-1px) rotate(45deg)}
+.check:has(input:checked){background:#FFF1E2;border-color:#F4C793}
+.ready-msg{margin-top:16px;font-family:var(--f-display);font-style:italic;font-size:1.25rem;color:var(--orange-deep);min-height:1.6em}
+.prep .btn-row{margin-top:22px}
+.privacy-hint{margin-top:22px;padding-top:18px;border-top:1px dashed var(--line);font-size:.88rem;display:flex;gap:10px}
+.privacy-hint svg{flex:none;width:20px;height:20px;margin-top:3px;color:var(--sage)}
+
+/* Station */
+.station{padding-block:clamp(22px,4vw,48px) 30px;display:grid;gap:clamp(22px,4vw,48px)}
+.station-media{border-radius:var(--r-card);overflow:hidden;aspect-ratio:4/5;max-height:56vh;max-height:56svh;width:100%;max-width:100%;box-shadow:0 30px 60px -40px rgba(111,90,75,.6)}
+.station-media .scene{position:absolute;inset:0}
+.station-media{position:relative}
+.station-copy{min-width:0;display:grid;gap:22px;align-content:start}
+.station-head h2{font-size:clamp(2.1rem,6.4vw,3.2rem);margin-top:8px}
+.guide{font-size:1.12rem;display:grid;gap:10px;color:var(--ink);border-left:2px solid var(--gold);padding-left:18px}
+.station-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+@media (min-width:860px){
+  .station{grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:start}
+  .station-media{position:sticky;top:150px;max-height:none;aspect-ratio:4/5}
+}
+
+/* Atemkreis */
+.breath{display:grid;justify-items:center;gap:14px;padding:26px 16px;border-radius:var(--r-card);background:radial-gradient(circle at 50% 45%,#FFF4E6,var(--cream) 70%);border:1px solid var(--line)}
+.breath-stage{width:200px;height:200px;display:grid;place-items:center;position:relative}
+.breath-ring{position:absolute;inset:0;border-radius:50%;border:1px dashed var(--gold)}
+.breath-circle{width:92px;height:92px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#FFD39E,var(--orange) 62%,#D2701F);box-shadow:0 0 0 14px rgba(242,140,40,.12),0 0 0 32px rgba(242,140,40,.06);transform:scale(1);transition:transform 4s cubic-bezier(.45,.05,.55,.95)}
+.breath.inhale .breath-circle{transform:scale(2);transition-duration:4s}
+.breath.exhale .breath-circle{transform:scale(1);transition-duration:6s}
+.breath-word{font-family:var(--f-display);font-size:1.6rem;color:var(--ink);min-height:1.4em}
+.breath-hint{font-size:.88rem;text-align:center;max-width:32ch}
+
+/* Timer */
+.timer{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px 16px;border-radius:18px;background:var(--paper);border:1px solid var(--line)}
+.timer-label{font-size:.85rem;font-weight:600;color:var(--ink);margin-right:4px}
+.chip{appearance:none;border:1px solid var(--line);background:var(--cream);border-radius:var(--r-pill);min-height:44px;min-width:56px;padding:0 14px;cursor:pointer;font-weight:600;font-size:.92rem;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--sage);border-color:var(--sage)}
+.timer-display{font-variant-numeric:tabular-nums;font-family:var(--f-display);font-size:1.7rem;color:var(--ink);min-width:3.2ch}
+.timer-done{flex-basis:100%;font-family:var(--f-display);font-style:italic;font-size:1.15rem;color:var(--orange-deep)}
+
+/* Fragen */
+.questions{display:grid;gap:4px}
+.questions h3{font-size:1.5rem;margin-bottom:8px}
+.q{border-bottom:1px solid var(--line)}
+.q summary{list-style:none;cursor:pointer;display:flex;gap:14px;align-items:flex-start;padding:14px 4px;min-height:52px}
+.q summary::-webkit-details-marker{display:none}
+.q-num{font-family:var(--f-display);font-size:1.15rem;color:var(--orange-deep);min-width:1.4em;line-height:1.45}
+.q-text{flex:1;min-width:0;color:var(--ink)}
+.q-pen{flex:none;font-size:.8rem;color:var(--brown);border:1px solid var(--line);border-radius:var(--r-pill);padding:3px 10px;margin-top:2px;white-space:nowrap}
+.q[open] .q-pen{background:var(--beige)}
+.q.answered .q-pen{background:#EEF1EA;border-color:var(--sage);color:#4D5A47}
+.q textarea{margin:0 0 16px 2.1em;width:calc(100% - 2.1em)}
+textarea,.word{width:100%;border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px 16px;font-size:1rem;line-height:1.55;color:var(--ink);resize:vertical;transition:border-color .3s,box-shadow .3s}
+textarea{min-height:110px}
+textarea:focus,.word:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 4px rgba(242,140,40,.18)}
+textarea::placeholder,.word::placeholder{color:#9C8B7E}
+
+.feature{padding:clamp(20px,4vw,30px);border-radius:var(--r-card);background:linear-gradient(160deg,#FFF3E5,var(--paper) 60%);border:1px solid #F1D4B2}
+.feature label,.feature legend{display:block;font-family:var(--f-display);font-size:clamp(1.45rem,4vw,1.8rem);line-height:1.2;color:var(--ink);margin-bottom:14px;padding:0}
+.feature fieldset{border:0;margin:0;padding:0;min-width:0}
+.words{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.word{text-align:center;min-height:54px;font-family:var(--f-display);font-size:1.2rem}
+@media (max-width:420px){.words{grid-template-columns:1fr}}
+.feature .hint{font-size:.88rem;margin-top:10px}
+
+.closing{padding:clamp(26px,5vw,40px);border-radius:var(--r-card);background:var(--ink);color:var(--cream)}
+.closing p{font-family:var(--f-display);font-size:clamp(1.3rem,3.6vw,1.6rem);line-height:1.4}
+.closing p+p{margin-top:12px}
+.closing .salut{font-style:italic;color:var(--gold)}
+
+.station-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--line);flex-wrap:wrap}
+.save-state{font-size:.82rem;color:var(--brown);flex-basis:100%}
+
+/* Abschluss */
+.finish{position:relative;min-height:calc(100vh - 61px);min-height:calc(100svh - 61px);display:flex;align-items:center;overflow:hidden;padding-block:60px}
+.leaves{position:absolute;inset:0;pointer-events:none;z-index:0}
+.leaf{position:absolute;top:-60px;width:34px;height:34px;opacity:.5;animation:fall linear infinite}
+.leaf svg{width:100%;height:100%;animation:sway ease-in-out infinite alternate}
+@keyframes fall{from{transform:translateY(-60px)}to{transform:translateY(calc(100vh + 120px))}}
+@keyframes sway{from{transform:translateX(-22px) rotate(-25deg)}to{transform:translateX(22px) rotate(30deg)}}
+.finish-card{position:relative;z-index:1;max-width:700px;margin-inline:auto;text-align:center;display:grid;gap:18px;justify-items:center}
+.finish-card h2{font-size:clamp(2.3rem,7vw,3.8rem)}
+.finish-card .sub{font-size:1.15rem;max-width:40ch}
+.finish-card .signature{font-size:1.9rem}
+.finish-actions{display:grid;gap:12px;width:100%;max-width:380px;margin-top:14px}
+.pdf-help{font-size:.85rem;max-width:44ch}
+
+/* Erkenntnisse */
+.insights{padding-block:clamp(36px,7vw,80px);max-width:760px}
+.insights h2{font-size:clamp(2.1rem,6vw,3rem)}
+.insights-intro{margin-top:12px}
+.ins-station{margin-top:34px}
+.ins-station h3{font-size:1.6rem;display:flex;align-items:baseline;gap:12px}
+.ins-station h3 span{font-family:var(--f-body);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--orange-deep)}
+.ins-item{margin-top:14px;padding:16px 18px;border-radius:16px;background:var(--paper);border:1px solid var(--line)}
+.ins-q{font-size:.9rem;color:var(--brown)}
+.ins-a{margin-top:6px;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;font-size:1.04rem}
+.empty{margin-top:30px;padding:26px;border-radius:var(--r-card);background:var(--paper);border:1px dashed var(--gold);font-family:var(--f-display);font-size:1.35rem;color:var(--ink)}
+.insights .btn-row{margin-top:34px}
+
+/* Fußbereich Datenschutz */
+.site-foot{padding-block:28px calc(36px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);margin-top:20px;font-size:.9rem}
+.site-foot details summary{cursor:pointer;font-weight:600;color:var(--ink);min-height:44px;display:flex;align-items:center}
+.privacy-body{display:grid;gap:10px;max-width:62ch;padding-top:6px}
+.confirm{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px}
+.status{font-weight:600;color:#4D5A47}
+
+/* Druckbogen – nur beim PDF-Speichern sichtbar */
+#print-sheet{display:none}
+@media print{
+  @page{margin:18mm 16mm}
+  body{background:#fff;color:#3B2C22;font-size:11.5pt}
+  body::before{display:none}
+  body>*:not(#print-sheet){display:none!important}
+  #print-sheet{display:block}
+  .p-head{text-align:center;border-bottom:1px solid #D6B88F;padding-bottom:12pt;margin-bottom:16pt}
+  .p-head h1{font-size:24pt}
+  .p-head p{margin-top:6pt;color:#6F5A4B}
+  .p-station{break-inside:avoid-page;margin-top:14pt}
+  .p-station h2{font-size:16pt;color:#A9560E;margin-bottom:6pt}
+  .p-item{break-inside:avoid;margin:0 0 8pt}
+  .p-q{font-size:9.5pt;color:#6F5A4B}
+  .p-a{white-space:pre-wrap;margin-top:2pt}
+  .p-close{margin-top:22pt;padding-top:12pt;border-top:1px solid #D6B88F;font-family:var(--f-display);font-size:14pt;text-align:center}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .breath-circle{transition:none!important}
+  .leaf{display:none}
+  .leaves.static .leaf{display:block;animation:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== WILLKOMMEN ===================== -->
+<main id="view-hero" class="view" data-view="hero">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="scene" id="hero-scene" data-art="hero"></div>
+    <div class="hero-veil" aria-hidden="true"></div>
+    <button class="icon-btn hero-sound" type="button" id="hero-sound" aria-pressed="false" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      <span>Ton an</span>
+    </button>
+    <div class="wrap hero-content">
+      <p class="eyebrow" data-t="Ein Moment nur für dich"></p>
+      <h1 id="hero-title" class="hero-title" style="margin-top:14px"></h1>
+      <p class="hero-sub">Eine kleine Mandarine. Fünf Sinne. Eine Reise zurück zu dir selbst.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" type="button" data-go="prep"><span aria-hidden="true">🍊</span> Meine Achtsamkeitsreise beginnen</button>
+        <button class="btn btn-soft" type="button" id="resume-btn" hidden></button>
+      </div>
+      <p class="scroll-cue">Etwa 10–15 Minuten · in deinem eigenen Tempo</p>
+    </div>
+  </section>
+
+  <section class="letter wrap" aria-labelledby="letter-title">
+    <article class="letter-card">
+      <h2 id="letter-title"></h2>
+      <div class="letter-body">
+        <p>Wie schön, dass du da bist.</p>
+        <p>Manchmal braucht es nicht viel, um wieder bei sich selbst anzukommen. Nur einen ruhigen Moment, einen bewussten Atemzug und eine kleine Mandarine.</p>
+        <p>Diese besondere Achtsamkeitsreise habe ich für dich vorbereitet.</p>
+        <p>Von Herzen,</p>
+        <p class="signature"><span class="js-sender"></span> <span aria-hidden="true">❤️</span></p>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" type="button" data-go="prep"><span aria-hidden="true">🍊</span> Meine Achtsamkeitsreise beginnen</button>
+      </div>
+    </article>
+  </section>
+</main>
+
+<!-- ===================== KOPFLEISTE (Reise) ===================== -->
+<header class="topbar" id="topbar" hidden>
+  <div class="wrap">
+    <div class="topbar-inner">
+      <button class="brand" type="button" data-go="hero" aria-label="Zur Begrüßung"><span class="brand-dot" aria-hidden="true"></span>Mandarinenreise</button>
+      <div class="tools">
+        <button class="icon-btn" type="button" id="music-btn" aria-pressed="false" aria-controls="music-panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+          <span id="music-label">Naturklang</span>
+        </button>
+      </div>
+    </div>
+    <div class="music-panel" id="music-panel" hidden>
+      <label for="volume">Lautstärke</label>
+      <input type="range" id="volume" min="0" max="100" value="35">
+    </div>
+    <p class="note" id="music-note" hidden style="padding-bottom:12px"></p>
+    <nav class="progress" id="progress" aria-label="Fortschritt der Reise" hidden>
+      <ol class="progress-steps" id="progress-steps"></ol>
+      <p class="progress-text" id="progress-text" aria-live="polite"></p>
+    </nav>
+  </div>
+</header>
+
+<!-- ===================== VORBEREITUNG ===================== -->
+<main id="view-prep" class="view" data-view="prep" hidden>
+  <section class="prep wrap" aria-labelledby="prep-title">
+    <div class="prep-card">
+      <p class="eyebrow">Vorbereitung</p>
+      <h2 id="prep-title" tabindex="-1" style="margin-top:10px">Bevor deine Reise beginnt …</h2>
+      <div class="prep-text">
+        <p>Suche dir einen ruhigen Platz. Nimm eine Mandarine in deine Hand. Du musst nichts erreichen, nichts beweisen und nichts richtig machen.</p>
+        <p>Erlaube dir einfach, diesen Augenblick bewusst zu erleben.</p>
+      </div>
+      <ul class="checks">
+        <li><label class="check"><input type="checkbox" id="chk-1"> Ich habe eine Mandarine.</label></li>
+        <li><label class="check"><input type="checkbox" id="chk-2"> Ich sitze bequem.</label></li>
+        <li><label class="check"><input type="checkbox" id="chk-3"> Ich bin bereit, mir Zeit für mich zu nehmen.</label></li>
+      </ul>
+      <p class="ready-msg" id="ready-msg" aria-live="polite"></p>
+      <div class="btn-row">
+        <button class="btn btn-primary" type="button" data-go="s1">Ich bin bereit.</button>
+      </div>
+      <p class="privacy-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <span>Alles, was du unterwegs aufschreibst, bleibt nur auf diesem Gerät in deinem Browser gespeichert. Nichts wird an einen Server gesendet. Du kannst es jederzeit wieder löschen.</span>
+      </p>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== STATIONEN (werden per JavaScript aus den Daten erzeugt) ===================== -->
+<div id="stations"></div>
+
+<!-- ===================== ABSCHLUSS ===================== -->
+<main id="view-finish" class="view" data-view="finish" hidden>
+  <section class="finish" aria-labelledby="finish-title">
+    <div class="leaves" id="leaves" aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="finish-card">
+        <p class="eyebrow">Deine Reise ist vollendet</p>
+        <h2 id="finish-title" tabindex="-1"></h2>
+        <p class="sub">Achtsamkeit beginnt nicht mit großen Veränderungen, sondern mit kleinen bewussten Momenten.</p>
+        <p class="signature">Von Herzen, dein <span class="js-sender"></span>.</p>
+        <div class="finish-actions">
+          <button class="btn btn-primary" type="button" data-go="insights">Meine Erkenntnisse ansehen</button>
+          <button class="btn btn-soft" type="button" data-action="pdf">Meine Gedanken als PDF speichern</button>
+          <button class="btn btn-ghost" type="button" data-action="restart">Meine Reise noch einmal erleben</button>
+        </div>
+        <p class="pdf-help">Beim PDF öffnet sich der Druckdialog deines Browsers. Wähle dort „Als PDF sichern“. Auf dem iPhone tippst du im Druckdialog auf das Teilen-Symbol und dann auf „In Dateien sichern“.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== ERKENNTNISSE ===================== -->
+<main id="view-insights" class="view" data-view="insights" hidden>
+  <section class="insights wrap" aria-labelledby="insights-title">
+    <p class="eyebrow">Nur für dich</p>
+    <h2 id="insights-title" tabindex="-1" style="margin-top:10px">Meine Erkenntnisse</h2>
+    <p class="insights-intro">Hier findest du alles, was du auf deiner Reise festgehalten hast. Es ist nur auf diesem Gerät gespeichert.</p>
+    <div id="insights-list"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" type="button" data-action="pdf">Als PDF speichern</button>
+      <button class="btn btn-soft" type="button" data-go="finish">Zurück zum Abschluss</button>
+    </div>
+  </section>
+</main>
+
+<!-- ===================== DATENSCHUTZ ===================== -->
+<footer class="site-foot" id="site-foot" hidden>
+  <div class="wrap">
+    <details id="privacy">
+      <summary>Datenschutz &amp; deine gespeicherten Antworten</summary>
+      <div class="privacy-body">
+        <p>Diese Seite hat kein Benutzerkonto, keine Tracking-Skripte und keine Analysewerkzeuge. Schriften und Medien liegen auf demselben Server wie die Seite.</p>
+        <p>Deine Antworten und dein Fortschritt werden im lokalen Speicher deines Browsers (localStorage) auf diesem Gerät abgelegt, damit nichts verloren geht, wenn du die Seite schließt. Sie verlassen dein Gerät nicht. Auf einem anderen Gerät oder in einem anderen Browser siehst du sie nicht.</p>
+        <p id="storage-warning" hidden><strong>Hinweis:</strong> Dein Browser erlaubt gerade kein Speichern (zum Beispiel im privaten Modus). Deine Antworten bleiben nur erhalten, solange diese Seite geöffnet ist.</p>
+        <div class="confirm" id="delete-area">
+          <button class="btn btn-danger" type="button" id="delete-btn">Meine gespeicherten Antworten löschen</button>
+        </div>
+        <div class="confirm" id="delete-confirm" hidden>
+          <span>Wirklich alles löschen? Das lässt sich nicht rückgängig machen.</span>
+          <button class="btn btn-danger" type="button" id="delete-yes">Ja, löschen</button>
+          <button class="btn btn-ghost" type="button" id="delete-no">Abbrechen</button>
+        </div>
+        <p class="status" id="delete-status" role="status"></p>
+      </div>
+    </details>
+  </div>
+</footer>
+
+<audio id="music" loop preload="none"></audio>
+<div id="print-sheet" aria-hidden="true"></div>
+
+<script>
+/* =========================================================================
+   ZENTRALE KONFIGURATION – hier Namen und alle Medienpfade anpassen
+   ========================================================================= */
+const CONFIG = {
+  name: 'Laura',           // Name der Empfängerin (auch per Link: index.html?name=Sabine)
+  sender: 'Ilho',          // Absender / Signatur
+  storageKey: 'mandarinenreise-v1',
+  timerMinutes: [1, 2, 3],
+  media: {
+    // Hero: Hochformat für Handys, Querformat für Desktop. Fehlt eine Datei, wird die andere bzw. die Illustration genutzt.
+    hero:     { portrait: 'assets/videos/hero-9x16.mp4', landscape: 'assets/videos/hero-16x9.mp4', poster: 'assets/images/hero-poster.jpg' },
+    station1: { portrait: 'assets/videos/station-1-ankommen-9x16.mp4',  poster: 'assets/images/station-1-poster.jpg' },
+    station2: { portrait: 'assets/videos/station-2-sehen-9x16.mp4',     poster: 'assets/images/station-2-poster.jpg' },
+    station3: { portrait: 'assets/videos/station-3-fuehlen-9x16.mp4',   poster: 'assets/images/station-3-poster.jpg' },
+    station4: { portrait: 'assets/videos/station-4-riechen-9x16.mp4',   poster: 'assets/images/station-4-poster.jpg' },
+    station5: { portrait: 'assets/videos/station-5-schmecken-9x16.mp4', poster: 'assets/images/station-5-poster.jpg' },
+    station6: { portrait: 'assets/videos/station-6-integration-9x16.mp4', poster: 'assets/images/station-6-poster.jpg' },
+    music: 'assets/audio/naturklang.mp3'   // Vogelgezwitscher & Blätterrauschen aus dem Hero-Video
+  }
+};
+
+/* Name optional über den Link setzen (nur Buchstaben, Leerzeichen, Bindestrich) */
+(() => {
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.has('name')) {                       // auch leer erlaubt → neutrale Ansprache ohne Namen
+      const p = (q.get('name') || '').trim();
+      CONFIG.name = /^[\p{L} .'-]{1,40}$/u.test(p) ? p : '';
+    }
+  } catch (e) {}
+})();
+const fill = s => s.replaceAll('{name}', CONFIG.name).replaceAll('{sender}', CONFIG.sender);
+const hasName = () => CONFIG.name !== '';
+const inApp = window.parent !== window;     // eingebettet, z. B. in der smile2go-App
+
+/* =========================================================================
+   INHALT DER SECHS STATIONEN
+   ========================================================================= */
+const STATIONS = [
+  { id: 's1', sense: 'Ankommen', art: 'breath', media: 'station1',
+    title: '{name}, komm ganz bei dir an.', titleNoName: 'Komm ganz bei dir an.',
+    guide: ['Schließe für einen Moment deine Augen. Spüre deine Füße auf dem Boden. Atme langsam ein und wieder aus.', 'Du musst gerade nirgendwo anders sein.'],
+    questions: ['Wie fühlt sich dein Körper in diesem Moment an?', 'Wo bemerkst du gerade Anspannung oder Entspannung?', 'Welche Gedanken beschäftigen dich?', 'Was verändert sich, wenn du deine Aufmerksamkeit auf deinen Atem richtest?', 'Was möchtest du für die nächsten Minuten bewusst loslassen?'],
+    breath: true,
+    feature: { type: 'text', label: 'Deine Gedanken beim Ankommen', hint: 'Ein Wort oder ein ganzer Satz – alles darf sein.' } },
+  { id: 's2', sense: 'Sehen', art: 'turn', media: 'station2',
+    title: 'Entdecke das Besondere im Einfachen.',
+    guide: ['Betrachte deine Mandarine so, als würdest du sie zum ersten Mal sehen.'],
+    questions: ['Welche verschiedenen Orangetöne kannst du erkennen?', 'Welche kleinen Unebenheiten fallen dir auf?', 'Ist die Mandarine vollkommen rund?', 'Was entdeckst du, wenn du sie besonders aufmerksam betrachtest?', 'Welche Details hättest du im Alltag wahrscheinlich übersehen?', 'Wie fühlt es sich an, etwas Gewöhnlichem so viel Aufmerksamkeit zu schenken?'],
+    feature: { type: 'text', label: 'Was hast du heute zum ersten Mal bewusst wahrgenommen?' } },
+  { id: 's3', sense: 'Fühlen', art: 'touch', media: 'station3',
+    title: 'Spüre den Augenblick.',
+    guide: ['Schließe deine Augen und lasse deine Fingerspitzen die Mandarine entdecken.'],
+    questions: ['Ist die Oberfläche glatt, rau oder uneben?', 'Wie fühlt sich die Temperatur an?', 'Wie schwer liegt die Mandarine in deiner Hand?', 'Was bemerkst du, wenn du sie sanft drückst?', 'Welche Empfindungen entstehen in deinen Fingerspitzen?', 'Wie verändert sich deine Aufmerksamkeit, wenn du deine Augen schließt?'],
+    feature: { type: 'text', label: 'Was spürst du gerade in deinem Körper?' } },
+  { id: 's4', sense: 'Riechen & Hören', art: 'peel', media: 'station4',
+    title: 'Lass deine Sinne erwachen.',
+    guide: ['Beginne, deine Mandarine ganz langsam zu schälen. Höre aufmerksam hin und nimm ihren Duft bewusst wahr.'],
+    questions: ['Wie verändert sich der Duft beim Öffnen der Schale?', 'Ist der Geruch frisch, süß oder intensiv?', 'Weckt der Duft eine Erinnerung?', 'Welche Gefühle verbindest du damit?', 'Welche leisen Geräusche hörst du beim Schälen?', 'Wie verändert sich dein Erleben, wenn du jeden Handgriff bewusst ausführst?'],
+    feature: { type: 'text', label: 'Wenn dieser Duft eine Erinnerung erzählen könnte, welche wäre es?' } },
+  { id: 's5', sense: 'Schmecken', art: 'segments', media: 'station5',
+    title: 'Genieße, ohne dich zu beeilen.',
+    guide: ['Nimm ein Stück Mandarine. Betrachte es. Lege es anschließend auf deine Zunge.', 'Spüre zunächst nur seine Oberfläche.', 'Beginne dann langsam zu kauen.'],
+    questions: ['Was spürst du, bevor du hineinbeißt?', 'Ist der erste Geschmack süß, sauer oder beides?', 'Wie verändert sich der Geschmack beim Kauen?', 'Welche unterschiedlichen Texturen bemerkst du?', 'Was passiert, wenn du bewusst langsamer isst?', 'Wann hast du zuletzt etwas mit so viel Aufmerksamkeit gegessen?', 'Welche Gefühle entstehen, wenn du dir Zeit für diesen einfachen Moment nimmst?'],
+    feature: { type: 'three', label: 'Beschreibe deinen Geschmacksmoment mit drei Worten.' } },
+  { id: 's6', sense: 'Integration', art: 'tea', media: 'station6',
+    title: 'Nimm diesen Moment mit in deinen Alltag.',
+    guide: ['Lege deine Hände entspannt ab. Atme ruhig weiter. Spüre nach, was du gerade erlebt hast.'],
+    questions: ['Wie fühlst du dich jetzt im Vergleich zum Beginn?', 'Was hat dich während der Übung überrascht?', 'Welcher deiner fünf Sinne war besonders präsent?', 'Was hast du über deine eigene Aufmerksamkeit erfahren?', 'Welche kleinen Momente deines Alltags möchtest du bewusster erleben?', 'Was könntest du morgen anders machen, um dir selbst mehr Aufmerksamkeit zu schenken?', 'Welchen Gedanken möchtest du aus dieser Übung mitnehmen?'],
+    feature: { type: 'text', label: 'Was möchtest du dir von dieser Reise aufheben?' },
+    closing: ['Liebe {name},', 'manchmal finden wir Ruhe nicht, indem wir etwas verändern, sondern indem wir dem gegenwärtigen Moment unsere volle Aufmerksamkeit schenken.', 'Du darfst dir diese kleinen Augenblicke jederzeit schenken.'] }
+];
+
+/* =========================================================================
+   SPEICHER (nur lokal)
+   ========================================================================= */
+const KEY = CONFIG.storageKey + ':' + CONFIG.name.toLowerCase();
+let storageOK = true;
+let state = { answers: {}, last: null, visited: [] };
+try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) { const parsed = JSON.parse(raw); if (parsed && typeof parsed === 'object') state = Object.assign(state, parsed); }
+  localStorage.setItem(KEY + ':test', '1'); localStorage.removeItem(KEY + ':test');
+} catch (e) { storageOK = false; }
+
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    if (!storageOK) return;
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+      const t = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      document.querySelectorAll('.save-state').forEach(el => el.textContent = 'Auf diesem Gerät gespeichert · ' + t + ' Uhr');
+    } catch (e) { storageOK = false; document.getElementById('storage-warning').hidden = false; }
+  }, 400);
+}
+
+/* =========================================================================
+   ILLUSTRATIONEN (Platzhalter, solange keine Videos hinterlegt sind)
+   ========================================================================= */
+let artCount = 0;
+function mandarin(cx, cy, r, id, opts = {}) {
+  const leaf = opts.leaf !== false;
+  return `
+  <ellipse cx="${cx}" cy="${cy + r * .92}" rx="${r * 1.05}" ry="${r * .16}" fill="#6F5A4B" opacity=".18"/>
+  <ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${r * .87}" fill="url(#mg${id})"/>
+  <ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${r * .87}" fill="url(#dots${id})" opacity=".55"/>
+  <ellipse cx="${cx - r * .34}" cy="${cy - r * .36}" rx="${r * .26}" ry="${r * .15}" fill="#FFE2B8" opacity=".55" transform="rotate(-24 ${cx - r * .34} ${cy - r * .36})"/>
+  <circle cx="${cx + r * .04}" cy="${cy - r * .84}" r="${r * .07}" fill="#7C8A5E"/>
+  ${leaf ? `<path d="M${cx + r * .06} ${cy - r * .86} C ${cx + r * .38} ${cy - r * 1.2}, ${cx + r * .85} ${cy - r * 1.22}, ${cx + r * 1.08} ${cy - r * 1.06} C ${cx + r * .8} ${cy - r * .8}, ${cx + r * .4} ${cy - r * .74}, ${cx + r * .06} ${cy - r * .86} Z" fill="#8A9C78"/>
+  <path d="M${cx + r * .1} ${cy - r * .87} C ${cx + r * .45} ${cy - r * 1.0}, ${cx + r * .75} ${cy - r * 1.02}, ${cx + r * 1.0} ${cy - r * 1.03}" stroke="#A8B5A2" stroke-width="2" fill="none"/>` : ''}`;
+}
+function defs(id) {
+  return `<defs>
+    <radialGradient id="mg${id}" cx="36%" cy="30%" r="78%">
+      <stop offset="0" stop-color="#FFC27A"/><stop offset=".45" stop-color="#F28C28"/><stop offset="1" stop-color="#C25F17"/>
+    </radialGradient>
+    <pattern id="dots${id}" width="11" height="11" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.1" fill="#B65A14" opacity=".35"/><circle cx="8.5" cy="8" r=".9" fill="#FFD6A0" opacity=".5"/>
+    </pattern>
+    <radialGradient id="flesh${id}" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#FFD08A"/><stop offset="1" stop-color="#F29A3B"/></radialGradient>
+  </defs>`;
+}
+function artSVG(kind) {
+  const id = ++artCount;
+  let body = '';
+  if (kind === 'hero') {
+    body = `<g class="breathe-art">${mandarin(560, 420, 120, id)}</g>
+      ${mandarin(780, 470, 62, id, { leaf: false })}`;
+    return `<svg viewBox="0 0 1000 560" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${defs(id)}${body}</svg>`;
+  }
+  if (kind === 'breath' || kind === 'turn' || kind === 'touch') {
+    const r = kind === 'touch' ? 150 : 118;
+    body = `<g class="breathe-art">${mandarin(200, kind === 'touch' ? 360 : 340, r, id)}</g>`;
+    if (kind === 'breath') body = `<circle cx="200" cy="320" r="170" fill="#FFF6E8" opacity=".55"/>` + body;
+  } else if (kind === 'peel') {
+    body = `
+      <ellipse cx="200" cy="408" rx="150" ry="22" fill="#6F5A4B" opacity=".16"/>
+      <path d="M90 400 C 70 340, 110 300, 150 330 C 150 360, 130 390, 90 400Z" fill="url(#mg${id})"/>
+      <path d="M310 402 C 340 350, 300 300, 258 330 C 262 362, 280 392, 310 402Z" fill="url(#mg${id})"/>
+      <path d="M118 404 C 130 370, 270 370, 286 404 C 250 416, 150 416, 118 404Z" fill="#FFE7C8"/>
+      <ellipse cx="200" cy="340" rx="84" ry="72" fill="url(#flesh${id})"/>
+      <g stroke="#E58A33" stroke-width="2" fill="none" opacity=".7">
+        <path d="M200 270 C 185 310, 185 370, 200 410"/><path d="M200 270 C 160 300, 150 370, 175 408"/><path d="M200 270 C 240 300, 250 370, 226 408"/>
+      </g>
+      <g stroke="#FFF4E2" stroke-width="1.6" fill="none" opacity=".8"><path d="M150 320 C 180 330, 220 300, 250 318"/><path d="M160 360 C 190 352, 220 372, 244 356"/></g>`;
+  } else if (kind === 'segments') {
+    const seg = (x, y, rot) => `<g transform="translate(${x} ${y}) rotate(${rot})"><path d="M-36 0 C -36 -34, 36 -34, 36 0 C 22 10, -22 10, -36 0Z" fill="url(#flesh${id})" stroke="#E58A33" stroke-width="1.5"/><path d="M-24 -6 C -8 -22, 8 -22, 24 -6" stroke="#FFF1DC" stroke-width="1.6" fill="none" opacity=".8"/></g>`;
+    body = `
+      <ellipse cx="200" cy="384" rx="168" ry="44" fill="#6F5A4B" opacity=".14"/>
+      <ellipse cx="200" cy="372" rx="160" ry="46" fill="#F4EEE6"/><ellipse cx="200" cy="368" rx="120" ry="30" fill="#FBF7F1"/>
+      ${seg(150, 362, -18)}${seg(206, 352, 6)}${seg(256, 368, 22)}${seg(196, 384, -4)}
+      <g transform="translate(298 250)">${seg(0, 0, -30)}</g>`;
+  } else if (kind === 'tea') {
+    body = `
+      <ellipse cx="270" cy="414" rx="70" ry="12" fill="#6F5A4B" opacity=".16"/>
+      <path d="M215 330 h110 v40 a55 46 0 0 1 -110 0Z" fill="#F4EEE6"/><ellipse cx="270" cy="330" rx="55" ry="10" fill="#C9965A"/>
+      <path d="M325 340 c26 0 26 36 0 36" stroke="#F4EEE6" stroke-width="9" fill="none"/>
+      <g class="steam" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" fill="none" opacity=".7"><path d="M255 300 c-10 -16 10 -26 0 -44"/><path d="M282 300 c-10 -16 10 -26 0 -44"/></g>
+      <path d="M70 410 C 60 380, 100 368, 120 392 C 108 406, 90 412, 70 410Z" fill="url(#mg${id})"/>
+      <path d="M118 414 C 126 388, 168 388, 172 410 C 152 420, 134 420, 118 414Z" fill="url(#mg${id})"/>
+      <path d="M96 382 C 104 362, 138 360, 146 378 C 130 390, 110 390, 96 382Z" fill="#E98A30"/>`;
+  }
+  return `<svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${defs(id)}${body}</svg>`;
+}
+
+/* =========================================================================
+   VIDEOS – werden nur genutzt, wenn die Datei wirklich lädt
+   ========================================================================= */
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+function setupScene(scene, artKind, mediaKey) {
+  scene.innerHTML = `<div class="art">${artSVG(artKind)}</div>`;
+  const m = CONFIG.media[mediaKey];
+  if (!m) return;
+  const portrait = matchMedia('(max-aspect-ratio: 1/1)').matches || mediaKey !== 'hero';
+  const sources = (portrait ? [m.portrait, m.landscape] : [m.landscape, m.portrait]).filter(Boolean);
+  if (!sources.length) return;
+  const v = document.createElement('video');
+  v.muted = true; v.loop = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+  v.preload = 'metadata'; v.setAttribute('aria-hidden', 'true'); v.tabIndex = -1; v.disablePictureInPicture = true;
+  if (m.poster) v.poster = m.poster;
+  let i = 0;
+  v.addEventListener('error', () => {
+    i++;
+    if (i < sources.length) { v.src = sources[i]; v.load(); }
+    else v.remove();              // keine Datei vorhanden → Illustration bleibt sichtbar
+  });
+  v.addEventListener('loadeddata', () => {
+    scene.classList.add('has-video');
+    if (!reduceMotion.matches && !scene.closest('[hidden]')) v.play().catch(() => {});
+  });
+  v.src = sources[0];
+  scene.appendChild(v);
+}
+function playScenesIn(root) {
+  root.querySelectorAll('video').forEach(v => { if (!reduceMotion.matches && v.readyState >= 2) v.play().catch(() => {}); });
+}
+function pauseAllVideos() {
+  document.querySelectorAll('video').forEach(v => v.pause());
+  const hb = document.getElementById('hero-sound'), hv = document.querySelector('#hero-scene video');
+  if (hv) hv.muted = true;
+  if (hb) { hb.setAttribute('aria-pressed', 'false'); hb.querySelector('span').textContent = 'Ton an'; }
+}
+
+/* =========================================================================
+   STATIONEN AUFBAUEN
+   ========================================================================= */
+const stationsHost = document.getElementById('stations');
+const stationTitle = s => fill(!hasName() && s.titleNoName ? s.titleNoName : s.title);
+function el(tag, attrs = {}, text) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v; else if (k === 'hidden') n.hidden = v; else n.setAttribute(k, v);
+  }
+  if (text != null) n.textContent = text;
+  return n;
+}
+function bindField(field, key) {
+  field.value = state.answers[key] || '';
+  field.addEventListener('input', () => {
+    const val = field.value;
+    if (val.trim()) state.answers[key] = val; else delete state.answers[key];
+    const q = field.closest('.q'); if (q) q.classList.toggle('answered', !!val.trim());
+    save();
+  });
+}
+
+STATIONS.forEach((s, idx) => {
+  const view = el('main', { id: 'view-' + s.id, class: 'view', 'data-view': s.id, hidden: true });
+  const sec = el('section', { class: 'station wrap', 'aria-labelledby': s.id + '-title' });
+
+  const media = el('div', { class: 'station-media' });
+  const scene = el('div', { class: 'scene' });
+  media.appendChild(scene);
+  scene.dataset.art = s.art; scene.dataset.media = s.media;
+
+  const copy = el('div', { class: 'station-copy' });
+  const head = el('div', { class: 'station-head' });
+  head.appendChild(el('p', { class: 'eyebrow' }, `Station ${idx + 1} · ${s.sense}`));
+  head.appendChild(el('h2', { id: s.id + '-title', tabindex: '-1' }, stationTitle(s)));
+  copy.appendChild(head);
+
+  const guide = el('div', { class: 'guide', id: s.id + '-guide' });
+  s.guide.forEach(p => guide.appendChild(el('p', {}, fill(p))));
+  copy.appendChild(guide);
+
+  // Werkzeuge: Vorlesen
+  const tools = el('div', { class: 'station-tools' });
+  if ('speechSynthesis' in window) {
+    const speak = el('button', { class: 'btn btn-soft speak-btn', type: 'button', 'aria-pressed': 'false', 'data-station': s.id }, '🔈 Anleitung vorlesen');
+    tools.appendChild(speak);
+  }
+  if (tools.children.length) copy.appendChild(tools);
+
+  // Atemkreis
+  if (s.breath) {
+    const b = el('div', { class: 'breath', id: 'breath' });
+    const stage = el('div', { class: 'breath-stage', 'aria-hidden': 'true' });
+    stage.appendChild(el('div', { class: 'breath-ring' }));
+    stage.appendChild(el('div', { class: 'breath-circle' }));
+    b.appendChild(stage);
+    b.appendChild(el('p', { class: 'breath-word', id: 'breath-word' }, ''));
+    b.appendChild(el('button', { class: 'btn btn-soft', type: 'button', id: 'breath-btn', 'aria-pressed': 'false' }, 'Atemkreis starten'));
+    b.appendChild(el('p', { class: 'breath-hint' }, 'Atme mit dem Kreis: vier Sekunden ein, sechs Sekunden aus. Wenn dein eigener Rhythmus sich anders anfühlt, folge ihm.'));
+    copy.appendChild(b);
+  }
+
+  // Timer
+  const timer = el('div', { class: 'timer', role: 'group', 'aria-label': 'Optionaler Timer' });
+  timer.appendChild(el('span', { class: 'timer-label' }, 'Timer (optional)'));
+  CONFIG.timerMinutes.forEach(min => timer.appendChild(el('button', { class: 'chip t-set', type: 'button', 'data-min': String(min), 'aria-pressed': 'false' }, min + ' Min')));
+  timer.appendChild(el('span', { class: 'timer-display', 'aria-hidden': 'true' }, '–:––'));
+  const tStart = el('button', { class: 'chip t-start', type: 'button', disabled: '' }, 'Start');
+  timer.appendChild(tStart);
+  timer.appendChild(el('p', { class: 'timer-done', 'aria-live': 'polite' }, ''));
+  copy.appendChild(timer);
+
+  // Fragen
+  const qs = el('div', { class: 'questions' });
+  qs.appendChild(el('h3', {}, 'Fragen für deinen Moment'));
+  qs.appendChild(el('p', { class: 'note', style: 'margin-bottom:6px' }, 'Lies sie in Ruhe. Wenn du magst, tippe auf eine Frage und halte deine Antwort fest.'));
+  s.questions.forEach((q, qi) => {
+    const key = `${s.id}.q${qi + 1}`;
+    const d = el('details', { class: 'q' + (state.answers[key] ? ' answered' : '') });
+    const sum = el('summary');
+    sum.appendChild(el('span', { class: 'q-num', 'aria-hidden': 'true' }, String(qi + 1)));
+    sum.appendChild(el('span', { class: 'q-text' }, q));
+    sum.appendChild(el('span', { class: 'q-pen', 'aria-hidden': 'true' }, state.answers[key] ? 'notiert' : 'notieren'));
+    d.appendChild(sum);
+    const ta = el('textarea', { id: key.replace('.', '-'), 'aria-label': q, placeholder: 'Deine Antwort (optional)', rows: '3' });
+    bindField(ta, key);
+    ta.addEventListener('input', () => { sum.querySelector('.q-pen').textContent = ta.value.trim() ? 'notiert' : 'notieren'; });
+    d.appendChild(ta);
+    qs.appendChild(d);
+  });
+  copy.appendChild(qs);
+
+  // Hauptfrage
+  const feat = el('div', { class: 'feature' });
+  if (s.feature.type === 'three') {
+    const fs = el('fieldset');
+    fs.appendChild(el('legend', {}, s.feature.label));
+    const words = el('div', { class: 'words' });
+    ['Erstes Wort', 'Zweites Wort', 'Drittes Wort'].forEach((ph, wi) => {
+      const inp = el('input', { class: 'word', type: 'text', id: `${s.id}-w${wi + 1}`, maxlength: '40', placeholder: ph, 'aria-label': ph, autocomplete: 'off' });
+      bindField(inp, `${s.id}.w${wi + 1}`);
+      words.appendChild(inp);
+    });
+    fs.appendChild(words);
+    feat.appendChild(fs);
+  } else {
+    const fid = `${s.id}-f`;
+    feat.appendChild(el('label', { for: fid }, s.feature.label));
+    const ta = el('textarea', { id: fid, rows: '4', placeholder: 'Schreib, was in dir auftaucht …' });
+    bindField(ta, `${s.id}.f`);
+    feat.appendChild(ta);
+    if (s.feature.hint) feat.appendChild(el('p', { class: 'hint' }, s.feature.hint));
+  }
+  copy.appendChild(feat);
+
+  if (s.closing) {
+    const c = el('div', { class: 'closing' });
+    s.closing.forEach((p, pi) => { if (pi === 0 && !hasName()) return; c.appendChild(el('p', { class: pi === 0 ? 'salut' : '' }, fill(p))); });
+    copy.appendChild(c);
+  }
+
+  // Navigation
+  const nav = el('div', { class: 'station-nav' });
+  nav.appendChild(el('button', { class: 'btn btn-ghost', type: 'button', 'data-go': idx === 0 ? 'prep' : STATIONS[idx - 1].id }, '← Zurück'));
+  const last = idx === STATIONS.length - 1;
+  nav.appendChild(el('button', { class: 'btn btn-primary', type: 'button', 'data-go': last ? 'finish' : STATIONS[idx + 1].id }, last ? 'Reise abschließen' : 'Weiter →'));
+  nav.appendChild(el('p', { class: 'save-state' }, storageOK ? 'Deine Notizen werden automatisch auf diesem Gerät gespeichert.' : 'Speichern ist in diesem Browser gerade nicht möglich.'));
+  copy.appendChild(nav);
+
+  sec.appendChild(media); sec.appendChild(copy);
+  view.appendChild(sec);
+  stationsHost.appendChild(view);
+});
+
+/* Szenen vorbereiten (Hero sofort, Stationen erst beim Öffnen) */
+setupScene(document.getElementById('hero-scene'), 'hero', 'hero');
+
+/* Ton des Hero-Videos – nur auf Knopfdruck */
+(() => {
+  const btn = document.getElementById('hero-sound');
+  const hv = document.querySelector('#hero-scene video');
+  if (!hv) return;
+  hv.addEventListener('loadeddata', () => { btn.hidden = false; });
+  btn.addEventListener('click', () => {
+    const on = btn.getAttribute('aria-pressed') !== 'true';
+    hv.muted = !on; hv.volume = .6;
+    btn.setAttribute('aria-pressed', String(on));
+    btn.querySelector('span').textContent = on ? 'Ton aus' : 'Ton an';
+    if (on) hv.play().catch(() => {});
+  });
+})();
+
+/* =========================================================================
+   FORTSCHRITT
+   ========================================================================= */
+const stepsHost = document.getElementById('progress-steps');
+STATIONS.forEach((s, i) => {
+  const li = el('li');
+  const b = el('button', { type: 'button', 'data-go': s.id, 'aria-label': `Station ${i + 1}: ${s.sense}` });
+  b.appendChild(el('span', { class: 'bar' }));
+  b.appendChild(el('span', { class: 'lbl' }, s.sense));
+  li.appendChild(b); stepsHost.appendChild(li);
+});
+function updateProgress(id) {
+  const idx = STATIONS.findIndex(s => s.id === id);
+  stepsHost.querySelectorAll('li').forEach((li, i) => {
+    li.className = i < idx ? 'done' : i === idx ? 'current' : '';
+    const b = li.querySelector('button');
+    if (i === idx) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  document.getElementById('progress-text').textContent = `Station ${idx + 1} von ${STATIONS.length} · ${STATIONS[idx].sense}`;
+}
+
+/* =========================================================================
+   NAVIGATION ZWISCHEN DEN ANSICHTEN
+   ========================================================================= */
+const topbar = document.getElementById('topbar');
+const foot = document.getElementById('site-foot');
+let current = 'hero';
+
+function show(id) {
+  stopSpeech(); resetTimers(); stopBreath(); pauseAllVideos();
+  document.querySelectorAll('.view').forEach(v => v.hidden = v.dataset.view !== id);
+  const view = document.querySelector(`.view[data-view="${id}"]`);
+  if (!view) return;
+  current = id;
+  const isStation = /^s\d$/.test(id);
+  topbar.hidden = id === 'hero';
+  foot.hidden = id === 'hero';
+  document.getElementById('progress').hidden = !isStation;
+  if (isStation) {
+    updateProgress(id);
+    const scene = view.querySelector('.scene');
+    if (scene && !scene.dataset.ready) { scene.dataset.ready = '1'; setupScene(scene, scene.dataset.art, scene.dataset.media); }
+  }
+  if (id === 'finish') {
+    startLeaves();
+    if (inApp) { try { window.parent.postMessage({ type: 'mandarinenreise:fertig' }, location.origin); } catch (e) {} }
+  }
+  if (id === 'insights') renderInsights();
+  if (id === 'hero') refreshResume();
+  if (id !== 'hero' && id !== 'insights') { state.last = id; if (isStation && !state.visited.includes(id)) state.visited.push(id); save(); }
+  playScenesIn(view);
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  const h = view.querySelector('h2[tabindex]');
+  if (h && id !== 'hero') h.focus({ preventScroll: true });
+}
+
+document.addEventListener('click', e => {
+  const go = e.target.closest('[data-go]');
+  if (go) { show(go.dataset.go); return; }
+  const act = e.target.closest('[data-action]');
+  if (act && act.dataset.action === 'pdf') savePDF();
+  if (act && act.dataset.action === 'restart') { state.last = 'prep'; save(); show('prep'); }
+});
+
+/* Fortsetzen */
+function refreshResume() {
+  const btn = document.getElementById('resume-btn');
+  const s = STATIONS.findIndex(x => x.id === state.last);
+  if (s >= 0) { btn.hidden = false; btn.textContent = `Weitermachen bei Station ${s + 1}`; btn.dataset.go = state.last; }
+  else if (state.last === 'finish') { btn.hidden = false; btn.textContent = 'Meine Erkenntnisse ansehen'; btn.dataset.go = 'insights'; }
+  else btn.hidden = true;
+}
+
+/* =========================================================================
+   VORBEREITUNG
+   ========================================================================= */
+const checks = ['chk-1', 'chk-2', 'chk-3'].map(id => document.getElementById(id));
+checks.forEach(c => c.addEventListener('change', () => {
+  document.getElementById('ready-msg').textContent = checks.every(x => x.checked) ? 'Wunderbar. Dann lass uns beginnen.' : '';
+}));
+
+/* =========================================================================
+   ATEMKREIS
+   ========================================================================= */
+let breathTimer = null;
+function stopBreath() {
+  clearTimeout(breathTimer); breathTimer = null;
+  const b = document.getElementById('breath'); if (!b) return;
+  b.classList.remove('inhale', 'exhale');
+  document.getElementById('breath-word').textContent = '';
+  const btn = document.getElementById('breath-btn'); btn.textContent = 'Atemkreis starten'; btn.setAttribute('aria-pressed', 'false');
+}
+function breathStep(phase) {
+  const b = document.getElementById('breath');
+  b.classList.toggle('inhale', phase === 'in'); b.classList.toggle('exhale', phase === 'out');
+  document.getElementById('breath-word').textContent = phase === 'in' ? 'Einatmen …' : 'Ausatmen …';
+  breathTimer = setTimeout(() => breathStep(phase === 'in' ? 'out' : 'in'), phase === 'in' ? 4000 : 6000);
+}
+document.addEventListener('click', e => {
+  if (e.target.id !== 'breath-btn') return;
+  if (breathTimer) stopBreath();
+  else { e.target.textContent = 'Atemkreis anhalten'; e.target.setAttribute('aria-pressed', 'true'); breathStep('in'); }
+});
+
+/* =========================================================================
+   TIMER
+   ========================================================================= */
+let tState = null; // {root, total, left, running, int}
+function fmt(sec) { return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+function resetTimers() {
+  if (tState) clearInterval(tState.int);
+  tState = null;
+  document.querySelectorAll('.timer').forEach(t => {
+    t.querySelector('.timer-display').textContent = '–:––';
+    t.querySelectorAll('.t-set').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    const st = t.querySelector('.t-start'); st.textContent = 'Start'; st.disabled = true;
+    t.querySelector('.timer-done').textContent = '';
+  });
+}
+document.addEventListener('click', e => {
+  const set = e.target.closest('.t-set');
+  if (set) {
+    const root = set.closest('.timer');
+    if (tState) clearInterval(tState.int);
+    const total = Number(set.dataset.min) * 60;
+    tState = { root, total, left: total, running: false, int: null };
+    root.querySelectorAll('.t-set').forEach(b => b.setAttribute('aria-pressed', String(b === set)));
+    root.querySelector('.timer-display').textContent = fmt(total);
+    const st = root.querySelector('.t-start'); st.disabled = false; st.textContent = 'Start';
+    root.querySelector('.timer-done').textContent = '';
+    return;
+  }
+  const start = e.target.closest('.t-start');
+  if (start && tState && tState.root === start.closest('.timer')) {
+    if (tState.running) { clearInterval(tState.int); tState.running = false; start.textContent = 'Weiter'; return; }
+    if (tState.left <= 0) tState.left = tState.total;
+    tState.running = true; start.textContent = 'Pause';
+    tState.root.querySelector('.timer-done').textContent = '';
+    tState.int = setInterval(() => {
+      tState.left--;
+      tState.root.querySelector('.timer-display').textContent = fmt(Math.max(0, tState.left));
+      if (tState.left <= 0) {
+        clearInterval(tState.int); tState.running = false; start.textContent = 'Noch einmal';
+        tState.root.querySelector('.timer-done').textContent = 'Deine Zeit ist um. Bleib gern noch einen Moment, wenn es sich gut anfühlt.';
+      }
+    }, 1000);
+  }
+});
+
+/* =========================================================================
+   SPRACHAUSGABE (Web Speech API, nur wenn vorhanden)
+   ========================================================================= */
+let germanVoice = null;
+function pickVoice() {
+  if (!('speechSynthesis' in window)) return;
+  const vs = speechSynthesis.getVoices();
+  germanVoice = vs.find(v => /de(-|_)DE/i.test(v.lang) && /female|anna|petra|helena|katja|marlene|vicki/i.test(v.name)) || vs.find(v => /^de/i.test(v.lang)) || null;
+}
+if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.addEventListener?.('voiceschanged', pickVoice); }
+function stopSpeech() {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  document.querySelectorAll('.speak-btn').forEach(b => { b.textContent = '🔈 Anleitung vorlesen'; b.setAttribute('aria-pressed', 'false'); });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.speak-btn'); if (!b) return;
+  if (b.getAttribute('aria-pressed') === 'true') { stopSpeech(); return; }
+  stopSpeech();
+  const s = STATIONS.find(x => x.id === b.dataset.station);
+  const text = [stationTitle(s), ...s.guide.map(fill)].join(' ');
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'de-DE'; u.rate = .86; u.pitch = 1; if (germanVoice) u.voice = germanVoice;
+  u.onend = u.onerror = () => { b.textContent = '🔈 Anleitung vorlesen'; b.setAttribute('aria-pressed', 'false'); };
+  b.textContent = '⏹ Vorlesen beenden'; b.setAttribute('aria-pressed', 'true');
+  speechSynthesis.speak(u);
+});
+
+/* =========================================================================
+   MUSIK (startet nur auf Knopfdruck)
+   ========================================================================= */
+const audio = document.getElementById('music');
+const musicBtn = document.getElementById('music-btn');
+const musicNote = document.getElementById('music-note');
+const vol = document.getElementById('volume');
+audio.volume = vol.value / 100;
+vol.addEventListener('input', () => audio.volume = vol.value / 100);
+function musicOff(msg) {
+  audio.pause();
+  musicBtn.setAttribute('aria-pressed', 'false');
+  document.getElementById('music-label').textContent = 'Naturklang';
+  document.getElementById('music-panel').hidden = true;
+  musicNote.hidden = !msg; musicNote.textContent = msg || '';
+}
+audio.addEventListener('error', () => { if (musicBtn.getAttribute('aria-pressed') === 'true') musicOff('Es ist noch keine Klangdatei hinterlegt. Die Reise funktioniert auch ganz in Stille.'); });
+musicBtn.addEventListener('click', () => {
+  if (musicBtn.getAttribute('aria-pressed') === 'true') { musicOff(); return; }
+  if (!audio.src) audio.src = CONFIG.media.music;
+  musicBtn.setAttribute('aria-pressed', 'true');
+  document.getElementById('music-label').textContent = 'Klang aus';
+  document.getElementById('music-panel').hidden = false;
+  musicNote.hidden = true;
+  audio.play().catch(() => musicOff('Der Klang konnte nicht starten. Die Reise funktioniert auch ganz in Stille.'));
+});
+
+/* =========================================================================
+   ERKENNTNISSE & PDF
+   ========================================================================= */
+function collect() {
+  return STATIONS.map((s, i) => {
+    const items = [];
+    if (s.feature.type === 'three') {
+      const w = [1, 2, 3].map(n => (state.answers[`${s.id}.w${n}`] || '').trim()).filter(Boolean);
+      if (w.length) items.push({ q: s.feature.label, a: w.join(' · ') });
+    } else if ((state.answers[`${s.id}.f`] || '').trim()) items.push({ q: s.feature.label, a: state.answers[`${s.id}.f`].trim() });
+    s.questions.forEach((q, qi) => { const a = (state.answers[`${s.id}.q${qi + 1}`] || '').trim(); if (a) items.push({ q, a }); });
+    return { num: i + 1, sense: s.sense, title: stationTitle(s), items };
+  }).filter(g => g.items.length);
+}
+function renderInsights() {
+  const host = document.getElementById('insights-list'); host.textContent = '';
+  const groups = collect();
+  if (!groups.length) { host.appendChild(el('p', { class: 'empty' }, 'Du hast noch nichts aufgeschrieben – und das ist völlig in Ordnung. Manche Momente möchten einfach nur erlebt werden.')); return; }
+  groups.forEach(g => {
+    const sec = el('section', { class: 'ins-station' });
+    const h = el('h3'); h.appendChild(el('span', {}, `Station ${g.num} · ${g.sense}`)); sec.appendChild(h);
+    sec.appendChild(el('p', { style: 'font-family:var(--f-display);font-size:1.3rem;color:var(--ink);margin-top:4px' }, g.title));
+    g.items.forEach(it => { const d = el('div', { class: 'ins-item' }); d.appendChild(el('p', { class: 'ins-q' }, it.q)); d.appendChild(el('p', { class: 'ins-a' }, it.a)); sec.appendChild(d); });
+    host.appendChild(sec);
+  });
+}
+function buildPrintSheet() {
+  const sh = document.getElementById('print-sheet'); sh.textContent = '';
+  const head = el('div', { class: 'p-head' });
+  head.appendChild(el('h1', {}, 'Meine Mandarinen-Achtsamkeitsreise'));
+  head.appendChild(el('p', {}, `${hasName() ? 'Für ' + CONFIG.name : 'Für dich'} · ${new Date().toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}`));
+  sh.appendChild(head);
+  const groups = collect();
+  if (!groups.length) sh.appendChild(el('p', {}, 'Auf dieser Reise wurden keine Notizen festgehalten. Manche Momente möchten einfach nur erlebt werden.'));
+  groups.forEach(g => {
+    const s = el('section', { class: 'p-station' });
+    s.appendChild(el('h2', {}, `Station ${g.num} · ${g.sense}`));
+    g.items.forEach(it => { const d = el('div', { class: 'p-item' }); d.appendChild(el('p', { class: 'p-q' }, it.q)); d.appendChild(el('p', { class: 'p-a' }, it.a)); s.appendChild(d); });
+    sh.appendChild(s);
+  });
+  const c = el('div', { class: 'p-close' });
+  c.appendChild(el('p', {}, 'Achtsamkeit beginnt nicht mit großen Veränderungen, sondern mit kleinen bewussten Momenten.'));
+  c.appendChild(el('p', { style: 'margin-top:8pt;font-style:italic' }, `Von Herzen, dein ${CONFIG.sender}.`));
+  sh.appendChild(c);
+}
+function savePDF() { buildPrintSheet(); window.print(); }
+window.addEventListener('beforeprint', buildPrintSheet);
+
+/* =========================================================================
+   LÖSCHEN
+   ========================================================================= */
+const delBtn = document.getElementById('delete-btn'), delConfirm = document.getElementById('delete-confirm'), delArea = document.getElementById('delete-area'), delStatus = document.getElementById('delete-status');
+delBtn.addEventListener('click', () => { delArea.hidden = true; delConfirm.hidden = false; delStatus.textContent = ''; document.getElementById('delete-no').focus(); });
+document.getElementById('delete-no').addEventListener('click', () => { delConfirm.hidden = true; delArea.hidden = false; delBtn.focus(); });
+document.getElementById('delete-yes').addEventListener('click', () => {
+  state = { answers: {}, last: current === 'hero' ? null : current, visited: [] };
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  document.querySelectorAll('#stations textarea, #stations input.word').forEach(f => { f.value = ''; });
+  document.querySelectorAll('.q').forEach(q => { q.classList.remove('answered'); q.open = false; q.querySelector('.q-pen').textContent = 'notieren'; });
+  delConfirm.hidden = true; delArea.hidden = false;
+  delStatus.textContent = 'Deine gespeicherten Antworten wurden gelöscht.';
+  if (current === 'insights') renderInsights();
+});
+
+/* =========================================================================
+   ABSCHLUSS – schwebende Mandarinenblätter
+   ========================================================================= */
+let leavesBuilt = false;
+function startLeaves() {
+  if (leavesBuilt) return; leavesBuilt = true;
+  const host = document.getElementById('leaves');
+  const leafSVG = c => `<svg viewBox="0 0 40 40"><path d="M6 34 C 6 16, 18 6, 36 4 C 34 22, 24 34, 6 34Z" fill="${c}"/><path d="M8 32 C 16 22, 24 14, 33 7" stroke="#FFF9F2" stroke-width="1.4" fill="none" opacity=".7"/></svg>`;
+  const colors = ['#A8B5A2', '#8A9C78', '#D6B88F', '#F28C28', '#A8B5A2'];
+  for (let i = 0; i < 12; i++) {
+    const s = el('span', { class: 'leaf' });
+    s.innerHTML = leafSVG(colors[i % colors.length]);
+    s.style.left = (Math.random() * 96) + '%';
+    s.style.width = s.style.height = (22 + Math.random() * 22) + 'px';
+    s.style.animationDuration = (14 + Math.random() * 12) + 's';
+    s.style.animationDelay = (-Math.random() * 20) + 's';
+    s.firstChild.style.animationDuration = (3 + Math.random() * 3) + 's';
+    if (reduceMotion.matches) { s.style.top = (10 + Math.random() * 75) + '%'; }
+    host.appendChild(s);
+  }
+  if (reduceMotion.matches) host.classList.add('static');
+}
+
+/* =========================================================================
+   START
+   ========================================================================= */
+document.querySelectorAll('.js-sender').forEach(n => n.textContent = CONFIG.sender);
+document.querySelectorAll('[data-t]').forEach(n => n.textContent = fill(n.dataset.t));
+const ht = document.getElementById('hero-title');
+if (hasName()) { ht.append('Liebe ' + CONFIG.name + ', '); ht.appendChild(el('em', {}, 'dieser Moment')); }
+else ht.appendChild(el('em', {}, 'Dieser Moment'));
+ht.append(' gehört nur dir.');
+document.getElementById('letter-title').textContent = hasName() ? `Herzlich willkommen in unserer großen Familie, liebe ${CONFIG.name}! ❤️` : 'Herzlich willkommen in unserer großen Familie! ❤️';
+document.getElementById('finish-title').textContent = hasName() ? `${CONFIG.name}, danke, dass du dir Zeit für dich genommen hast. ❤️` : 'Danke, dass du dir Zeit für dich genommen hast. ❤️';
+document.title = hasName() ? `Ein Moment nur für dich, ${CONFIG.name} – Mandarinenreise` : 'Ein Moment nur für dich – Mandarinenreise';
+if (!storageOK) document.getElementById('storage-warning').hidden = false;
+refreshResume();
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseAllVideos(); else playScenesIn(document.querySelector(`.view[data-view="${current}"]`)); });
+</script>
+</body>
+</html>

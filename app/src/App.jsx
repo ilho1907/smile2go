@@ -9266,8 +9266,10 @@ function Qigong({ qigong, setQigong, addPunkte }) {
 
 const ATEM_TAKT = [["Einatmen", 4], ["Halten", 7], ["Ausatmen", 8]];
 
-function Achtsamkeit({ achtsam, setAchtsam, addPunkte }) {
+function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "" }) {
   const [modus, setModus] = useState(null);
+  const [reiseOffen, setReiseOffen] = useState(false);
+  const reiseGemerkt = useRef(false);
   const [phase, setPhase] = useState(0);
   const [rest, setRest] = useState(4);
   const [runde, setRunde] = useState(0);
@@ -9297,6 +9299,22 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte }) {
     addPunkte?.(5, "Achtsamkeit geübt");
   };
 
+  // Mandarinenreise: eigenständige Seite unter /mandarinenreise, meldet sich am Ende per postMessage
+  useEffect(() => {
+    if (!reiseOffen) return;
+    reiseGemerkt.current = false;
+    const empfang = (e) => {
+      if (e.origin !== window.location.origin || e.data?.type !== "mandarinenreise:fertig") return;
+      if (reiseGemerkt.current) return;
+      reiseGemerkt.current = true;
+      merken("Mandarinenreise");
+    };
+    window.addEventListener("message", empfang);
+    const alterOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("message", empfang); document.body.style.overflow = alterOverflow; };
+  }, [reiseOffen]);
+
   const SINN_FRAGEN = [
     "5 Dinge, die du siehst",
     "4 Dinge, die du hörst",
@@ -9310,9 +9328,40 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte }) {
       <Eyebrow color={C.plum}>Achtsamkeit</Eyebrow>
       <H size={25} style={{ marginBottom: 8 }}>Ankommen, wo du bist</H>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
-        Drei kurze Übungen. Keine braucht mehr als ein paar Minuten — und keine
+        Kleine Übungen für zwischendurch. Die meisten brauchen nur ein paar Minuten — und keine
         verlangt, dass du dabei etwas fühlst oder erreichst.
       </p>
+
+      {/* Mandarinenreise – geführte Übung mit den fünf Sinnen */}
+      <Card style={{ marginBottom: 12, background: "linear-gradient(160deg, #FFF3E5, #FFFDF9 65%)", border: "1px solid #F1D4B2" }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>🍊 Die Mandarinenreise</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+          {name ? `${name}, eine` : "Eine"} kleine Mandarine, fünf Sinne, sechs ruhige Stationen. Etwa 10–15 Minuten
+          nur für dich. Halte eine Mandarine bereit.
+        </p>
+        <Btn small onClick={() => setReiseOffen(true)}>Reise beginnen</Btn>
+      </Card>
+
+      {reiseOffen && (
+        <div role="dialog" aria-modal="true" aria-label="Die Mandarinenreise" style={{
+          position: "fixed", inset: 0, zIndex: 9999, background: "#FFF9F2", display: "flex", flexDirection: "column",
+          paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px max(14px, env(safe-area-inset-right, 0px)) 8px max(14px, env(safe-area-inset-left, 0px))", borderBottom: `1px solid ${C.line}` }}>
+            <span style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso }}>🍊 Mandarinenreise</span>
+            <button type="button" onClick={() => setReiseOffen(false)} style={{
+              minHeight: 40, padding: "0 16px", borderRadius: 999, border: `1px solid ${C.line}`, background: C.card,
+              color: C.espresso, fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer",
+            }}>Schließen ✕</button>
+          </div>
+          <iframe
+            title="Die Mandarinenreise"
+            src={`/mandarinenreise/index.html?name=${encodeURIComponent(name || "")}`}
+            allow="autoplay; fullscreen"
+            style={{ flex: 1, width: "100%", border: 0, display: "block" }}
+          />
+        </div>
+      )}
 
       {/* 4-7-8 Atem */}
       <Card style={{ marginBottom: 12 }}>
@@ -10399,7 +10448,7 @@ export default function IlhoApp() {
               {tab === "flamme" && <Flamme flamme={flamme} setFlamme={setFlamme} addPunkte={addPunkte} />}
               {tab === "metime" && <MeTime metime={metime} setMetime={setMetime} addPunkte={addPunkte} />}
               {tab === "qigong" && <Qigong qigong={qigong} setQigong={setQigong} addPunkte={addPunkte} />}
-              {tab === "achtsamkeit" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} />}
+              {tab === "achtsamkeit" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} name={anzeigeName} />}
               {tab === "dankbarkeit" && <Dankbarkeit dank={dank} setDank={setDank} addPunkte={addPunkte} />}
               {tab === "loslassen" && <Loslassen losgelassen={losgelassen} setLosgelassen={setLosgelassen} addPunkte={addPunkte} />}
               {tab === "kreis" && <FreundinnenKreis kreis={kreis} setKreis={setKreis} streak={streak} addPunkte={addPunkte} />}
