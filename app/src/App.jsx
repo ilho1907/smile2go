@@ -2271,7 +2271,7 @@ function Kurse({ bindung, aufBindung, addPunkte }) {
 
 /* ── Journal-Hub: Tagebuch · Aufgaben · 3-6-9 · Money Mind ── */
 
-function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, setMm, briefe, setBriefe, akarte, setAkarte, addPunkte, streak, punkte, initialSec }) {
+function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, setMm, briefe, setBriefe, briefPost, setBriefPost, akarte, setAkarte, addPunkte, streak, punkte, initialSec }) {
   const [sec, setSec] = useState(initialSec || "heute");
 
   const chips = [
@@ -2311,7 +2311,7 @@ function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, 
 
       {sec === "heute" && <JournalHeute entries={entries} setEntries={setEntries} addPunkte={addPunkte} />}
       {sec === "rituale" && <Rituale ritual={ritual} setRitual={setRitual} addPunkte={addPunkte} />}
-      {sec === "brief" && <Brief briefe={briefe} setBriefe={setBriefe} addPunkte={addPunkte} />}
+      {sec === "brief" && <Brief briefe={briefe} setBriefe={setBriefe} briefPost={briefPost} setBriefPost={setBriefPost} addPunkte={addPunkte} />}
       {sec === "money" && <MoneyMind mm={mm} setMm={setMm} addPunkte={addPunkte} />}
     </div>
   );
@@ -2779,40 +2779,251 @@ function DankbarkeitsChallenge({ ch, setCh, addPunkte }) {
   );
 }
 
-/* — Zukunftsbrief (Brief an dein zukünftiges Ich · Methode: zeitliche Distanzierung) — */
-function Brief({ briefe, setBriefe, addPunkte }) {
+/* — Zukunftsbrief (Brief an dein zukünftiges Ich · Methode: zeitliche Distanzierung) —
+   Magischer 3D-Umschlag → Schreiben (Tippen oder Sprechen) → Speichern oder per Post senden. */
+const BRIEF_MIN_TAGE = 21;   // mindestens 3 Wochen Vorlauf
+const BRIEF_IDEAL_TAGE = 28; // ideal 4–6 Wochen
+const plusTage = (n) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d; };
+const isoTag = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const deDatum = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+function BriefUmschlag({ onOffen }) {
+  const [auf, setAuf] = useState(false);
+  const oeffnen = () => {
+    if (auf) return;
+    setAuf(true);
+    setTimeout(onOffen, 1700);
+  };
+  const funken = [
+    { l: "8%", t: "18%", d: 0 }, { l: "88%", t: "12%", d: 0.6 }, { l: "18%", t: "82%", d: 1.1 },
+    { l: "80%", t: "78%", d: 0.3 }, { l: "50%", t: "4%", d: 0.9 }, { l: "94%", t: "48%", d: 1.4 }, { l: "3%", t: "50%", d: 0.5 },
+  ];
+  return (
+    <div style={{ textAlign: "center", padding: "10px 0 6px" }}>
+      <style>{`
+        @keyframes s2gFunke { 0%,100% { opacity: 0; transform: scale(.4) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(25deg); } }
+        @keyframes s2gSchweben { 0%,100% { transform: translateY(0) rotateX(8deg) rotateY(-10deg); } 50% { transform: translateY(-8px) rotateX(4deg) rotateY(8deg); } }
+        @keyframes s2gSiegel { to { opacity: 0; transform: translate(-50%, -50%) scale(1.8); } }
+        @keyframes s2gAura { 0%,100% { opacity: .45; transform: scale(.92); } 50% { opacity: .85; transform: scale(1.05); } }
+      `}</style>
+      <div onClick={oeffnen} role="button" aria-label="Zukunftsbrief öffnen"
+        style={{ position: "relative", width: 260, height: 190, margin: "70px auto 18px", perspective: 900, cursor: auf ? "default" : "pointer" }}>
+        {/* Feen-Aura */}
+        <div style={{ position: "absolute", inset: -30, borderRadius: "50%", background: `radial-gradient(circle, rgba(246,234,211,.95), rgba(194,82,110,.18) 55%, transparent 72%)`, animation: "s2gAura 3.2s ease-in-out infinite" }} />
+        {funken.map((f, i) => (
+          <div key={i} style={{ position: "absolute", left: f.l, top: f.t, fontSize: i % 2 ? 13 : 18, color: C.gold, animation: `s2gFunke 2.4s ${f.d}s ease-in-out infinite`, pointerEvents: "none", zIndex: 6 }}>✦</div>
+        ))}
+        <div style={{ position: "absolute", inset: 0, animation: auf ? "none" : "s2gSchweben 4s ease-in-out infinite", transform: auf ? "rotateX(10deg)" : undefined, transition: "transform .6s" }}>
+          {/* Rückseite */}
+          <div style={{ position: "absolute", inset: 0, borderRadius: 14, background: `linear-gradient(160deg, ${C.plum}, ${C.rose})`, boxShadow: "0 26px 40px -18px rgba(138,63,90,.6)", zIndex: 1 }} />
+          {/* Briefpapier */}
+          <div style={{
+            position: "absolute", left: "9%", width: "82%", height: "80%", bottom: "8%", borderRadius: 8,
+            background: `linear-gradient(180deg, #FFFFFF, ${C.card})`, boxShadow: "0 4px 14px rgba(0,0,0,.12)",
+            transform: auf ? "translateY(-50%)" : "translateY(0)", transition: "transform 1s .55s cubic-bezier(.2,.8,.2,1)", zIndex: 2,
+            padding: "16px 14px", textAlign: "left", fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 13, color: C.plum,
+          }}>
+            Liebe Ich, …
+            <div style={{ marginTop: 10, height: 1, background: C.line }} />
+            <div style={{ marginTop: 10, height: 1, background: C.line }} />
+            <div style={{ marginTop: 10, height: 1, background: C.line, width: "70%" }} />
+          </div>
+          {/* Vordertasche */}
+          <div style={{ position: "absolute", inset: 0, borderRadius: 14, zIndex: 3, clipPath: "polygon(0 0, 50% 56%, 100% 0, 100% 100%, 0 100%)", background: `linear-gradient(200deg, ${C.goldSoft}, ${C.rose} 85%)` }} />
+          {/* Klappe */}
+          <div style={{
+            position: "absolute", left: 0, top: 0, width: "100%", height: "60%", transformOrigin: "top center",
+            clipPath: "polygon(0 0, 100% 0, 50% 100%)", background: `linear-gradient(180deg, ${C.gold}, ${C.goldSoft})`,
+            transform: auf ? "perspective(600px) rotateX(180deg)" : "perspective(600px) rotateX(0deg)", zIndex: auf ? 1 : 4, filter: auf ? "brightness(.85)" : "none",
+            transition: "transform .8s cubic-bezier(.4,.1,.2,1), z-index 0s .4s", borderRadius: "14px 14px 0 0",
+          }} />
+          {/* Siegel */}
+          <div style={{
+            position: "absolute", left: "50%", top: "58%", transform: "translate(-50%, -50%)", zIndex: 5,
+            width: 46, height: 46, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #E07A93, ${C.plum})`,
+            boxShadow: "0 4px 10px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.35)", display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#FFF3F0", fontSize: 20, animation: auf ? "s2gSiegel .5s forwards" : "none",
+          }}>♡</div>
+        </div>
+      </div>
+      <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.plum }}>
+        {auf ? "Dein Brief öffnet sich …" : "Tippe auf den Umschlag, um deinen Brief zu öffnen"}
+      </div>
+    </div>
+  );
+}
+
+function Brief({ briefe, setBriefe, briefPost, setBriefPost, addPunkte }) {
+  const [phase, setPhase] = useState("zu"); // zu → schreiben
   const [text, setText] = useState("");
   const [offen, setOffen] = useState(null);
+  const [hoeren, setHoeren] = useState(false);
+  const [hinweis, setHinweis] = useState("");
+  const [postOffen, setPostOffen] = useState(false);
+  const [pruefen, setPruefen] = useState(false);
+  const recRef = useRef(null);
+  const guthaben = briefPost?.guthaben ?? 1;
+  const [adr, setAdr] = useState(briefPost?.adresse || { name: "", strasse: "", plz: "", ort: "", land: "Deutschland" });
+  const [datum, setDatum] = useState(isoTag(plusTage(42)));
 
-  const senden = () => {
-    if (!text.trim()) return;
-    setBriefe([{
-      txt: text.trim(),
-      geschrieben: new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }),
-    }, ...briefe]);
-    setText("");
+  useEffect(() => () => recRef.current?.stop(), []);
+
+  const diktieren = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setHinweis("Sprechen wird von diesem Browser leider nicht unterstützt — bitte tippe deinen Brief."); return; }
+    if (hoeren) { recRef.current?.stop(); setHoeren(false); return; }
+    const r = new SR();
+    r.lang = "de-DE"; r.continuous = true; r.interimResults = false;
+    r.onresult = (e) => {
+      let neu = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) neu += e.results[i][0].transcript + " ";
+      if (neu) setText((t) => (t ? t.replace(/\s*$/, " ") : "") + neu.trim());
+    };
+    r.onerror = () => setHoeren(false);
+    r.onend = () => setHoeren(false);
+    recRef.current = r; r.start(); setHoeren(true); setHinweis("");
+  };
+
+  const heuteText = () => new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+
+  const speichern = () => {
+    if (!text.trim()) { setHinweis("Schreib oder sprich zuerst ein paar Zeilen. 💌"); return; }
+    recRef.current?.stop();
+    setBriefe([{ txt: text.trim(), geschrieben: heuteText(), art: "gespeichert" }, ...briefe]);
+    setText(""); setHinweis("Dein Brief liegt jetzt sicher in deiner Schatzkiste. ✨");
     if (addPunkte) addPunkte(10, "Zukunftsbrief geschrieben");
   };
 
+  const tageBis = Math.round((new Date(datum + "T00:00:00") - plusTage(0)) / 864e5);
+  const adresseOk = adr.name.trim() && adr.strasse.trim() && /^\d{4,5}$/.test(adr.plz.trim()) && adr.ort.trim();
+
+  const sendenPruefen = () => {
+    if (!text.trim()) { setHinweis("Schreib oder sprich zuerst deinen Brief. 💌"); return; }
+    if (guthaben < 1) { setHinweis("Dein Brief-Guthaben ist aufgebraucht."); return; }
+    if (!adresseOk) { setHinweis("Bitte prüfe die Adresse — Name, Straße, PLZ (4–5 Ziffern) und Ort werden gebraucht."); return; }
+    if (!datum || tageBis < BRIEF_MIN_TAGE) { setHinweis(`Das Zustelldatum muss mindestens 3 Wochen (${BRIEF_MIN_TAGE} Tage) in der Zukunft liegen.`); return; }
+    recRef.current?.stop();
+    setHinweis(""); setPruefen(true);
+  };
+
+  const abschicken = () => {
+    setBriefe([{ txt: text.trim(), geschrieben: heuteText(), art: "post", zustellung: datum, adresse: { ...adr }, status: "geplant" }, ...briefe]);
+    setBriefPost({ ...(briefPost || {}), guthaben: guthaben - 1, adresse: { ...adr } });
+    setPruefen(false); setPostOffen(false); setText("");
+    setHinweis(`Dein Brief ist unterwegs zu dir — er kommt am ${deDatum(datum)}. 💌`);
+    if (addPunkte) addPunkte(20, "Zukunftsbrief per Post");
+  };
+
+  const feld = { width: "100%", padding: "12px 14px", fontSize: 15, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", marginBottom: 9 };
+  const klein = { fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.55 };
+
   return (
     <div>
-      <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, ${C.plum}, ${C.rose} 150%)`, border: "none" }}>
-        <Eyebrow color={C.goldPale}>💌 Zukunftsbrief</Eyebrow>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#FFF3F0", lineHeight: 1.6 }}>
-          Ein Brief an dein zukünftiges Ich — schreib dir selbst deine Wünsche und Worte von heute.
-        </p>
-      </Card>
+      {phase === "zu" ? (
+        <Card style={{ marginBottom: 14, background: `linear-gradient(170deg, #FFFFFF, ${C.goldPale})` }}>
+          <BriefUmschlag onOffen={() => setPhase("schreiben")} />
+        </Card>
+      ) : (
+        <div style={{ animation: "fadeUp .6s ease both" }}>
+          <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, ${C.plum}, ${C.rose} 150%)`, border: "none" }}>
+            <Eyebrow color={C.goldPale}>💌 Zukunftsbrief</Eyebrow>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#FFF3F0", lineHeight: 1.6 }}>
+              Schreib oder sprich zu deinem zukünftigen Ich — deine Wünsche, deine Worte von heute.
+            </p>
+          </Card>
 
-      <Card style={{ marginBottom: 14 }}>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={"Liebe Ich,\n\nwenn du das liest, dann …"}
-          rows={7}
-          style={{ width: "100%", padding: "15px 16px", fontSize: 15.5, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, marginBottom: 12, outline: "none", resize: "vertical", lineHeight: 1.6 }}
-        />
-        <Btn full onClick={senden}>Brief speichern 💌</Btn>
-      </Card>
+          <Card style={{ marginBottom: 14 }}>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={"Liebe Ich,\n\nwenn du das liest, dann …"}
+              rows={8}
+              style={{ width: "100%", padding: "15px 16px", fontSize: 15.5, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${hoeren ? C.rose : C.line}`, borderRadius: 14, background: `repeating-linear-gradient(180deg, ${C.card} 0 31px, ${C.line} 31px 32px)`, color: C.espresso, marginBottom: 12, outline: "none", resize: "vertical", lineHeight: "32px" }}
+            />
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <button onClick={diktieren} style={{
+                flex: 1, minHeight: 44, borderRadius: 999, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 700,
+                border: `1.5px solid ${hoeren ? C.rose : C.gold}`, background: hoeren ? C.roseSoft : "rgba(255,255,255,.7)", color: hoeren ? C.plum : C.gold,
+                animation: hoeren ? "glowPulse 1.6s ease-in-out infinite" : "none",
+              }}>{hoeren ? "⏹ Aufnahme beenden" : "🎙️ Sprechen statt tippen"}</button>
+            </div>
+            {hoeren && <div style={{ ...klein, color: C.rose, marginBottom: 10, textAlign: "center" }}>Ich höre dir zu … sprich ganz in Ruhe.</div>}
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <Btn ghost onClick={speichern}>💾 Speichern</Btn>
+              <Btn onClick={() => { setPostOffen(!postOffen); setHinweis(""); }}>✉️ Senden</Btn>
+            </div>
+            {hinweis && <div style={{ ...klein, marginTop: 10, textAlign: "center", color: C.plum, fontWeight: 600 }}>{hinweis}</div>}
+          </Card>
+
+          {postOffen && (
+            <Card style={{ marginBottom: 14, animation: "fadeUp .4s ease both" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <Eyebrow>✉️ Brief per Post</Eyebrow>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: guthaben > 0 ? C.plum : C.rose, background: guthaben > 0 ? C.goldPale : C.roseSoft, borderRadius: 999, padding: "6px 12px" }}>
+                  Guthaben: {guthaben} {guthaben === 1 ? "Brief" : "Briefe"}
+                </div>
+              </div>
+
+              <div style={{ background: C.goldPale, borderRadius: 12, padding: "11px 13px", marginBottom: 14 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: C.plum }}>⏳ Bitte rechtzeitig abschicken</div>
+                <p style={{ ...klein, marginTop: 3 }}>
+                  Damit dein Brief pünktlich ankommt, schick ihn <b>mindestens 3 Wochen</b> vor dem Wunschdatum ab — am besten <b>4–6 Wochen</b> vorher.
+                </p>
+              </div>
+
+              <div style={{ ...klein, fontWeight: 700, color: C.espresso, marginBottom: 5 }}>Wann soll der Brief bei dir ankommen?</div>
+              <input type="date" value={datum} min={isoTag(plusTage(BRIEF_MIN_TAGE))} onChange={(e) => setDatum(e.target.value)} style={feld} />
+              {datum && tageBis >= BRIEF_MIN_TAGE && tageBis < BRIEF_IDEAL_TAGE && (
+                <div style={{ ...klein, color: C.rose, marginTop: -4, marginBottom: 9 }}>Knapp, aber möglich — ideal sind 4–6 Wochen Vorlauf.</div>
+              )}
+              {datum && tageBis < BRIEF_MIN_TAGE && (
+                <div style={{ ...klein, color: C.rose, marginTop: -4, marginBottom: 9 }}>Zu früh — frühestens am {deDatum(isoTag(plusTage(BRIEF_MIN_TAGE)))}.</div>
+              )}
+
+              <div style={{ ...klein, fontWeight: 700, color: C.espresso, margin: "6px 0 5px" }}>An welche Adresse?</div>
+              <input placeholder="Vor- und Nachname" value={adr.name} onChange={(e) => setAdr({ ...adr, name: e.target.value })} style={feld} />
+              <input placeholder="Straße und Hausnummer" value={adr.strasse} onChange={(e) => setAdr({ ...adr, strasse: e.target.value })} style={feld} />
+              <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 8 }}>
+                <input placeholder="PLZ" inputMode="numeric" value={adr.plz} onChange={(e) => setAdr({ ...adr, plz: e.target.value })} style={feld} />
+                <input placeholder="Ort" value={adr.ort} onChange={(e) => setAdr({ ...adr, ort: e.target.value })} style={feld} />
+              </div>
+              <select value={adr.land} onChange={(e) => setAdr({ ...adr, land: e.target.value })} style={feld}>
+                {["Deutschland", "Österreich", "Schweiz"].map((l) => <option key={l}>{l}</option>)}
+              </select>
+
+              <Btn full onClick={sendenPruefen} disabled={guthaben < 1}>Brief senden 💌</Btn>
+              {guthaben < 1 && <p style={{ ...klein, textAlign: "center", marginTop: 8 }}>Dein Guthaben ist aufgebraucht. Neues Brief-Guthaben kannst du bald direkt hier aufladen.</p>}
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Prüfen: Datum und Adresse bestätigen */}
+      {pruefen && (
+        <div onClick={() => setPruefen(false)} style={{ position: "fixed", inset: 0, background: "rgba(58,51,43,.55)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: C.card, borderRadius: 22, padding: 22, maxWidth: 380, width: "100%", animation: "fadeUp .35s ease both", boxShadow: "0 30px 60px -20px rgba(0,0,0,.4)" }}>
+            <Eyebrow>Bitte kurz prüfen</Eyebrow>
+            <H size={21} style={{ marginBottom: 14 }}>Stimmen Datum und Adresse?</H>
+            <div style={{ background: C.goldPale, borderRadius: 14, padding: "12px 14px", marginBottom: 10 }}>
+              <div style={{ ...klein, fontWeight: 700, color: C.plum }}>📅 Zustellung</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, marginTop: 3 }}>{deDatum(datum)}</div>
+              <div style={{ ...klein, marginTop: 2 }}>in {tageBis} Tagen ({Math.floor(tageBis / 7)} Wochen)</div>
+            </div>
+            <div style={{ background: C.goldPale, borderRadius: 14, padding: "12px 14px", marginBottom: 10 }}>
+              <div style={{ ...klein, fontWeight: 700, color: C.plum }}>🏠 Adresse</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, marginTop: 3, lineHeight: 1.5 }}>
+                {adr.name}<br />{adr.strasse}<br />{adr.plz} {adr.ort}<br />{adr.land}
+              </div>
+            </div>
+            <p style={{ ...klein, marginBottom: 14 }}>Für diesen Brief wird <b>1 Brief</b> von deinem Guthaben abgezogen (danach: {guthaben - 1}).</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <Btn ghost onClick={() => setPruefen(false)}>Korrigieren</Btn>
+              <Btn onClick={abschicken}>Ja, abschicken</Btn>
+            </div>
+          </div>
+        </div>
+      )}
 
       {briefe.length > 0 && (
         <>
@@ -2820,16 +3031,21 @@ function Brief({ briefe, setBriefe, addPunkte }) {
           {briefe.map((b, i) => (
             <Card key={i} onClick={() => setOffen(offen === i ? null : i)} style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <div style={{ fontSize: 26 }}>{offen === i ? "📖" : "✉️"}</div>
+                <div style={{ fontSize: 26 }}>{b.art === "post" ? "📮" : offen === i ? "📖" : "✉️"}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.espresso }}>Geschrieben am {b.geschrieben}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.gold, marginTop: 2 }}>{offen === i ? "Tippen zum Schließen" : "Tippen zum Lesen"}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: b.art === "post" ? C.rose : C.gold, marginTop: 2 }}>
+                    {b.art === "post" ? `Per Post · kommt am ${deDatum(b.zustellung)}` : offen === i ? "Tippen zum Schließen" : "Tippen zum Lesen"}
+                  </div>
                 </div>
                 <div style={{ fontSize: 15, color: C.gold }}>{offen === i ? "▾" : "›"}</div>
               </div>
               {offen === i && (
                 <div style={{ marginTop: 12, borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
                   <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 14.5, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{b.txt}</p>
+                  {b.art === "post" && b.adresse && (
+                    <div style={{ ...klein, marginTop: 10 }}>📮 An: {b.adresse.name}, {b.adresse.strasse}, {b.adresse.plz} {b.adresse.ort}</div>
+                  )}
                   <div style={{ marginTop: 12, background: C.goldPale, borderRadius: 12, padding: "10px 13px" }}>
                     <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: C.plum }}>🪞 Reflexion</div>
                     <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.5, marginTop: 3 }}>Was hat sich seitdem verändert? Was möchtest du deinem heutigen Ich sagen?</p>
@@ -10048,6 +10264,7 @@ export default function IlhoApp() {
   const [mm, setMm] = useState([]);
   const [horo, setHoro] = useState(null);
   const [briefe, setBriefe] = useState([]);
+  const [briefPost, setBriefPost] = useState({ guthaben: 1 });
   const [akarte, setAkarte] = useState(null);
   const [punkte, setPunkte] = useState(120);
   const [uploads, setUploads] = useState([]);
@@ -10138,6 +10355,7 @@ export default function IlhoApp() {
     if (s.energie !== undefined) setEnergie(s.energie);
     if (s.ch369) setCh369(s.ch369);
     if (s.briefe) setBriefe(s.briefe);
+    if (s.briefPost) setBriefPost(s.briefPost);
     if (s.mm) setMm(s.mm);
     if (typeof s.punkte === "number") setPunkte(s.punkte);
     if (s.ritual) setRitual(s.ritual);
@@ -10180,9 +10398,9 @@ export default function IlhoApp() {
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office }));
+      localStorage.setItem("s2g_state", JSON.stringify({ user, entries, ziele, aufgaben, energie, ch369, briefe, briefPost, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office }));
     } catch (e) {}
-  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office]);
+  }, [user, entries, ziele, aufgaben, energie, ch369, briefe, briefPost, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office]);
 
   // Echte Supabase-Session: stellt Login nach Reload/Google-Redirect wieder her.
   // Ohne konfiguriertes Supabase (kein .env) bleibt supabase === null und hier passiert nichts —
@@ -10239,10 +10457,10 @@ export default function IlhoApp() {
 
   useEffect(() => {
     if (!supabase || !user || !cloudBereit) return; // nichts speichern, bevor der Cloud-Stand geladen (oder als leer bestätigt) wurde
-    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office };
+    const state = { user, entries, ziele, aufgaben, energie, ch369, briefe, briefPost, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office };
     const timer = setTimeout(() => { speichereAppState(state); }, 1200); // debounced, kein Schreiben bei jeder Mikro-Änderung
     return () => clearTimeout(timer);
-  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office]);
+  }, [user, cloudBereit, entries, ziele, aufgaben, energie, ch369, briefe, briefPost, mm, punkte, ritual, alias, anon, kursWahl, prefs, meinZeichen, drawn, horo, akarte, coachMsgs, termine, lumaMsgs, intake, checkins, ilhoAktiv, archetyp, qigong, metime, achtsam, dank, losgelassen, flamme, zkMsgs, kreis, mondrit, caches, intu, reisen, feste, leere, wo, office]);
 
   // Erreichbarkeit der Cloud einmal beim Start pruefen (pausiertes Projekt, Funkloch).
   useEffect(() => {
@@ -10420,7 +10638,7 @@ export default function IlhoApp() {
               {tab === "wochenbericht" && <Wochenbericht bindung={bindung} aufBindung={aufBindung} entries={entries} achtsam={achtsam} dank={dank} qigong={qigong} metime={metime} losgelassen={losgelassen} punkte={punkte} />}
               {tab === "impressum" && <Impressum />}
               {tab === "datenschutz" && <Datenschutz />}
-              {tab === "tagebuch" && <Journal entries={entries} setEntries={setEntries} ritual={ritual} setRitual={setRitual} ch369={ch369} setCh369={setCh369} mm={mm} setMm={setMm} briefe={briefe} setBriefe={setBriefe} akarte={akarte} setAkarte={setAkarte} addPunkte={addPunkte} streak={streak} punkte={punkte} initialSec={journalSec} />}
+              {tab === "tagebuch" && <Journal entries={entries} setEntries={setEntries} ritual={ritual} setRitual={setRitual} ch369={ch369} setCh369={setCh369} mm={mm} setMm={setMm} briefe={briefe} setBriefe={setBriefe} briefPost={briefPost} setBriefPost={setBriefPost} akarte={akarte} setAkarte={setAkarte} addPunkte={addPunkte} streak={streak} punkte={punkte} initialSec={journalSec} />}
               {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} bindung={bindung} openPunkte={() => setPkModal(true)} openThema={(id) => { setThemaId(id); go("thema"); }} /></>}
               {tab === "thema" && <ThemaScreen id={themaId} go={go} bindung={bindung} />}
               {tab === "ziele" && <><MediaBanner video={S2GVID.ziele} poster={S2GIMG.ziele} title="Ziele" subtitle="Deine Richtung, dein Nordstern" height={190} /><Ziele ziele={ziele} setZiele={setZiele} addPunkte={addPunkte} /></>}
