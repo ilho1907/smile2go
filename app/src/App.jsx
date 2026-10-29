@@ -20,7 +20,8 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   modulErledigt, modulZurueck, stelleAnfrage,
   rolleWunschMerken, rolleAbgleichen, coachRolleSetzen,
   ladeGemeinschaft, zaehleGemeinschaft, gemeinschaftDateiUrl, gemeinschaftGesehen,
-  gemeinschaftHerz, ladeMeineHerzen, beduerfnisMerken, beduerfnisVergessen } from "./supabase";
+  gemeinschaftHerz, ladeMeineHerzen, beduerfnisMerken, beduerfnisVergessen,
+  meineBeduerfnisse } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -7303,36 +7304,36 @@ const GEM_TYP_ICON = { video: "▶️", audio: "\u{1F3A7}", uebung: "\u{1F9F6}",
    Die freie Mediathek. Jede Coachin bringt beim Start mindestens einen
    Beitrag ein; jede Frau sieht alles — ohne Bindung, ohne Bezahlung. Wer
    hier etwas findet, das hilft, erfaehrt auch, von wem es kommt. So
-   begegnen sich die beiden Seiten ueber Inhalte statt ueber Werbung. */
+   begegnen sich die beiden Seiten ueber Inhalte statt ueber Werbung.
+
+   Drei Ebenen: Uebersicht (welche Tuer?) → Liste (was liegt dahinter?)
+   → Lesen (der Beitrag selbst, ganzseitig statt als Akkordeon). */
 
 function Gemeinschaft({ go, bindung }) {
   const [bed, setBed] = useState(null);
+  const [detail, setDetail] = useState(null);
   const [zahlen, setZahlen] = useState({});
+  const [meine, setMeine] = useState([]);       // ihr eigenes Beduerfnis-Profil
   const [liste, setListe] = useState(null);
   const [herzen, setHerzen] = useState([]);
-  const [offen, setOffen] = useState(null);
+  const [wegFrage, setWegFrage] = useState(false);
+  const [geteilt, setGeteilt] = useState("");
 
-  useEffect(() => {
+  const neuLaden = () => {
     zaehleGemeinschaft().then(setZahlen);
-    ladeMeineHerzen().then(setHerzen);
-  }, []);
+    meineBeduerfnisse().then((d) => setMeine(d || []));
+  };
+  useEffect(() => { neuLaden(); ladeMeineHerzen().then(setHerzen); }, []);
 
   useEffect(() => {
     if (!bed) { setListe(null); return; }
     let aktiv = true;
     setListe(null);
     ladeGemeinschaft(bed).then((d) => { if (aktiv) setListe(d); });
-    // Sie hat diese Tuer bewusst geoeffnet — das ist ein leises Signal.
+    // Sie hat diese Tuer bewusst geoeffnet — ein leises Signal, mehr nicht.
     beduerfnisMerken(bed, 2);
     return () => { aktiv = false; };
   }, [bed]);
-
-  const oeffnen = async (b) => {
-    setOffen(offen?.id === b.id ? null : b);
-    if (offen?.id === b.id) return;
-    gemeinschaftGesehen(b.id, b.typ === "text" || b.typ === "uebung" ? 100 : 10);
-    beduerfnisMerken(b.beduerfnis, 3);
-  };
 
   const herz = async (b) => {
     const an = !herzen.includes(b.id);
@@ -7341,52 +7342,111 @@ function Gemeinschaft({ go, bindung }) {
     if (an) beduerfnisMerken(b.beduerfnis, 5);
   };
 
-  /* ── Übersicht: nur Türen, hinter denen wirklich etwas liegt ── */
-  if (!bed) {
-    const offeneTueren = BEDUERFNISSE.filter((b) => (zahlen[b.id] || 0) > 0);
-    const gesamt = Object.values(zahlen).reduce((a, n) => a + n, 0);
-    return (
-      <div style={{ padding: "0 0 24px" }}>
-        <Eyebrow color={C.plum}>Von Frauen für Frauen</Eyebrow>
-        <H size={23} style={{ marginBottom: 6 }}>Was brauchst du gerade?</H>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: "0 0 18px" }}>
-          {gesamt > 0
-            ? `${gesamt} Beiträge, geschenkt von Coachinnen aus ganz Deutschland. Frei für dich — ganz gleich, ob du eine Begleitung hast oder nicht.`
-            : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen. Bald ist der erste da."}
-        </p>
+  const oeffnen = (b) => {
+    setDetail(b);
+    gemeinschaftGesehen(b.id, b.typ === "text" || b.typ === "uebung" ? 100 : 10);
+    beduerfnisMerken(b.beduerfnis, 3);
+  };
 
-        {offeneTueren.length === 0 ? (
-          <Card>
-            <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
-              Noch ist es still hier. Die ersten Coachinnen tragen gerade ihre Geschenke ein. 🤍
-            </p>
-          </Card>
-        ) : (
-          <div style={{ display: "grid", gap: 10 }}>
-            {offeneTueren.map((b) => (
-              <Card key={b.id} onClick={() => setBed(b.id)}
-                style={{ display: "flex", alignItems: "center", gap: 13, cursor: "pointer" }}>
-                <span style={{ fontSize: 23, flexShrink: 0 }}>{b.icon}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso, lineHeight: 1.35 }}>{b.t}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
-                    {zahlen[b.id]} {zahlen[b.id] === 1 ? "Beitrag" : "Beiträge"}
-                  </div>
-                </div>
-                <span style={{ color: C.gold, fontSize: 18 }}>›</span>
-              </Card>
-            ))}
-          </div>
+  const einladen = async () => {
+    const text = "Ich bin bei smile2go — da sammeln Coachinnen Übungen, Audios und Impulse, die für alle Frauen frei sind. Magst du auch etwas beitragen?";
+    const url = window.location.origin;
+    try {
+      if (navigator.share) { await navigator.share({ title: "smile2go", text, url }); return; }
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setGeteilt("Einladung kopiert — du kannst sie jetzt einfügen.");
+      setTimeout(() => setGeteilt(""), 4000);
+    } catch { /* abgebrochen — nichts tun */ }
+  };
+
+  /* Ein kleiner Kopf, der zeigt, wo sie gerade ist. Bewusst als Brotkrume
+     und nicht als zweiter Zurück-Pfeil, damit er nicht mit dem globalen
+     Zurück-Knopf der App konkurriert. */
+  const Krume = ({ pfad, auf }) => (
+    <button onClick={auf} style={{
+      display: "block", width: "100%", textAlign: "left", background: "none",
+      border: "none", cursor: "pointer", padding: "6px 0 14px", minHeight: 44,
+      fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, fontWeight: 600,
+    }}>{pfad}</button>
+  );
+
+  const CoachZeile = ({ name, gross }) => !name ? null : (
+    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+      <div style={{
+        width: gross ? 34 : 26, height: gross ? 34 : 26, borderRadius: "50%", flexShrink: 0,
+        background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: "Georgia, serif", fontSize: gross ? 15 : 12.5,
+      }}>{name.charAt(0)}</div>
+      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: gross ? 14.5 : 13.5, color: C.plum, fontWeight: 600 }}>
+        {name}
+      </span>
+    </div>
+  );
+
+  /* ── 3 · Lesen ── */
+  if (detail) {
+    const b = detail;
+    const geherzt = herzen.includes(b.id);
+    return (
+      <div style={{ padding: "0 0 28px" }}>
+        <Krume pfad={`‹ ${BED[b.beduerfnis]?.t || "Zurück"}`} auf={() => setDetail(null)} />
+
+        <Eyebrow color={C.plum}>{GEM_TYP_ICON[b.typ]} {b.dauer_min ? `${b.dauer_min} Minuten` : "Für dich"}</Eyebrow>
+        <H size={24} style={{ marginBottom: 10, lineHeight: 1.25 }}>{b.titel}</H>
+        {b.einleitung && (
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.ink, lineHeight: 1.65, margin: "0 0 16px" }}>
+            {b.einleitung}
+          </p>
+        )}
+        <div style={{ marginBottom: 20 }}><CoachZeile name={b.coach_name} gross /></div>
+
+        {b.typ === "audio" && b.datei_pfad && (
+          <audio controls src={gemeinschaftDateiUrl(b.datei_pfad)} style={{ width: "100%", marginBottom: 18 }}
+            onEnded={() => gemeinschaftGesehen(b.id, 100)}
+            onTimeUpdate={(e) => {
+              const el = e.currentTarget;
+              if (el.duration > 0) {
+                const p = Math.round((el.currentTime / el.duration) * 100);
+                if (p > 0 && p % 25 === 0) gemeinschaftGesehen(b.id, p);
+              }
+            }} />
         )}
 
-        {!bindung?.coach_id && gesamt > 0 && (
+        {b.typ === "video" && b.extern_url && (
+          <a href={b.extern_url} target="_blank" rel="noreferrer"
+            onClick={() => gemeinschaftGesehen(b.id, 50)}
+            style={{
+              display: "block", marginBottom: 18, padding: "15px 18px", borderRadius: 15,
+              background: C.beige, textAlign: "center", textDecoration: "none", minHeight: 48,
+              fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.espresso,
+            }}>▶︎ Video ansehen</a>
+        )}
+
+        {(b.typ === "text" || b.typ === "uebung") && b.text && (
+          <Card style={{ marginBottom: 18 }}>
+            <p style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso, lineHeight: 1.75, whiteSpace: "pre-wrap", margin: 0 }}>
+              {b.text}
+            </p>
+          </Card>
+        )}
+
+        {b.extern_url && b.typ !== "video" && (
+          <a href={b.extern_url} target="_blank" rel="noreferrer" style={{
+            display: "inline-block", marginBottom: 18, minHeight: 44, lineHeight: "44px",
+            fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, fontWeight: 600,
+          }}>↗ Weiterlesen</a>
+        )}
+
+        <Btn full ghost={!geherzt} onClick={() => herz(b)}>
+          {geherzt ? "🤍 Gemerkt" : "🤍 Hat mir gut getan"}
+        </Btn>
+
+        {b.coach_name && (
           <Card style={{ marginTop: 18, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, marginBottom: 5 }}>
-              Und wenn du mehr möchtest?
-            </div>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
-              Jeder Beitrag hier kommt von einer echten Frau. Wenn dir eine gut tut, kannst du
-              unter ihrem Namen sehen, was sie sonst noch anbietet — ohne Druck, ohne Abo.
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.65, margin: 0 }}>
+              Das hier ist ein Geschenk von <strong>{b.coach_name}</strong> an alle Frauen in smile2go.
+              {!bindung?.coach_id && " Wenn sie dir gut tut, kannst du sie als deine Begleitung wählen — ohne Druck."}
             </p>
           </Card>
         )}
@@ -7394,117 +7454,165 @@ function Gemeinschaft({ go, bindung }) {
     );
   }
 
-  /* ── Eine Tür ── */
-  const info = BED[bed];
-  return (
-    <div style={{ padding: "0 0 24px" }}>
-      <button onClick={() => { setBed(null); setOffen(null); }} style={{
-        background: "none", border: "none", cursor: "pointer", padding: "4px 0 12px",
-        fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, fontWeight: 600, minHeight: 40,
-      }}>‹ Alle Bereiche</button>
+  /* ── 2 · Eine Tür ── */
+  if (bed) {
+    const info = BED[bed];
+    return (
+      <div style={{ padding: "0 0 28px" }}>
+        <Krume pfad="‹ Alle Bereiche" auf={() => { setBed(null); setWegFrage(false); }} />
 
-      <Eyebrow color={C.plum}>{info?.icon} Gemeinschaft</Eyebrow>
-      <H size={21} style={{ marginBottom: 16 }}>{info?.t}</H>
+        <Eyebrow color={C.plum}>{info?.icon} Gemeinschaft</Eyebrow>
+        <H size={22} style={{ marginBottom: 18, lineHeight: 1.3 }}>{info?.t}</H>
 
-      {liste === null && (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Einen Moment …</p>
-      )}
+        {liste === null && (
+          <div style={{ display: "grid", gap: 12 }}>
+            {[0, 1].map((i) => (
+              <Card key={i} style={{ height: 92, opacity: .45 }} />
+            ))}
+          </div>
+        )}
 
-      {liste?.length === 0 && (
-        <Card><p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 14.5, color: C.ink, margin: 0 }}>
-          Hierzu gibt es noch nichts. Schau bald wieder vorbei.
-        </p></Card>
-      )}
+        {liste?.length === 0 && (
+          <Card><p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15, color: C.ink, margin: 0, lineHeight: 1.6 }}>
+            Hierzu gibt es noch nichts. Schau bald wieder vorbei.
+          </p></Card>
+        )}
 
-      <div style={{ display: "grid", gap: 12 }}>
-        {(liste || []).map((b) => {
-          const auf = offen?.id === b.id;
-          const geherzt = herzen.includes(b.id);
-          return (
-            <Card key={b.id} style={{ padding: 0, overflow: "hidden" }}>
-              <div onClick={() => oeffnen(b)} style={{ padding: "15px 16px", cursor: "pointer" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 11 }}>
-                  <span style={{ fontSize: 19, flexShrink: 0, marginTop: 1 }}>{GEM_TYP_ICON[b.typ]}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.35 }}>{b.titel}</div>
-                    {b.einleitung && (
-                      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, margin: "5px 0 0" }}>{b.einleitung}</p>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 8, flexWrap: "wrap" }}>
-                      {b.coach_name && (
-                        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, fontWeight: 600 }}>
-                          von {b.coach_name}
-                        </span>
-                      )}
-                      {b.dauer_min ? (
-                        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>· {b.dauer_min} Min</span>
-                      ) : null}
-                      {b.herzen > 0 && (
-                        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>· {b.herzen} 🤍</span>
-                      )}
-                    </div>
+        <div style={{ display: "grid", gap: 12 }}>
+          {(liste || []).map((b) => (
+            <Card key={b.id} onClick={() => oeffnen(b)} style={{ cursor: "pointer" }}>
+              <div style={{ marginBottom: 9 }}><CoachZeile name={b.coach_name} /></div>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{GEM_TYP_ICON[b.typ]}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.35 }}>{b.titel}</div>
+                  {b.einleitung && (
+                    <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, margin: "6px 0 0" }}>
+                      {b.einleitung}
+                    </p>
+                  )}
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 8 }}>
+                    {b.dauer_min ? `${b.dauer_min} Min` : "Kurz"}
+                    {b.herzen > 0 && ` · ${b.herzen} 🤍`}
+                    {herzen.includes(b.id) && " · gemerkt"}
                   </div>
-                  <span style={{ color: C.gold, fontSize: 17, flexShrink: 0 }}>{auf ? "⌃" : "⌄"}</span>
                 </div>
               </div>
-
-              {auf && (
-                <div style={{ padding: "0 16px 15px", borderTop: `1px solid ${C.line}` }}>
-                  {b.typ === "audio" && b.datei_pfad && (
-                    <audio controls src={gemeinschaftDateiUrl(b.datei_pfad)} style={{ width: "100%", marginTop: 13 }}
-                      onEnded={() => gemeinschaftGesehen(b.id, 100)}
-                      onTimeUpdate={(e) => {
-                        const el = e.currentTarget;
-                        if (el.duration > 0) {
-                          const p = Math.round((el.currentTime / el.duration) * 100);
-                          if (p > 0 && p % 25 === 0) gemeinschaftGesehen(b.id, p);
-                        }
-                      }} />
-                  )}
-
-                  {b.typ === "video" && b.extern_url && (
-                    <a href={b.extern_url} target="_blank" rel="noreferrer"
-                      onClick={() => gemeinschaftGesehen(b.id, 50)}
-                      style={{
-                        display: "block", marginTop: 13, padding: "13px 16px", borderRadius: 13,
-                        background: C.beige, textAlign: "center", textDecoration: "none",
-                        fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, color: C.espresso,
-                      }}>▶︎ Video ansehen</a>
-                  )}
-
-                  {(b.typ === "text" || b.typ === "uebung") && b.text && (
-                    <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap", margin: "13px 0 0" }}>{b.text}</p>
-                  )}
-
-                  {b.extern_url && b.typ !== "video" && (
-                    <a href={b.extern_url} target="_blank" rel="noreferrer" style={{
-                      display: "inline-block", marginTop: 11, fontFamily: "system-ui, sans-serif",
-                      fontSize: 13, color: C.plum, fontWeight: 600,
-                    }}>↗ Weiterlesen</a>
-                  )}
-
-                  <div style={{ display: "flex", gap: 9, marginTop: 14, alignItems: "center" }}>
-                    <button onClick={() => herz(b)} style={{
-                      padding: "9px 15px", borderRadius: 11, cursor: "pointer", minHeight: 42,
-                      border: `1.5px solid ${geherzt ? C.rose : C.line}`,
-                      background: geherzt ? C.roseSoft : "transparent",
-                      fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600,
-                      color: geherzt ? C.plum : C.ink,
-                    }}>{geherzt ? "🤍 Gemerkt" : "🤍 Hat mir gut getan"}</button>
-                  </div>
-                </div>
-              )}
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </div>
 
-      {/* Transparenz: sie darf wissen, warum sie etwas sieht, und es abstellen. */}
-      <button onClick={async () => { await beduerfnisVergessen(bed); setBed(null); }} style={{
-        width: "100%", background: "none", border: "none", cursor: "pointer", marginTop: 20,
-        fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, minHeight: 44,
-        textDecoration: "underline", opacity: .75,
-      }}>Das beschäftigt mich nicht mehr — nicht mehr vorschlagen</button>
+        {/* Transparenz: sie darf wissen, warum sie etwas sieht, und es abstellen.
+            Zwei Schritte, weil es ihre Daten loescht und nicht rueckgaengig geht. */}
+        <div style={{ marginTop: 24 }}>
+          {!wegFrage ? (
+            <button onClick={() => setWegFrage(true)} style={{
+              width: "100%", background: "none", border: "none", cursor: "pointer", minHeight: 44,
+              fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, textDecoration: "underline",
+            }}>Weniger davon vorschlagen</button>
+          ) : (
+            <Card>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
+                Wir merken uns dann nicht mehr, dass dich das beschäftigt hat, und schlagen
+                nichts mehr dazu vor. Du findest den Bereich hier trotzdem weiter.
+              </p>
+              <div style={{ display: "flex", gap: 9 }}>
+                <Btn small onClick={async () => {
+                  await beduerfnisVergessen(bed);
+                  setWegFrage(false); setBed(null); neuLaden();
+                }}>Ja, weniger davon</Btn>
+                <Btn small ghost onClick={() => setWegFrage(false)}>Abbrechen</Btn>
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── 1 · Übersicht ── */
+  const gesamt = Object.values(zahlen).reduce((a, n) => a + n, 0);
+  // Was sie zuletzt beschäftigt hat, steht oben — aber nur, wenn es dafür
+  // auch wirklich Beiträge gibt. Der Rest behält die ruhige Reihenfolge.
+  const meinRang = Object.fromEntries(meine.map((m) => [m.beduerfnis, Number(m.wert) || 0]));
+  const vorhanden = BEDUERFNISSE.filter((b) => (zahlen[b.id] || 0) > 0);
+  const naheliegend = vorhanden.filter((b) => (meinRang[b.id] || 0) >= 5).slice(0, 3);
+  const weitere = vorhanden.filter((b) => !naheliegend.includes(b));
+
+  const Kachel = ({ b }) => (
+    <Card onClick={() => setBed(b.id)} style={{ cursor: "pointer", padding: 15 }}>
+      <div style={{ fontSize: 22, marginBottom: 7 }}>{b.icon}</div>
+      <div style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.35 }}>{b.t}</div>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 5 }}>
+        {zahlen[b.id]} {zahlen[b.id] === 1 ? "Beitrag" : "Beiträge"}
+      </div>
+    </Card>
+  );
+
+  return (
+    <div style={{ padding: "0 0 28px" }}>
+      <Eyebrow color={C.plum}>Von Frauen für Frauen</Eyebrow>
+      <H size={23} style={{ marginBottom: 7 }}>Was brauchst du gerade?</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: "0 0 20px" }}>
+        {gesamt > 0
+          ? `${gesamt} Beiträge, geschenkt von Coachinnen. Frei für dich — ganz gleich, ob du eine Begleitung hast oder nicht.`
+          : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen."}
+      </p>
+
+      {vorhanden.length === 0 ? (
+        <>
+          <Card style={{ marginBottom: 14 }}>
+            <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.ink, lineHeight: 1.65, margin: 0 }}>
+              Noch ist es still hier. Die ersten Coachinnen tragen gerade ihre Geschenke ein. 🤍
+            </p>
+          </Card>
+          <Card style={{ background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, marginBottom: 6 }}>
+              Kennst du eine Coachin?
+            </div>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.65, margin: "0 0 14px" }}>
+              Jede Coachin, die hier etwas einbringt, macht diesen Ort für alle Frauen reicher —
+              und wird selbst gefunden. Wenn du eine kennst, lade sie ein.
+            </p>
+            <Btn small onClick={einladen}>↗ Eine Coachin einladen</Btn>
+            {geteilt && (
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.sage, marginTop: 11, fontWeight: 600 }}>{geteilt}</div>
+            )}
+          </Card>
+        </>
+      ) : (
+        <>
+          {naheliegend.length > 0 && (
+            <>
+              <Eyebrow color={C.gold}>Zuletzt bei dir</Eyebrow>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, margin: "8px 0 22px" }}>
+                {naheliegend.map((b) => <Kachel key={b.id} b={b} />)}
+              </div>
+            </>
+          )}
+
+          {weitere.length > 0 && (
+            <>
+              {naheliegend.length > 0 && <Eyebrow color={C.gold}>Alle Bereiche</Eyebrow>}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginTop: 8 }}>
+                {weitere.map((b) => <Kachel key={b.id} b={b} />)}
+              </div>
+            </>
+          )}
+
+          {!bindung?.coach_id && (
+            <Card style={{ marginTop: 22, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, marginBottom: 5 }}>
+                Und wenn du mehr möchtest?
+              </div>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+                Jeder Beitrag hier kommt von einer echten Frau. Wenn dir eine gut tut, siehst du
+                unter ihrem Namen, was sie sonst noch anbietet — ohne Druck, ohne Abo.
+              </p>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 }
