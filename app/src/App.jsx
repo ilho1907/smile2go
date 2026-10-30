@@ -7298,16 +7298,113 @@ const BEDUERFNISSE = [
 
 const BED = Object.fromEntries(BEDUERFNISSE.map((b) => [b.id, b]));
 
-const GEM_TYP_ICON = { video: "▶️", audio: "\u{1F3A7}", uebung: "\u{1F9F6}", text: "\u{1F4D6}" };
 
 /* ── Gemeinschaft ───────────────────────────────────────────────────────────
    Die freie Mediathek. Jede Coachin bringt beim Start mindestens einen
-   Beitrag ein; jede Frau sieht alles — ohne Bindung, ohne Bezahlung. Wer
-   hier etwas findet, das hilft, erfaehrt auch, von wem es kommt. So
-   begegnen sich die beiden Seiten ueber Inhalte statt ueber Werbung.
+   Beitrag ein; jede Frau sieht alles — ohne Bindung, ohne Bezahlung.
 
    Drei Ebenen: Uebersicht (welche Tuer?) → Liste (was liegt dahinter?)
-   → Lesen (der Beitrag selbst, ganzseitig statt als Akkordeon). */
+   → Hoeren/Lesen (der Beitrag selbst, ganzseitig).
+
+   Zur Bildebene: die Titelbilder werden im Browser gerechnet, nicht
+   hochgeladen. Jede Tuer hat ihren eigenen Ton, jeder Beitrag eine eigene
+   Variante davon — deterministisch aus Beduerfnis und id, also bei jedem
+   Oeffnen dieselbe. Das kostet keinen Speicherplatz, kein Stockfoto, keine
+   Lizenz, und eine Coachin ohne eigenes Bild hat trotzdem eine schoene
+   Kachel. Bei dreihundert Coachinnen ist genau das der Punkt. */
+
+const GEM_TOENE = {
+  schlaflos:    ["#2B2440", "#44304F", "rgba(170,140,220,", "rgba(90,70,140,"],
+  kraftlos:     ["#6B4420", "#A4702F", "rgba(255,205,130,", "rgba(190,120,50,"],
+  unruhig:      ["#2F3A4A", "#49596B", "rgba(180,205,230,", "rgba(95,125,160,"],
+  angst:        ["#263A3A", "#3E5A57", "rgba(170,215,205,", "rgba(85,135,125,"],
+  liebeskummer: ["#6B2A40", "#A34A63", "rgba(255,180,200,", "rgba(190,80,115,"],
+  trennung:     ["#4A2F3C", "#6E4857", "rgba(230,185,200,", "rgba(150,95,120,"],
+  trauer:       ["#3C3540", "#5A4E58", "rgba(210,195,215,", "rgba(120,105,125,"],
+  wut:          ["#5A2A22", "#8C4330", "rgba(255,175,140,", "rgba(185,85,55,"],
+  einsam:       ["#333E44", "#4F6168", "rgba(195,215,220,", "rgba(105,135,145,"],
+  selbstzweifel:["#443050", "#654671", "rgba(220,190,235,", "rgba(135,100,160,"],
+  grenzen:      ["#7A3B24", "#B0603A", "rgba(255,190,150,", "rgba(200,110,70,"],
+  geld:         ["#3F4030", "#616349", "rgba(225,225,175,", "rgba(135,140,95,"],
+  betrug:       ["#2E3A40", "#4A5A62", "rgba(170,200,215,", "rgba(90,120,135,"],
+  neuanfang:    ["#2F4A33", "#4F7349", "rgba(190,225,170,", "rgba(100,150,95,"],
+  koerper:      ["#5A3A2E", "#866049", "rgba(245,205,175,", "rgba(170,115,80,"],
+};
+
+// Kleine, stabile Zahl aus einem Text — damit derselbe Beitrag immer
+// dieselbe Variante seines Tons bekommt.
+function gemSaat(text) {
+  const s = String(text);
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h) % 100000;
+}
+
+function gemMalen(cv, ton, saat) {
+  if (!cv) return;
+  const toene = GEM_TOENE[ton] || GEM_TOENE.schlaflos;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return;
+  cv.width = Math.round(w * dpr);
+  cv.height = Math.round(h * dpr);
+  const g = cv.getContext("2d");
+  if (!g) return;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const lin = g.createLinearGradient(0, 0, w * 0.35, h);
+  lin.addColorStop(0, toene[0]);
+  lin.addColorStop(1, toene[1]);
+  g.fillStyle = lin;
+  g.fillRect(0, 0, w, h);
+
+  let r = saat + 1;
+  const zufall = () => { r = (r * 1103515245 + 12345) % 2147483648; return r / 2147483648; };
+  for (let i = 0; i < 4; i++) {
+    const x = zufall() * w, y = zufall() * h;
+    const rad = (0.35 + zufall() * 0.5) * Math.max(w, h);
+    const farbe = toene[2 + (i % 2)];
+    const rg = g.createRadialGradient(x, y, 0, x, y, rad);
+    rg.addColorStop(0, farbe + (0.24 + zufall() * 0.3).toFixed(2) + ")");
+    rg.addColorStop(1, farbe + "0)");
+    g.fillStyle = rg;
+    g.fillRect(0, 0, w, h);
+  }
+
+  // Feines Korn, damit die Flaeche nicht nach Farbverlauf aussieht.
+  try {
+    const bild = g.getImageData(0, 0, cv.width, cv.height);
+    const d = bild.data;
+    for (let p = 0; p < d.length; p += 4) {
+      const n = (Math.random() - 0.5) * 9;
+      d[p] += n; d[p + 1] += n; d[p + 2] += n;
+    }
+    g.putImageData(bild, 0, 0);
+  } catch { /* getImageData kann scheitern — dann eben ohne Korn */ }
+}
+
+function GemBild({ ton, saat = 0, style }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const malen = () => gemMalen(ref.current, ton, saat);
+    malen();
+    const id = setTimeout(malen, 60);   // nach dem Layout noch einmal
+    window.addEventListener("resize", malen);
+    return () => { clearTimeout(id); window.removeEventListener("resize", malen); };
+  }, [ton, saat]);
+  return <canvas ref={ref} aria-hidden="true" style={{ display: "block", width: "100%", height: "100%", ...style }} />;
+}
+
+const GEM_TYP_ICON = { video: "▶", audio: "♪", uebung: "✎", text: "❧" };
+
+const gemZeit = (s) => {
+  if (!isFinite(s) || s < 0) s = 0;
+  const m = Math.floor(s / 60), r = Math.floor(s % 60);
+  return `${m}:${String(r).padStart(2, "0")}`;
+};
 
 function Gemeinschaft({ go, bindung }) {
   const [bed, setBed] = useState(null);
@@ -7318,6 +7415,15 @@ function Gemeinschaft({ go, bindung }) {
   const [herzen, setHerzen] = useState([]);
   const [wegFrage, setWegFrage] = useState(false);
   const [geteilt, setGeteilt] = useState("");
+
+  // Der Abspieler sitzt auf dieser Ebene, nicht im Detail — so laeuft das
+  // Audio weiter, wenn sie zurueck in die Liste blaettert.
+  const audioRef = useRef(null);
+  const [laeuft, setLaeuft] = useState(null);
+  const [spielt, setSpielt] = useState(false);
+  const [zeit, setZeit] = useState(0);
+  const [dauer, setDauer] = useState(0);
+  const gemeldet = useRef(-1);
 
   const neuLaden = () => {
     zaehleGemeinschaft().then(setZahlen);
@@ -7346,6 +7452,20 @@ function Gemeinschaft({ go, bindung }) {
     setDetail(b);
     gemeinschaftGesehen(b.id, b.typ === "text" || b.typ === "uebung" ? 100 : 10);
     beduerfnisMerken(b.beduerfnis, 3);
+    if (b.typ === "audio" && b.datei_pfad && laeuft?.id !== b.id) {
+      setLaeuft(b); setZeit(0); setDauer(0); gemeldet.current = -1;
+    }
+  };
+
+  const abspielen = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (el.paused) el.play().then(() => setSpielt(true)).catch(() => {});
+    else { el.pause(); setSpielt(false); }
+  };
+  const springen = (s) => {
+    const el = audioRef.current;
+    if (el && isFinite(el.duration)) el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + s));
   };
 
   const einladen = async () => {
@@ -7359,72 +7479,186 @@ function Gemeinschaft({ go, bindung }) {
     } catch { /* abgebrochen — nichts tun */ }
   };
 
-  /* Ein kleiner Kopf, der zeigt, wo sie gerade ist. Bewusst als Brotkrume
-     und nicht als zweiter Zurück-Pfeil, damit er nicht mit dem globalen
+  /* Brotkrume statt zweitem Zurück-Pfeil, damit sie nicht mit dem globalen
      Zurück-Knopf der App konkurriert. */
-  const Krume = ({ pfad, auf }) => (
+  const Krume = ({ pfad, auf, hell }) => (
     <button onClick={auf} style={{
       display: "block", width: "100%", textAlign: "left", background: "none",
-      border: "none", cursor: "pointer", padding: "6px 0 14px", minHeight: 44,
-      fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, fontWeight: 600,
+      border: "none", cursor: "pointer", padding: "14px 0", minHeight: 46,
+      fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600,
+      color: hell ? "#fff" : C.plum,
+      textShadow: hell ? "0 1px 8px rgba(0,0,0,.5)" : "none",
     }}>{pfad}</button>
   );
 
   const CoachZeile = ({ name, gross }) => !name ? null : (
-    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
       <div style={{
-        width: gross ? 34 : 26, height: gross ? 34 : 26, borderRadius: "50%", flexShrink: 0,
+        width: gross ? 46 : 30, height: gross ? 46 : 30, borderRadius: "50%", flexShrink: 0,
         background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "Georgia, serif", fontSize: gross ? 15 : 12.5,
+        fontFamily: "Georgia, serif", fontSize: gross ? 20 : 13.5,
+        boxShadow: "0 0 0 2px rgba(255,255,255,.85), 0 4px 10px -4px rgba(110,80,45,.5)",
       }}>{name.charAt(0)}</div>
-      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: gross ? 14.5 : 13.5, color: C.plum, fontWeight: 600 }}>
+      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: gross ? 15 : 13.5, color: C.plum, fontWeight: 700 }}>
         {name}
       </span>
     </div>
   );
 
-  /* ── 3 · Lesen ── */
+  /* Vollbild-Kopf, der nach unten in die Seite auslaeuft. */
+  const Held = ({ ton, saat, hoehe, oben, eyebrow, titel }) => (
+    <div style={{ position: "relative", height: hoehe, margin: "0 -18px" }}>
+      <div style={{ position: "absolute", inset: 0 }}><GemBild ton={ton} saat={saat} /></div>
+      <div style={{
+        position: "absolute", inset: 0,
+        background: `linear-gradient(to top, ${C.cream} 0%, rgba(251,246,238,0) 46%), linear-gradient(to top, rgba(26,16,12,.55), rgba(26,16,12,.12) 60%)`,
+      }} />
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "0 18px 4px" }}>
+        {oben}
+        <div>
+          {eyebrow && (
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,.78)", fontWeight: 700, marginBottom: 7 }}>
+              {eyebrow}
+            </div>
+          )}
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 25, color: "#fff", lineHeight: 1.18, textShadow: "0 2px 14px rgba(0,0,0,.45)", marginBottom: 10 }}>
+            {titel}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const audioEl = (
+    <audio
+      ref={audioRef}
+      src={laeuft?.datei_pfad ? gemeinschaftDateiUrl(laeuft.datei_pfad) : undefined}
+      onLoadedMetadata={(e) => setDauer(e.currentTarget.duration || 0)}
+      onPlay={() => setSpielt(true)}
+      onPause={() => setSpielt(false)}
+      onEnded={() => { setSpielt(false); if (laeuft) gemeinschaftGesehen(laeuft.id, 100); }}
+      onTimeUpdate={(e) => {
+        const el = e.currentTarget;
+        setZeit(el.currentTime || 0);
+        if (el.duration > 0 && laeuft) {
+          const p = Math.floor((el.currentTime / el.duration) * 4) * 25;
+          if (p > gemeldet.current) { gemeldet.current = p; gemeinschaftGesehen(laeuft.id, p); }
+        }
+      }}
+      style={{ display: "none" }}
+    />
+  );
+
+  const MiniLeiste = () => (!laeuft || detail?.id === laeuft.id) ? null : (
+    <div style={{
+      position: "sticky", bottom: 12, zIndex: 5, margin: "18px -4px 0",
+      display: "flex", alignItems: "center", gap: 11, padding: "9px 13px 9px 9px",
+      borderRadius: 17, background: "rgba(58,42,34,.95)", color: "#fff",
+      boxShadow: "0 14px 34px -14px rgba(0,0,0,.7)",
+    }}>
+      <div style={{ width: 34, height: 34, borderRadius: 11, overflow: "hidden", flexShrink: 0 }}>
+        <GemBild ton={laeuft.beduerfnis} saat={gemSaat(laeuft.id)} />
+      </div>
+      <button onClick={() => setDetail(laeuft)} style={{
+        flex: 1, minWidth: 0, background: "none", border: "none", cursor: "pointer",
+        textAlign: "left", color: "#fff", padding: 0,
+      }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {laeuft.titel}
+        </div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: "rgba(255,255,255,.62)" }}>
+          {laeuft.coach_name}{dauer > 0 ? ` · noch ${gemZeit(dauer - zeit)}` : ""}
+        </div>
+      </button>
+      <button onClick={abspielen} aria-label={spielt ? "Pause" : "Abspielen"} style={{
+        width: 34, height: 34, borderRadius: "50%", border: "none", cursor: "pointer", flexShrink: 0,
+        background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 13,
+      }}>{spielt ? "❚❚" : "▶"}</button>
+    </div>
+  );
+
+  /* ── 3 · Hören / Lesen ── */
   if (detail) {
     const b = detail;
     const geherzt = herzen.includes(b.id);
+    const istAudio = b.typ === "audio" && b.datei_pfad;
+    const anteil = dauer > 0 ? (zeit / dauer) * 100 : 0;
+
     return (
       <div style={{ padding: "0 0 28px" }}>
-        <Krume pfad={`‹ ${BED[b.beduerfnis]?.t || "Zurück"}`} auf={() => setDetail(null)} />
+        {audioEl}
+        <Held
+          ton={b.beduerfnis} saat={gemSaat(b.id)} hoehe={200}
+          oben={<Krume pfad={`‹ ${BED[b.beduerfnis]?.t || "Zurück"}`} auf={() => setDetail(null)} hell />}
+          eyebrow={`${b.typ === "audio" ? "Audio" : b.typ === "video" ? "Video" : "Übung"}${b.dauer_min ? ` · ${b.dauer_min} Minuten` : ""}`}
+          titel={b.titel}
+        />
 
-        <Eyebrow color={C.plum}>{GEM_TYP_ICON[b.typ]} {b.dauer_min ? `${b.dauer_min} Minuten` : "Für dich"}</Eyebrow>
-        <H size={24} style={{ marginBottom: 10, lineHeight: 1.25 }}>{b.titel}</H>
         {b.einleitung && (
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.ink, lineHeight: 1.65, margin: "0 0 16px" }}>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.ink, lineHeight: 1.65, margin: "0 0 18px" }}>
             {b.einleitung}
           </p>
         )}
-        <div style={{ marginBottom: 20 }}><CoachZeile name={b.coach_name} gross /></div>
+        <div style={{ marginBottom: 22 }}><CoachZeile name={b.coach_name} gross /></div>
 
-        {b.typ === "audio" && b.datei_pfad && (
-          <audio controls src={gemeinschaftDateiUrl(b.datei_pfad)} style={{ width: "100%", marginBottom: 18 }}
-            onEnded={() => gemeinschaftGesehen(b.id, 100)}
-            onTimeUpdate={(e) => {
-              const el = e.currentTarget;
-              if (el.duration > 0) {
-                const p = Math.round((el.currentTime / el.duration) * 100);
-                if (p > 0 && p % 25 === 0) gemeinschaftGesehen(b.id, p);
-              }
-            }} />
+        {istAudio && (
+          <div style={{
+            background: `linear-gradient(160deg, ${C.espresso} 0%, #4A3228 60%, #5B3A34 100%)`,
+            borderRadius: 22, padding: "18px 18px 16px", color: "#fff",
+            boxShadow: "0 22px 44px -26px rgba(58,42,34,.9)",
+          }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 16, lineHeight: 1.3 }}>{b.titel}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: "rgba(255,255,255,.66)", margin: "2px 0 16px" }}>
+              von {b.coach_name}
+            </div>
+
+            <input
+              type="range" min={0} max={100} step={0.1} value={anteil}
+              onChange={(e) => {
+                const el = audioRef.current;
+                if (el && isFinite(el.duration)) el.currentTime = (Number(e.target.value) / 100) * el.duration;
+              }}
+              aria-label="Position"
+              style={{ width: "100%", accentColor: C.rose, margin: 0 }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: 11, color: "rgba(255,255,255,.6)", fontVariantNumeric: "tabular-nums", margin: "4px 0 14px" }}>
+              <span>{gemZeit(zeit)}</span>
+              <span>-{gemZeit(Math.max(0, dauer - zeit))}</span>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24 }}>
+              <button onClick={() => springen(-15)} aria-label="15 Sekunden zurück" style={{
+                width: 42, height: 42, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,.3)",
+                background: "transparent", color: "#fff", fontFamily: "system-ui, sans-serif",
+                fontSize: 11, fontWeight: 700, cursor: "pointer",
+              }}>15</button>
+              <button onClick={abspielen} aria-label={spielt ? "Pause" : "Abspielen"} style={{
+                width: 62, height: 62, borderRadius: "50%", border: "none",
+                background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
+                fontSize: 22, cursor: "pointer", boxShadow: "0 10px 26px -10px rgba(217,110,139,.9)",
+              }}>{spielt ? "❚❚" : "▶"}</button>
+              <button onClick={() => springen(15)} aria-label="15 Sekunden vor" style={{
+                width: 42, height: 42, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,.3)",
+                background: "transparent", color: "#fff", fontFamily: "system-ui, sans-serif",
+                fontSize: 11, fontWeight: 700, cursor: "pointer",
+              }}>15</button>
+            </div>
+          </div>
         )}
 
         {b.typ === "video" && b.extern_url && (
           <a href={b.extern_url} target="_blank" rel="noreferrer"
             onClick={() => gemeinschaftGesehen(b.id, 50)}
             style={{
-              display: "block", marginBottom: 18, padding: "15px 18px", borderRadius: 15,
-              background: C.beige, textAlign: "center", textDecoration: "none", minHeight: 48,
+              display: "block", padding: "15px 18px", borderRadius: 15, background: C.beige,
+              textAlign: "center", textDecoration: "none", minHeight: 48,
               fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.espresso,
             }}>▶︎ Video ansehen</a>
         )}
 
         {(b.typ === "text" || b.typ === "uebung") && b.text && (
-          <Card style={{ marginBottom: 18 }}>
+          <Card>
             <p style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso, lineHeight: 1.75, whiteSpace: "pre-wrap", margin: 0 }}>
               {b.text}
             </p>
@@ -7433,17 +7667,19 @@ function Gemeinschaft({ go, bindung }) {
 
         {b.extern_url && b.typ !== "video" && (
           <a href={b.extern_url} target="_blank" rel="noreferrer" style={{
-            display: "inline-block", marginBottom: 18, minHeight: 44, lineHeight: "44px",
+            display: "inline-block", marginTop: 14, minHeight: 44, lineHeight: "44px",
             fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, fontWeight: 600,
           }}>↗ Weiterlesen</a>
         )}
 
-        <Btn full ghost={!geherzt} onClick={() => herz(b)}>
-          {geherzt ? "🤍 Gemerkt" : "🤍 Hat mir gut getan"}
-        </Btn>
+        <div style={{ marginTop: 20 }}>
+          <Btn full ghost={!geherzt} onClick={() => herz(b)}>
+            {geherzt ? "🤍 Gemerkt" : "🤍 Hat mir gut getan"}
+          </Btn>
+        </div>
 
         {b.coach_name && (
-          <Card style={{ marginTop: 18, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
+          <Card style={{ marginTop: 16, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
             <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.65, margin: 0 }}>
               Das hier ist ein Geschenk von <strong>{b.coach_name}</strong> an alle Frauen in smile2go.
               {!bindung?.coach_id && " Wenn sie dir gut tut, kannst du sie als deine Begleitung wählen — ohne Druck."}
@@ -7459,16 +7695,17 @@ function Gemeinschaft({ go, bindung }) {
     const info = BED[bed];
     return (
       <div style={{ padding: "0 0 28px" }}>
-        <Krume pfad="‹ Alle Bereiche" auf={() => { setBed(null); setWegFrage(false); }} />
-
-        <Eyebrow color={C.plum}>{info?.icon} Gemeinschaft</Eyebrow>
-        <H size={22} style={{ marginBottom: 18, lineHeight: 1.3 }}>{info?.t}</H>
+        {audioEl}
+        <Held
+          ton={bed} saat={gemSaat(bed)} hoehe={liste?.length ? 230 : 180}
+          oben={<Krume pfad="‹ Alle Bereiche" auf={() => { setBed(null); setWegFrage(false); }} hell />}
+          eyebrow={`Gemeinschaft${liste?.length ? ` · ${liste.length} ${liste.length === 1 ? "Beitrag" : "Beiträge"}` : ""}`}
+          titel={info?.t}
+        />
 
         {liste === null && (
-          <div style={{ display: "grid", gap: 12 }}>
-            {[0, 1].map((i) => (
-              <Card key={i} style={{ height: 92, opacity: .45 }} />
-            ))}
+          <div style={{ display: "grid", gap: 13 }}>
+            {[0, 1].map((i) => <Card key={i} style={{ height: 96, opacity: .4 }} />)}
           </div>
         )}
 
@@ -7478,41 +7715,55 @@ function Gemeinschaft({ go, bindung }) {
           </p></Card>
         )}
 
-        <div style={{ display: "grid", gap: 12 }}>
+        <div style={{ display: "grid", gap: 13 }}>
           {(liste || []).map((b) => (
-            <Card key={b.id} onClick={() => oeffnen(b)} style={{ cursor: "pointer" }}>
-              <div style={{ marginBottom: 9 }}><CoachZeile name={b.coach_name} /></div>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                <span style={{ fontSize: 18, flexShrink: 0, marginTop: 2 }}>{GEM_TYP_ICON[b.typ]}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.35 }}>{b.titel}</div>
-                  {b.einleitung && (
-                    <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, margin: "6px 0 0" }}>
-                      {b.einleitung}
-                    </p>
+            <Card key={b.id} onClick={() => oeffnen(b)} style={{ cursor: "pointer", padding: 0, overflow: "hidden", display: "flex", gap: 13 }}>
+              <div style={{ position: "relative", width: 86, flexShrink: 0 }}>
+                <div style={{ position: "absolute", inset: 0 }}>
+                  <GemBild ton={b.beduerfnis} saat={gemSaat(b.id)} />
+                </div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 17 }}>
+                  {GEM_TYP_ICON[b.typ]}
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0, padding: "14px 15px 14px 0" }}>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.3 }}>{b.titel}</div>
+                {b.einleitung && (
+                  <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.8, color: C.ink, lineHeight: 1.5, margin: "5px 0 0" }}>
+                    {b.einleitung}
+                  </p>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8, fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink }}>
+                  {b.coach_name && (
+                    <span style={{
+                      width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+                      background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      fontFamily: "Georgia, serif", fontSize: 12,
+                    }}>{b.coach_name.charAt(0)}</span>
                   )}
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 8 }}>
-                    {b.dauer_min ? `${b.dauer_min} Min` : "Kurz"}
-                    {b.herzen > 0 && ` · ${b.herzen} 🤍`}
-                    {herzen.includes(b.id) && " · gemerkt"}
-                  </div>
+                  <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {b.coach_name}{b.dauer_min ? ` · ${b.dauer_min} Min` : ""}{b.herzen > 0 ? ` · ${b.herzen} 🤍` : ""}
+                  </span>
                 </div>
               </div>
             </Card>
           ))}
         </div>
 
+        <MiniLeiste />
+
         {/* Transparenz: sie darf wissen, warum sie etwas sieht, und es abstellen.
             Zwei Schritte, weil es ihre Daten loescht und nicht rueckgaengig geht. */}
-        <div style={{ marginTop: 24 }}>
+        <div style={{ marginTop: 26 }}>
           {!wegFrage ? (
             <button onClick={() => setWegFrage(true)} style={{
-              width: "100%", background: "none", border: "none", cursor: "pointer", minHeight: 44,
+              width: "100%", background: "none", border: "none", cursor: "pointer", minHeight: 46,
               fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, textDecoration: "underline",
             }}>Weniger davon vorschlagen</button>
           ) : (
             <Card>
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: "0 0 14px" }}>
                 Wir merken uns dann nicht mehr, dass dich das beschäftigt hat, und schlagen
                 nichts mehr dazu vor. Du findest den Bereich hier trotzdem weiter.
               </p>
@@ -7532,28 +7783,34 @@ function Gemeinschaft({ go, bindung }) {
 
   /* ── 1 · Übersicht ── */
   const gesamt = Object.values(zahlen).reduce((a, n) => a + n, 0);
-  // Was sie zuletzt beschäftigt hat, steht oben — aber nur, wenn es dafür
-  // auch wirklich Beiträge gibt. Der Rest behält die ruhige Reihenfolge.
   const meinRang = Object.fromEntries(meine.map((m) => [m.beduerfnis, Number(m.wert) || 0]));
   const vorhanden = BEDUERFNISSE.filter((b) => (zahlen[b.id] || 0) > 0);
   const naheliegend = vorhanden.filter((b) => (meinRang[b.id] || 0) >= 5).slice(0, 3);
   const weitere = vorhanden.filter((b) => !naheliegend.includes(b));
 
   const Kachel = ({ b }) => (
-    <Card onClick={() => setBed(b.id)} style={{ cursor: "pointer", padding: 15 }}>
-      <div style={{ fontSize: 22, marginBottom: 7 }}>{b.icon}</div>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.35 }}>{b.t}</div>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 5 }}>
-        {zahlen[b.id]} {zahlen[b.id] === 1 ? "Beitrag" : "Beiträge"}
-      </div>
-    </Card>
+    <button onClick={() => setBed(b.id)} style={{
+      position: "relative", border: "none", padding: 0, borderRadius: 18, overflow: "hidden",
+      cursor: "pointer", aspectRatio: "4 / 3.4", background: C.beige, width: "100%",
+      boxShadow: "0 14px 30px -20px rgba(110,80,45,.5)", display: "block",
+    }}>
+      <span style={{ position: "absolute", inset: 0 }}><GemBild ton={b.id} saat={gemSaat(b.id)} /></span>
+      <span style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(26,16,12,.72) 0%, rgba(26,16,12,.28) 45%, rgba(26,16,12,.04) 100%)" }} />
+      <span style={{ position: "absolute", inset: "auto 0 0 0", padding: "12px 13px", textAlign: "left" }}>
+        <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 14.5, color: "#fff", lineHeight: 1.25 }}>{b.t}</span>
+        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: "rgba(255,255,255,.8)", marginTop: 4, fontWeight: 600 }}>
+          {zahlen[b.id]} {zahlen[b.id] === 1 ? "Beitrag" : "Beiträge"}
+        </span>
+      </span>
+    </button>
   );
 
   return (
     <div style={{ padding: "0 0 28px" }}>
+      {audioEl}
       <Eyebrow color={C.plum}>Von Frauen für Frauen</Eyebrow>
-      <H size={23} style={{ marginBottom: 7 }}>Was brauchst du gerade?</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: "0 0 20px" }}>
+      <H size={30} style={{ marginBottom: 9, lineHeight: 1.18 }}>Was brauchst du gerade?</H>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.62, margin: "0 0 22px" }}>
         {gesamt > 0
           ? `${gesamt} Beiträge, geschenkt von Coachinnen. Frei für dich — ganz gleich, ob du eine Begleitung hast oder nicht.`
           : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen."}
@@ -7567,10 +7824,10 @@ function Gemeinschaft({ go, bindung }) {
             </p>
           </Card>
           <Card style={{ background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, marginBottom: 6 }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 7, lineHeight: 1.25 }}>
               Kennst du eine Coachin?
             </div>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.65, margin: "0 0 14px" }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.65, margin: "0 0 15px" }}>
               Jede Coachin, die hier etwas einbringt, macht diesen Ort für alle Frauen reicher —
               und wird selbst gefunden. Wenn du eine kennst, lade sie ein.
             </p>
@@ -7585,7 +7842,7 @@ function Gemeinschaft({ go, bindung }) {
           {naheliegend.length > 0 && (
             <>
               <Eyebrow color={C.gold}>Zuletzt bei dir</Eyebrow>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, margin: "8px 0 22px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "9px 0 24px" }}>
                 {naheliegend.map((b) => <Kachel key={b.id} b={b} />)}
               </div>
             </>
@@ -7594,15 +7851,17 @@ function Gemeinschaft({ go, bindung }) {
           {weitere.length > 0 && (
             <>
               {naheliegend.length > 0 && <Eyebrow color={C.gold}>Alle Bereiche</Eyebrow>}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginTop: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 9 }}>
                 {weitere.map((b) => <Kachel key={b.id} b={b} />)}
               </div>
             </>
           )}
 
+          <MiniLeiste />
+
           {!bindung?.coach_id && (
-            <Card style={{ marginTop: 22, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, marginBottom: 5 }}>
+            <Card style={{ marginTop: 24, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 6, lineHeight: 1.25 }}>
                 Und wenn du mehr möchtest?
               </div>
               <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6, margin: 0 }}>
