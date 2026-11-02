@@ -64,3 +64,88 @@ export const stimmeSetzen = (an) => {
   try { localStorage.setItem(SCHLUESSEL, an ? "an" : "aus"); } catch {}
   if (!an) stoppSprache();
 };
+
+/* ── Zuhören statt Tippen ───────────────────────────────────────────────────
+   Die Gegenrichtung zum Vorlesen: die Nutzerin spricht, die App schreibt mit.
+   Gedacht für die Abende, an denen niemand tippen mag — und für Frauen, die
+   mit der Tastatur nicht schnell sind.
+
+   Die Spracherkennung läuft, wo der Browser sie mitbringt (Chrome, Safari ab
+   iOS 14.5, Edge). Wo nicht, bleibt alles wie vorher: der Knopf erscheint
+   gar nicht erst, Tippen funktioniert unverändert. Erkannt wird auf dem
+   Gerät beziehungsweise beim Browser-Hersteller — wir senden nichts an
+   unsere eigenen Dienste und speichern keine Aufnahme. */
+
+const Erkenner =
+  typeof window !== "undefined"
+    ? window.SpeechRecognition || window.webkitSpeechRecognition
+    : null;
+
+export const zuhoerenMoeglich = () => !!Erkenner;
+
+/* Startet das Zuhören. Gibt eine Funktion zurück, die es wieder beendet.
+   beiText  — bekommt den Text, sobald ein Satz fertig erkannt ist
+   beiZwischen — bekommt den vorläufigen Text, damit man beim Sprechen sieht,
+                 dass die App zuhört
+   beiEnde  — wird immer aufgerufen, auch bei Abbruch oder Fehler */
+export function hoereZu({ beiText, beiZwischen, beiEnde, sprache = "de-DE" } = {}) {
+  if (!Erkenner) { beiEnde?.(); return () => {}; }
+
+  let e;
+  try { e = new Erkenner(); } catch { beiEnde?.(); return () => {}; }
+
+  e.lang = sprache;
+  e.continuous = false;        // ein Gedanke, dann Ruhe — kein Dauermikrofon
+  e.interimResults = true;
+  e.maxAlternatives = 1;
+
+  let fertig = false;
+  const schliessen = () => { if (!fertig) { fertig = true; beiEnde?.(); } };
+
+  e.onresult = (ev) => {
+    let endgueltig = "", vorlaeufig = "";
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const t = ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) endgueltig += t; else vorlaeufig += t;
+    }
+    if (vorlaeufig) beiZwischen?.(vorlaeufig.trim());
+    if (endgueltig) beiText?.(endgueltig.trim());
+  };
+  e.onerror = schliessen;
+  e.onend = schliessen;
+
+  try { e.start(); } catch { schliessen(); }
+
+  return () => { try { e.stop(); } catch { schliessen(); } };
+}
+
+/* ── Sperrbildschirm ────────────────────────────────────────────────────────
+   Ohne das hört eine Meditation auf, sobald das Telefon in die Tasche geht,
+   und auf dem Sperrbildschirm steht nichts. Mit der Media Session kennt das
+   Betriebssystem Titel, Coachin und Bild und zeigt Abspielen, Pause und die
+   Sprünge dort an, wo eine Nutzerin sie erwartet. */
+export function sperrbildschirm({ titel, coach, bild, audio, sprung = 15 }) {
+  const ms = typeof navigator !== "undefined" ? navigator.mediaSession : null;
+  if (!ms || !audio) return () => {};
+
+  try {
+    ms.metadata = new window.MediaMetadata({
+      title: titel || "smile2go",
+      artist: coach || "smile2go",
+      album: "smile2go",
+      artwork: bild ? [{ src: bild, sizes: "512x512", type: "image/png" }] : [],
+    });
+  } catch {}
+
+  const setzen = (name, fn) => { try { ms.setActionHandler(name, fn); } catch {} };
+  setzen("play", () => audio.play().catch(() => {}));
+  setzen("pause", () => audio.pause());
+  setzen("seekbackward", () => { audio.currentTime = Math.max(0, audio.currentTime - sprung); });
+  setzen("seekforward", () => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + sprung); });
+  setzen("seekto", (d) => { if (d.seekTime != null) audio.currentTime = d.seekTime; });
+
+  return () => {
+    ["play", "pause", "seekbackward", "seekforward", "seekto"].forEach((n) => setzen(n, null));
+    try { ms.metadata = null; } catch {}
+  };
+}

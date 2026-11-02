@@ -2,14 +2,61 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#F4EDE2" />
+  <!-- interactive-widget: die Tastatur schiebt das Layout, statt darueber zu
+       liegen — sonst verdeckt sie auf Android das Eingabefeld von ilho. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <!-- Gleiche Farbe wie im Manifest, sonst blitzt beim Start ein anderer Ton. -->
+  <meta name="theme-color" content="#FBF6EE" />
+  <meta name="color-scheme" content="light" />
+
+  <!-- Vom Startbildschirm aus ohne Browserleiste, mit Statusleiste in der
+       Cremefarbe statt in Schwarz: das ist der Unterschied zwischen
+       „Internetseite" und „App". -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="smile2go" />
+
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" href="/icon-192.png" />
   <title>smile2go — Dein Raum für Ruhe & Wachstum</title>
+
+  <style>
+    html, body { margin: 0; background: #FBF6EE; }
+    /* Startbild. Es steht im HTML, also ist es da, bevor irgendein Skript
+       geladen hat — kein weisses Blitzen, kein leerer Rahmen. React ersetzt
+       den Inhalt von #root, sobald es bereit ist; damit verschwindet es von
+       selbst, ohne eine Zeile Aufraeumcode. */
+    #s2g-start {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 22px;
+      background: radial-gradient(120% 80% at 50% 0%, #FFFDF9 0%, #FBF6EE 55%, #F2E7D8 100%);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    #s2g-start .wort {
+      font-size: 34px; letter-spacing: .5px; color: #3A2A22;
+      opacity: 0; animation: s2g-auf .7s .1s ease-out forwards;
+    }
+    #s2g-start .ring {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 2px solid rgba(58,42,34,.14); border-top-color: rgba(176,96,58,.75);
+      opacity: 0; animation: s2g-auf .5s .45s ease-out forwards, s2g-dreh 1s linear .45s infinite;
+    }
+    @keyframes s2g-auf  { to { opacity: 1; } }
+    @keyframes s2g-dreh { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      #s2g-start .wort, #s2g-start .ring { animation: s2g-auf .01s forwards; }
+    }
+  </style>
 </head>
-<body style="margin:0">
-  <div id="root"></div>
+<body>
+  <div id="root">
+    <div id="s2g-start">
+      <div class="wort">smile2go</div>
+      <div class="ring"></div>
+    </div>
+  </div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

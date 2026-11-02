@@ -16,7 +16,11 @@ const Root = () => {
 };
 window.addEventListener("hashchange", () => window.location.reload());
 
-ReactDOM.createRoot(document.getElementById("root")).render(<Root />);
+const wurzel = document.getElementById("root");
+// Das Startbild steht im index.html, damit sofort etwas da ist. React raeumt
+// den Container beim ersten Render selbst auf; dies hier ist der Gurt dazu.
+document.getElementById("s2g-start")?.remove();
+ReactDOM.createRoot(wurzel).render(<Root />);
 
 // Service Worker: Offline-Hülle + Push. Nur im Produktions-Build registrieren,
 // damit der Vite-Dev-Server nicht gegen einen gecachten Stand arbeitet.

@@ -7,7 +7,8 @@ import { ILHO_SYSTEM } from "./ilho";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, AUDIO as S2GAUDIO } from "./media";
-import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen } from "./sprache";
+import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
+  hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
   ladeMeineBindung, mitCoachVerbinden, ladeNachrichten, sendeNachricht, abonniereNachrichten, markiereGelesen,
   ladeFreieSlots, ladeMeineTermine, terminBuchen, terminStornieren,
@@ -1357,6 +1358,24 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [grenzenOffen, setGrenzenOffen] = useState(false);
+  // Sprechen statt tippen — das Textfeld bleibt, dies kommt daneben.
+  const [hoert, setHoert] = useState(false);
+  const [gehoert, setGehoert] = useState("");   // vorlaeufig, waehrend sie spricht
+  const stoppRef = useRef(null);
+  const mikroMoeglich = useMemo(() => zuhoerenMoeglich(), []);
+
+  useEffect(() => () => { stoppRef.current?.(); }, []);
+
+  const mikro = () => {
+    if (hoert) { stoppRef.current?.(); return; }
+    setGehoert("");
+    setHoert(true);
+    stoppRef.current = hoereZu({
+      beiZwischen: setGehoert,
+      beiText: (t) => setInput((v) => (v ? v.trim() + " " : "") + t),
+      beiEnde: () => { setHoert(false); setGehoert(""); stoppRef.current = null; },
+    });
+  };
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy, grenzenOffen]);
@@ -1486,12 +1505,34 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
       )}
       <div style={{ padding: "10px 14px 12px", borderTop: msgs.length > 0 ? "none" : `1px solid ${C.line}`, background: C.cream, display: "flex", gap: 8 }}>
         <input
-          value={input}
+          value={hoert && gehoert ? (input ? input.trim() + " " + gehoert : gehoert) : input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Schreib ilho …"
-          style={{ flex: 1, padding: "13px 16px", fontSize: 15, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 22, background: C.card, color: C.espresso, outline: "none" }}
+          placeholder={hoert ? "ilho hört zu …" : "Schreib ilho …"}
+          style={{ flex: 1, padding: "13px 16px", fontSize: 15, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${hoert ? C.rose : C.line}`, borderRadius: 22, background: C.card, color: hoert && gehoert ? C.ink : C.espresso, outline: "none", transition: "border-color .2s" }}
         />
+        {mikroMoeglich && (
+          <button
+            onClick={mikro}
+            aria-label={hoert ? "Aufnahme beenden" : "Sprechen statt tippen"}
+            aria-pressed={hoert}
+            style={{
+              width: 48, height: 48, borderRadius: "50%", cursor: "pointer", flexShrink: 0,
+              border: hoert ? "none" : `1.5px solid ${C.line}`,
+              background: hoert ? C.rose : C.card,
+              color: hoert ? "#fff" : C.plum,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: hoert ? `0 0 0 6px ${C.rose}22` : "none",
+              transition: "background .2s, box-shadow .2s",
+            }}
+          >
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+              <rect x="9" y="2.5" width="6" height="11" rx="3" />
+              <path d="M5.5 11a6.5 6.5 0 0 0 13 0" />
+              <path d="M12 17.5V21" />
+            </svg>
+          </button>
+        )}
         <button onClick={send} disabled={busy} style={{
           width: 48, height: 48, borderRadius: "50%", border: "none", cursor: "pointer",
           background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 18, flexShrink: 0,
@@ -7503,6 +7544,32 @@ function Gemeinschaft({ go, bindung }) {
     if (el.paused) el.play().then(() => setSpielt(true)).catch(() => {});
     else { el.pause(); setSpielt(false); }
   };
+
+  /* Sobald etwas laeuft, soll es auch auf dem Sperrbildschirm stehen: Titel,
+     Coachin und das Bild der Kachel. Sonst verschwindet eine Meditation,
+     sobald das Telefon in die Tasche geht. Das Bild entsteht hier einmal
+     offscreen aus demselben Pinsel wie die Kachel. */
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!laeuft || !el) return;
+    let bild = null;
+    try {
+      // gemMalen rechnet mit der gemessenen Groesse, also muss die Leinwand
+      // kurz im Dokument haengen — unsichtbar, einen Wimpernschlag lang.
+      const cv = document.createElement("canvas");
+      cv.style.cssText = "position:fixed;left:-9999px;top:0;width:512px;height:512px";
+      document.body.appendChild(cv);
+      gemMalen(cv, laeuft.beduerfnis, gemSaat(laeuft.id || laeuft.titel || ""));
+      bild = cv.toDataURL("image/png");
+      cv.remove();
+    } catch { /* ohne Bild ist der Sperrbildschirm immer noch besser als keiner */ }
+    return sperrbildschirm({
+      titel: laeuft.titel,
+      coach: laeuft.coach_name || "smile2go",
+      bild,
+      audio: el,
+    });
+  }, [laeuft]);
   const springen = (s) => {
     const el = audioRef.current;
     if (el && isFinite(el.duration)) el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + s));
