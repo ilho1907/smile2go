@@ -7276,6 +7276,43 @@ function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, me
    Nicht nach Funktion sortiert, sondern nach dem, was gerade los ist.
    Ein Thema bündelt, was in der App schon da ist — und später das, was
    die eigene Coachin dazu hinterlegt hat. */
+/* ── Tab-Icons ──────────────────────────────────────────────────────────────
+   Gezeichnet statt Emoji: eine Strichfassung fuer den ruhenden Zustand, eine
+   gefuellte fuer den aktiven. So nimmt die Leiste die Markenfarbe an, statt
+   fuenf fremde Emoji-Paletten in die App zu holen. */
+
+function NavIcon({ art, aktiv, hell }) {
+  const f = hell ? "#fff" : aktiv ? C.plum : C.ink;
+  const g = {
+    width: 25, height: 25, viewBox: "0 0 24 24", fill: "none",
+    stroke: f, strokeWidth: aktiv ? 2 : 1.7,
+    strokeLinecap: "round", strokeLinejoin: "round",
+    style: { display: "block", transition: "stroke .2s ease" },
+  };
+  if (art === "heute") return (
+    <svg {...g}><circle cx="12" cy="12" r="4.2" fill={aktiv ? f : "none"} />
+      <path d="M12 2.6v2.2M12 19.2v2.2M4.3 4.3l1.6 1.6M18.1 18.1l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.3 19.7l1.6-1.6M18.1 5.9l1.6-1.6" /></svg>
+  );
+  if (art === "orakel") return (
+    <svg {...g}><path d="M19.5 14.8A7.6 7.6 0 1 1 9.2 4.5a6 6 0 0 0 10.3 10.3Z" fill={aktiv ? f : "none"} />
+      <path d="m17.4 3.1.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7Z" fill={aktiv ? f : "none"} /></svg>
+  );
+  if (art === "coaching") return (
+    <svg {...g}><circle cx="12" cy="12" r="2.4" fill={hell || aktiv ? f : "none"} />
+      <path d="M12 9.6c0-2.3-.8-4.1 0-5.4.8 1.3 0 3.1 0 5.4ZM14.4 12c2.3 0 4.1-.8 5.4 0-1.3.8-3.1 0-5.4 0ZM12 14.4c0 2.3.8 4.1 0 5.4-.8-1.3 0-3.1 0-5.4ZM9.6 12c-2.3 0-4.1.8-5.4 0 1.3-.8 3.1 0 5.4 0ZM13.7 10.3c1.6-1.6 3.1-2.7 4.4-2.6-.1 1.3-1.2 2.8-2.8 4.4ZM13.7 13.7c1.6 1.6 2.7 3.1 2.6 4.4-1.3-.1-2.8-1.2-4.4-2.8ZM10.3 13.7c-1.6 1.6-3.1 2.7-4.4 2.6.1-1.3 1.2-2.8 2.8-4.4ZM10.3 10.3C8.7 8.7 7.6 7.2 7.7 5.9c1.3.1 2.8 1.2 4.4 2.8Z" /></svg>
+  );
+  if (art === "journal") return (
+    <svg {...g}><path d="M5 4.6A1.6 1.6 0 0 1 6.6 3H18a1 1 0 0 1 1 1v15.5a1 1 0 0 1-1 1H6.6A1.6 1.6 0 0 1 5 18.9Z" fill={aktiv ? f : "none"} fillOpacity={aktiv ? .14 : 0} />
+      <path d="M8.6 7.6h6.8M8.6 11.2h6.8M8.6 14.8h4" /></svg>
+  );
+  return (
+    <svg {...g}><rect x="3.6" y="3.6" width="7" height="7" rx="2.2" fill={aktiv ? f : "none"} fillOpacity={aktiv ? .16 : 0} />
+      <rect x="13.4" y="3.6" width="7" height="7" rx="2.2" fill={aktiv ? f : "none"} fillOpacity={aktiv ? .16 : 0} />
+      <rect x="3.6" y="13.4" width="7" height="7" rx="2.2" fill={aktiv ? f : "none"} fillOpacity={aktiv ? .16 : 0} />
+      <rect x="13.4" y="13.4" width="7" height="7" rx="2.2" fill={aktiv ? f : "none"} fillOpacity={aktiv ? .16 : 0} /></svg>
+  );
+}
+
 /* ── Beduerfnisse ───────────────────────────────────────────────────────────
    EIN gemeinsames Vokabular fuer Mediathek, Live, Wochenbericht und Profil.
    Nicht nach Thema sortiert, sondern danach, wonach eine Frau um 23 Uhr
@@ -10901,11 +10938,11 @@ export default function IlhoApp() {
   const isSub = !ROOTS.includes(tab);
 
   const NAV = [
-    { k: "heute", icon: "☀️", t: "Heute" },
-    { k: "orakel", icon: "🔮", t: "Orakel" },
-    { k: "coaching", icon: "🌸", t: "Coaching", center: true },
-    { k: "tagebuch", icon: "📔", t: "Journal" },
-    { k: "mehr", icon: "✦", t: "Mehr" },
+    { k: "heute", art: "heute", t: "Heute" },
+    { k: "orakel", art: "orakel", t: "Orakel" },
+    { k: "coaching", art: "coaching", t: "Coaching", center: true },
+    { k: "tagebuch", art: "journal", t: "Journal" },
+    { k: "mehr", art: "mehr", t: "Mehr" },
   ];
 
   return (
@@ -11063,7 +11100,7 @@ export default function IlhoApp() {
               position: "fixed", bottom: 0, left: 0, right: 0, margin: "0 auto", maxWidth: 430,
               background: C.card, borderTop: `1px solid ${C.line}`,
               display: "flex", justifyContent: "space-around", alignItems: "flex-end",
-              padding: "8px 4px 14px", zIndex: 10,
+              padding: "8px 4px calc(14px + env(safe-area-inset-bottom, 0px))", zIndex: 10,
             }}>
               {NAV.map((n) => {
                 const active = tab === n.k || (n.k === "mehr" && isSub);
@@ -11076,7 +11113,7 @@ export default function IlhoApp() {
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                       color: "#fff", animation: "glowPulse 2.6s ease-in-out infinite",
                     }}>
-                      <span style={{ fontSize: 22 }}>{n.icon}</span>
+                      <NavIcon art={n.art} hell />
                       <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 8.5, fontWeight: 700, marginTop: 1 }}>{n.t}</span>
                     </button>
                   );
@@ -11087,7 +11124,7 @@ export default function IlhoApp() {
                     minWidth: 56, minHeight: 50, padding: "6px 4px",
                     color: active ? C.plum : C.ink, opacity: active ? 1 : 0.7,
                   }}>
-                    <span style={{ fontSize: 21 }}>{n.icon}</span>
+                    <NavIcon art={n.art} aktiv={active} />
                     <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, fontWeight: active ? 700 : 500, letterSpacing: 0.3 }}>{n.t}</span>
                     {active && <span style={{ width: 16, height: 2.5, borderRadius: 2, background: C.rose }} />}
                   </button>
