@@ -795,8 +795,11 @@ function FeldMitIcon({ icon, children }) {
   );
 }
 
-function Auth({ onLogin }) {
-  const [mode, setMode] = useState("login");
+// startMode und startRolle kommen von der Website: ein Link wie
+// app.smile2go.app/?start=coach oeffnet direkt die passende Registrierung,
+// damit eine Besucherin nicht noch einmal suchen muss, wo sie hingehoert.
+function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
+  const [mode, setMode] = useState(startMode);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [dsgvo, setDsgvo] = useState(false);
@@ -805,7 +808,7 @@ function Auth({ onLogin }) {
   const [optin, setOptin] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const [rolle, setRolle] = useState("klientin");
+  const [rolle, setRolle] = useState(startRolle);
 
   const echterBackend = !!supabase;
 
@@ -10620,6 +10623,13 @@ export default function IlhoApp() {
     const q = window.location.search || "";
     return h.includes("type=recovery") || h === "#passwort-neu" || /[?&]pw=neu(&|$)/.test(q);
   });
+  // Einstieg von der Website: ?start=coach oder ?start=klientin.
+  // Nur einmal beim Laden gelesen, danach nie wieder angefasst.
+  const [startWunsch] = useState(() => {
+    if (typeof window === "undefined") return null;
+    const w = new URLSearchParams(window.location.search).get("start");
+    return w === "coach" || w === "klientin" ? w : null;
+  });
   const [tab, setTab] = useState("heute");
   const [stack, setStack] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -10930,7 +10940,7 @@ export default function IlhoApp() {
             <Card><ZweiFaktorAbfrage C={C} faktorId={mfaFaktor} onOk={() => setMfaFaktor(null)} onAbbruch={() => { supabase.auth.signOut(); setUser(null); setMfaFaktor(null); }} /></Card>
           </div>
         ) : !user ? (
-          <div style={{ animation: "fadeUp .5s ease" }}><Auth onLogin={(mail, zeichen, ilho) => { setUser(mail); if (zeichen) setMeinZeichen(zeichen); if (typeof ilho === "boolean") setIlhoAktiv(ilho); }} /></div>
+          <div style={{ animation: "fadeUp .5s ease" }}><Auth startMode={startWunsch ? "register" : "login"} startRolle={startWunsch || "klientin"} onLogin={(mail, zeichen, ilho) => { setUser(mail); if (zeichen) setMeinZeichen(zeichen); if (typeof ilho === "boolean") setIlhoAktiv(ilho); }} /></div>
         ) : (
           <>
             {/* Zurück-Leiste für Unterseiten */}
