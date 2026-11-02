@@ -3,7 +3,9 @@
 // 2) Web-Push empfangen und anzeigen
 // 3) Klick auf die Meldung öffnet die App an der richtigen Stelle
 
-const CACHE = "s2g-v1";
+// Die Version steht im Namen: beim Aktivieren wird jeder andere Cache
+// geloescht. Bei einer Aenderung an dieser Datei hier hochzaehlen.
+const CACHE = "s2g-v2";
 const HUELLE = ["/", "/index.html", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {
