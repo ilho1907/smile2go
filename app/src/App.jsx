@@ -730,9 +730,34 @@ const Eyebrow = ({ children, color = C.gold }) => (
   </div>
 );
 
-const H = ({ children, size = 22, style }) => (
-  <div style={{ fontFamily: "Georgia, serif", fontSize: size, fontWeight: 500, color: C.espresso, lineHeight: 1.2, letterSpacing: "-0.01em", ...style }}>{children}</div>
-);
+/* Schriftstufen ────────────────────────────────────────────────────────────
+   Bisher lag die groesste Ueberschrift der App bei 25 Pixeln. Das ist die
+   Groesse einer Zwischenueberschrift auf einer Webseite, nicht die einer
+   Anwendung, die man in der Hand haelt. Teure Apps gehen oben auf 38 bis 42
+   und lassen dafuer unten alles, wie es ist — der Abstand zwischen gross und
+   klein macht das Gefuehl, nicht die Groesse an sich.
+
+   Darum wird hier nicht multipliziert, sondern gespreizt: kleine Zahlen
+   bleiben fast gleich, grosse wachsen deutlich. Und je groesser eine Zeile
+   wird, desto enger stehen Zeilen und Buchstaben — sonst faellt eine grosse
+   Serifenschrift auseinander. Alle 72 Ueberschriften der App gehen durch
+   diese eine Stelle, deshalb genuegt sie. */
+const hStufe = (n) => Math.round((n + Math.max(0, n - 17) * 0.75) * 10) / 10;
+
+const H = ({ children, size = 22, style }) => {
+  const s = hStufe(size);
+  return (
+    <div style={{
+      fontFamily: "Georgia, serif",
+      fontSize: s,
+      fontWeight: 500,
+      color: C.espresso,
+      lineHeight: s >= 34 ? 1.1 : s >= 26 ? 1.16 : 1.2,
+      letterSpacing: s >= 34 ? "-0.022em" : s >= 26 ? "-0.016em" : "-0.01em",
+      ...style,
+    }}>{children}</div>
+  );
+};
 
 const Btn = ({ children, onClick, ghost, full, small, disabled }) => (
   <button
@@ -7629,7 +7654,7 @@ function Gemeinschaft({ go, bindung }) {
               {eyebrow}
             </div>
           )}
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 25, color: "#fff", lineHeight: 1.18, textShadow: "0 2px 14px rgba(0,0,0,.45)", marginBottom: 10 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 34, color: "#fff", lineHeight: 1.08, letterSpacing: "-0.022em", textShadow: "0 2px 14px rgba(0,0,0,.45)", marginBottom: 10 }}>
             {titel}
           </div>
         </div>

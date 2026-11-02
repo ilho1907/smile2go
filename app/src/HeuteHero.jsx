@@ -48,6 +48,6 @@ const S = {
     background: "radial-gradient(circle at 40% 35%, #f4d68a, #d9a94e)", color: "#4a3410", fontSize: 13, fontWeight: 600,
     boxShadow: "0 0 40px rgba(217,169,78,.7)" },
   bottom: { position: "absolute", bottom: 16, left: 18, right: 18, textAlign: "center" },
-  gruss: { fontFamily: "Georgia, serif", fontSize: 26, color: P.ink, margin: 0, textShadow: "0 1px 8px rgba(255,255,255,.5)" },
+  gruss: { fontFamily: "Georgia, serif", fontSize: 36, lineHeight: 1.08, letterSpacing: "-0.022em", color: P.ink, margin: 0, textShadow: "0 1px 8px rgba(255,255,255,.5)" },
   sub: { fontSize: 13, color: "#6b573f", margin: "2px 0 0" },
 };
