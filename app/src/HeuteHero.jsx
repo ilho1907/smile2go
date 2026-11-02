@@ -1,53 +1,120 @@
 // HeuteHero.jsx — smile2go
-// Cinematic Hero für den Heute-Screen: Higgsfield-Video als Hintergrund,
-// warmes Gold-Overlay, atmender Orb, Begrüßung + Lichtpunkte. Wie im Konzept.
-import { useState } from "react";
+// Der erste Blick am Tag.
+//
+// Zu den Massen: hier sind bewusst die Verhaeltnisse der grossen
+// Coaching-Apps uebernommen, nicht die eines Kopfbildes auf einer Webseite.
+// Der Unterschied liegt in vier Zahlen.
+//
+//   Bild      etwa 70 Prozent der Schirmhoehe, randlos bis in die Ecken,
+//             ohne abgerundete Kanten — eine Webseite rahmt ihr Bild ein,
+//             eine App laesst es den Schirm sein.
+//   Titel     rund ein Zehntel der Bildhoehe, linksbuendig in der unteren
+//             Ecke, zweizeilig, enger Zeilenabstand.
+//   Verlauf   unten wirklich dunkel, nicht nur angedeutet — sonst traegt
+//             weisse Serifenschrift nicht.
+//   Handlung  genau eine. Ein breiter Knopf unter dem Titel, sonst nichts.
+//
+// Der Orb bleibt, aber er rueckt an den rechten Rand: in der Mitte verdeckt
+// er das Gesicht im Bild und streitet mit dem Knopf um die Aufmerksamkeit.
+import { useRef, useState } from "react";
 import { VIDEO, IMG, PALETTE as P } from "./media";
 
 export default function HeuteHero({ name = "", punkte = 0 }) {
-  const [breathing, setBreathing] = useState(false);
-  const hour = new Date().getHours();
-  const gruss = hour < 11 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
+  const [atmet, setAtmet] = useState(false);
+  const rahmen = useRef(null);
+  const stunde = new Date().getHours();
+  const gruss = stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Guten Tag" : "Guten Abend";
 
-  const breathe = () => setBreathing((b) => !b);
+  // Der eine Knopf tut das, was er verspricht: er bringt sie in den Tag —
+  // also an den Energie-Kompass direkt unter dem Bild.
+  const beginnen = () => {
+    const h = rahmen.current?.getBoundingClientRect().height || 420;
+    window.scrollTo({ top: Math.max(0, h - 72), behavior: "smooth" });
+  };
 
   return (
-    <div style={S.wrap}>
+    <div ref={rahmen} style={S.wrap}>
       <video src={VIDEO.heute} poster={IMG.heute} autoPlay muted loop playsInline preload="auto" style={S.video} />
-      <div style={S.overlay} />
-      <div style={S.top}>
-        <span style={S.brand}>smile2go</span>
+      <div style={S.schleier} />
+
+      <div style={S.oben}>
+        <span style={S.marke}>smile2go</span>
         <span style={S.lp}>🔥 {punkte} Lichtpunkte</span>
       </div>
-      <div style={S.center}>
-        <button onClick={breathe} aria-label="Atme mit" style={{ ...S.orb, animation: breathing ? "s2gBreathe 7s ease-in-out infinite" : "s2gFloat 5s ease-in-out infinite" }}>
-          {breathing ? "atme…" : "atme mit"}
-        </button>
+
+      <button
+        onClick={() => setAtmet((a) => !a)}
+        aria-label="Atme mit"
+        aria-pressed={atmet}
+        className="s2g-orb"
+        style={{ ...S.orb, animation: atmet ? "s2gBreathe 7s ease-in-out infinite" : "s2gFloat 5s ease-in-out infinite" }}
+      >
+        {atmet ? "atme…" : "atme mit"}
+      </button>
+
+      <div style={S.unten}>
+        <h1 style={S.titel}>
+          {gruss}{name ? `, ${name}` : ""}.
+          <br />
+          <span style={S.titelZwei}>Dein Ritual wartet.</span>
+        </h1>
+        <button onClick={beginnen} style={S.knopf}>Dein Ritual beginnen</button>
       </div>
-      <div style={S.bottom}>
-        <p style={S.gruss}>{gruss}{name ? `, ${name}` : ""}</p>
-        <p style={S.sub}>Dein Ritual des Tages wartet auf dich.</p>
-      </div>
+
       <style>{`
         @keyframes s2gBreathe { 0%,100%{ transform:scale(.82); } 50%{ transform:scale(1.1); } }
         @keyframes s2gFloat { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
+        @media (prefers-reduced-motion: reduce) { .s2g-orb { animation: none !important; } }
       `}</style>
     </div>
   );
 }
 
 const S = {
-  wrap: { position: "relative", borderRadius: 22, overflow: "hidden", height: 300, margin: "0 0 14px", boxShadow: "0 12px 34px rgba(150,110,60,.22)" },
+  // Randlos und hoch. dvh statt vh, damit die Adressleiste des Browsers die
+  // Hoehe beim Scrollen nicht springen laesst.
+  wrap: {
+    position: "relative", overflow: "hidden",
+    height: "min(70dvh, 560px)", minHeight: 400,
+    margin: "0 0 18px", borderRadius: 0,
+  },
   video: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" },
-  overlay: { position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(40,26,16,.12) 0%, rgba(40,26,16,0) 45%, rgba(246,239,228,.62) 100%)" },
-  top: { position: "absolute", top: 14, left: 16, right: 16, display: "flex", justifyContent: "space-between", alignItems: "center" },
-  brand: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 16, letterSpacing: 1, textShadow: "0 1px 6px rgba(0,0,0,.3)" },
-  lp: { background: "rgba(255,255,255,.9)", color: P.gold, fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 20 },
-  center: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 120 },
-  orb: { width: 88, height: 88, borderRadius: "50%", border: "none", cursor: "pointer",
-    background: "radial-gradient(circle at 40% 35%, #f4d68a, #d9a94e)", color: "#4a3410", fontSize: 13, fontWeight: 600,
-    boxShadow: "0 0 40px rgba(217,169,78,.7)" },
-  bottom: { position: "absolute", bottom: 16, left: 18, right: 18, textAlign: "center" },
-  gruss: { fontFamily: "Georgia, serif", fontSize: 36, lineHeight: 1.08, letterSpacing: "-0.022em", color: P.ink, margin: 0, textShadow: "0 1px 8px rgba(255,255,255,.5)" },
-  sub: { fontSize: 13, color: "#6b573f", margin: "2px 0 0" },
+  schleier: {
+    position: "absolute", inset: 0,
+    background: "linear-gradient(180deg, rgba(30,19,10,.36) 0%, rgba(30,19,10,.05) 30%, rgba(30,19,10,.42) 62%, rgba(24,15,7,.86) 100%)",
+  },
+
+  oben: {
+    position: "absolute", left: 20, right: 20, display: "flex",
+    justifyContent: "space-between", alignItems: "center",
+    top: "calc(16px + env(safe-area-inset-top, 0px))",
+  },
+  marke: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 17, letterSpacing: .8, textShadow: "0 1px 8px rgba(0,0,0,.45)" },
+  lp: {
+    background: "rgba(255,253,249,.92)", color: P.gold, fontFamily: "system-ui, sans-serif",
+    fontSize: 12, fontWeight: 600, padding: "6px 13px", borderRadius: 20,
+    boxShadow: "0 4px 14px -4px rgba(0,0,0,.35)",
+  },
+
+  orb: {
+    position: "absolute", right: 20, top: "40%", width: 80, height: 80,
+    borderRadius: "50%", border: "none", cursor: "pointer",
+    background: "radial-gradient(circle at 38% 32%, #f7dd96, #d2a349)",
+    color: "#4a3410", fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 600,
+    boxShadow: "0 0 44px rgba(217,169,78,.72), 0 10px 26px -10px rgba(0,0,0,.5)",
+  },
+
+  unten: { position: "absolute", bottom: 22, left: 20, right: 20 },
+  titel: {
+    fontFamily: "Georgia, serif", fontWeight: 400,
+    fontSize: "clamp(30px, 8.6vw, 44px)", lineHeight: 1.06, letterSpacing: "-0.025em",
+    color: "#FFFBF4", margin: 0, textShadow: "0 2px 20px rgba(0,0,0,.55)",
+  },
+  titelZwei: { color: "rgba(255,251,244,.82)" },
+  knopf: {
+    marginTop: 18, width: "100%", minHeight: 54, border: "none", borderRadius: 27,
+    cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 600,
+    color: "#3A2A18", background: "linear-gradient(135deg, #F3D28B, #D2A349)",
+    boxShadow: "0 14px 30px -12px rgba(0,0,0,.65)",
+  },
 };
