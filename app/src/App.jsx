@@ -576,9 +576,12 @@ const Card = ({ children, style, onClick }) => (
     style={{
       background: `linear-gradient(165deg, #FFFFFF 0%, ${C.card} 55%, #FFFCF7 100%)`,
       border: `1px solid ${C.line}`,
-      borderRadius: 22,
-      padding: 18,
-      boxShadow: "0 16px 34px -22px rgba(110,80,45,.38), 0 2px 6px -2px rgba(110,80,45,.08)",
+      // Mehr Luft im Kasten und eine weichere Ecke: achtzehn Pixel Rand sind
+      // die eines Web-Kastens, zweiundzwanzig die einer Anwendung. Bei 206
+      // Karten in der App ist das der Unterschied zwischen eng und ruhig.
+      borderRadius: 24,
+      padding: 22,
+      boxShadow: "0 18px 38px -24px rgba(110,80,45,.40), 0 2px 6px -2px rgba(110,80,45,.07)",
       cursor: onClick ? "pointer" : "default",
       ...style,
     }}
