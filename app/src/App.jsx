@@ -605,14 +605,38 @@ const Card = ({ children, style, onClick, flach }) => (
   </div>
 );
 
-const Dunkel = ({ children, style }) => (
-  <div style={{
-    background: "linear-gradient(168deg, #3C2E22 0%, #2E241B 100%)",
-    color: "#F2E7D6", borderRadius: 24, padding: 24,
-    boxShadow: "0 24px 48px -26px rgba(40,26,14,.75)",
-    ...style,
-  }}>{children}</div>
-);
+/* Der dunkle Block war Braun — also dieselbe Farbe wie der Hintergrund, nur
+   dunkler. Damit war er kein Gegenüber, sondern ein Schatten des Cremes.
+   Jetzt steht hier eine eigene Farbe.
+
+   Die Wahl ist nicht nach Gefühl getroffen. Die Farbprognosen für 2027 zeigen
+   alle in dieselbe Richtung: Dulux nennt Soulful Sage, Benjamin Moore Webster
+   Green, Sherwin-Williams Celery, Behr ein tiefes Oliv, und WGSN führt
+   Meadowland Green in den Schlüsselfarben. Grün ist die Farbe, auf die sich
+   2027 alle einigen — und zu Creme und Messing ist tiefes Waldgrün die
+   Verbindung, die in Mode und Innenraum seit jeher teuer aussieht.
+
+   Zwei Alternativen stehen daneben bereit, damit ein Wechsel ein Wort kostet
+   und keine Suche: Tinte folgt der WGSN-Farbe des Jahres 2027, Luminous Blue;
+   Pflaume ist der weiblichste und in dieser Kategorie seltenste Weg. */
+
+const DUNKEL_TON = {
+  wald:    { flaeche: "linear-gradient(168deg, #2A3C2E 0%, #1C2A21 100%)", schrift: "#E8F0E4", leise: "rgba(232,240,228,.70)", zeichen: "#C7D9A8", schatten: "rgba(14,26,16,.75)" },
+  tinte:   { flaeche: "linear-gradient(168deg, #22354F 0%, #16243A 100%)", schrift: "#E3EBF5", leise: "rgba(227,235,245,.70)", zeichen: "#9DC2E8", schatten: "rgba(8,18,34,.75)" },
+  pflaume: { flaeche: "linear-gradient(168deg, #3B2135 0%, #2A1626 100%)", schrift: "#F0E2EB", leise: "rgba(240,226,235,.70)", zeichen: "#E3A9C6", schatten: "rgba(28,10,24,.75)" },
+};
+
+const Dunkel = ({ children, style, ton = "wald" }) => {
+  const t = DUNKEL_TON[ton] || DUNKEL_TON.wald;
+  return (
+    <div style={{
+      background: t.flaeche, color: t.schrift,
+      borderRadius: 24, padding: 24,
+      boxShadow: `0 24px 48px -26px ${t.schatten}`,
+      ...style,
+    }}>{children}</div>
+  );
+};
 
 /* Abstaende ────────────────────────────────────────────────────────────────
    Bisher standen zwischen den Bloecken 32, 24, 20 und 14 Pixel, je nachdem,
@@ -6979,10 +7003,10 @@ function CoachingHub({ go, bindung, aufBindung }) {
             ["herz", "Und trotzdem: dein Raum bleibt deiner", "Journal, Orakel und Rituale sieht sie nicht."],
           ].map(([i, t, s], n) => (
             <div key={t} style={{ display: "flex", gap: 13, marginTop: n === 0 ? 0 : R.klein }}>
-              <Ikon n={i} size={19} style={{ color: C.goldSoft, marginTop: 2 }} />
+              <Ikon n={i} size={19} style={{ color: DUNKEL_TON.wald.zeichen, marginTop: 2 }} />
               <span>
-                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: "#FBF3E6" }}>{t}</span>
-                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13, color: "rgba(242,231,214,.72)", lineHeight: 1.55, marginTop: 3 }}>{s}</span>
+                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 14, color: DUNKEL_TON.wald.schrift }}>{t}</span>
+                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13, color: DUNKEL_TON.wald.leise, lineHeight: 1.55, marginTop: 3 }}>{s}</span>
               </span>
             </div>
           ))}
