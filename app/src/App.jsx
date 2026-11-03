@@ -11111,7 +11111,12 @@ export default function IlhoApp() {
         @keyframes breathe { 0%,100% { transform: scale(0.58); } 50% { transform: scale(1); } }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
       `}</style>
-      <div className="s2g-shell" style={{ width: "100%", maxWidth: 430, background: C.cream, minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
+      {/* Ein Verlauf gehoert in die Flaeche, nicht auf den Knopf. Auf dem
+          Knopf macht er ihn unsicher — in der Flaeche gibt er Tiefe, ohne
+          dass man ihn bemerkt. Oben etwas heller, unten etwas waermer:
+          genug, damit die Seite nicht wie ein gleichmaessiges Blatt wirkt,
+          zu wenig, um als Farbe aufzufallen. */}
+      <div className="s2g-shell" style={{ width: "100%", maxWidth: 430, background: `linear-gradient(176deg, #FBF6EE 0%, ${C.cream} 46%, #EFE5D4 100%)`, backgroundAttachment: "fixed", minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
         {cloudAus && (
           <div style={{
             position: "sticky", top: 0, zIndex: 40,
