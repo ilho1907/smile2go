@@ -6,7 +6,9 @@
 const HF = "https://d8j0ntlcm91z4.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7";
 
 // Schattenspiegel — Verbrennungs-Ritual: Higgsfield-Video (Seedance 2.0, 4K, 2160×3840, 9:16, mit nativem Ton)
-export const FEUER_VIDEO = "/media/video/orakel_klein.mp4";
+export const FEUER_VIDEO = `${HF}/hf_20260728_162308_09b35acf-3ce7-4e67-a8bb-59f77eefd3c8.mp4`;
+// Falls das CDN-Video nicht lädt, springt der Player auf diese lokale Datei.
+export const FEUER_VIDEO_ERSATZ = "/media/video/orakel_klein.mp4";
 
 // Orakel-Kartenbilder (Higgsfield · nano_banana_pro, 4K, 3:4) — 44-Karten-Göttinnen-Deck, einheitlicher 8K-3D-HD-Kartenstil
 export const KARTEN = {
