@@ -8287,6 +8287,9 @@ function ThemaScreen({ id, go, bindung }) {
 
 const WOCHEN_GRUPPEN = ["Seele & Rituale", "Wachsen & Spielen"];
 const WOCHEN_BONUS = 20;
+// Diese Übungen sind nie gesperrt. Sie bleiben trotzdem in der Rotation,
+// damit sich die Reihenfolge der übrigen Wochen-Türen nicht verschiebt.
+const IMMER_OFFEN = ["schatten"];
 
 /* Die Wochentür: eine Übung pro Woche, für alle gleich. Sie wird an drei
    Stellen gebraucht — oben auf "Heute", im Menü und in der Gruppe selbst. */
@@ -8544,7 +8547,7 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte }) {
           <div style={{ marginTop: 8 }}>
             {gr.items.map((x) => {
               const offen = rhythmus && x.tab === offenTab;
-              const gesperrt = rhythmus && !offen;
+              const gesperrt = rhythmus && !offen && !IMMER_OFFEN.includes(x.tab);
               return (
               <div key={x.t}>
                 <Card
