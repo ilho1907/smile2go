@@ -27,10 +27,11 @@ import {
    Aufruf:  http://localhost:5173/#coach
    ───────────────────────────────────────────── */
 
+// Der Coach-Bereich gehoert zur selben Welt wie die Mitglieder-App.
 const C = {
-  cream: "#F4EDE2", card: "#FFFDF9", beige: "#ECE2D1", line: "#E3D6C2",
-  gold: "#C1913C", goldPale: "#F6EAD3", espresso: "#3A332B", ink: "#6F6355",
-  sage: "#5E8A52", rose: "#C2526E", roseSoft: "#F5DBE1", plum: "#8A3F5A", rot: "#B0492F",
+  cream: "#F8F6FB", card: "#FFFEFF", beige: "#EFEBF6", line: "#E6E1F0",
+  gold: "#5B4C99", goldPale: "#EDE9FA", espresso: "#262233", ink: "#6E6882",
+  sage: "#5E9A92", rose: "#B59BE8", roseSoft: "#F2EEFC", plum: "#4A3C85", rot: "#B0492F",
 };
 
 const Eyebrow = ({ children, color = C.gold }) => (

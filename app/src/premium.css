@@ -28,26 +28,26 @@ body, input, textarea, select, button { font-family: 'Inter', system-ui, -apple-
 /* ── Bühne hinter der App (Desktop): warmes Licht + feines Punktraster ── */
 .s2g-stage {
   background:
-    radial-gradient(60% 50% at 15% 25%, rgba(193, 145, 60, 0.16) 0%, rgba(193, 145, 60, 0) 70%),
-    radial-gradient(55% 45% at 85% 80%, rgba(194, 82, 110, 0.14) 0%, rgba(194, 82, 110, 0) 70%),
-    radial-gradient(70% 40% at 50% 0%, rgba(230, 190, 108, 0.22) 0%, rgba(230, 190, 108, 0) 70%),
-    #ECE2D1 !important;
+    radial-gradient(60% 50% at 15% 25%, rgba(91, 76, 153, 0.16) 0%, rgba(91, 76, 153, 0) 70%),
+    radial-gradient(55% 45% at 85% 80%, rgba(181, 155, 232, 0.14) 0%, rgba(181, 155, 232, 0) 70%),
+    radial-gradient(70% 40% at 50% 0%, rgba(173, 155, 235, 0.22) 0%, rgba(173, 155, 235, 0) 70%),
+    #EFEBF6 !important;
   position: relative;
 }
 .s2g-stage::before {
   content: "";
   position: fixed; inset: 0;
   pointer-events: none;
-  background-image: radial-gradient(rgba(168, 120, 44, 0.16) 1.1px, transparent 1.1px);
+  background-image: radial-gradient(rgba(120, 100, 180, 0.16) 1.1px, transparent 1.1px);
   background-size: 26px 26px;
   -webkit-mask-image: radial-gradient(80% 70% at 50% 40%, #000 20%, transparent 100%);
   mask-image: radial-gradient(80% 70% at 50% 40%, #000 20%, transparent 100%);
 }
 .s2g-shell {
   background:
-    radial-gradient(120% 40% at 50% 0%, rgba(230, 190, 108, 0.16) 0%, rgba(230, 190, 108, 0) 60%),
-    #F4EDE2 !important;
-  box-shadow: 0 40px 100px -30px rgba(90, 60, 30, 0.35), 0 0 0 1px rgba(235, 216, 198, 0.7) !important;
+    radial-gradient(120% 40% at 50% 0%, rgba(173, 155, 235, 0.16) 0%, rgba(173, 155, 235, 0) 60%),
+    #F8F6FB !important;
+  box-shadow: 0 40px 100px -30px rgba(70, 55, 130, 0.35), 0 0 0 1px rgba(230, 225, 240, 0.7) !important;
   overflow-x: clip;
 }
 
@@ -67,7 +67,7 @@ input, textarea, select { box-sizing: border-box; max-width: 100%; transition: b
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
 textarea:focus, select:focus {
   border-color: var(--s2g-gold) !important;
-  box-shadow: 0 0 0 4px rgba(193, 145, 60, 0.16) !important;
+  box-shadow: 0 0 0 4px rgba(91, 76, 153, 0.16) !important;
   outline: none !important;
 }
 ::placeholder { color: #B5A391; }
@@ -77,7 +77,7 @@ textarea:focus, select:focus {
   background: rgba(255, 255, 254, 0.86) !important;
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
   backdrop-filter: blur(18px) saturate(1.2);
-  box-shadow: 0 -12px 30px -22px rgba(90, 60, 30, 0.35);
+  box-shadow: 0 -12px 30px -22px rgba(70, 55, 130, 0.35);
 }
 
 ::-webkit-scrollbar { width: 0; height: 0; }
@@ -94,16 +94,16 @@ textarea:focus, select:focus {
 /* ── Replika-Look: Logo, Punktraster, warmes Licht (nur Optik) ── */
 .s2g-shell {
   background:
-    radial-gradient(120% 60% at 50% -10%, rgba(232, 201, 138, 0.32) 0%, rgba(232, 201, 138, 0) 55%),
-    radial-gradient(90% 55% at 90% 110%, rgba(194, 82, 110, 0.14) 0%, rgba(194, 82, 110, 0) 60%),
-    radial-gradient(80% 50% at 5% 100%, rgba(193, 145, 60, 0.12) 0%, rgba(193, 145, 60, 0) 60%),
-    #FFFDF9 !important;
+    radial-gradient(120% 60% at 50% -10%, rgba(190, 175, 240, 0.32) 0%, rgba(190, 175, 240, 0) 55%),
+    radial-gradient(90% 55% at 90% 110%, rgba(181, 155, 232, 0.14) 0%, rgba(181, 155, 232, 0) 60%),
+    radial-gradient(80% 50% at 5% 100%, rgba(91, 76, 153, 0.12) 0%, rgba(91, 76, 153, 0) 60%),
+    #FFFEFF !important;
 }
 .s2g-shell::before {
   content: "";
   position: absolute; inset: 0;
   pointer-events: none;
-  background-image: radial-gradient(rgba(168, 132, 44, 0.16) 1.1px, transparent 1.1px);
+  background-image: radial-gradient(rgba(120, 100, 180, 0.16) 1.1px, transparent 1.1px);
   background-size: 26px 26px;
   -webkit-mask-image: linear-gradient(#000 0, rgba(0,0,0,.55) 600px, transparent 1400px);
   mask-image: linear-gradient(#000 0, rgba(0,0,0,.55) 600px, transparent 1400px);
@@ -114,7 +114,7 @@ textarea:focus, select:focus {
 
 .s2g-logo-halo {
   position: absolute; inset: 0; border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(232, 201, 138, 0.6), rgba(232, 201, 138, 0) 72%);
+  background: radial-gradient(closest-side, rgba(190, 175, 240, 0.6), rgba(190, 175, 240, 0) 72%);
   filter: blur(4px);
   animation: s2gGlow 4.5s ease-in-out infinite;
 }
@@ -122,10 +122,10 @@ textarea:focus, select:focus {
   position: relative; display: grid; place-items: center; border-radius: 26%;
   background:
     radial-gradient(80% 80% at 30% 20%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 42%),
-    conic-gradient(from 210deg, #e8c98a, #c1913c 30%, #c97352 55%, #c2526e 78%, #e8c98a);
+    conic-gradient(from 210deg, #C9BEFF, #5B4C99 30%, #6FBFC9 55%, #C79BE8 78%, #C9BEFF);
   box-shadow:
-    0 0 50px 4px rgba(193, 145, 60, 0.4),
-    0 20px 60px -10px rgba(194, 82, 110, 0.45),
+    0 0 50px 4px rgba(91, 76, 153, 0.4),
+    0 20px 60px -10px rgba(181, 155, 232, 0.45),
     inset 0 0 0 1.5px rgba(255, 255, 255, 0.5),
     inset 0 -12px 26px rgba(120, 30, 50, 0.25);
   animation: s2gFloat 7s ease-in-out infinite;
@@ -197,11 +197,11 @@ button:not(:disabled):active { transform: scale(0.955); }
 
 /* ── Tab-Leiste: dichteres Glas, sichere Zone, weicher Wechsel ── */
 .s2g-nav {
-  background: rgba(255, 253, 249, 0.82) !important;
+  background: rgba(255, 254, 255, 0.82) !important;
   -webkit-backdrop-filter: blur(26px) saturate(1.5);
   backdrop-filter: blur(26px) saturate(1.5);
-  border-top: 1px solid rgba(235, 216, 198, 0.65) !important;
-  box-shadow: 0 -18px 40px -30px rgba(90, 60, 30, 0.5);
+  border-top: 1px solid rgba(230, 225, 240, 0.65) !important;
+  box-shadow: 0 -18px 40px -30px rgba(70, 55, 130, 0.5);
 }
 .s2g-nav button { transition: background-color 0.25s ease, opacity 0.25s ease, transform 0.22s var(--s2g-feder); }
 
@@ -209,7 +209,7 @@ button:not(:disabled):active { transform: scale(0.955); }
 .s2g-skelett {
   position: relative;
   overflow: hidden;
-  background: rgba(235, 216, 198, 0.42);
+  background: rgba(230, 225, 240, 0.42);
 }
 .s2g-skelett::after {
   content: "";
