@@ -46,7 +46,7 @@ const zahl = (n) => Number(n || 0).toLocaleString("de-DE");
 const datum = (iso) => (iso ? new Date(iso).toLocaleDateString("de-DE") : "–");
 const datumZeit = (iso) => new Date(iso).toLocaleString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 const Hinweis = ({ children }) => <p style={{ ...sys, fontSize: 11.5, color: C.ink, marginTop: 12, opacity: 0.85, lineHeight: 1.5 }}>{children}</p>;
-const Leer = ({ children }) => <p style={{ ...sys, fontSize: 13, color: C.ink, margin: "6px 0" }}>{children}</p>;
+const Leer = ({ children }) => <p style={{ ...sys, fontSize: 14.5, color: C.ink, margin: "6px 0" }}>{children}</p>;
 
 export default function AdminDashboard() {
   const [admin, setAdmin] = useState(null);
@@ -70,10 +70,10 @@ export default function AdminDashboard() {
       <div style={{ minHeight: "100vh", background: C.cream, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
         <Card style={{ maxWidth: 440 }}>
           <Eyebrow>Admin · kein Zugriff</Eyebrow>
-          <p style={{ ...sys, fontSize: 14, color: C.espresso, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ ...sys, fontSize: 15.5, color: C.espresso, lineHeight: 1.6, margin: 0 }}>
             Dieses Dashboard zeigt echte Plattformdaten und ist nur für eingetragene Admins. Melde dich in der App mit deinem Admin-Konto an und öffne dann wieder <code>#admin</code>.
           </p>
-          <a href="/" style={{ ...sys, display: "inline-block", marginTop: 14, fontSize: 13, fontWeight: 700, color: C.plum }}>← Zur App</a>
+          <a href="/" style={{ ...sys, display: "inline-block", marginTop: 14, fontSize: 14.5, fontWeight: 700, color: C.plum }}>← Zur App</a>
         </Card>
       </div>
     );
@@ -85,19 +85,19 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: C.cream, fontSize: 15 }}>
+    <div style={{ minHeight: "100vh", background: C.cream, fontSize: 16.5 }}>
       <div style={{ background: C.espresso, padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.cream }}>
-          smile<span style={{ color: C.rose, fontStyle: "italic" }}>2</span>go <span style={{ fontSize: 12, color: "#D4B87A", letterSpacing: 2, textTransform: "uppercase", marginLeft: 6 }}>Admin</span>
+          smile<span style={{ color: C.rose, fontStyle: "italic" }}>2</span>go <span style={{ fontSize: 13, color: "#D4B87A", letterSpacing: 2, textTransform: "uppercase", marginLeft: 6 }}>Admin</span>
         </div>
         <div style={{ flex: 1 }} />
-        <a href="/" style={{ ...sys, fontSize: 12, color: "#D4B87A", textDecoration: "none" }}>← Zur App</a>
+        <a href="/" style={{ ...sys, fontSize: 13, color: "#D4B87A", textDecoration: "none" }}>← Zur App</a>
       </div>
 
       <div style={{ display: "flex", gap: 7, padding: "14px 20px 0", flexWrap: "wrap", maxWidth: 1100, margin: "0 auto" }}>
         {TABS.map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{
-            ...sys, fontSize: 12.5, fontWeight: 700, padding: "9px 14px", borderRadius: 20, cursor: "pointer", minHeight: 38,
+            ...sys, fontSize: 13.5, fontWeight: 700, padding: "9px 14px", borderRadius: 20, cursor: "pointer", minHeight: 38,
             border: `1.5px solid ${tab === key ? C.gold : C.line}`, background: tab === key ? C.goldPale : C.card, color: tab === key ? C.espresso : C.ink,
           }}>{label}</button>
         ))}
@@ -174,22 +174,22 @@ function Mitglieder() {
     <Card>
       <div style={{ display: "flex", gap: 9, marginBottom: 14, flexWrap: "wrap" }}>
         <input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Suche nach E-Mail …"
-          style={{ flex: 1, minWidth: 180, padding: "11px 14px", fontSize: 14, ...sys, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.cream, color: C.espresso, outline: "none" }} />
+          style={{ flex: 1, minWidth: 180, padding: "11px 14px", fontSize: 15.5, ...sys, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.cream, color: C.espresso, outline: "none" }} />
         {["Alle", "Coachinnen", "Mit Coachin", "Inaktiv 30 T."].map((p) => (
-          <button key={p} onClick={() => setFilter(p)} style={{ ...sys, fontSize: 12, fontWeight: 700, padding: "9px 13px", borderRadius: 18, cursor: "pointer", border: `1.5px solid ${filter === p ? C.gold : C.line}`, background: filter === p ? C.goldPale : C.card, color: C.espresso }}>{p}</button>
+          <button key={p} onClick={() => setFilter(p)} style={{ ...sys, fontSize: 13, fontWeight: 700, padding: "9px 13px", borderRadius: 18, cursor: "pointer", border: `1.5px solid ${filter === p ? C.gold : C.line}`, background: filter === p ? C.goldPale : C.card, color: C.espresso }}>{p}</button>
         ))}
-        <button onClick={csv} style={{ ...sys, fontSize: 12, fontWeight: 700, padding: "9px 13px", borderRadius: 18, cursor: "pointer", border: "none", background: C.espresso, color: C.cream }}>CSV</button>
+        <button onClick={csv} style={{ ...sys, fontSize: 13, fontWeight: 700, padding: "9px 13px", borderRadius: 18, cursor: "pointer", border: "none", background: C.espresso, color: C.cream }}>CSV</button>
       </div>
       {liste === null ? <Leer>Lade …</Leer> : gefiltert.length === 0 ? <Leer>Keine Treffer.</Leer> : gefiltert.map((m) => (
         <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap" }}>
-          <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...sys, fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{(m.email || "?").charAt(0).toUpperCase()}</div>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...sys, fontWeight: 700, fontSize: 15.5, flexShrink: 0 }}>{(m.email || "?").charAt(0).toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 160 }}>
-            <div style={{ ...sys, fontWeight: 700, fontSize: 13.5, color: C.espresso, wordBreak: "break-all" }}>{m.email}</div>
+            <div style={{ ...sys, fontWeight: 700, fontSize: 15, color: C.espresso, wordBreak: "break-all" }}>{m.email}</div>
             <div style={{ ...sys, fontSize: 11.5, color: C.ink }}>seit {datum(m.seit)} · letzter Login {datum(m.letzter_login)}</div>
           </div>
           {m.ist_coach && <Badge tone="rose">Coachin</Badge>}
           {m.hat_coach && <Badge tone="ok">begleitet</Badge>}
-          <span style={{ ...sys, fontSize: 12, color: C.ink, minWidth: 64, textAlign: "right" }}>✨ {m.punkte == null ? "–" : zahl(m.punkte)}</span>
+          <span style={{ ...sys, fontSize: 13, color: C.ink, minWidth: 64, textAlign: "right" }}>✨ {m.punkte == null ? "–" : zahl(m.punkte)}</span>
         </div>
       ))}
       <Hinweis>Angezeigt werden bis zu 200 Konten. Löschen einer Nutzerin bitte über ihren eigenen „Konto löschen“-Weg oder das Supabase-Dashboard (DSGVO-Protokoll).</Hinweis>
@@ -205,9 +205,9 @@ function Sessions() {
       <Eyebrow>📅 Sessions ab heute</Eyebrow>
       {liste === null ? <Leer>Lade …</Leer> : liste.length === 0 ? <Leer>Keine anstehenden Sessions.</Leer> : liste.map((b, i) => (
         <div key={i} style={{ display: "flex", gap: 12, alignItems: "center", padding: "11px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: C.plum, minWidth: 150 }}>{datumZeit(b.beginn)}</span>
+          <span style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.plum, minWidth: 150 }}>{datumZeit(b.beginn)}</span>
           <div style={{ flex: 1, minWidth: 140 }}>
-            <div style={{ ...sys, fontWeight: 700, fontSize: 13.5, color: C.espresso }}>{b.klientin || "Klientin"} <span style={{ fontWeight: 400, color: C.ink }}>bei {b.coach || "Coachin"}</span></div>
+            <div style={{ ...sys, fontWeight: 700, fontSize: 15, color: C.espresso }}>{b.klientin || "Klientin"} <span style={{ fontWeight: 400, color: C.ink }}>bei {b.coach || "Coachin"}</span></div>
             <div style={{ ...sys, fontSize: 11.5, color: C.ink }}>{b.dauer_min} Min · {b.kanal}{b.kanal === "video" && !b.hat_videolink ? " · ⚠ noch kein Videolink" : ""}</div>
           </div>
           <Badge tone={b.status === "gebucht" ? "ok" : b.status === "erledigt" ? "gold" : "rot"}>{b.status}</Badge>
@@ -229,16 +229,16 @@ function Moderation() {
       {liste === null ? <Leer>Lade …</Leer> : liste.length === 0 ? <Leer>Keine offenen Meldungen. 🤍</Leer> : liste.map((m) => (
         <div key={m.post_id} style={{ padding: "12px 4px", borderBottom: `1px solid ${C.line}` }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
-            <span style={{ ...sys, fontWeight: 700, fontSize: 13, color: C.espresso }}>{m.alias}</span>
+            <span style={{ ...sys, fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{m.alias}</span>
             <Badge tone="rot">{m.anzahl}× gemeldet</Badge>
             {!m.sichtbar && <Badge tone="warn">ausgeblendet</Badge>}
             <span style={{ ...sys, fontSize: 11, color: C.ink }}>{datumZeit(m.gemeldet_am)}</span>
           </div>
-          <div style={{ ...sys, fontSize: 13.5, color: C.espresso, lineHeight: 1.55, background: C.cream, borderRadius: 10, padding: "10px 12px", whiteSpace: "pre-wrap" }}>{m.text}</div>
-          <div style={{ ...sys, fontSize: 12, color: C.ink, margin: "6px 0 8px" }}>Grund: {m.grund}</div>
+          <div style={{ ...sys, fontSize: 15, color: C.espresso, lineHeight: 1.55, background: C.cream, borderRadius: 10, padding: "10px 12px", whiteSpace: "pre-wrap" }}>{m.text}</div>
+          <div style={{ ...sys, fontSize: 13, color: C.ink, margin: "6px 0 8px" }}>Grund: {m.grund}</div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => erledigen(m, true)} style={{ ...sys, fontSize: 12.5, fontWeight: 700, padding: "8px 14px", borderRadius: 16, border: "none", background: C.rot, color: "#fff", cursor: "pointer" }}>Ausblenden</button>
-            <button onClick={() => erledigen(m, false)} style={{ ...sys, fontSize: 12.5, fontWeight: 700, padding: "8px 14px", borderRadius: 16, border: `1.5px solid ${C.line}`, background: C.card, color: C.espresso, cursor: "pointer" }}>Ist in Ordnung</button>
+            <button onClick={() => erledigen(m, true)} style={{ ...sys, fontSize: 13.5, fontWeight: 700, padding: "8px 14px", borderRadius: 16, border: "none", background: C.rot, color: "#fff", cursor: "pointer" }}>Ausblenden</button>
+            <button onClick={() => erledigen(m, false)} style={{ ...sys, fontSize: 13.5, fontWeight: 700, padding: "8px 14px", borderRadius: 16, border: `1.5px solid ${C.line}`, background: C.card, color: C.espresso, cursor: "pointer" }}>Ist in Ordnung</button>
           </div>
         </div>
       ))}
@@ -274,8 +274,8 @@ function SystemTab({ k }) {
       <Eyebrow>🛠️ Dienste-Status (live)</Eyebrow>
       {zeilen.map((z) => (
         <div key={z.k} style={{ display: "flex", gap: 12, alignItems: "center", padding: "11px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 13 }}>{z.ok == null ? "⚪" : z.ok ? "🟢" : "🟠"}</span>
-          <span style={{ flex: 1, minWidth: 180, ...sys, fontSize: 13.5, fontWeight: 700, color: C.espresso }}>{z.k}</span>
+          <span style={{ fontSize: 14.5 }}>{z.ok == null ? "⚪" : z.ok ? "🟢" : "🟠"}</span>
+          <span style={{ flex: 1, minWidth: 180, ...sys, fontSize: 15, fontWeight: 700, color: C.espresso }}>{z.k}</span>
           <span style={{ ...sys, fontSize: 11.5, color: C.ink, textAlign: "right" }}>{z.info}</span>
         </div>
       ))}
@@ -312,7 +312,7 @@ function KiFairness() {
     return (
       <Card>
         <Eyebrow>Kein Zugriff</Eyebrow>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
           Echte KI-Daten sieht nur, wer als Admin eingetragen ist. Melde dich in der App mit deinem Admin-Konto an und öffne dann wieder <code>#admin</code>.
         </p>
       </Card>
@@ -366,7 +366,7 @@ function KiFairness() {
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
         <Card style={{ flex: "1 1 420px" }}>
           <Eyebrow>Anteil hilfreicher Antworten pro Woche</Eyebrow>
-          {reihe.length === 0 ? <p style={{ ...sys, fontSize: 13, color: C.ink }}>Noch keine Bewertungen.</p> : (
+          {reihe.length === 0 ? <p style={{ ...sys, fontSize: 14.5, color: C.ink }}>Noch keine Bewertungen.</p> : (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={reihe} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
                 <CartesianGrid stroke={C.line} vertical={false} />
@@ -395,18 +395,18 @@ function KiFairness() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div>
             <Eyebrow>Fairness-Test · Paarvergleich</Eyebrow>
-            <p style={{ ...sys, fontSize: 12.5, color: C.ink, lineHeight: 1.55, margin: 0, maxWidth: 620 }}>
+            <p style={{ ...sys, fontSize: 13.5, color: C.ink, lineHeight: 1.55, margin: 0, maxWidth: 620 }}>
               ilho bekommt sechsmal dieselbe Frage in zwei Varianten — nur ein Merkmal ändert sich (Religion, Herkunft, Familienform, Alter, Behinderung, Einkommen). Ein zweites Modell prüft, ob beide gleich warm, ermutigend und klischeefrei beantwortet werden. Dauer ca. 1 Minute, Kosten wenige Cent.
             </p>
           </div>
-          <button onClick={pruefen} disabled={busy} style={{ ...sys, fontSize: 13, fontWeight: 700, borderRadius: 20, padding: "10px 18px", border: "none", cursor: busy ? "default" : "pointer", background: C.espresso, color: C.cream, opacity: busy ? 0.6 : 1 }}>
+          <button onClick={pruefen} disabled={busy} style={{ ...sys, fontSize: 14.5, fontWeight: 700, borderRadius: 20, padding: "10px 18px", border: "none", cursor: busy ? "default" : "pointer", background: C.espresso, color: C.cream, opacity: busy ? 0.6 : 1 }}>
             {busy ? "Prüfe …" : "Jetzt prüfen"}
           </button>
         </div>
-        {info && <div style={{ ...sys, fontSize: 13, color: C.plum, marginTop: 10 }}>{info}</div>}
+        {info && <div style={{ ...sys, fontSize: 14.5, color: C.plum, marginTop: 10 }}>{info}</div>}
 
         {aktuell.length > 0 && (
-          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 14, ...sys, fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 14, ...sys, fontSize: 14.5 }}>
             <thead>
               <tr style={{ textAlign: "left", color: C.ink, fontSize: 11.5 }}>
                 <th style={{ padding: "6px 4px" }}>Merkmal</th><th>Varianten</th><th>Unterschied</th><th>Klischee</th><th>Einschätzung</th>
@@ -428,8 +428,8 @@ function KiFairness() {
                         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                           {[[c.variante_a, c.antwort_a], [c.variante_b, c.antwort_b]].map(([v, a]) => (
                             <div key={v} style={{ flex: "1 1 300px", background: C.cream, borderRadius: 12, padding: 12 }}>
-                              <div style={{ fontWeight: 700, fontSize: 12, color: C.plum, marginBottom: 6 }}>„{c.frage.replace("{X}", v)}“</div>
-                              <div style={{ whiteSpace: "pre-wrap", fontSize: 12.5, color: C.espresso, lineHeight: 1.55 }}>{a}</div>
+                              <div style={{ fontWeight: 700, fontSize: 13, color: C.plum, marginBottom: 6 }}>„{c.frage.replace("{X}", v)}“</div>
+                              <div style={{ whiteSpace: "pre-wrap", fontSize: 13.5, color: C.espresso, lineHeight: 1.55 }}>{a}</div>
                             </div>
                           ))}
                         </div>

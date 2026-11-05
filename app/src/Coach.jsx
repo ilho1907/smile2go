@@ -53,21 +53,21 @@ const Btn = ({ children, onClick, ghost, small, disabled, ton }) => (
 );
 
 const feldStil = {
-  width: "100%", padding: "11px 13px", fontSize: 14.5, fontFamily: "system-ui, sans-serif",
+  width: "100%", padding: "11px 13px", fontSize: 16, fontFamily: "system-ui, sans-serif",
   border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso,
   outline: "none", boxSizing: "border-box", marginBottom: 10,
 };
 
 const Feld = ({ label, ...rest }) => (
   <label style={{ display: "block" }}>
-    {label && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>{label}</div>}
+    {label && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>{label}</div>}
     <input style={feldStil} {...rest} />
   </label>
 );
 
 const Leer = ({ children }) => (
   <Card style={{ textAlign: "center" }}>
-    <p style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>{children}</p>
+    <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>{children}</p>
   </Card>
 );
 
@@ -97,12 +97,12 @@ function Anmeldung({ onFertig }) {
           <div style={{ fontFamily: "Georgia, serif", fontSize: 34, color: C.espresso }}>
             smile<span style={{ color: C.rose, fontStyle: "italic" }}>2</span>go
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 4 }}>Coach-Panel</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 4 }}>Coach-Panel</div>
         </div>
         <Card>
           <Feld label="E-Mail" type="email" value={mail} onChange={(e) => setMail(e.target.value)} />
           <Feld label="Passwort" type="password" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && anmelden()} />
-          {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.rot, marginBottom: 10 }}>{err}</div>}
+          {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.rot, marginBottom: 10 }}>{err}</div>}
           <Btn onClick={anmelden} disabled={busy}>{busy ? "Einen Moment …" : "Anmelden"}</Btn>
           <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, lineHeight: 1.6, marginTop: 14, marginBottom: 0 }}>
             Dasselbe Konto wie in der App. Wer sich hier anmeldet, wird als Coachin geführt
@@ -172,7 +172,7 @@ function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
     <>
       <Eyebrow color={C.plum}>Einladungscodes</Eyebrow>
       <Card style={{ marginBottom: 22 }}>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
           Gib einer Klientin einen Code. Sie trägt ihn in der App unter „Mit deiner Coachin
           verbinden" ein — ab dann gehören eure Nachrichten, Termine und Materialien nur euch beiden.
         </p>
@@ -183,18 +183,18 @@ function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
           <Btn small ghost onClick={vorschlag}>Vorschlag</Btn>
           <Btn small onClick={anlegen} disabled={neuerCode.trim().length < 4}>Anlegen</Btn>
         </div>
-        {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.rot, marginTop: 8 }}>{err}</div>}
+        {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.rot, marginTop: 8 }}>{err}</div>}
 
         {codes.length > 0 && (
           <div style={{ marginTop: 14 }}>
             {codes.map((c) => (
               <div key={c.code} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${C.line}` }}>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: 1, color: c.aktiv ? C.espresso : C.ink, textDecoration: c.aktiv ? "none" : "line-through" }}>{c.code}</span>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, flex: 1 }}>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, letterSpacing: 1, color: c.aktiv ? C.espresso : C.ink, textDecoration: c.aktiv ? "none" : "line-through" }}>{c.code}</span>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, flex: 1 }}>
                   {c.nutzungen}× eingelöst{c.max_nutzungen ? ` · max ${c.max_nutzungen}` : ""}
                 </span>
-                <button onClick={() => navigator.clipboard?.writeText(c.code)} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>kopieren</button>
-                <button onClick={async () => { await codeUmschalten(c.code, !c.aktiv); codesLaden(); }} style={{ background: "none", border: "none", color: C.ink, fontFamily: "system-ui, sans-serif", fontSize: 12, cursor: "pointer" }}>
+                <button onClick={() => navigator.clipboard?.writeText(c.code)} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>kopieren</button>
+                <button onClick={async () => { await codeUmschalten(c.code, !c.aktiv); codesLaden(); }} style={{ background: "none", border: "none", color: C.ink, fontFamily: "system-ui, sans-serif", fontSize: 13, cursor: "pointer" }}>
                   {c.aktiv ? "sperren" : "freigeben"}
                 </button>
               </div>
@@ -213,7 +213,7 @@ function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
               {(k.anzeigename || "K").charAt(0).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>
                 {k.anzeigename || "Ohne Namen"}
                 {ungelesen[k.id] > 0 && (
                   <span style={{ marginLeft: 8, fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, color: "#fff", background: C.rose, borderRadius: 10, padding: "2px 8px" }}>
@@ -221,7 +221,7 @@ function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
                   </span>
                 )}
               </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>
                 {k.status} · verbunden seit {new Date(k.verbunden_am).toLocaleDateString("de-DE")}
               </div>
             </div>
@@ -288,7 +288,7 @@ function Nachrichten({ klientinnen, offen, setOffen, ungelesenNeu, coachName }) 
           ? <Leer>Noch keine Klientinnen verbunden.</Leer>
           : klientinnen.map((k) => (
             <Card key={k.id} style={{ marginBottom: 9, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
-              <div style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{k.anzeigename || "Ohne Namen"}</div>
+              <div style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{k.anzeigename || "Ohne Namen"}</div>
               <Btn small ghost onClick={() => setOffen(k)}>Öffnen</Btn>
             </Card>
           ))}
@@ -303,9 +303,9 @@ function Nachrichten({ klientinnen, offen, setOffen, ungelesenNeu, coachName }) 
       </div>
 
       <Card style={{ marginBottom: 12, maxHeight: "56vh", overflowY: "auto" }}>
-        {laedt && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Lade Verlauf …</div>}
+        {laedt && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>Lade Verlauf …</div>}
         {!laedt && msgs.length === 0 && (
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.ink, textAlign: "center", padding: "16px 0" }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.ink, textAlign: "center", padding: "16px 0" }}>
             Noch keine Nachrichten. Schreib den ersten Satz.
           </div>
         )}
@@ -318,7 +318,7 @@ function Nachrichten({ klientinnen, offen, setOffen, ungelesenNeu, coachName }) 
                   background: ich ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.beige,
                   color: ich ? "#fff" : C.espresso,
                   borderRadius: ich ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                  padding: "10px 13px", fontFamily: "system-ui, sans-serif", fontSize: 14, lineHeight: 1.55,
+                  padding: "10px 13px", fontFamily: "system-ui, sans-serif", fontSize: 15.5, lineHeight: 1.55,
                 }}>
                   {m.audio_pfad
                     ? (audioLinks[m.id] ? <audio controls src={audioLinks[m.id]} style={{ width: 200, maxWidth: "100%" }} /> : "🎙️ Sprachnachricht")
@@ -408,7 +408,7 @@ function Termine() {
           <div style={{ flex: "1 1 110px" }}><Feld label="Uhrzeit" type="time" value={zeit} onChange={(e) => setZeit(e.target.value)} /></div>
           <div style={{ flex: "1 1 110px" }}><Feld label="Dauer (Min)" type="number" value={dauer} onChange={(e) => setDauer(e.target.value)} /></div>
           <label style={{ flex: "1 1 130px" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Kanal</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Kanal</div>
             <select value={kanal} onChange={(e) => setKanal(e.target.value)} style={feldStil}>
               <option value="video">Video</option>
               <option value="telefon">Telefon</option>
@@ -420,14 +420,14 @@ function Termine() {
           <Btn small onClick={anlegen}>Fenster anlegen</Btn>
           <Btn small ghost onClick={woche}>Gleiche Zeit, ganze Woche</Btn>
         </div>
-        {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 10 }}>{err}</div>}
+        {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 10 }}>{err}</div>}
       </Card>
 
       <Eyebrow color={C.plum}>Gebuchte Sessions ({gebucht.length})</Eyebrow>
       {gebucht.length === 0 ? <Leer>Noch keine Buchungen.</Leer> : gebucht.map((t) => (
         <Card key={t.id} style={{ marginBottom: 10 }}>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>{datumZeit(t.beginn)}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 3 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 3 }}>
             {t.klientin_name} · {t.dauer_min} Min · {t.kanal}
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -445,7 +445,7 @@ function Termine() {
           </div>
         </Card>
       ))}
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, margin: "4px 0 16px" }}>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, margin: "4px 0 16px" }}>
         🔔 Deine Klientinnen und du bekommt automatisch eine Push-Erinnerung 24 Stunden und 1 Stunde vor jeder Session.
       </div>
 
@@ -454,9 +454,9 @@ function Termine() {
           <Eyebrow color={C.plum}>Dokumentation ({vergangen.length})</Eyebrow>
           <Card>
             {vergangen.slice().reverse().slice(0, 20).map((t) => (
-              <div key={t.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso }}>
+              <div key={t.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso }}>
                 <span style={{ flex: 1 }}>{datumZeit(t.beginn)} · {t.klientin_name}</span>
-                <span style={{ color: t.status === "erledigt" ? C.sage : C.rot, fontWeight: 700, fontSize: 12 }}>{t.status}</span>
+                <span style={{ color: t.status === "erledigt" ? C.sage : C.rot, fontWeight: 700, fontSize: 13 }}>{t.status}</span>
               </div>
             ))}
           </Card>
@@ -470,9 +470,9 @@ function Termine() {
           <Card>
             {slots.filter((s) => s.aktiv).map((s) => (
               <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${C.line}` }}>
-                <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso }}>{datumZeit(s.beginn)}</span>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink }}>{s.dauer_min} Min · {s.kanal}</span>
-                <button onClick={async () => { await slotLoeschen(s.id); laden(); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>entfernen</button>
+                <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>{datumZeit(s.beginn)}</span>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>{s.dauer_min} Min · {s.kanal}</span>
+                <button onClick={async () => { await slotLoeschen(s.id); laden(); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>entfernen</button>
               </div>
             ))}
           </Card>
@@ -526,13 +526,13 @@ function Material({ coachId, klientinnen }) {
         <Feld label="Kurze Beschreibung" value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="PDF · 8 Seiten" />
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <label style={{ flex: "1 1 160px" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Kategorie</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Kategorie</div>
             <select value={kategorie} onChange={(e) => setKategorie(e.target.value)} style={feldStil}>
               {["Artikel", "E-Books", "Videos", "Audio", "Aufgabe"].map((k) => <option key={k}>{k}</option>)}
             </select>
           </label>
           <label style={{ flex: "1 1 200px" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Für wen?</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Für wen?</div>
             <select value={fuer} onChange={(e) => setFuer(e.target.value)} style={feldStil}>
               <option value="">Alle meine Klientinnen</option>
               {klientinnen.map((k) => <option key={k.id} value={k.id}>{k.anzeigename || "Ohne Namen"}</option>)}
@@ -541,23 +541,23 @@ function Material({ coachId, klientinnen }) {
         </div>
         <Feld label="Oder: Link statt Datei" value={externUrl} onChange={(e) => setExternUrl(e.target.value)} placeholder="https://…" />
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Datei</div>
-          <input type="file" onChange={(e) => setDatei(e.target.files?.[0] || null)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13 }} />
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Datei</div>
+          <input type="file" onChange={(e) => setDatei(e.target.files?.[0] || null)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5 }} />
         </div>
         <Btn onClick={anlegen} disabled={busy}>{busy ? "Lade hoch …" : "Veröffentlichen"}</Btn>
-        {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.plum, marginTop: 10 }}>{hinweis}</div>}
+        {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, marginTop: 10 }}>{hinweis}</div>}
       </Card>
 
       <Eyebrow color={C.plum}>Veröffentlicht ({liste.length})</Eyebrow>
       {liste.length === 0 ? <Leer>Noch nichts veröffentlicht.</Leer> : liste.map((m) => (
         <Card key={m.id} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{m.titel}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{m.titel}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>
               {m.kategorie} · {new Date(m.sichtbar_ab).toLocaleDateString("de-DE")}
             </div>
           </div>
-          <button onClick={async () => { await materialLoeschen(m.id); laden(); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>löschen</button>
+          <button onClick={async () => { await materialLoeschen(m.id); laden(); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>löschen</button>
         </Card>
       ))}
     </>
@@ -615,7 +615,7 @@ function Angebote({ coachId }) {
           <Feld label="Titel" value={modul.titel} onChange={(e) => setModul({ ...modul, titel: e.target.value })} />
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <label style={{ flex: "1 1 140px" }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Art</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Art</div>
               <select value={modul.typ} onChange={(e) => setModul({ ...modul, typ: e.target.value })} style={feldStil}>
                 <option value="text">Text</option><option value="video">Video</option>
                 <option value="audio">Audio</option><option value="aufgabe">Aufgabe</option>
@@ -631,10 +631,10 @@ function Angebote({ coachId }) {
         {module.length === 0 ? <Leer>Noch keine Module.</Leer> : module.map((m) => (
           <Card key={m.id} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center" }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{m.nr}. {m.titel}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>{m.typ}{m.dauer_min ? ` · ${m.dauer_min} Min` : ""}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{m.nr}. {m.titel}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>{m.typ}{m.dauer_min ? ` · ${m.dauer_min} Min` : ""}</div>
             </div>
-            <button onClick={async () => { await modulLoeschen(m.id); ladeKursModule(offen.id).then(setModule); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>löschen</button>
+            <button onClick={async () => { await modulLoeschen(m.id); ladeKursModule(offen.id).then(setModule); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>löschen</button>
           </Card>
         ))}
       </>
@@ -646,7 +646,7 @@ function Angebote({ coachId }) {
       <Card style={{ marginBottom: 22 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <label style={{ flex: "1 1 140px" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Art</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Art</div>
             <select value={form.typ} onChange={(e) => setForm({ ...form, typ: e.target.value })} style={feldStil}>
               <option value="kurs">Kurs</option><option value="paket">Paket</option>
               <option value="retreat">Retreat</option><option value="shop">Sonstiges</option>
@@ -670,13 +670,13 @@ function Angebote({ coachId }) {
       {liste.length === 0 ? <Leer>Noch keine Angebote — in der App steht bei deinen Klientinnen gerade nichts.</Leer> : liste.map((a) => (
         <Card key={a.id} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>{a.titel}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 2 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{a.titel}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>
               {[a.typ, a.einheiten, a.preis_cent != null ? `${(a.preis_cent / 100).toFixed(0)} €` : null].filter(Boolean).join(" · ")}
             </div>
           </div>
           {a.typ === "kurs" && <Btn small ghost onClick={() => setOffen(a)}>Module</Btn>}
-          <button onClick={async () => { await angebotLoeschen(a.id); laden(); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>löschen</button>
+          <button onClick={async () => { await angebotLoeschen(a.id); laden(); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>löschen</button>
         </Card>
       ))}
 
@@ -684,10 +684,10 @@ function Angebote({ coachId }) {
         <Eyebrow color={C.plum}>Anfragen ({anfragen.filter((a) => a.status === "offen").length} offen)</Eyebrow>
         {anfragen.length === 0 ? <Leer>Noch keine Anfragen.</Leer> : anfragen.map((a) => (
           <Card key={a.id} style={{ marginBottom: 9 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>
               {a.klientin_name} · {a.angebot_titel}
             </div>
-            {a.nachricht && <p style={{ fontFamily: "Georgia, serif", fontSize: 14, color: C.espresso, lineHeight: 1.6, margin: "6px 0" }}>{a.nachricht}</p>}
+            {a.nachricht && <p style={{ fontFamily: "Georgia, serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.6, margin: "6px 0" }}>{a.nachricht}</p>}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
               <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, flex: 1 }}>
                 {new Date(a.created_at).toLocaleDateString("de-DE")} · {a.status}
@@ -785,11 +785,11 @@ function GemeinschaftCoach({ onGeaendert }) {
           <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 8 }}>
             Ein Geschenk an die anderen Frauen
           </div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.65, margin: "0 0 12px" }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.65, margin: "0 0 12px" }}>
             Bring eine Übung, ein Audio, einen Text oder ein Video ein — frei für jede Frau in der App,
             auch für die, die noch keine Begleitung hat. Die meisten haben keine.
           </p>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.65, margin: "0 0 14px" }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.65, margin: "0 0 14px" }}>
             Ab dem ersten Beitrag bist du sichtbar: dein Profil und deine Angebote erscheinen bei jeder Frau,
             der dein Beitrag geholfen hat. <strong>So findet dich deine erste Klientin</strong> — ohne Werbebudget.
           </p>
@@ -805,12 +805,12 @@ function GemeinschaftCoach({ onGeaendert }) {
               <Card key={b.id}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso }}>{b.titel}</div>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 3 }}>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso }}>{b.titel}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 3 }}>
                       {GEM_BEDUERFNISSE.find(([k]) => k === b.beduerfnis)?.[1] || b.beduerfnis} · {b.typ}
                       {b.dauer_min ? ` · ${b.dauer_min} Min` : ""}
                     </div>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.plum, marginTop: 6, fontWeight: 600 }}>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, marginTop: 6, fontWeight: 600 }}>
                       {b.aufrufe} mal geöffnet · {b.herzen} 🤍
                       {b.anteil_anzahl > 0 && ` · ${Math.round(b.anteil_schnitt)} % zu Ende gehört`}
                     </div>
@@ -829,7 +829,7 @@ function GemeinschaftCoach({ onGeaendert }) {
           <Eyebrow>Neuer Beitrag</Eyebrow>
 
           <label style={{ display: "block", marginBottom: 10 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>
               Wem hilft das gerade?
             </div>
             <select value={f.beduerfnis} onChange={(e) => setF({ ...f, beduerfnis: e.target.value })} style={feldStil}>
@@ -838,7 +838,7 @@ function GemeinschaftCoach({ onGeaendert }) {
           </label>
 
           <label style={{ display: "block", marginBottom: 10 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Art</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Art</div>
             <select value={f.typ} onChange={(e) => { setF({ ...f, typ: e.target.value }); setAudio(null); }} style={feldStil}>
               <option value="uebung">Übung zum Lesen & Machen</option>
               <option value="audio">Audio (Meditation, Impuls …)</option>
@@ -860,7 +860,7 @@ function GemeinschaftCoach({ onGeaendert }) {
               <Feld label="Link zum Video" value={f.extern_url}
                 onChange={(e) => setF({ ...f, extern_url: e.target.value })}
                 placeholder="https://youtube.com/watch?v=…" />
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, lineHeight: 1.6, margin: "-4px 0 12px", opacity: .85 }}>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6, margin: "-4px 0 12px", opacity: .85 }}>
                 Videos bleiben auf deinem eigenen Kanal — die Aufrufe und die Abonnentinnen gehören dir,
                 nicht uns. Wir zeigen nur den Weg dorthin.
               </p>
@@ -869,7 +869,7 @@ function GemeinschaftCoach({ onGeaendert }) {
 
           {f.typ === "audio" && (
             <label style={{ display: "block", marginBottom: 12 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Audiodatei</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Audiodatei</div>
               <input type="file" accept="audio/*" onChange={(e) => setAudio(e.target.files?.[0] || null)}
                 style={{ ...feldStil, padding: 9 }} />
             </label>
@@ -877,7 +877,7 @@ function GemeinschaftCoach({ onGeaendert }) {
 
           {(f.typ === "text" || f.typ === "uebung") && (
             <label style={{ display: "block", marginBottom: 12 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Der Text</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Der Text</div>
               <textarea value={f.text} onChange={(e) => setF({ ...f, text: e.target.value })} rows={9}
                 style={{ ...feldStil, resize: "vertical", lineHeight: 1.6 }}
                 placeholder={"Schritt für Schritt, so wie du es einer Freundin sagen würdest.\n\n1. …\n2. …"} />
@@ -885,7 +885,7 @@ function GemeinschaftCoach({ onGeaendert }) {
           )}
 
           {hinweis && (
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.rot, lineHeight: 1.5, marginBottom: 12 }}>{hinweis}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.rot, lineHeight: 1.5, marginBottom: 12 }}>{hinweis}</div>
           )}
 
           <div style={{ display: "flex", gap: 9 }}>
@@ -919,7 +919,7 @@ function Beitraege({ coachId }) {
     <>
       <Eyebrow color={C.plum}>Neuer Beitrag</Eyebrow>
       <Card style={{ marginBottom: 22 }}>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
           Erscheint bei deinen Klientinnen unter „Neu von deiner Coachin". Wenn du den
           Inhalt auch auf Instagram oder YouTube veröffentlicht hast, trag den Link ein —
           dann führt ein Tipp direkt zum Original.
@@ -928,7 +928,7 @@ function Beitraege({ coachId }) {
         <textarea value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} rows={5} placeholder="Impuls der Woche …" style={{ ...feldStil, resize: "vertical" }} />
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <label style={{ flex: "1 1 150px" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Quelle</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Quelle</div>
             <select value={form.quelle} onChange={(e) => setForm({ ...form, quelle: e.target.value })} style={feldStil}>
               <option value="app">Nur App</option><option value="instagram">Instagram</option>
               <option value="youtube">YouTube</option><option value="pinterest">Pinterest</option>
@@ -943,13 +943,13 @@ function Beitraege({ coachId }) {
       <Eyebrow color={C.plum}>Veröffentlicht ({liste.length})</Eyebrow>
       {liste.length === 0 ? <Leer>Noch nichts veröffentlicht.</Leer> : liste.map((b) => (
         <Card key={b.id} style={{ marginBottom: 9 }}>
-          {b.titel && <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14, color: C.espresso, marginBottom: 4 }}>{b.titel}</div>}
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 14, color: C.espresso, lineHeight: 1.6, margin: "0 0 8px", whiteSpace: "pre-wrap" }}>{b.text}</p>
+          {b.titel && <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso, marginBottom: 4 }}>{b.titel}</div>}
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.6, margin: "0 0 8px", whiteSpace: "pre-wrap" }}>{b.text}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, flex: 1 }}>
               {new Date(b.veroeffentlicht_am).toLocaleDateString("de-DE")} · {b.quelle}
             </span>
-            <button onClick={async () => { await beitragLoeschen(b.id); laden(); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>löschen</button>
+            <button onClick={async () => { await beitragLoeschen(b.id); laden(); }} style={{ background: "none", border: "none", color: C.rot, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>löschen</button>
           </div>
         </Card>
       ))}
@@ -987,10 +987,10 @@ function Benachrichtigungen() {
       <Card style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>
               Nachrichten deiner Klientinnen
             </div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6, marginTop: 3 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginTop: 3 }}>
               {an
                 ? "Du bekommst auf diesem Gerät Bescheid, sobald jemand schreibt."
                 : "Ohne Benachrichtigung siehst du neue Nachrichten erst, wenn du das Panel öffnest."}
@@ -998,14 +998,14 @@ function Benachrichtigungen() {
           </div>
           <button onClick={umschalten} disabled={busy} style={{
             border: "none", cursor: busy ? "wait" : "pointer", borderRadius: 14, padding: "11px 16px",
-            fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600,
+            fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600,
             background: an ? C.beige : `linear-gradient(135deg, ${C.gold}, ${C.rose})`,
             color: an ? C.espresso : "#fff", whiteSpace: "nowrap",
           }}>
             {busy ? "…" : an ? "Aus" : "Einschalten"}
           </button>
         </div>
-        {fehler && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#A8552F", marginTop: 10 }}>{fehler}</div>}
+        {fehler && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#A8552F", marginTop: 10 }}>{fehler}</div>}
       </Card>
     </>
   );
@@ -1043,14 +1043,14 @@ function Profil({ profil, neuLaden }) {
       <Card style={{ marginBottom: 20 }}>
         <Feld label="Name, den deine Klientinnen sehen" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Vor- und Nachname" />
         <Feld label="Ein, zwei Sätze über dich" value={f.kurzprofil} onChange={(e) => setF({ ...f, kurzprofil: e.target.value })} placeholder="Womit du arbeitest, in deinen Worten" />
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.6, margin: "6px 0 12px" }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: "6px 0 12px" }}>
           Nur ausgefüllte Felder erscheinen in der App — leere werden gar nicht angezeigt.
         </p>
 
         <Feld label="E-Mail für Klientinnen" value={f.email_oeffentlich} onChange={(e) => setF({ ...f, email_oeffentlich: e.target.value })} placeholder="hallo@deine-praxis.de" />
         <Feld label="Telefon (optional)" value={f.telefon} onChange={(e) => setF({ ...f, telefon: e.target.value })} placeholder="+49 â¦" />
         <Feld label="Buchungslink" value={f.buchungslink} onChange={(e) => setF({ ...f, buchungslink: e.target.value })} placeholder="https://calendly.com/â¦ oder cal.com, eTermin â¦" />
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, lineHeight: 1.6, margin: "-4px 0 14px", opacity: .8 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6, margin: "-4px 0 14px", opacity: .8 }}>
           Der Termin entsteht in deinem eigenen Werkzeug. Trägst du hier nichts ein, buchen deine
           Klientinnen über die freien Zeitfenster, die du unter „Termine" anlegst.
         </p>
@@ -1063,7 +1063,7 @@ function Profil({ profil, neuLaden }) {
         <Feld label="Facebook" value={f.facebook} onChange={(e) => setF({ ...f, facebook: e.target.value })} placeholder="https://facebook.com/…" />
         <Feld label="LinkedIn" value={f.linkedin} onChange={(e) => setF({ ...f, linkedin: e.target.value })} placeholder="https://linkedin.com/in/…" />
         <Btn onClick={speichern}>Speichern</Btn>
-        {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.plum, marginTop: 10 }}>{hinweis}</div>}
+        {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, marginTop: 10 }}>{hinweis}</div>}
       </Card>
 
       <Card>
@@ -1124,7 +1124,7 @@ export default function CoachPanel() {
       <div style={{ minHeight: "100vh", background: C.cream, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
         <Card style={{ maxWidth: 420 }}>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso, marginBottom: 8 }}>Keine Cloud konfiguriert</div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
             Das Coach-Panel arbeitet ausschließlich mit echten Daten. Trag in <code>app/.env</code>
             {" "}die Supabase-Zugänge ein und lade neu.
           </p>
@@ -1161,16 +1161,16 @@ export default function CoachPanel() {
           <div style={{ fontFamily: "Georgia, serif", fontSize: 27, color: C.espresso }}>
             smile<span style={{ color: C.rose, fontStyle: "italic" }}>2</span>go
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Coach-Panel</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>Coach-Panel</div>
         </div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 20 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 20 }}>
           {profil?.name || session.user.email}
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
           {TABS.map(([k, label]) => (
             <button key={k} onClick={() => { setTab(k); setChat(null); }} style={{
-              fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600,
+              fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600,
               padding: "9px 15px", borderRadius: 20, cursor: "pointer", minHeight: 38,
               border: `1.5px solid ${tab === k ? C.gold : C.line}`,
               background: tab === k ? C.goldPale : C.card,

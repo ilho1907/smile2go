@@ -5,7 +5,7 @@
 
 // Die Version steht im Namen: beim Aktivieren wird jeder andere Cache
 // geloescht. Bei einer Aenderung an dieser Datei hier hochzaehlen.
-const CACHE = "s2g-v9";
+const CACHE = "s2g-v10";
 const HUELLE = ["/", "/index.html", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {

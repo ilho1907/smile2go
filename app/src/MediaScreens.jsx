@@ -20,12 +20,12 @@ function CinemaScreen({ video, poster, kicker, title, subtitle, cta, onDone }) {
         style={{ width: "100%", height: 480, objectFit: "cover", display: "block" }} />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(40,26,16,.15),rgba(40,26,16,.55))" }} />
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: 24, textAlign: "center" }}>
-        <p style={{ fontSize: 12, letterSpacing: 2, color: "#f0dca8", fontWeight: 600, textTransform: "uppercase", margin: 0 }}>{kicker}</p>
+        <p style={{ fontSize: 13, letterSpacing: 2, color: "#f0dca8", fontWeight: 600, textTransform: "uppercase", margin: 0 }}>{kicker}</p>
         <p style={{ fontFamily: "Georgia, serif", fontSize: 27, color: "#fff", margin: "6px 0 4px", textShadow: "0 1px 10px rgba(0,0,0,.35)" }}>{title}</p>
-        {subtitle && <p style={{ fontSize: 14, color: "rgba(255,255,255,.85)", margin: "0 0 16px" }}>{subtitle}</p>}
+        {subtitle && <p style={{ fontSize: 15.5, color: "rgba(255,255,255,.85)", margin: "0 0 16px" }}>{subtitle}</p>}
         <button onClick={toggle}
           style={{ border: "none", cursor: "pointer", background: `linear-gradient(90deg,${P.gold},${P.rose})`,
-                   color: "#fff", fontSize: 15, fontWeight: 600, padding: "13px 28px", borderRadius: 26,
+                   color: "#fff", fontSize: 16.5, fontWeight: 600, padding: "13px 28px", borderRadius: 26,
                    boxShadow: "0 8px 20px rgba(201,162,75,.35)" }}>
           {on ? "❚❚ Ton aus" : (cta || "▶ Mit Ton abspielen")}
         </button>
@@ -52,10 +52,10 @@ export function WelcomeIntro({ onContinue }) {
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(40,26,16,.1),rgba(246,239,228,.75))" }} />
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: 28, textAlign: "center" }}>
         <p style={{ fontFamily: "Georgia, serif", fontSize: 28, color: P.ink, margin: "0 0 6px" }}>Schön, dass du da bist.</p>
-        <p style={{ fontSize: 15, color: "#6b573f", margin: "0 0 18px" }}>Dein Rückzugsort.</p>
+        <p style={{ fontSize: 16.5, color: "#6b573f", margin: "0 0 18px" }}>Dein Rückzugsort.</p>
         <button onClick={onContinue}
           style={{ border: "none", cursor: "pointer", background: `linear-gradient(90deg,${P.gold},${P.rose})`,
-                   color: "#fff", fontSize: 15, fontWeight: 600, padding: "14px 30px", borderRadius: 26 }}>
+                   color: "#fff", fontSize: 16.5, fontWeight: 600, padding: "14px 30px", borderRadius: 26 }}>
           Beginnen
         </button>
       </div>
@@ -76,9 +76,9 @@ export function LichtpunkteReward({ points = 5, onClose }) {
         <video src={VIDEO.lichtpunkte} poster={IMG.lichtpunkte} autoPlay muted loop playsInline style={{ width: "100%", height: 260, objectFit: "cover" }} />
         <div style={{ padding: 18, textAlign: "center" }}>
           <p style={{ fontFamily: "Georgia, serif", fontSize: 22, color: P.ink, margin: "0 0 2px" }}>+{shown} Lichtpunkte</p>
-          <p style={{ fontSize: 13, color: P.mut, margin: "0 0 14px" }}>Dein Licht wächst mit jedem Schritt.</p>
+          <p style={{ fontSize: 14.5, color: P.mut, margin: "0 0 14px" }}>Dein Licht wächst mit jedem Schritt.</p>
           <button onClick={onClose}
-            style={{ border: "none", cursor: "pointer", background: P.gold, color: "#fff", fontSize: 14, fontWeight: 600, padding: "10px 22px", borderRadius: 22 }}>
+            style={{ border: "none", cursor: "pointer", background: P.gold, color: "#fff", fontSize: 15.5, fontWeight: 600, padding: "10px 22px", borderRadius: 22 }}>
             Danke
           </button>
         </div>

@@ -16,7 +16,7 @@ function CodeFeld({ wert, setWert, onEnter, C }) {
 function Knopf({ children, onClick, disabled, ghost, C }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      ...sys, fontSize: 14, fontWeight: 700, borderRadius: 22, padding: "11px 20px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.6 : 1,
+      ...sys, fontSize: 15.5, fontWeight: 700, borderRadius: 22, padding: "11px 20px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.6 : 1,
       border: ghost ? `1.5px solid ${C.line}` : "none", background: ghost ? "transparent" : `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: ghost ? C.espresso : "#fff",
     }}>{children}</button>
   );
@@ -36,10 +36,10 @@ export function ZweiFaktorAbfrage({ faktorId, onOk, onAbbruch, C }) {
   };
   return (
     <div>
-      <div style={{ ...sys, fontSize: 15, fontWeight: 700, color: C.espresso }}>🔐 Zweiter Schritt</div>
-      <p style={{ ...sys, fontSize: 13, color: C.ink, lineHeight: 1.5, margin: "6px 0 0" }}>Gib den Code aus deiner Authenticator-App ein.</p>
+      <div style={{ ...sys, fontSize: 16.5, fontWeight: 700, color: C.espresso }}>🔐 Zweiter Schritt</div>
+      <p style={{ ...sys, fontSize: 14.5, color: C.ink, lineHeight: 1.5, margin: "6px 0 0" }}>Gib den Code aus deiner Authenticator-App ein.</p>
       <CodeFeld wert={code} setWert={setCode} onEnter={pruefen} C={C} />
-      {err && <div style={{ ...sys, fontSize: 13, color: "#A8552F", marginBottom: 8 }}>{err}</div>}
+      {err && <div style={{ ...sys, fontSize: 14.5, color: "#A8552F", marginBottom: 8 }}>{err}</div>}
       <div style={{ display: "flex", gap: 8 }}>
         <Knopf onClick={pruefen} disabled={busy || code.length !== 6} C={C}>{busy ? "Prüfe …" : "Bestätigen"}</Knopf>
         {onAbbruch && <Knopf ghost onClick={onAbbruch} C={C}>Abbrechen</Knopf>}
@@ -82,25 +82,25 @@ export function ZweiFaktorEinstellung({ C }) {
     laden();
   };
 
-  if (!status) return <p style={{ ...sys, fontSize: 13, color: C.ink }}>Lade …</p>;
+  if (!status) return <p style={{ ...sys, fontSize: 14.5, color: C.ink }}>Lade …</p>;
   return (
     <div>
-      <p style={{ ...sys, fontSize: 13, color: C.ink, lineHeight: 1.55, marginTop: 0 }}>
+      <p style={{ ...sys, fontSize: 14.5, color: C.ink, lineHeight: 1.55, marginTop: 0 }}>
         Mit Zwei-Faktor-Anmeldung braucht es neben deinem Passwort einen Code aus einer Authenticator-App (z. B. Google Authenticator, Microsoft Authenticator, 1Password). So bleibt dein Konto geschützt, selbst wenn jemand dein Passwort kennt.
       </p>
       {status.aktiv && !setup && (
         <>
-          <div style={{ ...sys, fontSize: 14, fontWeight: 700, color: C.sage || C.espresso, margin: "8px 0 12px" }}>✓ Aktiv</div>
+          <div style={{ ...sys, fontSize: 15.5, fontWeight: 700, color: C.sage || C.espresso, margin: "8px 0 12px" }}>✓ Aktiv</div>
           <Knopf ghost onClick={abschalten} disabled={busy} C={C}>Abschalten</Knopf>
         </>
       )}
       {!status.aktiv && !setup && <Knopf onClick={starten} disabled={busy} C={C}>{busy ? "Einen Moment …" : "Jetzt einrichten"}</Knopf>}
       {setup && (
         <div>
-          <p style={{ ...sys, fontSize: 13, color: C.espresso, lineHeight: 1.5 }}>1. Scanne den QR-Code mit deiner Authenticator-App.</p>
+          <p style={{ ...sys, fontSize: 14.5, color: C.espresso, lineHeight: 1.5 }}>1. Scanne den QR-Code mit deiner Authenticator-App.</p>
           <img src={setup.qr} alt="QR-Code für die Authenticator-App" style={{ width: 180, height: 180, background: "#fff", borderRadius: 12, padding: 8 }} />
           <p style={{ ...sys, fontSize: 11.5, color: C.ink, wordBreak: "break-all" }}>Oder Schlüssel manuell eingeben: <code>{setup.geheimnis}</code></p>
-          <p style={{ ...sys, fontSize: 13, color: C.espresso, lineHeight: 1.5, marginBottom: 0 }}>2. Gib den 6-stelligen Code aus der App ein.</p>
+          <p style={{ ...sys, fontSize: 14.5, color: C.espresso, lineHeight: 1.5, marginBottom: 0 }}>2. Gib den 6-stelligen Code aus der App ein.</p>
           <CodeFeld wert={code} setWert={setCode} onEnter={bestaetigen} C={C} />
           <div style={{ display: "flex", gap: 8 }}>
             <Knopf onClick={bestaetigen} disabled={busy || code.length !== 6} C={C}>Bestätigen</Knopf>
@@ -108,7 +108,7 @@ export function ZweiFaktorEinstellung({ C }) {
           </div>
         </div>
       )}
-      {info && <p style={{ ...sys, fontSize: 13, color: C.plum || C.espresso, marginTop: 12 }}>{info}</p>}
+      {info && <p style={{ ...sys, fontSize: 14.5, color: C.plum || C.espresso, marginTop: 12 }}>{info}</p>}
     </div>
   );
 }
