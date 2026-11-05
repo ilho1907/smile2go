@@ -32,20 +32,38 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
         KI-Orakel-Deutung, Google-Login, Zurück-Navigation
    ───────────────────────────────────────────── */
 
+/* Farben ───────────────────────────────────────────────────────────────────
+   Die alte Welt war Creme, Gold und Weinrot — also Braun in drei Helligkeiten
+   plus ein dunkles Rot. Zwei Dinge stimmten daran nicht. Das Creme war selbst
+   ein Braunton, und eine ganze Anwendung aus einem Farbkreis wirkt flach, egal
+   wie sorgfaeltig sie gebaut ist. Und das Weinrot war schwer: eine Frau, die
+   um zwei Uhr nachts aufmacht, soll nicht in eine dunkle Stube treten.
+
+   Perlmutt ist das Gegenteil von beidem: ein fast weisser Grund mit einem
+   Hauch Flieder, eine ruhige violette Farbe fuer alles, was angefasst wird,
+   und als Akzent ein Schimmern statt einer Flaeche. Das Schimmern traegt das
+   Spirituelle — Orakel, Mondphasen, Sternzeichen —, ohne dass irgendwo
+   abgedunkelt werden muss, und es sieht nach Schmuck aus statt nach Software.
+   Keine der erfolgreichen deutschen Frauen-Apps geht diesen Weg; Flo ist
+   Pink-Rot, Clue Rot, MindDoc Orange, 7Mind Pfirsich.
+
+   Die Namen bleiben wie sie waren. cream heisst weiter cream, gold weiter
+   gold — sonst muessten tausend Stellen angefasst werden, und die Namen
+   beschreiben ohnehin die Rolle, nicht den Farbton. */
 const C = {
-  cream: "#F4EDE2",
-  card: "#FFFDF9",
-  beige: "#ECE2D1",
-  line: "#E3D6C2",
-  gold: "#C1913C",
-  goldSoft: "#D9B26A",
-  goldPale: "#F6EAD3",
-  espresso: "#3A332B",
-  ink: "#6F6355",
-  sage: "#93B07F",
-  rose: "#C2526E",
-  roseSoft: "#F5DBE1",
-  plum: "#8A3F5A",
+  cream: "#F8F6FB",      // Grund — fast weiss, ein Hauch Flieder
+  card: "#FFFEFF",       // erhobene Flaeche
+  beige: "#EFEBF6",      // ruhige zweite Flaeche
+  line: "#E6E1F0",       // Kante
+  gold: "#5B4C99",       // die Farbe, die angefasst wird
+  goldSoft: "#8E7BFF",   // lebendiger, fuer Zeichen und Hervorhebung
+  goldPale: "#EDE9FA",   // getoente Flaeche
+  espresso: "#262233",   // Schrift
+  ink: "#6E6882",        // Nebenschrift
+  sage: "#5E9A92",       // Zustimmung, Ruhe
+  rose: "#B59BE8",       // Betonung
+  roseSoft: "#F2EEFC",   // leiseste getoente Flaeche
+  plum: "#4A3C85",       // tiefste Markenfarbe
 };
 
 const MOTIVATION = [
@@ -596,7 +614,7 @@ const Card = ({ children, style, onClick, flach }) => (
       // Karten in der App ist das der Unterschied zwischen eng und ruhig.
       borderRadius: 24,
       padding: 22,
-      boxShadow: flach ? "none" : "0 18px 38px -24px rgba(110,80,45,.40), 0 2px 6px -2px rgba(110,80,45,.07)",
+      boxShadow: flach ? "none" : "0 18px 38px -24px rgba(70,55,130,.40), 0 2px 6px -2px rgba(70,55,130,.07)",
       cursor: onClick ? "pointer" : "default",
       ...style,
     }}
@@ -624,10 +642,13 @@ const DUNKEL_TON = {
   wald:    { flaeche: "linear-gradient(168deg, #2A3C2E 0%, #1C2A21 100%)", schrift: "#E8F0E4", leise: "rgba(232,240,228,.70)", zeichen: "#C7D9A8", schatten: "rgba(14,26,16,.75)" },
   tinte:   { flaeche: "linear-gradient(168deg, #22354F 0%, #16243A 100%)", schrift: "#E3EBF5", leise: "rgba(227,235,245,.70)", zeichen: "#9DC2E8", schatten: "rgba(8,18,34,.75)" },
   pflaume: { flaeche: "linear-gradient(168deg, #3B2135 0%, #2A1626 100%)", schrift: "#F0E2EB", leise: "rgba(240,226,235,.70)", zeichen: "#E3A9C6", schatten: "rgba(28,10,24,.75)" },
+  /* Perlmutt dunkelt nicht ab, sondern toent: dieselbe Aufgabe, ohne dass
+     die Seite irgendwo schwer wird. */
+  perlmutt: { flaeche: "linear-gradient(140deg, #F6F3FD 0%, #EAE4F8 58%, #DCD4F2 100%)", schrift: "#262233", leise: "rgba(38,34,51,.66)", zeichen: "#5B4C99", schatten: "rgba(80,60,150,.28)" },
 };
 
-const Dunkel = ({ children, style, ton = "wald" }) => {
-  const t = DUNKEL_TON[ton] || DUNKEL_TON.wald;
+const Dunkel = ({ children, style, ton = "perlmutt" }) => {
+  const t = DUNKEL_TON[ton] || DUNKEL_TON.perlmutt;
   return (
     <div style={{
       background: t.flaeche, color: t.schrift,
@@ -834,7 +855,7 @@ const Btn = ({ children, onClick, ghost, full, small, disabled }) => (
          — der Knopf soll fest aussehen, nicht leuchten. */
       background: ghost ? "rgba(255,255,255,.72)" : C.gold,
       boxShadow: ghost
-        ? "0 1px 2px rgba(110,80,45,.05)"
+        ? "0 1px 2px rgba(70,55,130,.05)"
         : "0 10px 22px -12px rgba(120,85,25,.55)",
       color: ghost ? C.espresso : "#FFFCF5",
       width: full ? "100%" : "auto",
@@ -7007,10 +7028,10 @@ function CoachingHub({ go, bindung, aufBindung }) {
             ["herz", "Und trotzdem: dein Raum bleibt deiner", "Journal, Orakel und Rituale sieht sie nicht."],
           ].map(([i, t, s], n) => (
             <div key={t} style={{ display: "flex", gap: 13, marginTop: n === 0 ? 0 : R.klein }}>
-              <Ikon n={i} size={19} style={{ color: DUNKEL_TON.wald.zeichen, marginTop: 2 }} />
+              <Ikon n={i} size={19} style={{ color: DUNKEL_TON.perlmutt.zeichen, marginTop: 2 }} />
               <span>
-                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 15.5, color: DUNKEL_TON.wald.schrift }}>{t}</span>
-                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: DUNKEL_TON.wald.leise, lineHeight: 1.55, marginTop: 3 }}>{s}</span>
+                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 15.5, color: DUNKEL_TON.perlmutt.schrift }}>{t}</span>
+                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: DUNKEL_TON.perlmutt.leise, lineHeight: 1.55, marginTop: 3 }}>{s}</span>
               </span>
             </div>
           ))}
@@ -7722,7 +7743,7 @@ function Gemeinschaft({ go, bindung }) {
         background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "Georgia, serif", fontSize: gross ? 20 : 13.5,
-        boxShadow: "0 0 0 2px rgba(255,255,255,.85), 0 4px 10px -4px rgba(110,80,45,.5)",
+        boxShadow: "0 0 0 2px rgba(255,255,255,.85), 0 4px 10px -4px rgba(70,55,130,.5)",
       }}>{name.charAt(0)}</div>
       <span style={{ fontFamily: "system-ui, sans-serif", fontSize: gross ? 15 : 13.5, color: C.plum, fontWeight: 700 }}>
         {name}
@@ -8016,7 +8037,7 @@ function Gemeinschaft({ go, bindung }) {
     <button onClick={() => setBed(b.id)} style={{
       position: "relative", border: "none", padding: 0, borderRadius: 18, overflow: "hidden",
       cursor: "pointer", aspectRatio: "4 / 3.4", background: C.beige, width: "100%",
-      boxShadow: "0 14px 30px -20px rgba(110,80,45,.5)", display: "block",
+      boxShadow: "0 14px 30px -20px rgba(70,55,130,.5)", display: "block",
     }}>
       <span style={{ position: "absolute", inset: 0 }}><GemBild ton={b.id} saat={gemSaat(b.id)} /></span>
       <span style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(26,16,12,.72) 0%, rgba(26,16,12,.28) 45%, rgba(26,16,12,.04) 100%)" }} />
@@ -11148,7 +11169,7 @@ export default function IlhoApp() {
           dass man ihn bemerkt. Oben etwas heller, unten etwas waermer:
           genug, damit die Seite nicht wie ein gleichmaessiges Blatt wirkt,
           zu wenig, um als Farbe aufzufallen. */}
-      <div className="s2g-shell" style={{ width: "100%", maxWidth: 430, background: `linear-gradient(176deg, #FBF6EE 0%, ${C.cream} 46%, #EFE5D4 100%)`, backgroundAttachment: "fixed", minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
+      <div className="s2g-shell" style={{ width: "100%", maxWidth: 430, background: `linear-gradient(176deg, #FFFEFF 0%, ${C.cream} 46%, #EDE8F7 100%)`, backgroundAttachment: "fixed", minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
         {cloudAus && (
           <div style={{
             position: "sticky", top: 0, zIndex: 40,

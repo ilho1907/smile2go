@@ -6,7 +6,7 @@
        liegen — sonst verdeckt sie auf Android das Eingabefeld von ilho. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <!-- Gleiche Farbe wie im Manifest, sonst blitzt beim Start ein anderer Ton. -->
-  <meta name="theme-color" content="#FBF6EE" />
+  <meta name="theme-color" content="#F8F6FB" />
   <meta name="color-scheme" content="light" />
 
   <!-- Vom Startbildschirm aus ohne Browserleiste, mit Statusleiste in der
@@ -23,7 +23,7 @@
   <title>smile2go — Dein Raum für Ruhe & Wachstum</title>
 
   <style>
-    html, body { margin: 0; background: #FBF6EE; }
+    html, body { margin: 0; background: #F8F6FB; }
     /* Startbild. Es steht im HTML, also ist es da, bevor irgendein Skript
        geladen hat — kein weisses Blitzen, kein leerer Rahmen. React ersetzt
        den Inhalt von #root, sobald es bereit ist; damit verschwindet es von
@@ -31,16 +31,16 @@
     #s2g-start {
       position: fixed; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 22px;
-      background: radial-gradient(120% 80% at 50% 0%, #FFFDF9 0%, #FBF6EE 55%, #F2E7D8 100%);
+      background: radial-gradient(120% 80% at 50% 0%, #FFFEFF 0%, #F8F6FB 55%, #EAE4F8 100%);
       font-family: Georgia, "Times New Roman", serif;
     }
     #s2g-start .wort {
-      font-size: 34px; letter-spacing: .5px; color: #3A2A22;
+      font-size: 36px; letter-spacing: .5px; color: #2A2347;
       opacity: 0; animation: s2g-auf .7s .1s ease-out forwards;
     }
     #s2g-start .ring {
       width: 34px; height: 34px; border-radius: 50%;
-      border: 2px solid rgba(58,42,34,.14); border-top-color: rgba(176,96,58,.75);
+      border: 2px solid rgba(60,45,120,.14); border-top-color: rgba(91,76,153,.8);
       opacity: 0; animation: s2g-auf .5s .45s ease-out forwards, s2g-dreh 1s linear .45s infinite;
     }
     @keyframes s2g-auf  { to { opacity: 1; } }

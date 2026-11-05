@@ -137,6 +137,6 @@ export const VOICE = {
 };
 
 export const PALETTE = {
-  bg: "#F6EFE4", card: "#FFFDF9", gold: "#C9A24B",
-  rose: "#D89AA6", sage: "#93B09A", ink: "#4A3B2C", mut: "#A2917B",
+  bg: "#F8F6FB", card: "#FFFEFF", gold: "#5B4C99",
+  rose: "#B59BE8", sage: "#5E9A92", ink: "#262233", mut: "#8E88A0",
 };
