@@ -170,7 +170,7 @@ const GOETTINNEN = [
   {
     n: "Die Göttin der lebendigen Schöpfung", b: "Schöpfung", sub: "Hüterin des Herztempels",
     hue: ["#C96A7E", "#6E3148"], sym: "rose",
-    txt: "Mein Herz ist ein heiliger Tempel. Aus mir entsteht neues Leben. 🌹",
+    txt: "Mein Herz ist ein heiliger Tempel. Aus mir entsteht neues Leben.",
     frage: "Wo darf ich meine schöpferische Kraft wieder vollständig verkörpern?",
     affirmationen: [
       "Ich öffne mein Herz und empfange die Kraft der lebendigen Schöpfung.",
@@ -425,7 +425,7 @@ const mondphase = () => {
 async function askLuma(messages, system, max_tokens) {
   // Sicher: kein API-Key im Browser. Läuft über die Supabase Edge Function "ai".
   const url = import.meta.env?.VITE_AI_FUNCTION_URL;
-  if (!url) return "Ich bin gleich für dich da — sobald ilho verbunden ist. 🤍";
+  if (!url) return "Ich bin gleich für dich da — sobald ilho verbunden ist.";
   try {
     const anon = import.meta.env?.VITE_SUPABASE_ANON_KEY || "";
     const res = await fetch(url, {
@@ -436,7 +436,7 @@ async function askLuma(messages, system, max_tokens) {
     const data = await res.json();
     return (data.text || "").trim();
   } catch {
-    return "Gerade kann ich dich nicht erreichen — versuch es gleich noch einmal. 🤍";
+    return "Gerade kann ich dich nicht erreichen — versuch es gleich noch einmal.";
   }
 }
 
@@ -503,7 +503,7 @@ function Hoerknopf({ text, kategorie = "karte", twin, klein = false }) {
         fontFamily: "system-ui, sans-serif", fontSize: klein ? 12 : 13, fontWeight: 600,
         opacity: laedt ? 0.6 : 1,
       }}>
-        {laedt ? "…" : "🔊"} {laedt ? "wird gesprochen" : "Anhören"}
+        {laedt ? "…" : <Ikon n="laut" size={16} />} {laedt ? "wird gesprochen" : "Anhören"}
       </button>
       <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>
         KI-Stimme{twin?.voice_id ? " deiner Coachin" : ""}
@@ -694,7 +694,7 @@ const Mikro = ({ onText, size = 36 }) => {
         background: an ? C.rose : C.roseSoft, fontSize: size * 0.42, cursor: "pointer",
         display: "flex", alignItems: "center", justifyContent: "center",
         boxShadow: an ? `0 0 0 4px ${C.roseSoft}` : "none", transition: "box-shadow .3s",
-      }}>🎤</button>
+      }}><Ikon n="mikro" size={17} /></button>
   );
 };
 
@@ -1136,7 +1136,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
       {mode === "register" && (
         <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5, marginBottom: 14, cursor: "pointer" }}>
           <input type="checkbox" checked={ilhoOn} onChange={(e) => setIlhoOn(e.target.checked)} style={{ width: 20, height: 20, accentColor: C.gold, flexShrink: 0, marginTop: 1 }} />
-          <span>✨ <strong>ilho</strong>, meinen KI-Begleiter, aktivieren. Jederzeit in den Einstellungen änderbar.</span>
+          <span><strong>ilho</strong>, meinen KI-Begleiter, aktivieren. Jederzeit in den Einstellungen änderbar.</span>
         </label>
       )}
 
@@ -1197,9 +1197,9 @@ function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries })
         [{ role: "user", content: `Meine Energie heute: ${lvl.t} (${lvl.v}/10). Gib mir einen kurzen, liebevollen Impuls für meinen Tag — max. 2 Sätze.` }],
         ILHO_SYSTEM
       );
-      setImpuls(txt || "Sei heute besonders sanft mit dir. 🤍");
+      setImpuls(txt || "Sei heute besonders sanft mit dir.");
     } catch {
-      setImpuls("Sei heute besonders sanft mit dir — du machst das wunderbar. 🤍");
+      setImpuls("Sei heute besonders sanft mit dir — du machst das wunderbar.");
     }
     setBusy(false);
   };
@@ -1208,7 +1208,7 @@ function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries })
 
   return (
     <Card style={{ marginBottom: 16, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
-      <Eyebrow color={C.plum}>🧭 Energie-Kompass · KI-personalisiert</Eyebrow>
+      <Eyebrow color={C.plum}>Energie-Kompass · KI-personalisiert</Eyebrow>
       <H size={16.5} style={{ marginBottom: 12 }}>Wie ist deine Energie heute?</H>
       <div style={{ display: "flex", gap: 4 }}>
         {ENERGIE.map((x) => {
@@ -1233,10 +1233,10 @@ function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries })
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Sym e={aktuelles.e} size={16} />{aktuelles.t}</span>
         </div>
       )}
-      {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, marginTop: 12 }}>✨ ilho spürt in deinen Tag hinein …</p>}
+      {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, marginTop: 12 }}>ilho spürt in deinen Tag hinein …</p>}
       {impuls && !busy && (
         <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, lineHeight: 1.55, marginTop: 12 }}>
-          ✨ {impuls}
+          {impuls}
         </p>
       )}
     </Card>
@@ -1302,8 +1302,8 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
     const today = now.toDateString();
 
     if (hour >= 7 && hour < 9 && lastNotif !== today && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      new Notification("☀️ Dein Tag ist vorbereitet", {
-        body: "ilho hat deine Tageskarte, Mantra & Atemritual bereit. Komm in smile2go! 🤍",
+      new Notification("Dein Tag ist vorbereitet", {
+        body: "ilho hat deine Tageskarte, Mantra & Atemritual bereit. Komm in smile2go!",
         icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23FFD700'/></svg>",
       });
       localStorage.setItem("ilho_notif_date", today);
@@ -1339,7 +1339,7 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
           <div style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.sage, marginBottom: 3 }}>ilho hat deinen Tag vorbereitet</div>
           <H size={26} style={{ marginBottom: 4 }}>{gruss}{name ? `, ${name}` : ""}</H>
         </div>
-        <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", fontSize: 22, color: C.gold, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(58,42,34,.1)", overflow: "hidden", padding: 0 }}>{prefs?.avatar ? <img src={prefs.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "👤"}</button>
+        <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", fontSize: 22, color: C.gold, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(58,42,34,.1)", overflow: "hidden", padding: 0 }}>{prefs?.avatar ? <img src={prefs.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Ikon n="person" size={22} />}</button>
       </div>
 
 
@@ -1415,7 +1415,7 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
       {/* Status: Punkte & Streak */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
         <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}><Ikon n="flamme" size={16} style={{ color: C.gold }} />{streak} Tage Serie</span>
-        <button onClick={openPunkte} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum, background: C.roseSoft, border: `1.5px solid ${C.rose}`, borderRadius: 20, padding: "5px 12px", cursor: "pointer" }}>✨ {punkte} Sonnenstrahlen ›</button>
+        <button onClick={openPunkte} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum, background: C.roseSoft, border: `1.5px solid ${C.rose}`, borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}><Ikon n="funke" size={14} />{punkte} Sonnenstrahlen ›</button>
       </div>
 
       {/* Mehr: Alle Features */}
@@ -1455,7 +1455,7 @@ function IlhoGrenzen() {
       {ILHO_KANN.map((t) => zeile(t, "✓", C.sage))}
       <div style={{ fontWeight: 700, color: C.espresso, margin: "10px 0 6px" }}>Was ilho nicht kann</div>
       {ILHO_NICHT.map((t) => zeile(t, "✕", C.rose))}
-      <div style={{ fontSize: 11.5, opacity: 0.75, marginTop: 8 }}>ilho ist eine künstliche Intelligenz, kein Mensch. Deine Daumen-Bewertungen helfen, ilho besser zu machen — gespeichert wird nur 👍/👎, nie dein Text.</div>
+      <div style={{ fontSize: 11.5, opacity: 0.75, marginTop: 8 }}>ilho ist eine künstliche Intelligenz, kein Mensch. Deine Daumen-Bewertungen helfen, ilho besser zu machen — gespeichert wird nur dein Daumen, nie dein Text.</div>
     </div>
   );
 }
@@ -1522,7 +1522,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
       const reply = await askLuma(next.map(({ role, content }) => ({ role, content })), ILHO_SYSTEM + ctx + gedaechtnis + twinTon);
       setMsgs([...next, { role: "assistant", content: reply || "Ich bin hier. Erzähl mir mehr davon. 🤍" }]);
     } catch {
-      setMsgs([...next, { role: "assistant", content: "Gerade kann ich dich nicht erreichen — versuch es gleich noch einmal. 🤍" }]);
+      setMsgs([...next, { role: "assistant", content: "Gerade kann ich dich nicht erreichen — versuch es gleich noch einmal." }]);
     }
     setBusy(false);
   };
@@ -8083,7 +8083,7 @@ function Gemeinschaft({ go, bindung }) {
         <>
           <Card style={{ marginBottom: 14 }}>
             <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.ink, lineHeight: 1.65, margin: 0 }}>
-              Noch ist es still hier. Die ersten Coachinnen tragen gerade ihre Geschenke ein. 🤍
+              Noch ist es still hier. Die ersten Coachinnen tragen gerade ihre Geschenke ein.
             </p>
           </Card>
           <Card style={{ background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
@@ -8800,7 +8800,7 @@ function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
                 von {ABZEICHEN.length} Abzeichen
               </div>
               <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 8 }}>
-                ✨ {punkte} Lichtpunkte · noch {Math.max(0, naechsterMs - punkte)} bis {naechsterMs}
+                {punkte} Lichtpunkte · noch {Math.max(0, naechsterMs - punkte)} bis {naechsterMs}
               </div>
             </Card>
 
@@ -10796,7 +10796,7 @@ function Jahresrueckblick({ entries, qigong, dank, losgelassen, punkte, streak, 
           <Card style={{ marginBottom: 12 }}>
             <Eyebrow color={C.espresso}>Zahlen & Zeichen</Eyebrow>
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, lineHeight: 1.9 }}>
-              ✨ {punkte} Lichtpunkte gesammelt<br />
+              {punkte} Lichtpunkte gesammelt<br />
               {qigongMin > 0 && <>🌿 {qigongMin} Minuten Qigong an {(qigong || []).length} Tagen<br /></>}
               {dankSaetze > 0 && <>🤍 {dankSaetze} Dinge, für die du dankbar warst<br /></>}
               {gegangen > 0 && <>🕊️ {gegangen} {gegangen === 1 ? "Sache" : "Dinge"} losgelassen<br /></>}
