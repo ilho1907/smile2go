@@ -51,19 +51,19 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
    gold — sonst muessten tausend Stellen angefasst werden, und die Namen
    beschreiben ohnehin die Rolle, nicht den Farbton. */
 const C = {
-  cream: "#F8F6FB",      // Grund — fast weiss, ein Hauch Flieder
-  card: "#FFFEFF",       // erhobene Flaeche
-  beige: "#EFEBF6",      // ruhige zweite Flaeche
-  line: "#E6E1F0",       // Kante
-  gold: "#5B4C99",       // die Farbe, die angefasst wird
-  goldSoft: "#8E7BFF",   // lebendiger, fuer Zeichen und Hervorhebung
-  goldPale: "#EDE9FA",   // getoente Flaeche
-  espresso: "#262233",   // Schrift
-  ink: "#6E6882",        // Nebenschrift
-  sage: "#5E9A92",       // Zustimmung, Ruhe
-  rose: "#B59BE8",       // Betonung
-  roseSoft: "#F2EEFC",   // leiseste getoente Flaeche
-  plum: "#4A3C85",       // tiefste Markenfarbe
+  cream: "#FBF6FA",      // Grund — fast weiss, ein Hauch Flieder
+  card: "#FFFDFE",       // erhobene Flaeche
+  beige: "#F5EBF3",      // ruhige zweite Flaeche
+  line: "#EFDFEC",       // Kante
+  gold: "#8E4C85",       // die Farbe, die angefasst wird
+  goldSoft: "#D472BE",   // lebendiger, fuer Zeichen und Hervorhebung
+  goldPale: "#F9EAF4",   // getoente Flaeche
+  espresso: "#2E2430",   // Schrift
+  ink: "#7A6B7A",        // Nebenschrift
+  sage: "#6FA89C",       // Zustimmung, Ruhe
+  rose: "#E8A8D4",       // Betonung
+  roseSoft: "#FCF1F8",   // leiseste getoente Flaeche
+  plum: "#6E3568",       // tiefste Markenfarbe
 };
 
 const MOTIVATION = [
@@ -644,7 +644,7 @@ const DUNKEL_TON = {
   pflaume: { flaeche: "linear-gradient(168deg, #3B2135 0%, #2A1626 100%)", schrift: "#F0E2EB", leise: "rgba(240,226,235,.70)", zeichen: "#E3A9C6", schatten: "rgba(28,10,24,.75)" },
   /* Perlmutt dunkelt nicht ab, sondern toent: dieselbe Aufgabe, ohne dass
      die Seite irgendwo schwer wird. */
-  perlmutt: { flaeche: "linear-gradient(140deg, #F6F3FD 0%, #EAE4F8 58%, #DCD4F2 100%)", schrift: "#262233", leise: "rgba(38,34,51,.66)", zeichen: "#5B4C99", schatten: "rgba(80,60,150,.28)" },
+  perlmutt: { flaeche: "linear-gradient(140deg, #FDF4FA 0%, #F7E6F2 58%, #F0D8EA 100%)", schrift: "#2E2430", leise: "rgba(38,34,51,.66)", zeichen: "#8E4C85", schatten: "rgba(80,60,150,.28)" },
 };
 
 const Dunkel = ({ children, style, ton = "perlmutt" }) => {
@@ -11169,7 +11169,7 @@ export default function IlhoApp() {
           dass man ihn bemerkt. Oben etwas heller, unten etwas waermer:
           genug, damit die Seite nicht wie ein gleichmaessiges Blatt wirkt,
           zu wenig, um als Farbe aufzufallen. */}
-      <div className="s2g-shell" style={{ width: "100%", maxWidth: 430, background: `linear-gradient(176deg, #FFFEFF 0%, ${C.cream} 46%, #EDE8F7 100%)`, backgroundAttachment: "fixed", minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
+      <div className="s2g-shell" style={{ width: "100%", maxWidth: 430, background: `linear-gradient(176deg, #FFFDFE 0%, ${C.cream} 46%, #F4E4F0 100%)`, backgroundAttachment: "fixed", minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
         {cloudAus && (
           <div style={{
             position: "sticky", top: 0, zIndex: 40,

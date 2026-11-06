@@ -16,9 +16,9 @@ import { alsCsv } from "./export";
 // Dieselbe Perlmutt-Welt wie in der Mitglieder-App; die Namen beschreiben
 // die Rolle, nicht den Farbton.
 const C = {
-  cream: "#F8F6FB", card: "#FFFEFF", beige: "#EFEBF6", line: "#E6E1F0",
-  gold: "#5B4C99", goldPale: "#EDE9FA", espresso: "#262233", ink: "#6E6882",
-  sage: "#5E9A92", rose: "#B59BE8", roseSoft: "#F2EEFC", plum: "#4A3C85", rot: "#B0492F",
+  cream: "#FBF6FA", card: "#FFFDFE", beige: "#F5EBF3", line: "#EFDFEC",
+  gold: "#8E4C85", goldPale: "#F9EAF4", espresso: "#2E2430", ink: "#7A6B7A",
+  sage: "#6FA89C", rose: "#E8A8D4", roseSoft: "#FCF1F8", plum: "#6E3568", rot: "#B0492F",
 };
 
 const Kpi = ({ t, v, s, accent }) => (
