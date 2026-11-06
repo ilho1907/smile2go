@@ -7476,6 +7476,16 @@ function NavIcon({ art, aktiv, hell }) {
     <svg {...g}><path d="M19.5 14.8A7.6 7.6 0 1 1 9.2 4.5a6 6 0 0 0 10.3 10.3Z" fill={aktiv ? f : "none"} />
       <path d="m17.4 3.1.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7Z" fill={aktiv ? f : "none"} /></svg>
   );
+  /* Drei Gestalten nebeneinander, die mittlere vorn: das Zeichen fuer die
+     Gemeinschaft. Keine Sonne, keine Blume — Menschen. */
+  if (art === "gemeinschaft") return (
+    <svg {...g}><circle cx="12" cy="7.2" r="3.1" fill={hell || aktiv ? f : "none"} />
+      <path d="M6.6 20c.4-2.9 2.6-4.6 5.4-4.6s5 1.7 5.4 4.6" />
+      <circle cx="4.6" cy="9.6" r="2.1" />
+      <path d="M1.4 17.6c.3-2 1.6-3.2 3.2-3.2" />
+      <circle cx="19.4" cy="9.6" r="2.1" />
+      <path d="M22.6 17.6c-.3-2-1.6-3.2-3.2-3.2" /></svg>
+  );
   if (art === "coaching") return (
     <svg {...g}><circle cx="12" cy="12" r="2.4" fill={hell || aktiv ? f : "none"} />
       <path d="M12 9.6c0-2.3-.8-4.1 0-5.4.8 1.3 0 3.1 0 5.4ZM14.4 12c2.3 0 4.1-.8 5.4 0-1.3.8-3.1 0-5.4 0ZM12 14.4c0 2.3.8 4.1 0 5.4-.8-1.3 0-3.1 0-5.4ZM9.6 12c-2.3 0-4.1.8-5.4 0 1.3-.8 3.1 0 5.4 0ZM13.7 10.3c1.6-1.6 3.1-2.7 4.4-2.6-.1 1.3-1.2 2.8-2.8 4.4ZM13.7 13.7c1.6 1.6 2.7 3.1 2.6 4.4-1.3-.1-2.8-1.2-4.4-2.8ZM10.3 13.7c-1.6 1.6-3.1 2.7-4.4 2.6.1-1.3 1.2-2.8 2.8-4.4ZM10.3 10.3C8.7 8.7 7.6 7.2 7.7 5.9c1.3.1 2.8 1.2 4.4 2.8Z" /></svg>
@@ -8051,15 +8061,23 @@ function Gemeinschaft({ go, bindung }) {
   );
 
   return (
-    <div style={{ padding: "0 0 28px" }}>
+    <div style={{ padding: "26px 20px 28px" }}>
       {audioEl}
       <Eyebrow color={C.plum}>Von Frauen für Frauen</Eyebrow>
       <H size={30} style={{ marginBottom: 9, lineHeight: 1.18 }}>Was brauchst du gerade?</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.62, margin: "0 0 22px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.62, margin: "0 0 18px" }}>
         {gesamt > 0
           ? `${gesamt} Beiträge, geschenkt von Coachinnen. Frei für dich — ganz gleich, ob du eine Begleitung hast oder nicht.`
           : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen."}
       </p>
+
+      {/* Zwei Tueren standen nebeneinander, ohne voneinander zu wissen: hier
+          das, was Coachinnen schenken, dort das, was die Frauen einander
+          schreiben. Von hier geht es jetzt dorthin. */}
+      <div style={{ display: "flex", gap: 9, marginBottom: 24, flexWrap: "wrap" }}>
+        <Btn small ghost onClick={() => go("community")}><Ikon n="sprechblase" size={16} />Was Frauen schreiben</Btn>
+        <Btn small ghost onClick={() => go("coaching")}><Ikon n="herz" size={16} />Deine Begleitung</Btn>
+      </div>
 
       {vorhanden.length === 0 ? (
         <>
@@ -10852,7 +10870,7 @@ function PasswortNeu({ onFertig }) {
   );
 }
 
-const ROOTS = ["heute", "orakel", "coaching", "tagebuch", "mehr"];
+const ROOTS = ["heute", "orakel", "gemeinschaft", "tagebuch", "mehr"];
 const TITLES = { gemeinschaft: "Gemeinschaft", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
@@ -11149,7 +11167,14 @@ export default function IlhoApp() {
   const NAV = [
     { k: "heute", art: "heute", t: "Heute" },
     { k: "orakel", art: "orakel", t: "Orakel" },
-    { k: "coaching", art: "coaching", t: "Coaching", center: true },
+    /* Der mittlere Knopf ist der wichtigste der App — er steht groesser und
+       hoeher als die anderen. Dort stand bisher Coaching: etwas, das nur
+       die Frauen betrifft, die schon eine Begleitung haben. Die meisten
+       haben keine. Was alle betrifft, ist die Gemeinschaft, und genau
+       darauf ist das Jahr 2027 gebaut: Frauen unterstuetzen Frauen.
+       Coaching bleibt erreichbar — ueber Mehr und ueber jeden Beitrag,
+       an dem der Name einer Coachin steht. */
+    { k: "gemeinschaft", art: "gemeinschaft", t: "Gemeinschaft", center: true },
     { k: "tagebuch", art: "journal", t: "Journal" },
     { k: "mehr", art: "mehr", t: "Mehr" },
   ];
