@@ -5,7 +5,7 @@
 // Coaching-Apps uebernommen, nicht die eines Kopfbildes auf einer Webseite.
 // Der Unterschied liegt in vier Zahlen.
 //
-//   Bild      etwa 70 Prozent der Schirmhoehe, randlos bis in die Ecken,
+//   Bild      etwa 45 Prozent der Schirmhoehe (max. 400px), randlos bis in die Ecken,
 //             ohne abgerundete Kanten — eine Webseite rahmt ihr Bild ein,
 //             eine App laesst es den Schirm sein.
 //   Titel     rund ein Zehntel der Bildhoehe, linksbuendig in der unteren
@@ -54,7 +54,7 @@ export default function HeuteHero({ name = "", punkte = 0 }) {
 
       <div style={S.unten}>
         <h1 style={S.titel}>
-          {gruss}{name ? `, ${name}` : ""}.
+          {gruss}{name ? `, ${name.trim().split(/\s+/)[0]}` : ""}.
           <br />
           <span style={S.titelZwei}>Dein Ritual wartet.</span>
         </h1>
@@ -75,7 +75,7 @@ const S = {
   // Hoehe beim Scrollen nicht springen laesst.
   wrap: {
     position: "relative", overflow: "hidden",
-    height: "min(70dvh, 560px)", minHeight: 400,
+    height: "min(46dvh, 400px)", minHeight: 330,
     margin: "0 0 18px", borderRadius: 0,
   },
   video: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" },
@@ -97,22 +97,22 @@ const S = {
   },
 
   orb: {
-    position: "absolute", right: 20, top: "40%", width: 80, height: 80,
+    position: "absolute", right: 20, top: "24%", width: 62, height: 62,
     borderRadius: "50%", border: "none", cursor: "pointer",
     background: "radial-gradient(circle at 38% 32%, #f7dd96, #d2a349)",
-    color: "#4a3410", fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 600,
-    boxShadow: "0 0 44px rgba(217,169,78,.72), 0 10px 26px -10px rgba(0,0,0,.5)",
+    color: "#4a3410", fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 600,
+    boxShadow: "0 0 32px rgba(217,169,78,.72), 0 10px 26px -10px rgba(0,0,0,.5)",
   },
 
-  unten: { position: "absolute", bottom: 22, left: 20, right: 20 },
+  unten: { position: "absolute", bottom: 20, left: 20, right: 20 },
   titel: {
     fontFamily: "Georgia, serif", fontWeight: 400,
-    fontSize: "clamp(30px, 8.6vw, 44px)", lineHeight: 1.06, letterSpacing: "-0.025em",
+    fontSize: "clamp(26px, 7.2vw, 34px)", lineHeight: 1.08, letterSpacing: "-0.025em",
     color: "#FFFBF4", margin: 0, textShadow: "0 2px 20px rgba(0,0,0,.55)",
   },
   titelZwei: { color: "rgba(255,251,244,.82)" },
   knopf: {
-    marginTop: 18, width: "100%", minHeight: 54, border: "none", borderRadius: 27,
+    marginTop: 14, width: "100%", minHeight: 50, border: "none", borderRadius: 25,
     cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 600,
     color: "#3A2A18", background: "linear-gradient(135deg, #F3D28B, #D2A349)",
     boxShadow: "0 14px 30px -12px rgba(0,0,0,.65)",
