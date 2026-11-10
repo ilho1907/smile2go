@@ -13,8 +13,8 @@ Terminal (⌘+Boşluk → "Terminal"):
 
 ```bash
 cd ~/Downloads/smile2go-projekt
-git fetch origin claude/agency-agents-setup-ezcxn3
-git merge origin/claude/agency-agents-setup-ezcxn3
+git fetch origin claude/ajanlar-ve-proje-haritasi
+git merge origin/claude/ajanlar-ve-proje-haritasi
 ls .claude/agents | wc -l     # 230 yazmalı
 ```
 
