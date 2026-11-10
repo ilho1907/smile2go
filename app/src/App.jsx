@@ -4,6 +4,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
+import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, IlhoKennenlernen, IlhoWissen, usePassendeBeitraege } from "./IlhoAgent";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
 import { Ikon, Sym } from "./Ikon";
@@ -1469,8 +1470,23 @@ function journalKontext(entries) {
   return letzte.length ? `\n(Aus ihrem Journal, mit ihrer Erlaubnis — beziehe dich behutsam darauf, wenn es passt:\n${letzte.join("\n").slice(0, 1200)})` : "";
 }
 
-function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], prefs = {}, setPrefs }) {
+function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], prefs = {}, setPrefs, go }) {
   const [input, setInput] = useState("");
+  // Ihr persoenliches Profil bei ilho — liegt in prefs, also bei ihrem App-Zustand.
+  const profil = prefs.ilhoProfil || leeresProfil();
+  const setProfil = (p) => setPrefs && setPrefs({ ...prefs, ilhoProfil: p });
+  const [kennenOffen, setKennenOffen] = useState(false);
+  const [spaeter, setSpaeter] = useState(false);
+  const passend = usePassendeBeitraege(profil.fertig ? profil.themen : [], ladeGemeinschaft);
+  const kennenFertig = (p) => {
+    setProfil(p);
+    setKennenOffen(false);
+    (p.themen || []).forEach((id) => beduerfnisMerken(id, 3));
+    if (msgs.length === 0) {
+      const erstes = (p.themen || []).map((id) => BED[id]?.t).filter(Boolean)[0];
+      setMsgs([{ role: "assistant", content: `Danke${name ? `, ${name}` : ""}. Das behalte ich bei mir.${erstes ? ` „${erstes}“ — magst du mir erzählen, wie sich das gerade zeigt?` : " Womit magst du heute anfangen?"}` }]);
+    }
+  };
   const [busy, setBusy] = useState(false);
   const [grenzenOffen, setGrenzenOffen] = useState(false);
   // Sprechen statt tippen — das Textfeld bleibt, dies kommt daneben.
@@ -1519,8 +1535,11 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
       const ctx = energie ? `\n(Kontext: Die Nutzerin heißt ${name}, ihre heutige Energie: ${energie.t} ${energie.v}/10.)` : `\n(Kontext: Die Nutzerin heißt ${name}.)`;
       // Nur role/content an die KI — lokale Felder wie "bewertung" bleiben in der App.
       const gedaechtnis = prefs.ilhoJournal ? journalKontext(entries) : "";
-      const reply = await askLuma(next.map(({ role, content }) => ({ role, content })), ILHO_SYSTEM + ctx + gedaechtnis + twinTon);
-      setMsgs([...next, { role: "assistant", content: reply || "Ich bin hier. Erzähl mir mehr davon. 🤍" }]);
+      const roh = await askLuma(next.map(({ role, content }) => ({ role, content })), ILHO_SYSTEM + ctx + gedaechtnis + twinTon + agentKontext(profil, BEDUERFNISSE, passend));
+      const { text: reply, oeffne, merke } = verarbeiteAntwort(roh);
+      const gemerkt = merke && profil.fertig && profil.merken ? merke : null;
+      if (gemerkt) setProfil(notizDazu(profil, gemerkt));
+      setMsgs([...next, { role: "assistant", content: reply || "Ich bin hier. Erzähl mir mehr davon. 🤍", ...(oeffne && go ? { oeffne } : {}), ...(gemerkt ? { gemerkt } : {}) }]);
     } catch {
       setMsgs([...next, { role: "assistant", content: "Gerade kann ich dich nicht erreichen — versuch es gleich noch einmal." }]);
     }
@@ -1544,7 +1563,11 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
-        {msgs.length === 0 && (
+        {setPrefs && (kennenOffen || (msgs.length === 0 && !profil.fertig && !spaeter)) && (
+          <IlhoKennenlernen C={C} name={name} beduerfnisse={BEDUERFNISSE} profil={profil} onFertig={kennenFertig}
+            onSpaeter={() => { setSpaeter(true); setKennenOffen(false); }} />
+        )}
+        {msgs.length === 0 && !kennenOffen && (profil.fertig || spaeter || !setPrefs) && (
           <div style={{ textAlign: "center", padding: "30px 10px" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}><Sym e="✨" size={40} /></div>
             <H size={19} style={{ marginBottom: 8 }}>Hallo{name ? ` ${name}` : ""} 🤍</H>
@@ -1586,6 +1609,18 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
                 ))}
               </div>
             )}
+            {m.role === "assistant" && m.oeffne && go && ILHO_ZIELE[m.oeffne] && (
+              <div style={{ flexBasis: "100%", marginTop: 6 }}>
+                <button onClick={() => go(m.oeffne)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, color: C.plum, background: C.goldPale, border: `1px solid ${C.line}`, borderRadius: 18, padding: "9px 15px", cursor: "pointer" }}>{ILHO_ZIELE[m.oeffne]} →</button>
+              </div>
+            )}
+            {m.role === "assistant" && m.gemerkt && (
+              <div style={{ flexBasis: "100%", fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 5, lineHeight: 1.45 }}>
+                {(profil.notizen || []).some((n) => n.t === m.gemerkt) ? (
+                  <>ilho hat sich gemerkt: „{m.gemerkt}“ · <button onClick={() => setProfil({ ...profil, notizen: (profil.notizen || []).filter((n) => n.t !== m.gemerkt) })} style={{ border: "none", background: "none", color: C.plum, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, textDecoration: "underline" }}>Nicht merken</button></>
+                ) : <span style={{ opacity: 0.7 }}>Nicht gemerkt.</span>}
+              </div>
+            )}
             {m.role === "assistant" && m.bewertung === "schlecht" && !m.grund && (
               <div style={{ flexBasis: "100%", display: "flex", gap: 6, flexWrap: "wrap", margin: "6px 0 4px" }}>
                 <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, alignSelf: "center" }}>Was hat nicht gepasst?</span>
@@ -1601,7 +1636,10 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, padding: "4px 2px" }}>✨ ilho schreibt …</div>
         )}
         {grenzenOffen && msgs.length > 0 && <div style={{ marginTop: 8 }}><IlhoGrenzen /></div>}
-        {(grenzenOffen || msgs.length === 0) && setPrefs && (
+        {setPrefs && profil.fertig && !kennenOffen && (grenzenOffen || msgs.length === 0) && (
+          <div style={{ marginTop: 10 }}><IlhoWissen C={C} beduerfnisse={BEDUERFNISSE} profil={profil} setProfil={setProfil} onBearbeiten={() => setKennenOffen(true)} /></div>
+        )}
+        {(grenzenOffen || msgs.length === 0) && setPrefs && !kennenOffen && (profil.fertig || spaeter) && (
           <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 10, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.45, cursor: "pointer" }}>
             <input type="checkbox" checked={!!prefs.ilhoJournal} onChange={(e) => setPrefs({ ...prefs, ilhoJournal: e.target.checked })} style={{ marginTop: 2 }} />
             <span>ilho darf meine letzten 3 Journal-Einträge kennen, um sich auf frühere Gedanken zu beziehen. Jederzeit abschaltbar.</span>
@@ -1615,7 +1653,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
           <button onClick={() => setGrenzenOffen((o) => !o)} aria-expanded={grenzenOffen} style={{
             fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 600, color: C.plum,
             background: "none", border: "none", padding: "2px 2px", cursor: "pointer",
-          }}>{grenzenOffen ? "✕ Hinweis schließen" : "ⓘ Was ilho kann — und was nicht"}</button>
+          }}>{grenzenOffen ? "✕ Hinweis schließen" : "ⓘ Was ilho kann und über dich weiß"}</button>
         </div>
       )}
       <div style={{ padding: "10px 14px 12px", borderTop: msgs.length > 0 ? "none" : `1px solid ${C.line}`, background: C.cream, display: "flex", gap: 8 }}>
@@ -4897,7 +4935,6 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
         <Card style={{ marginTop: 8, marginBottom: 16, paddingTop: 4, paddingBottom: 4 }}>
           {[
             { t: "📖 App-Guide", fn: () => go("appguide") },
-            { t: "🧑‍⚕️ Coach-Ansicht (Demo)", fn: () => go("coachdash") },
             { t: "🤝 KI Coach Twin (Beta)", fn: () => go("coachtwin") },
             { t: "📝 Session-Notiz (Coach-Werkstatt)", fn: () => go("sessionnotiz") },
             { t: "🧠 Wissensarchiv (Coach-Werkstatt)", fn: () => go("wissen") },
@@ -9490,8 +9527,6 @@ function Flamme({ flamme, setFlamme, addPunkte }) {
   const heute = new Date().toDateString();
   const beigetragen = flamme?.letzterTag === heute;
   const tage = flamme?.tage || 0;
-  // Ehrliche Demo: Die Community-Zahl ist eine Vorschau, solange der Server-Teil nicht live ist.
-  const demoAndere = 11 + (new Date().getDate() % 7);
   const beitragen = () => {
     if (beigetragen) return;
     setFlamme({ letzterTag: heute, tage: tage + 1 });
@@ -9509,9 +9544,8 @@ function Flamme({ flamme, setFlamme, addPunkte }) {
         <div style={{ fontSize: 74, animation: "flicker 2.2s ease-in-out infinite", display: "inline-block", filter: "drop-shadow(0 0 18px rgba(230,190,108,.65))" }}><Sym e="🕯️" size={56} /></div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: "#F0E4D6", marginTop: 10 }}>Die Flamme brennt</div>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#C9A98C", marginTop: 6 }}>
-          Heute haben {demoAndere + (beigetragen ? 1 : 0)} Frauen ihr Licht dazugegeben{beigetragen ? " — du bist dabei. 🤍" : "."}
+          {beigetragen ? "Dein Licht brennt heute mit. 🤍" : "Gib heute dein Licht dazu."}
         </div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: "#9C8470", marginTop: 8 }}>Community-Vorschau — die Live-Zählung startet mit dem Server-Update.</div>
       </Card>
       <div style={{ marginTop: 14 }}>
         <Btn full onClick={beitragen} disabled={beigetragen}>
@@ -11411,7 +11445,7 @@ export default function IlhoApp() {
                         <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>✨ ilho · dein Begleiter</div>
                         <button onClick={() => setIlhoOpen(false)} style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "50%", width: 34, height: 34, fontSize: 16.5, cursor: "pointer", color: C.ink }}><Sym e="✕" size={15} /></button>
                       </div>
-                      <Luma name={anzeigeName} energie={energie} msgs={lumaMsgs} setMsgs={setLumaMsgs} twin={twin} twinTon={twinTon} entries={entries} prefs={prefs} setPrefs={setPrefs} />
+                      <Luma name={anzeigeName} energie={energie} msgs={lumaMsgs} setMsgs={setLumaMsgs} twin={twin} twinTon={twinTon} entries={entries} prefs={prefs} setPrefs={setPrefs} go={(k) => { setIlhoOpen(false); go(k); }} />
                     </div>
                   </>
                 )}
