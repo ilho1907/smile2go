@@ -41,6 +41,8 @@ geçer, uygulama çalışırken patlar. Riskli değişiklikten sonra tarayıcıd
 | `konfiguration/ilho.env.example` | Tüm ENV anahtarlarının şablonu |
 | `doku/` | Production guide |
 | `BACKLOG.md` | Bilinçli ertelenenler — "bu neden yok" sorusunun cevabı |
+| `ILHOVA-AGENT-ANBINDUNG.md` | Dış KI motoru ilhova agent'a bağlantı planı (ayrı repo, smile2go müşteri) |
+| `.claude/skills/` | 6 skill: memory-systems, self-improvement-loops, harness-engineering, evaluation, multi-agent-patterns, hosted-agents |
 | `*.md` (kök) | Strateji/hukuk/plan notları — kod değil |
 
 ## app/src — dosya haritası
