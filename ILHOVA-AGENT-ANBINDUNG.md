@@ -35,8 +35,9 @@ und keine Inhalte zu wiederholen.
 
 ## Skills in diesem Repo
 
-`.claude/skills/` enthält dieselben 6 Skills wie ilhova agent
+`.claude/skills/` enthält dieselben 10 Skills wie ilhova agent
 (memory-systems, self-improvement-loops, harness-engineering, evaluation,
+advanced-evaluation, filesystem-context, context-optimization, tool-design,
 multi-agent-patterns, hosted-agents; MIT, Quelle
 github.com/muratcankoylan/Agent-Skills-for-Context-Engineering), damit die
 Anbindung auf beiden Seiten nach denselben Prinzipien gebaut wird.
