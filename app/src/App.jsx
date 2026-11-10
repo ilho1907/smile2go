@@ -7581,7 +7581,7 @@ const BED = Object.fromEntries(BEDUERFNISSE.map((b) => [b.id, b]));
 
 const GEM_TOENE = {
   schlaflos:    ["#2B2440", "#44304F", "rgba(170,140,220,", "rgba(90,70,140,"],
-  kraftlos:     ["#6B4420", "#A4702F", "rgba(255,205,130,", "rgba(190,120,50,"],
+  kraftlos:     ["#5E3A5C", "#8E4C85", "rgba(255,190,230,", "rgba(180,90,160,"],
   unruhig:      ["#2F3A4A", "#49596B", "rgba(180,205,230,", "rgba(95,125,160,"],
   angst:        ["#263A3A", "#3E5A57", "rgba(170,215,205,", "rgba(85,135,125,"],
   liebeskummer: ["#6B2A40", "#A34A63", "rgba(255,180,200,", "rgba(190,80,115,"],
@@ -7681,6 +7681,9 @@ function Gemeinschaft({ go, bindung }) {
   const [herzen, setHerzen] = useState([]);
   const [wegFrage, setWegFrage] = useState(false);
   const [geteilt, setGeteilt] = useState("");
+  const [alle, setAlle] = useState([]);         // alle Beitraege — fuer Suche und "Zuletzt hinzugefuegt"
+  const [suche, setSuche] = useState("");
+  const [alleOffen, setAlleOffen] = useState(false);
 
   // Der Abspieler sitzt auf dieser Ebene, nicht im Detail — so laeuft das
   // Audio weiter, wenn sie zurueck in die Liste blaettert.
@@ -7695,7 +7698,7 @@ function Gemeinschaft({ go, bindung }) {
     zaehleGemeinschaft().then(setZahlen);
     meineBeduerfnisse().then((d) => setMeine(d || []));
   };
-  useEffect(() => { neuLaden(); ladeMeineHerzen().then(setHerzen); }, []);
+  useEffect(() => { neuLaden(); ladeMeineHerzen().then(setHerzen); ladeGemeinschaft(null, 200).then((d) => setAlle(d || [])); }, []);
 
   useEffect(() => {
     if (!bed) { setListe(null); return; }
@@ -8080,10 +8083,68 @@ function Gemeinschaft({ go, bindung }) {
   const naheliegend = vorhanden.filter((b) => (meinRang[b.id] || 0) >= 5).slice(0, 3);
   const weitere = vorhanden.filter((b) => !naheliegend.includes(b));
 
-  const Kachel = ({ b }) => (
+  // Suche: Titel, Einleitung, Name der Coachin und der Satz des Themas.
+  const wort = suche.trim().toLowerCase();
+  const treffer = wort
+    ? alle.filter((x) => [x.titel, x.einleitung, x.coach_name, BED[x.beduerfnis]?.t].some((t) => (t || "").toLowerCase().includes(wort))).slice(0, 30)
+    : [];
+  const neueste = [...alle].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")).slice(0, 6);
+
+  const Abschnitt = ({ children, rechts, alle: zeigeAlle, alleText = "Alle anzeigen ›" }) => (
+    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "0 0 12px" }}>
+      <span style={{ fontFamily: "Georgia, serif", fontSize: 21, color: C.espresso, letterSpacing: "-.015em", lineHeight: 1.2, minWidth: 0 }}>{children}</span>
+      {zeigeAlle ? (
+        <button onClick={zeigeAlle} style={{ flexShrink: 0, border: "none", background: "none", padding: "6px 0", cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, color: C.plum }}>{alleText}</button>
+      ) : rechts ? (
+        <span style={{ flexShrink: 0, fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600 }}>{rechts}</span>
+      ) : null}
+    </div>
+  );
+
+  // Regal: eine Reihe zum Wischen, die am Rand angeschnitten weiterlaeuft —
+  // so sieht sie, dass rechts noch mehr liegt.
+  const Regal = ({ children }) => (
+    <div className="gem-regal" style={{ display: "flex", gap: 14, overflowX: "auto", margin: "0 -20px 28px", padding: "2px 20px 6px", scrollSnapType: "x proximity", scrollPaddingLeft: 20, WebkitOverflowScrolling: "touch" }}>
+      {children}
+    </div>
+  );
+
+  // Cover: quadratisches Bild, darunter Titel und Coachin.
+  const Cover = ({ b }) => (
+    <button onClick={() => oeffnen(b)} style={{ flex: "0 0 auto", width: 132, padding: 0, border: "none", background: "none", textAlign: "left", cursor: "pointer", scrollSnapAlign: "start" }}>
+      <span style={{ position: "relative", display: "block", aspectRatio: "1 / 1", borderRadius: 14, overflow: "hidden", boxShadow: "0 12px 24px -16px rgba(120,60,110,.55)" }}>
+        <span style={{ position: "absolute", inset: 0 }}><GemBild ton={b.beduerfnis} saat={gemSaat(b.titel || String(b.id))} /></span>
+        <span style={{ position: "absolute", left: 8, bottom: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(255,253,254,.93)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12.5 }}>{GEM_TYP_ICON[b.typ]}</span>
+      </span>
+      <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, color: C.espresso, lineHeight: 1.3, marginTop: 9 }}>{b.titel}</span>
+      <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        {[b.coach_name, b.dauer_min ? `${b.dauer_min} Min` : null].filter(Boolean).join(" · ")}
+      </span>
+    </button>
+  );
+
+  const NeuKarte = ({ b, breit }) => (
+    <button onClick={() => oeffnen(b)} style={{
+      flex: "0 0 auto", width: breit ? "100%" : 234, display: "block", textAlign: "left", padding: 0, overflow: "hidden", cursor: "pointer",
+      border: `1px solid ${C.line}`, borderRadius: 17, background: C.card, boxShadow: "0 14px 28px -20px rgba(120,60,110,.5)",
+    }}>
+      <span style={{ position: "relative", display: "block", aspectRatio: breit ? "16 / 6" : "16 / 9" }}>
+        <span style={{ position: "absolute", inset: 0 }}><GemBild ton={b.beduerfnis} saat={gemSaat(b.titel || b.id)} /></span>
+        <span style={{ position: "absolute", left: 10, bottom: 9, width: 27, height: 27, borderRadius: "50%", background: "rgba(255,253,254,.93)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>{GEM_TYP_ICON[b.typ]}</span>
+      </span>
+      <span style={{ display: "block", padding: "11px 13px 13px" }}>
+        <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.28 }}>{b.titel}</span>
+        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 6, fontWeight: 600 }}>
+          {[b.coach_name, b.dauer_min ? `${b.dauer_min} Min` : null, BED[b.beduerfnis]?.t].filter(Boolean).join(" · ")}
+        </span>
+      </span>
+    </button>
+  );
+
+  const Kachel = ({ b, flach }) => (
     <button onClick={() => setBed(b.id)} style={{
       position: "relative", border: "none", padding: 0, borderRadius: 18, overflow: "hidden",
-      cursor: "pointer", aspectRatio: "4 / 3.4", background: C.beige, width: "100%",
+      cursor: "pointer", aspectRatio: flach ? "2 / 1" : "4 / 3.4", background: C.beige, width: "100%",
       boxShadow: "0 14px 30px -20px rgba(70,55,130,.5)", display: "block",
     }}>
       <span style={{ position: "absolute", inset: 0 }}><GemBild ton={b.id} saat={gemSaat(b.id)} /></span>
@@ -8100,8 +8161,9 @@ function Gemeinschaft({ go, bindung }) {
   return (
     <div style={{ padding: "26px 20px 28px" }}>
       {audioEl}
+<style>{`.gem-regal { scrollbar-width: none; } .gem-regal::-webkit-scrollbar { display: none; }`}</style>
       <Eyebrow color={C.plum}>Von Frauen für Frauen</Eyebrow>
-      <H size={30} style={{ marginBottom: 9, lineHeight: 1.18 }}>Was brauchst du gerade?</H>
+      <H size={30} style={{ marginBottom: 9, lineHeight: 1.18 }}>Community</H>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.62, margin: "0 0 18px" }}>
         {gesamt > 0
           ? `${gesamt} Beiträge, geschenkt von Coachinnen. Frei für dich — ganz gleich, ob du eine Begleitung hast oder nicht.`
@@ -8116,7 +8178,33 @@ function Gemeinschaft({ go, bindung }) {
         <Btn small ghost onClick={() => go("coaching")}><Ikon n="herz" size={16} />Deine Begleitung</Btn>
       </div>
 
-      {vorhanden.length === 0 ? (
+      {vorhanden.length > 0 && (
+        <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 14px", minHeight: 48, border: `1.5px solid ${C.line}`, borderRadius: 15, background: C.card, marginBottom: 22 }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.4" /><path d="m15.8 15.8 4.2 4.2" /></svg>
+          <input type="search" value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Thema, Coachin oder Wort suchen" autoComplete="off" aria-label="Community durchsuchen"
+            style={{ border: "none", background: "none", outline: "none", fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, width: "100%", padding: 0, minWidth: 0 }} />
+        </label>
+      )}
+
+      {vorhanden.length > 0 && alleOffen && !wort ? (
+        <>
+          <Abschnitt alle={() => setAlleOffen(false)} alleText="‹ Zurück">Alle Beiträge</Abschnitt>
+          <div style={{ display: "grid", gap: 12 }}>
+            {[...alle].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")).map((x) => <NeuKarte key={x.id} b={x} breit />)}
+          </div>
+          <MiniLeiste />
+        </>
+      ) : vorhanden.length > 0 && wort ? (
+        <>
+          <Abschnitt rechts={`${treffer.length} Treffer`}>Gefunden</Abschnitt>
+          {treffer.length === 0 ? (
+            <Card><p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>Dazu gibt es noch keinen Beitrag. Versuch ein anderes Wort — oder schau unten in die Themen.</p></Card>
+          ) : (
+            <div style={{ display: "grid", gap: 12 }}>{treffer.map((x) => <NeuKarte key={x.id} b={x} breit />)}</div>
+          )}
+          <MiniLeiste />
+        </>
+      ) : vorhanden.length === 0 ? (
         <>
           <Card style={{ marginBottom: 14 }}>
             <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.ink, lineHeight: 1.65, margin: 0 }}>
@@ -8139,23 +8227,31 @@ function Gemeinschaft({ go, bindung }) {
         </>
       ) : (
         <>
-          {naheliegend.length > 0 && (
+          {neueste.length > 0 && (
             <>
-              <Eyebrow color={C.gold}>Zuletzt bei dir</Eyebrow>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "9px 0 24px" }}>
-                {naheliegend.map((b) => <Kachel key={b.id} b={b} />)}
-              </div>
+              <Abschnitt alle={alle.length > neueste.length ? () => setAlleOffen(true) : null}>Zuletzt hinzugefügt</Abschnitt>
+              <Regal>{neueste.map((x) => <Cover key={x.id} b={x} />)}</Regal>
             </>
           )}
 
-          {weitere.length > 0 && (
-            <>
-              {naheliegend.length > 0 && <Eyebrow color={C.gold}>Alle Bereiche</Eyebrow>}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 9 }}>
-                {weitere.map((b) => <Kachel key={b.id} b={b} />)}
+          <Abschnitt>Themen</Abschnitt>
+          <Regal>
+            {[...naheliegend, ...weitere].map((x) => (
+              <div key={x.id} style={{ flex: "0 0 auto", width: 236, scrollSnapAlign: "start" }}><Kachel b={x} flach /></div>
+            ))}
+          </Regal>
+
+          {/* Ein Regal je Thema, das sie selbst gewaehlt hat — dann die uebrigen. */}
+          {[...naheliegend, ...weitere].slice(0, 4).map((t) => {
+            const reihe = alle.filter((x) => x.beduerfnis === t.id).slice(0, 8);
+            if (reihe.length < 2) return null;
+            return (
+              <div key={t.id}>
+                <Abschnitt alle={() => setBed(t.id)}>{t.t}</Abschnitt>
+                <Regal>{reihe.map((x) => <Cover key={x.id} b={x} />)}</Regal>
               </div>
-            </>
-          )}
+            );
+          })}
 
           <MiniLeiste />
 
