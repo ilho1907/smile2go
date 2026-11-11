@@ -8110,6 +8110,31 @@ function Gemeinschaft({ go, bindung }) {
     </div>
   ));
   const alleThemen = [...naheliegend, ...weitere, ...BEDUERFNISSE.filter((b) => !vorhanden.includes(b))];
+  // Der Weg nach draussen: der offene Teil, in dem Frauen einander schreiben,
+  // liegt auf der Website. Solange die Seite dort nicht fertig ist, fuehrt der
+  // zweite Knopf in denselben Teil hier in der App.
+  const PLATTFORM = "https://smile2go-8ab70d.webflow.io";
+  const MehrKarte = () => (
+    <Card style={{ marginTop: 6, marginBottom: 18, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
+      <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 7, lineHeight: 1.25 }}>Wenn du mehr möchtest</div>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, margin: "0 0 15px" }}>
+        In unserer Community schreiben Frauen einander, stellen Fragen und antworten. Du liest mit, so lange du magst, und schreibst erst, wenn du willst.
+      </p>
+      <a href={PLATTFORM} target="_blank" rel="noreferrer" style={{
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 48, borderRadius: 999, textDecoration: "none",
+        fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: "#FFF8FC", background: C.gold, boxShadow: "0 10px 22px -12px rgba(110,45,100,.7)",
+      }}>
+        Unsere Community
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4 10.5 13.5" /><path d="M19 14.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 19V6a1.5 1.5 0 0 1 1.5-1.5H9" /></svg>
+      </a>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, textAlign: "center", margin: "9px 0 4px" }}>öffnet unsere Seite im Browser</p>
+      <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 8 }}>
+        <Btn small ghost onClick={() => go("community")}><Ikon n="sprechblase" size={15} />Was Frauen hier schreiben</Btn>
+        <Btn small ghost onClick={() => go("coaching")}><Ikon n="herz" size={15} />Deine Begleitung</Btn>
+      </div>
+    </Card>
+  );
+
   const ThemenRegal = () => (
     <>
       <Abschnitt>Themen</Abschnitt>
@@ -8202,13 +8227,6 @@ function Gemeinschaft({ go, bindung }) {
           : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen."}
       </p>
 
-      {/* Zwei Tueren standen nebeneinander, ohne voneinander zu wissen: hier
-          das, was Coachinnen schenken, dort das, was die Frauen einander
-          schreiben. Von hier geht es jetzt dorthin. */}
-      <div style={{ display: "flex", gap: 9, marginBottom: 24, flexWrap: "wrap" }}>
-        <Btn small ghost onClick={() => go("community")}><Ikon n="sprechblase" size={16} />Was Frauen schreiben</Btn>
-        <Btn small ghost onClick={() => go("coaching")}><Ikon n="herz" size={16} />Deine Begleitung</Btn>
-      </div>
 
       {(
         <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 14px", minHeight: 48, border: `1.5px solid ${C.line}`, borderRadius: 15, background: C.card, marginBottom: 22 }}>
@@ -8240,6 +8258,7 @@ function Gemeinschaft({ go, bindung }) {
       ) : vorhanden.length === 0 ? (
         <>
           <ThemenRegal />
+          <MehrKarte />
           <AppRegale />
           <Card style={{ background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 7, lineHeight: 1.25 }}>
@@ -8278,21 +8297,12 @@ function Gemeinschaft({ go, bindung }) {
             );
           })}
 
+          <MehrKarte />
+
           <AppRegale />
 
           <MiniLeiste />
 
-          {!bindung?.coach_id && (
-            <Card style={{ marginTop: 24, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 6, lineHeight: 1.25 }}>
-                Und wenn du mehr möchtest?
-              </div>
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
-                Jeder Beitrag hier kommt von einer echten Frau. Wenn dir eine gut tut, siehst du
-                unter ihrem Namen, was sie sonst noch anbietet — ohne Druck, ohne Abo.
-              </p>
-            </Card>
-          )}
         </>
       )}
     </div>
