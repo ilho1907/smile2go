@@ -7587,14 +7587,14 @@ const GEM_TOENE = {
   liebeskummer: ["#6B2A40", "#A34A63", "rgba(255,180,200,", "rgba(190,80,115,"],
   trennung:     ["#4A2F3C", "#6E4857", "rgba(230,185,200,", "rgba(150,95,120,"],
   trauer:       ["#3C3540", "#5A4E58", "rgba(210,195,215,", "rgba(120,105,125,"],
-  wut:          ["#5A2A22", "#8C4330", "rgba(255,175,140,", "rgba(185,85,55,"],
+  wut:          ["#5A1F3A", "#8E2F55", "rgba(255,160,195,", "rgba(190,60,110,"],
   einsam:       ["#333E44", "#4F6168", "rgba(195,215,220,", "rgba(105,135,145,"],
   selbstzweifel:["#443050", "#654671", "rgba(220,190,235,", "rgba(135,100,160,"],
-  grenzen:      ["#7A3B24", "#B0603A", "rgba(255,190,150,", "rgba(200,110,70,"],
-  geld:         ["#3F4030", "#616349", "rgba(225,225,175,", "rgba(135,140,95,"],
+  grenzen:      ["#6E2E52", "#A8507E", "rgba(255,185,215,", "rgba(200,95,150,"],
+  geld:         ["#2E4440", "#4C6B66", "rgba(185,230,215,", "rgba(95,150,140,"],
   betrug:       ["#2E3A40", "#4A5A62", "rgba(170,200,215,", "rgba(90,120,135,"],
   neuanfang:    ["#2F4A33", "#4F7349", "rgba(190,225,170,", "rgba(100,150,95,"],
-  koerper:      ["#5A3A2E", "#866049", "rgba(245,205,175,", "rgba(170,115,80,"],
+  koerper:      ["#4E3456", "#7A5584", "rgba(230,200,240,", "rgba(150,110,170,"],
 };
 
 // Kleine, stabile Zahl aus einem Text — damit derselbe Beitrag immer
@@ -8088,6 +8088,38 @@ function Gemeinschaft({ go, bindung }) {
   const treffer = wort
     ? alle.filter((x) => [x.titel, x.einleitung, x.coach_name, BED[x.beduerfnis]?.t].some((t) => (t || "").toLowerCase().includes(wort))).slice(0, 30)
     : [];
+  const APP_TOENE = ["unruhig", "neuanfang", "schlaflos", "kraftlos", "einsam", "selbstzweifel", "trennung", "angst", "koerper"];
+  const appRegale = MEHR_GRUPPEN.filter((g) => ["Üben & Ankommen", "Seele & Rituale", "Wachsen & Spielen"].includes(g.g));
+  const appTreffer = wort
+    ? appRegale.flatMap((g) => g.items).filter((x) => [x.t, x.s].some((t) => (t || "").toLowerCase().includes(wort)))
+    : [];
+  const AppKarte = ({ x }) => (
+    <button onClick={() => go(x.tab)} style={{ flex: "0 0 auto", width: 132, padding: 0, border: "none", background: "none", textAlign: "left", cursor: "pointer", scrollSnapAlign: "start" }}>
+      <span style={{ position: "relative", display: "block", aspectRatio: "1 / 1", borderRadius: 14, overflow: "hidden", boxShadow: "0 12px 24px -16px rgba(120,60,110,.55)" }}>
+        <span style={{ position: "absolute", inset: 0 }}><GemBild ton={APP_TOENE[gemSaat(x.t) % APP_TOENE.length]} saat={gemSaat(x.tab)} /></span>
+        <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ width: 58, height: 58, borderRadius: "50%", background: "rgba(255,253,254,.92)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px -10px rgba(40,10,40,.6)" }}><Sym e={x.icon} size={28} /></span></span>
+      </span>
+      <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, color: C.espresso, lineHeight: 1.3, marginTop: 9 }}>{x.t}</span>
+      <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3, lineHeight: 1.35 }}>{x.s}</span>
+    </button>
+  );
+  const AppRegale = () => appRegale.map((g) => (
+    <div key={g.g}>
+      <Abschnitt>{g.g}</Abschnitt>
+      <Regal>{g.items.map((x) => <AppKarte key={x.tab} x={x} />)}</Regal>
+    </div>
+  ));
+  const alleThemen = [...naheliegend, ...weitere, ...BEDUERFNISSE.filter((b) => !vorhanden.includes(b))];
+  const ThemenRegal = () => (
+    <>
+      <Abschnitt>Themen</Abschnitt>
+      <Regal>
+        {alleThemen.map((x) => (
+          <div key={x.id} style={{ flex: "0 0 auto", width: 236, scrollSnapAlign: "start" }}><Kachel b={x} flach /></div>
+        ))}
+      </Regal>
+    </>
+  );
   const neueste = [...alle].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")).slice(0, 6);
 
   const Abschnitt = ({ children, rechts, alle: zeigeAlle, alleText = "Alle anzeigen ›" }) => (
@@ -8152,7 +8184,7 @@ function Gemeinschaft({ go, bindung }) {
       <span style={{ position: "absolute", inset: "auto 0 0 0", padding: "12px 13px", textAlign: "left" }}>
         <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 16, color: "#fff", lineHeight: 1.25 }}>{b.t}</span>
         <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: "rgba(255,255,255,.8)", marginTop: 4, fontWeight: 600 }}>
-          {zahlen[b.id]} {zahlen[b.id] === 1 ? "Beitrag" : "Beiträge"}
+          {zahlen[b.id] ? `${zahlen[b.id]} ${zahlen[b.id] === 1 ? "Beitrag" : "Beiträge"}` : "Die ersten Beiträge kommen"}
         </span>
       </span>
     </button>
@@ -8178,7 +8210,7 @@ function Gemeinschaft({ go, bindung }) {
         <Btn small ghost onClick={() => go("coaching")}><Ikon n="herz" size={16} />Deine Begleitung</Btn>
       </div>
 
-      {vorhanden.length > 0 && (
+      {(
         <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 14px", minHeight: 48, border: `1.5px solid ${C.line}`, borderRadius: 15, background: C.card, marginBottom: 22 }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.4" /><path d="m15.8 15.8 4.2 4.2" /></svg>
           <input type="search" value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Thema, Coachin oder Wort suchen" autoComplete="off" aria-label="Community durchsuchen"
@@ -8194,23 +8226,21 @@ function Gemeinschaft({ go, bindung }) {
           </div>
           <MiniLeiste />
         </>
-      ) : vorhanden.length > 0 && wort ? (
+      ) : wort ? (
         <>
-          <Abschnitt rechts={`${treffer.length} Treffer`}>Gefunden</Abschnitt>
-          {treffer.length === 0 ? (
-            <Card><p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>Dazu gibt es noch keinen Beitrag. Versuch ein anderes Wort — oder schau unten in die Themen.</p></Card>
-          ) : (
+          <Abschnitt rechts={`${treffer.length + appTreffer.length} Treffer`}>Gefunden</Abschnitt>
+          {appTreffer.length > 0 && <Regal>{appTreffer.map((x) => <AppKarte key={x.tab} x={x} />)}</Regal>}
+          {treffer.length === 0 && appTreffer.length === 0 ? (
+            <Card><p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>Dazu gibt es noch nichts. Versuch ein anderes Wort.</p></Card>
+          ) : treffer.length === 0 ? null : (
             <div style={{ display: "grid", gap: 12 }}>{treffer.map((x) => <NeuKarte key={x.id} b={x} breit />)}</div>
           )}
           <MiniLeiste />
         </>
       ) : vorhanden.length === 0 ? (
         <>
-          <Card style={{ marginBottom: 14 }}>
-            <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.ink, lineHeight: 1.65, margin: 0 }}>
-              Noch ist es still hier. Die ersten Coachinnen tragen gerade ihre Geschenke ein.
-            </p>
-          </Card>
+          <ThemenRegal />
+          <AppRegale />
           <Card style={{ background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 7, lineHeight: 1.25 }}>
               Kennst du eine Coachin?
@@ -8234,12 +8264,7 @@ function Gemeinschaft({ go, bindung }) {
             </>
           )}
 
-          <Abschnitt>Themen</Abschnitt>
-          <Regal>
-            {[...naheliegend, ...weitere].map((x) => (
-              <div key={x.id} style={{ flex: "0 0 auto", width: 236, scrollSnapAlign: "start" }}><Kachel b={x} flach /></div>
-            ))}
-          </Regal>
+          <ThemenRegal />
 
           {/* Ein Regal je Thema, das sie selbst gewaehlt hat — dann die uebrigen. */}
           {[...naheliegend, ...weitere].slice(0, 4).map((t) => {
@@ -8252,6 +8277,8 @@ function Gemeinschaft({ go, bindung }) {
               </div>
             );
           })}
+
+          <AppRegale />
 
           <MiniLeiste />
 
