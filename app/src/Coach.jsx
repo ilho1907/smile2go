@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
-import { brauchtZweitenFaktor, terminStatus, ladeKursFortschritt } from "./supabase";
+import { brauchtZweitenFaktor, terminStatus, ladeKursFortschritt, istCoachin } from "./supabase";
 import { alsPdf, alsCsv } from "./export";
 import {
   supabase,
@@ -1085,6 +1085,8 @@ export default function CoachPanel() {
   const [bereit, setBereit] = useState(false);
   const [mfaFaktor, setMfaFaktor] = useState(null);
   const [session, setSession] = useState(null);
+  // Der Coach-Bereich ist nur mit freigeschalteter Rolle (Coach-Code) offen.
+  const [istCoach, setIstCoach] = useState(null);
   const [profil, setProfil] = useState(null);
   const [klientinnen, setKlientinnen] = useState([]);
   const [ungelesen, setUngelesen] = useState({});
@@ -1106,7 +1108,11 @@ export default function CoachPanel() {
     const weiter = async (s) => {
       const f = s ? await brauchtZweitenFaktor().catch(() => null) : null;
       setMfaFaktor(f);
-      if (s && !f) alles();
+      if (s && !f) {
+        const c = await istCoachin().catch(() => false);
+        setIstCoach(c);
+        if (c) alles();
+      }
     };
     supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
@@ -1141,6 +1147,21 @@ export default function CoachPanel() {
         <div style={{ width: "100%", maxWidth: 380 }}><Card>
           <ZweiFaktorAbfrage C={C} faktorId={mfaFaktor} onOk={() => { setMfaFaktor(null); alles(); }} onAbbruch={() => supabase.auth.signOut()} />
         </Card></div>
+      </div>
+    );
+
+  if (istCoach === null) return <div style={{ minHeight: "100vh", background: C.cream }} />;
+  if (!istCoach)
+    return (
+      <div style={{ minHeight: "100vh", background: C.cream, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <Card style={{ maxWidth: 420 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso, marginBottom: 8 }}>Coach-Bereich noch nicht freigeschaltet</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: "0 0 14px" }}>
+            Den Coach-Bereich öffnest du mit deinem Coach-Code von smile2go. Gib ihn in der App
+            unter <b>Profil → Als Coachin arbeiten</b> ein.
+          </p>
+          <a href="/" style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.plum }}>← Zur App</a>
+        </Card>
       </div>
     );
 

@@ -713,6 +713,9 @@ export const adminSessions = () => adminRpc("admin_sessions").then((d) => d || [
 export const adminMeldungen = () => adminRpc("admin_meldungen").then((d) => d || []);
 export const adminMeldungErledigen = (postId, ausblenden) => adminRpc("admin_meldung_erledigen", { p_post: postId, p_ausblenden: ausblenden });
 export const adminSystem = () => adminRpc("admin_system");
+export const adminCoachCodes = () => adminRpc("admin_coach_codes").then((d) => d || []);
+export const adminCoachCodeErzeugen = (notiz, tage = null) => adminRpc("admin_coach_code_erzeugen", { p_notiz: notiz || null, p_tage: tage });
+export const adminCoachCodeUmschalten = (code, aktiv) => adminRpc("admin_coach_code_umschalten", { p_code: code, p_aktiv: aktiv });
 
 export async function ladeKiQualitaet(tage = 90) {
   const { data, error } = await supabase.rpc("ki_qualitaet", { p_tage: tage });
@@ -1036,7 +1039,7 @@ export async function gemeinschaftAudioHochladen(datei) {
 export async function gemeinschaftAnlegen(felder) {
   const user = await nutzerin();
   if (!supabase || !user) return null;
-  await supabase.from("coaches").upsert({ id: user.id, ist_coach: true }, { onConflict: "id" });
+  // Die coaches-Zeile gibt es schon: ohne freigeschaltete Rolle (Coach-Code) kommt sie hier nicht hin.
   const { data, error } = await supabase
     .from("gemeinschaft").insert({ ...felder, coach_id: user.id }).select().single();
   if (error) { console.warn("gemeinschaftAnlegen:", error.message); return null; }
@@ -1072,12 +1075,40 @@ export async function coachRolleSetzen(an, name = null) {
   return true;
 }
 
+// ── Coach-Codes ─────────────────────────────────────────────────────────────
+// Coachin wird man nur mit einem Code von smile2go (Admin-Dashboard). Die
+// Datenbank laesst ist_coach = true nur ueber coach_code_einloesen zu.
+
+// Fuer das Registrierformular — dort gibt es noch keine Sitzung.
+export async function coachCodePruefen(code) {
+  if (!code?.trim()) return false;
+  if (!supabase) return true; // Prototyp-Modus: ohne Backend gibt es nichts zu pruefen
+  const { data, error } = await supabase.rpc("coach_code_pruefen", { p_code: code });
+  if (error) { console.warn("coachCodePruefen:", error.message); return false; }
+  return data === true;
+}
+
+// Gibt "ok", "schon_coach" oder "ungueltig" zurueck.
+export async function coachCodeEinloesen(code) {
+  if (!code?.trim()) return "ungueltig";
+  if (!supabase) return "ok";
+  const { data, error } = await supabase.rpc("coach_code_einloesen", { p_code: code });
+  if (error) { console.warn("coachCodeEinloesen:", error.message); return "ungueltig"; }
+  return data || "ungueltig";
+}
+
 // Bei der Registrierung gewaehlte Rolle wird lokal gemerkt, weil die
 // coaches-Zeile erst nach der E-Mail-Bestaetigung geschrieben werden kann.
+// Der Coach-Code wird mitgemerkt und nach der Bestaetigung eingeloest.
 const ROLLE_SCHLUESSEL = "s2g_rolle_wunsch";
+const CODE_SCHLUESSEL = "s2g_coach_code";
 
-export function rolleWunschMerken(rolle) {
-  try { localStorage.setItem(ROLLE_SCHLUESSEL, rolle); } catch {}
+export function rolleWunschMerken(rolle, code = "") {
+  try {
+    localStorage.setItem(ROLLE_SCHLUESSEL, rolle);
+    if (rolle === "coach" && code) localStorage.setItem(CODE_SCHLUESSEL, code.trim().toUpperCase());
+    else localStorage.removeItem(CODE_SCHLUESSEL);
+  } catch {}
 }
 
 // Holt den gemerkten Wunsch nach, sobald es eine Sitzung gibt. Gibt zurueck,
@@ -1089,10 +1120,14 @@ export async function rolleAbgleichen() {
   try { wunsch = localStorage.getItem(ROLLE_SCHLUESSEL); } catch {}
   const metaRolle = user.user_metadata?.rolle || null;
   if (wunsch === "coach" || metaRolle === "coach") {
+    let code = null;
+    try { code = localStorage.getItem(CODE_SCHLUESSEL); } catch {}
+    code = code || user.user_metadata?.coach_code || null;
     const schon = await istCoachin();
-    if (!schon) await coachRolleSetzen(true);
-    try { localStorage.removeItem(ROLLE_SCHLUESSEL); } catch {}
-    return true;
+    // Ohne gueltigen Code bleibt sie Klientin — im Profil kann sie den Code nachreichen.
+    const ok = schon || (code && ["ok", "schon_coach"].includes(await coachCodeEinloesen(code)));
+    try { localStorage.removeItem(ROLLE_SCHLUESSEL); localStorage.removeItem(CODE_SCHLUESSEL); } catch {}
+    return !!ok;
   }
   try { if (wunsch) localStorage.removeItem(ROLLE_SCHLUESSEL); } catch {}
   return await istCoachin();

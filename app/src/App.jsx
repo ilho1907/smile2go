@@ -22,7 +22,7 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   ladeCoachBeitraege, ladeCoachProfil, merkeEinladung, ladeTwinMeinerCoachin,
   ladeMaterialien, ladeAngebote, ladeKursModule, ladeKursFortschritt,
   modulErledigt, modulZurueck, stelleAnfrage,
-  rolleWunschMerken, rolleAbgleichen, coachRolleSetzen,
+  rolleWunschMerken, rolleAbgleichen, coachRolleSetzen, coachCodePruefen, coachCodeEinloesen,
   ladeGemeinschaft, zaehleGemeinschaft, gemeinschaftDateiUrl, gemeinschaftGesehen,
   gemeinschaftHerz, ladeMeineHerzen, beduerfnisMerken, beduerfnisVergessen,
   meineBeduerfnisse } from "./supabase";
@@ -923,6 +923,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [rolle, setRolle] = useState(startRolle);
+  const [coachCode, setCoachCode] = useState("");
 
   const echterBackend = !!supabase;
 
@@ -962,10 +963,17 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
     if (!email.includes("@")) return setErr("Bitte gib eine gültige E-Mail-Adresse ein.");
     if (pw.length < 8) return setErr("Dein Passwort braucht mindestens 8 Zeichen.");
     if (mode === "register" && !dsgvo) return setErr("Bitte stimme der Datenschutzerklärung zu.");
+    if (mode === "register" && rolle === "coach") {
+      if (!coachCode.trim()) return setErr("Bitte gib deinen Coach-Code ein. Du hast ihn von smile2go bekommen.");
+      setBusy(true);
+      const gueltig = await coachCodePruefen(coachCode);
+      setBusy(false);
+      if (!gueltig) return setErr("Dieser Coach-Code ist nicht gültig oder wurde schon benutzt. Bitte prüf ihn noch einmal oder melde dich beim smile2go-Team.");
+    }
 
     // Prototyp-Modus (kein Supabase konfiguriert): altes Simulationsverhalten, unverändert.
     if (!echterBackend) {
-      if (mode === "register") { rolleWunschMerken(rolle); return setOptin(true); }
+      if (mode === "register") { rolleWunschMerken(rolle, coachCode); return setOptin(true); }
       onLogin(email);
       return;
     }
@@ -974,10 +982,10 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
     setBusy(true);
     try {
       if (mode === "register") {
-        rolleWunschMerken(rolle);
+        rolleWunschMerken(rolle, coachCode);
         const { data, error } = await supabase.auth.signUp({
           email, password: pw,
-          options: { data: { geburtsdatum: geburt, ilho_aktiv: ilhoOn, rolle } },
+          options: { data: { geburtsdatum: geburt, ilho_aktiv: ilhoOn, rolle, ...(rolle === "coach" ? { coach_code: coachCode.trim().toUpperCase() } : {}) } },
         });
         if (error) { setErr(error.message); setBusy(false); return; }
         if (data?.session) {
@@ -1110,10 +1118,18 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
             })}
           </div>
           {rolle === "coach" && (
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, marginTop: 9, opacity: .85 }}>
-              Du bekommst zusätzlich deinen Coach-Bereich: Klientinnen, Nachrichten, Termine,
-              Material und dein öffentliches Profil. Die App selbst kannst du weiterhin ganz normal nutzen.
-            </p>
+            <>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, marginTop: 9, opacity: .85 }}>
+                Du bekommst zusätzlich deinen Coach-Bereich: Klientinnen, Nachrichten, Termine,
+                Material und dein öffentliches Profil. Die App selbst kannst du weiterhin ganz normal nutzen.
+              </p>
+              <label htmlFor="s2g-coach-code" style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, margin: "10px 0 6px" }}>
+                Dein Coach-Code <span style={{ color: C.plum }}>· von smile2go</span>
+              </label>
+              <input id="s2g-coach-code" value={coachCode} onChange={(e) => setCoachCode(e.target.value.toUpperCase())}
+                placeholder="COACH-XXXX-XXXX" autoCapitalize="characters" autoComplete="off" spellCheck={false}
+                style={{ ...input, paddingLeft: 16, letterSpacing: 1.5, fontFamily: "ui-monospace, Menlo, monospace" }} />
+            </>
           )}
         </div>
       )}
@@ -4867,14 +4883,11 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
         ) : (
           <Card style={{ marginTop: 8, marginBottom: 16 }}>
             <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
-              Begleitest du selbst Frauen? Dann schalten wir dir deinen eigenen Coach-Bereich frei —
-              mit Klientinnenliste, Nachrichten, Terminen und deinem öffentlichen Profil.
-              Deine eigene App bleibt genau so, wie sie ist.
+              Begleitest du selbst Frauen? Mit deinem Coach-Code von smile2go schalten wir dir
+              deinen eigenen Coach-Bereich frei — mit Klientinnenliste, Nachrichten, Terminen und
+              deinem öffentlichen Profil. Deine eigene App bleibt genau so, wie sie ist.
             </p>
-            <Btn small ghost onClick={async () => {
-              const ok = await coachRolleSetzen(true, alias || null);
-              if (ok && setIstCoach) setIstCoach(true);
-            }}>Ich bin Coachin — Bereich freischalten</Btn>
+            <CoachCodeFreischalten alias={alias} onFrei={() => setIstCoach && setIstCoach(true)} />
           </Card>
         )}
 
@@ -4983,6 +4996,41 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
         <Btn full ghost onClick={onLogout}>Abmelden</Btn>
       </div>
     </div>
+  );
+}
+
+/* ── Coach-Bereich freischalten: nur mit Coach-Code von smile2go ── */
+
+function CoachCodeFreischalten({ alias, onFrei }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [fehler, setFehler] = useState("");
+  const einloesen = async () => {
+    setFehler("");
+    if (!code.trim()) return setFehler("Bitte gib deinen Coach-Code ein.");
+    setBusy(true);
+    const r = await coachCodeEinloesen(code);
+    if (r === "ok" || r === "schon_coach") {
+      if (alias) await coachRolleSetzen(true, alias);
+      onFrei();
+    } else {
+      setFehler("Dieser Code ist nicht gültig oder wurde schon benutzt. Den Coach-Code bekommst du vom smile2go-Team.");
+    }
+    setBusy(false);
+  };
+  return (
+    <>
+      <label htmlFor="s2g-coach-code-profil" style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginBottom: 6 }}>
+        Dein Coach-Code <span style={{ color: C.plum }}>· von smile2go</span>
+      </label>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <input id="s2g-coach-code-profil" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="COACH-XXXX-XXXX" autoCapitalize="characters" autoComplete="off" spellCheck={false}
+          style={{ flex: "1 1 180px", minHeight: 46, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, background: "#fff", color: C.espresso, fontSize: 15.5, letterSpacing: 1.5, fontFamily: "ui-monospace, Menlo, monospace", outline: "none" }} />
+        <Btn small ghost onClick={einloesen}>{busy ? "Prüfe …" : "Freischalten"}</Btn>
+      </div>
+      {fehler && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, lineHeight: 1.5, margin: "8px 0 0" }}>{fehler}</p>}
+    </>
   );
 }
 
