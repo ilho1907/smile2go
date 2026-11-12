@@ -9,6 +9,45 @@ Kullanıcıyla iletişim Türkçe, kod ve arayüz Almanca (bkz. `CLAUDE.md`).
 
 ---
 
+## ★ Coach-Codes & Coach-Menü  ·  12.11.2026  ·  DEVAM EDİYOR  ·  öncelik: ilk
+
+**Karar (ilho):** Koçlar ayrı uygulama değil, aynı uygulamayı kullanır. Kayıtta
+"Ich bin Coachin" + smile2go'nun verdiği **kod** → menüde/profilde ek seçenekler
+açılır (sosyal medya, klientin analizi …), Community sayfasında da. Kodlar
+bizim sistemden (Admin) çıkar, kim/ne zaman kullandı takip edilir. Koç kodu
+ayrı dosyalarda tutulsun (`app/src/coach/`), ileride ayrı koç uygulaması
+yapılabilsin. Shop: uygulamada (Lichtpunkte ile) ve Community'de ayrı sayfa.
+Uygulama zorlanırsa bir düğmeyle Community platformuna geçilsin.
+
+**Yapıldı (main'de, canlı):**
+- PR #2 — `backend/supabase/migrations/20261112_coach_codes.sql`: `coach_codes`
+  tablosu, `coach_code_pruefen`, `coach_code_einloesen`, `admin_coach_code_*`,
+  `coaches` üzerinde trigger (ist_coach yalnız kodla). Lokal Postgres'te test edildi.
+- Kayıt formunda kod alanı, Profil'de kod alanı, `#coach` paneli yalnız koçlara,
+  Admin'de "🔑 Coach-Codes" sekmesi.
+- PR #3 — Geçiş: migration Supabase'de yokken sabit kod **C-02** kabul edilir
+  (`supabase.js` → `FESTER_COACH_CODE`). Migration çalışınca otomatik sunucu kontrolü.
+
+**AÇIK — sıradaki adımlar:**
+1. **Migration Supabase'de çalıştırılmadı** (oturumda Supabase bağlantısı yoktu).
+   SQL Editor'da `20261112_coach_codes.sql` çalıştır, test kodu ekle:
+   `INSERT INTO coach_codes (code, notiz) VALUES ('C-02','Test ilho') ON CONFLICT DO NOTHING;`
+   Sonra `FESTER_COACH_CODE` geçişini `supabase.js`'ten kaldır.
+2. ilho'nun testi: ilhamsavran@web.de ile giriş → Profil → "Als Coachin arbeiten"
+   → C-02 → "Zum Coach-Bereich" görünmeli. (17:20'de ilk deneme eski sürümle
+   başarısız oldu; düzeltme sonra yayına çıktı — sonucu ilho'ya sor.)
+3. **Koç menüsü:** koçta ek menü/profil seçenekleri; "Mehr" içindeki dağınık koç
+   araçları (Werkstatt, Recherche, SessionIntelligenz, SessionArchiv, StimmProfil,
+   CoachTwinInterview, CoachDashboard, Office) tek yerde. Yeni kod `app/src/coach/`.
+   Önce tasarım önizlemesi göster, ilho onaylasın.
+4. Community'de koç seçenekleri.
+5. Shop: uygulamada Lichtpunkte ile, Community'de ayrı sayfa.
+6. Community platformuna geçiş düğmesi.
+
+Çalışma kuralı: `claude/*` dalı → PR → ilho onaylayınca merge (Vercel otomatik yayınlar).
+
+---
+
 ## 0. Bu dalı `main`'e al  ·  BEKLİYOR  ·  öncelik: ilk
 
 Dal: `claude/ajanlar-ve-proje-haritasi` (GitHub'a push edilmiş).
