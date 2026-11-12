@@ -4,6 +4,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
+import Gefuehlskompass, { GefuehlsKarte } from "./Gefuehlskompass";
 import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, IlhoKennenlernen, IlhoWissen, usePassendeBeitraege } from "./IlhoAgent";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
@@ -1292,6 +1293,19 @@ const TILE_KATALOG = {
   mail: { icon: "📧", t: "Nachrichten", s: "Dein Postfach öffnen", mail: true },
 };
 
+// Begruessung oben auf "Heute" — steht direkt unter dem Energie-Kompass,
+// darunter folgt der Gefuehlskompass.
+function HeuteKopf({ go }) {
+  // Die Begruessung steht schon gross im Bild oben — hier nur die Ueberleitung
+  // zu dem, was ilho vorbereitet hat, und der Weg in "Mein Bereich".
+  return (
+    <div style={{ padding: "4px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
+      <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.sage }}>ilho hat deinen Tag vorbereitet</div>
+      <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 42, height: 42, flexShrink: 0, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", color: C.gold, display: "flex", alignItems: "center", justifyContent: "center" }}><Ikon n="person" size={20} /></button>
+    </div>
+  );
+}
+
 function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs, setPrefs, ch369, meinZeichen, openPunkte, drawn, horo, entries, setJournalSec, twinTon = "" }) {
   // Nur eine heute gezogene Karte gilt als gezogen — sonst wartet sie wieder.
   const heutigeKarte = drawn && (!drawn.tag || drawn.tag === new Date().toDateString()) ? drawn : null;
@@ -1331,19 +1345,6 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
 
   return (
     <div style={{ padding: "26px 20px 20px" }}>
-      {/* ilho-Kopfzeile */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 20 }}>
-        <div style={{ flex: 1 }}>
-          {/* Die eine kleine Zeile ueber der Begruessung ist der Auftakt des
-              Bildschirms — darunter steht deshalb kein zweites, drittes und
-              viertes Etikett mehr in Grossbuchstaben. */}
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.sage, marginBottom: 3 }}>ilho hat deinen Tag vorbereitet</div>
-          <H size={26} style={{ marginBottom: 4 }}>{gruss}{name ? `, ${name}` : ""}</H>
-        </div>
-        <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 46, height: 46, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", fontSize: 22, color: C.gold, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(58,42,34,.1)", overflow: "hidden", padding: 0 }}>{prefs?.avatar ? <img src={prefs.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Ikon n="person" size={22} />}</button>
-      </div>
-
-
       {/* ilho bereitet vor — die Tageskarte gehört aber nicht in diese Liste:
           die zieht die Nutzerin selbst. Deshalb steht sie getrennt darunter. */}
       {/* Gestrichelt liest sich wie ein Platzhalter, der noch nicht fertig
@@ -11073,7 +11074,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "gemeinschaft", "tagebuch", "mehr"];
-const TITLES = { gemeinschaft: "Gemeinschaft", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { gefuehle: "Gefühlskompass", gemeinschaft: "Gemeinschaft", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -11101,6 +11102,7 @@ export default function IlhoApp() {
   const [entries, setEntries] = useState([]);
   const [drawn, setDrawn] = useState(null);
   const [energie, setEnergie] = useState(null);
+  const [gefStart, setGefStart] = useState("start");
   const [lumaMsgs, setLumaMsgs] = useState([]);
   const [ritual, setRitual] = useState({});
   const [ch369, setCh369] = useState({ tag: 1, archiv: {}, letzterTag: null, fertig: false });
@@ -11489,7 +11491,7 @@ export default function IlhoApp() {
                   ist rund 72 Pixel hoch und sitzt ueber der Leiste; die Zahlen
                   hier sind sein Platz plus der Rand, auf dem die Leiste steht. */}
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 208 : 136, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries} /><GefuehlsKarte C={C} daten={prefs.gefuehle} onCheckin={() => { setGefStart("checkin"); go("gefuehle"); }} onOeffnen={() => { setGefStart("start"); go("gefuehle"); }} /><HeuteKopf go={go} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "gemeinschaft" && <Gemeinschaft go={go} bindung={bindung} />}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} bindung={bindung} aufBindung={aufBindung} /></>}
@@ -11525,6 +11527,7 @@ export default function IlhoApp() {
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
               {tab === "archetyp" && <ArchetypTest archetyp={archetyp} setArchetyp={setArchetyp} addPunkte={addPunkte} />}
               {tab === "flamme" && <Flamme flamme={flamme} setFlamme={setFlamme} addPunkte={addPunkte} />}
+              {tab === "gefuehle" && <Gefuehlskompass key={gefStart} C={C} daten={prefs.gefuehle} setDaten={(g) => setPrefs((p) => ({ ...p, gefuehle: g }))} energie={energie} start={gefStart} onZurueck={back} />}
               {tab === "metime" && <MeTime metime={metime} setMetime={setMetime} addPunkte={addPunkte} />}
               {tab === "qigong" && <Qigong qigong={qigong} setQigong={setQigong} addPunkte={addPunkte} />}
               {tab === "achtsamkeit" && <Achtsamkeit achtsam={achtsam} setAchtsam={setAchtsam} addPunkte={addPunkte} name={anzeigeName} />}
