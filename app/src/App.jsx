@@ -1301,7 +1301,6 @@ function HeuteKopf({ go }) {
   return (
     <div style={{ padding: "4px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
       <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.sage }}>ilho hat deinen Tag vorbereitet</div>
-      <button onClick={() => go("profil")} aria-label="Mein Bereich" style={{ width: 42, height: 42, flexShrink: 0, borderRadius: "50%", border: `2px solid ${C.gold}`, background: C.card, cursor: "pointer", color: C.gold, display: "flex", alignItems: "center", justifyContent: "center" }}><Ikon n="person" size={20} /></button>
     </div>
   );
 }
@@ -11491,7 +11490,7 @@ export default function IlhoApp() {
                   ist rund 72 Pixel hoch und sitzt ueber der Leiste; die Zahlen
                   hier sind sein Platz plus der Rand, auf dem die Leiste steht. */}
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 208 : 136, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} /><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries} /><GefuehlsKarte C={C} daten={prefs.gefuehle} onCheckin={() => { setGefStart("checkin"); go("gefuehle"); }} onOeffnen={() => { setGefStart("start"); go("gefuehle"); }} /><HeuteKopf go={go} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} onProfil={() => go("profil")} /><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries} /><GefuehlsKarte C={C} daten={prefs.gefuehle} onCheckin={() => { setGefStart("checkin"); go("gefuehle"); }} onOeffnen={() => { setGefStart("start"); go("gefuehle"); }} /><HeuteKopf go={go} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "gemeinschaft" && <Gemeinschaft go={go} bindung={bindung} />}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} bindung={bindung} aufBindung={aufBindung} /></>}
