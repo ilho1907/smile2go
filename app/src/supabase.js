@@ -1079,12 +1079,23 @@ export async function coachRolleSetzen(an, name = null) {
 // Coachin wird man nur mit einem Code von smile2go (Admin-Dashboard). Die
 // Datenbank laesst ist_coach = true nur ueber coach_code_einloesen zu.
 
+// Uebergang: solange die Migration 20261112_coach_codes.sql noch nicht in
+// Supabase laeuft, gibt es die Code-Funktionen dort nicht. Dann gilt ein fester
+// Code. Sobald die Migration laeuft, wird automatisch serverseitig geprueft.
+const FESTER_COACH_CODE = "C-02";
+const normCode = (c) => String(c || "").trim().toUpperCase();
+const funktionFehlt = (error) =>
+  error?.code === "PGRST202" || /could not find the function|does not exist/i.test(error?.message || "");
+
 // Fuer das Registrierformular — dort gibt es noch keine Sitzung.
 export async function coachCodePruefen(code) {
   if (!code?.trim()) return false;
   if (!supabase) return true; // Prototyp-Modus: ohne Backend gibt es nichts zu pruefen
   const { data, error } = await supabase.rpc("coach_code_pruefen", { p_code: code });
-  if (error) { console.warn("coachCodePruefen:", error.message); return false; }
+  if (error) {
+    if (funktionFehlt(error)) return normCode(code) === FESTER_COACH_CODE;
+    console.warn("coachCodePruefen:", error.message); return false;
+  }
   return data === true;
 }
 
@@ -1093,7 +1104,11 @@ export async function coachCodeEinloesen(code) {
   if (!code?.trim()) return "ungueltig";
   if (!supabase) return "ok";
   const { data, error } = await supabase.rpc("coach_code_einloesen", { p_code: code });
-  if (error) { console.warn("coachCodeEinloesen:", error.message); return "ungueltig"; }
+  if (error) {
+    if (funktionFehlt(error) && normCode(code) === FESTER_COACH_CODE)
+      return (await coachRolleSetzen(true)) ? "ok" : "ungueltig";
+    console.warn("coachCodeEinloesen:", error.message); return "ungueltig";
+  }
   return data || "ungueltig";
 }
 
