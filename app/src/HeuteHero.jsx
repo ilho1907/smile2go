@@ -18,8 +18,9 @@
 // er das Gesicht im Bild und streitet mit dem Knopf um die Aufmerksamkeit.
 import { useRef, useState } from "react";
 import { VIDEO, IMG, PALETTE as P } from "./media";
+import { Ikon } from "./Ikon";
 
-export default function HeuteHero({ name = "", punkte = 0 }) {
+export default function HeuteHero({ name = "", punkte = 0, onProfil }) {
   const [atmet, setAtmet] = useState(false);
   const rahmen = useRef(null);
   const stunde = new Date().getHours();
@@ -39,7 +40,14 @@ export default function HeuteHero({ name = "", punkte = 0 }) {
 
       <div style={S.oben}>
         <span style={S.marke}>smile2go</span>
-        <span style={S.lp}>🔥 {punkte} Lichtpunkte</span>
+        <div style={S.rechts}>
+          <span style={S.lp}>🔥 {punkte} Lichtpunkte</span>
+          {onProfil && (
+            <button onClick={onProfil} aria-label="Mein Bereich" style={S.profil}>
+              <Ikon n="person" size={19} />
+            </button>
+          )}
+        </div>
       </div>
 
       <button
@@ -94,6 +102,14 @@ const S = {
     background: "rgba(255,253,249,.92)", color: P.gold, fontFamily: "system-ui, sans-serif",
     fontSize: 12, fontWeight: 600, padding: "6px 13px", borderRadius: 20,
     boxShadow: "0 4px 14px -4px rgba(0,0,0,.35)",
+  },
+  // "Mein Bereich" ganz oben rechts — dort, wo man das eigene Profil sucht.
+  rechts: { display: "flex", alignItems: "center", gap: 10 },
+  profil: {
+    width: 40, height: 40, flexShrink: 0, borderRadius: "50%", cursor: "pointer",
+    border: "1.5px solid rgba(255,253,249,.95)", background: "rgba(255,253,249,.92)",
+    color: P.gold, display: "flex", alignItems: "center", justifyContent: "center",
+    boxShadow: "0 4px 14px -4px rgba(0,0,0,.35)", padding: 0,
   },
 
   orb: {
