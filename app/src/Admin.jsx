@@ -3,6 +3,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContai
 import {
   supabase, istAdmin, ladeKiQualitaet, ladeFairnessChecks, starteFairnessCheck,
   adminKennzahlen, adminWachstum, adminMitglieder, adminSessions, adminMeldungen, adminMeldungErledigen, adminSystem, cloudErreichbar,
+  adminCoachCodes, adminCoachCodeErzeugen, adminCoachCodeUmschalten,
 } from "./supabase";
 import { ILHO_SYSTEM } from "./ilho";
 import { alsCsv } from "./export";
@@ -81,7 +82,7 @@ export default function AdminDashboard() {
     );
 
   const TABS = [
-    ["uebersicht", "📊 Übersicht"], ["mitglieder", "👥 Mitglieder"], ["sessions", "📅 Sessions"],
+    ["uebersicht", "📊 Übersicht"], ["mitglieder", "👥 Mitglieder"], ["coachcodes", "🔑 Coach-Codes"], ["sessions", "📅 Sessions"],
     ["moderation", `🛡️ Moderation${k?.meldungen_offen ? ` (${k.meldungen_offen})` : ""}`],
     ["fairness", "⚖️ KI & Fairness"], ["system", "🛠️ System"],
   ];
@@ -108,6 +109,7 @@ export default function AdminDashboard() {
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 20px 60px" }}>
         {tab === "uebersicht" && <Uebersicht k={k} wachstum={wachstum} />}
         {tab === "mitglieder" && <Mitglieder />}
+        {tab === "coachcodes" && <CoachCodes />}
         {tab === "sessions" && <Sessions />}
         {tab === "moderation" && <Moderation />}
         {tab === "fairness" && <KiFairness />}
@@ -217,6 +219,92 @@ function Sessions() {
       ))}
       <Hinweis>Erinnerungen gehen automatisch 24 h und 1 h vorher per Push an Klientin und Coachin.</Hinweis>
     </Card>
+  );
+}
+
+// Coachin wird man nur mit einem Code von hier. Jeder Code ist einmal
+// einloesbar — die Liste zeigt, wer ihn wann benutzt hat.
+function CoachCodes() {
+  const [liste, setListe] = useState(null);
+  const [notiz, setNotiz] = useState("");
+  const [tage, setTage] = useState("");
+  const [neu, setNeu] = useState("");
+  const [kopiert, setKopiert] = useState("");
+  const laden = () => adminCoachCodes().then(setListe);
+  useEffect(() => { laden(); }, []);
+
+  const erzeugen = async () => {
+    const t = parseInt(tage, 10);
+    const code = await adminCoachCodeErzeugen(notiz.trim(), Number.isFinite(t) && t > 0 ? t : null);
+    if (code) { setNeu(code); setNotiz(""); setTage(""); laden(); }
+  };
+  const kopieren = async (code) => {
+    try { await navigator.clipboard.writeText(code); setKopiert(code); setTimeout(() => setKopiert(""), 1500); } catch {}
+  };
+  const status = (c) => c.eingeloest_am ? ["eingelöst", "ok"]
+    : !c.aktiv ? ["gesperrt", "rot"]
+    : c.gueltig_bis && new Date(c.gueltig_bis) < new Date() ? ["abgelaufen", "warn"]
+    : ["offen", "gold"];
+  const feld = { ...sys, fontSize: 14.5, padding: "10px 12px", borderRadius: 12, border: `1px solid ${C.line}`, background: "#fff", color: C.espresso, outline: "none", minHeight: 42 };
+  const knopf = { ...sys, fontSize: 13.5, fontWeight: 700, padding: "9px 14px", borderRadius: 16, cursor: "pointer", minHeight: 40 };
+
+  return (
+    <>
+      <Card style={{ marginBottom: 16 }}>
+        <Eyebrow color={C.plum}>🔑 Neuen Coach-Code erzeugen</Eyebrow>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input value={notiz} onChange={(e) => setNotiz(e.target.value)} placeholder="Für wen? z. B. Cindy · Trauer" style={{ ...feld, flex: "2 1 220px" }} />
+          <input value={tage} onChange={(e) => setTage(e.target.value.replace(/\D/g, ""))} placeholder="gültig Tage (leer = unbegrenzt)" inputMode="numeric" style={{ ...feld, flex: "1 1 160px" }} />
+          <button onClick={erzeugen} style={{ ...knopf, border: "none", background: C.gold, color: "#fff" }}>Code erzeugen</button>
+        </div>
+        {neu && (
+          <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 19, letterSpacing: 1.5, color: C.espresso, background: C.goldPale, borderRadius: 10, padding: "8px 12px" }}>{neu}</span>
+            <button onClick={() => kopieren(neu)} style={{ ...knopf, border: `1.5px solid ${C.line}`, background: C.card, color: C.espresso }}>{kopiert === neu ? "Kopiert ✓" : "Kopieren"}</button>
+          </div>
+        )}
+        <Hinweis>Jeder Code ist genau einmal einlösbar — bei der Registrierung („Ich bin Coachin“) oder später im Profil.</Hinweis>
+      </Card>
+
+      <Card>
+        <Eyebrow color={C.plum}>Alle Coach-Codes</Eyebrow>
+        {liste === null ? <Leer>Lade …</Leer> : liste.length === 0 ? <Leer>Noch keine Codes.</Leer> : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", ...sys, fontSize: 13.5 }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: C.ink }}>
+                  {["Code", "Für", "Erstellt", "Status", "Eingelöst von", ""].map((h) => <th key={h} style={{ padding: "8px 6px", borderBottom: `1px solid ${C.line}`, fontWeight: 600 }}>{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {liste.map((c) => {
+                  const [st, ton] = status(c);
+                  return (
+                    <tr key={c.code} style={{ borderBottom: `1px solid ${C.line}` }}>
+                      <td style={{ padding: "9px 6px", fontFamily: "ui-monospace, Menlo, monospace", color: C.espresso, whiteSpace: "nowrap" }}>
+                        <button onClick={() => kopieren(c.code)} title="Kopieren" style={{ all: "unset", cursor: "pointer" }}>{c.code}{kopiert === c.code ? " ✓" : ""}</button>
+                      </td>
+                      <td style={{ padding: "9px 6px", color: C.espresso }}>{c.notiz || "–"}</td>
+                      <td style={{ padding: "9px 6px", color: C.ink, whiteSpace: "nowrap" }}>{datum(c.erstellt_am)}{c.gueltig_bis ? ` · bis ${datum(c.gueltig_bis)}` : ""}</td>
+                      <td style={{ padding: "9px 6px" }}><Badge tone={ton}>{st}</Badge></td>
+                      <td style={{ padding: "9px 6px", color: C.espresso }}>{c.eingeloest_email ? `${c.eingeloest_email} · ${datum(c.eingeloest_am)}` : "–"}</td>
+                      <td style={{ padding: "9px 6px", textAlign: "right" }}>
+                        {!c.eingeloest_am && (
+                          <button onClick={async () => { await adminCoachCodeUmschalten(c.code, !c.aktiv); laden(); }}
+                            style={{ ...knopf, fontSize: 12.5, padding: "6px 11px", minHeight: 32, border: `1.5px solid ${C.line}`, background: C.card, color: c.aktiv ? C.rot : C.espresso }}>
+                            {c.aktiv ? "Sperren" : "Freigeben"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </>
   );
 }
 
