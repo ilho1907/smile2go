@@ -7672,6 +7672,44 @@ const gemZeit = (s) => {
   return `${m}:${String(r).padStart(2, "0")}`;
 };
 
+// Laufendes Regal: zieht von selbst langsam weiter, laesst sich aber jederzeit
+// mit dem Finger wischen. Beruehrt sie es, haelt es an und laeuft erst ein paar
+// Sekunden spaeter weiter. Der Inhalt steht zweimal da, damit es ohne Sprung
+// endlos weiterlaeuft; die Kopie ist fuer Vorlesewerkzeuge unsichtbar.
+// Wer weniger Bewegung eingestellt hat, bekommt ein ruhiges Regal zum Wischen.
+function LaufRegal({ children, laeuft = true, zurueck = false, tempo = 0.4 }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !laeuft) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0, wieder = 0, pause = false, pos = null;
+    const halt = () => { pause = true; clearTimeout(wieder); };
+    const weiter = () => { clearTimeout(wieder); wieder = setTimeout(() => { pause = false; pos = null; }, 2500); };
+    const ev = [["pointerdown", halt], ["touchstart", halt], ["mouseenter", halt], ["pointerup", weiter], ["touchend", weiter], ["mouseleave", weiter], ["focusin", halt], ["focusout", weiter]];
+    ev.forEach(([n, f]) => el.addEventListener(n, f, { passive: true }));
+    const schritt = () => {
+      const halb = el.scrollWidth / 2;
+      if (!pause && halb > el.clientWidth) {
+        if (pos === null || Math.abs(el.scrollLeft - pos) > 3) pos = el.scrollLeft;
+        pos += zurueck ? -tempo : tempo;
+        if (pos >= halb) pos -= halb;
+        if (pos <= 0) pos += halb;
+        el.scrollLeft = pos;
+      }
+      raf = requestAnimationFrame(schritt);
+    };
+    if (zurueck) el.scrollLeft = el.scrollWidth / 2;
+    raf = requestAnimationFrame(schritt);
+    return () => { cancelAnimationFrame(raf); clearTimeout(wieder); ev.forEach(([n, f]) => el.removeEventListener(n, f)); };
+  }, [laeuft, zurueck, tempo]);
+  return (
+    <div ref={ref} className="gem-regal" style={{ display: "flex", gap: 14, overflowX: "auto", margin: "0 -20px 28px", padding: "2px 20px 6px", WebkitOverflowScrolling: "touch" }}>
+      {children(false)}{laeuft && children(true)}
+    </div>
+  );
+}
+
 function Gemeinschaft({ go, bindung }) {
   const [bed, setBed] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -8093,8 +8131,8 @@ function Gemeinschaft({ go, bindung }) {
   const appTreffer = wort
     ? appRegale.flatMap((g) => g.items).filter((x) => [x.t, x.s].some((t) => (t || "").toLowerCase().includes(wort)))
     : [];
-  const AppKarte = ({ x }) => (
-    <button onClick={() => go(x.tab)} style={{ flex: "0 0 auto", width: 132, padding: 0, border: "none", background: "none", textAlign: "left", cursor: "pointer", scrollSnapAlign: "start" }}>
+  const AppKarte = ({ x, kopie }) => (
+    <button onClick={() => go(x.tab)} aria-hidden={kopie || undefined} tabIndex={kopie ? -1 : undefined} style={{ flex: "0 0 auto", width: 132, padding: 0, border: "none", background: "none", textAlign: "left", cursor: "pointer", scrollSnapAlign: "start" }}>
       <span style={{ position: "relative", display: "block", aspectRatio: "1 / 1", borderRadius: 14, overflow: "hidden", boxShadow: "0 12px 24px -16px rgba(120,60,110,.55)" }}>
         <span style={{ position: "absolute", inset: 0 }}><GemBild ton={APP_TOENE[gemSaat(x.t) % APP_TOENE.length]} saat={gemSaat(x.tab)} /></span>
         <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ width: 58, height: 58, borderRadius: "50%", background: "rgba(255,253,254,.92)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px -10px rgba(40,10,40,.6)" }}><Sym e={x.icon} size={28} /></span></span>
@@ -8103,33 +8141,30 @@ function Gemeinschaft({ go, bindung }) {
       <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3, lineHeight: 1.35 }}>{x.s}</span>
     </button>
   );
-  const AppRegale = () => appRegale.map((g) => (
+  const AppRegale = () => appRegale.map((g, i) => (
     <div key={g.g}>
       <Abschnitt>{g.g}</Abschnitt>
-      <Regal>{g.items.map((x) => <AppKarte key={x.tab} x={x} />)}</Regal>
+      <LaufRegal laeuft={g.items.length >= 3} zurueck={i % 2 === 0} tempo={0.3 + i * 0.05}>
+        {(k) => g.items.map((x) => <AppKarte key={x.tab + (k ? "k" : "")} x={x} kopie={k} />)}
+      </LaufRegal>
     </div>
   ));
   const alleThemen = [...naheliegend, ...weitere, ...BEDUERFNISSE.filter((b) => !vorhanden.includes(b))];
-  // Der Weg nach draussen: der offene Teil, in dem Frauen einander schreiben,
-  // liegt auf der Website. Solange die Seite dort nicht fertig ist, fuehrt der
-  // zweite Knopf in denselben Teil hier in der App.
-  const PLATTFORM = "https://smile2go-8ab70d.webflow.io";
+  // "Unsere Community": der offene Teil, in dem Frauen einander schreiben —
+  // er oeffnet sich hier in der App, nicht auf der Website.
   const MehrKarte = () => (
-    <Card style={{ marginTop: 6, marginBottom: 18, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
+    <Card style={{ marginTop: 6, marginBottom: 26, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
       <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 7, lineHeight: 1.25 }}>Wenn du mehr möchtest</div>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, margin: "0 0 15px" }}>
         In unserer Community schreiben Frauen einander, stellen Fragen und antworten. Du liest mit, so lange du magst, und schreibst erst, wenn du willst.
       </p>
-      <a href={PLATTFORM} target="_blank" rel="noreferrer" style={{
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 48, borderRadius: 999, textDecoration: "none",
+      <button onClick={() => go("community")} style={{
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", minHeight: 48, borderRadius: 999, border: "none", cursor: "pointer",
         fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: "#FFF8FC", background: C.gold, boxShadow: "0 10px 22px -12px rgba(110,45,100,.7)",
       }}>
-        Unsere Community
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4 10.5 13.5" /><path d="M19 14.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 19V6a1.5 1.5 0 0 1 1.5-1.5H9" /></svg>
-      </a>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, textAlign: "center", margin: "9px 0 4px" }}>öffnet unsere Seite im Browser</p>
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 8 }}>
-        <Btn small ghost onClick={() => go("community")}><Ikon n="sprechblase" size={15} />Was Frauen hier schreiben</Btn>
+        <Ikon n="sprechblase" size={16} />Unsere Community
+      </button>
+      <div style={{ display: "flex", justifyContent: "center", marginTop: 10 }}>
         <Btn small ghost onClick={() => go("coaching")}><Ikon n="herz" size={15} />Deine Begleitung</Btn>
       </div>
     </Card>
@@ -8138,11 +8173,11 @@ function Gemeinschaft({ go, bindung }) {
   const ThemenRegal = () => (
     <>
       <Abschnitt>Themen</Abschnitt>
-      <Regal>
-        {alleThemen.map((x) => (
-          <div key={x.id} style={{ flex: "0 0 auto", width: 236, scrollSnapAlign: "start" }}><Kachel b={x} flach /></div>
+      <LaufRegal zurueck tempo={0.35}>
+        {(k) => alleThemen.map((x) => (
+          <div key={x.id + (k ? "k" : "")} style={{ flex: "0 0 auto", width: 236 }}><Kachel b={x} flach kopie={k} /></div>
         ))}
-      </Regal>
+      </LaufRegal>
     </>
   );
   const neueste = [...alle].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")).slice(0, 6);
@@ -8167,8 +8202,8 @@ function Gemeinschaft({ go, bindung }) {
   );
 
   // Cover: quadratisches Bild, darunter Titel und Coachin.
-  const Cover = ({ b }) => (
-    <button onClick={() => oeffnen(b)} style={{ flex: "0 0 auto", width: 132, padding: 0, border: "none", background: "none", textAlign: "left", cursor: "pointer", scrollSnapAlign: "start" }}>
+  const Cover = ({ b, kopie }) => (
+    <button onClick={() => oeffnen(b)} aria-hidden={kopie || undefined} tabIndex={kopie ? -1 : undefined} style={{ flex: "0 0 auto", width: 132, padding: 0, border: "none", background: "none", textAlign: "left", cursor: "pointer", scrollSnapAlign: "start" }}>
       <span style={{ position: "relative", display: "block", aspectRatio: "1 / 1", borderRadius: 14, overflow: "hidden", boxShadow: "0 12px 24px -16px rgba(120,60,110,.55)" }}>
         <span style={{ position: "absolute", inset: 0 }}><GemBild ton={b.beduerfnis} saat={gemSaat(b.titel || String(b.id))} /></span>
         <span style={{ position: "absolute", left: 8, bottom: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(255,253,254,.93)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12.5 }}>{GEM_TYP_ICON[b.typ]}</span>
@@ -8198,8 +8233,8 @@ function Gemeinschaft({ go, bindung }) {
     </button>
   );
 
-  const Kachel = ({ b, flach }) => (
-    <button onClick={() => setBed(b.id)} style={{
+  const Kachel = ({ b, flach, kopie }) => (
+    <button onClick={() => setBed(b.id)} aria-hidden={kopie || undefined} tabIndex={kopie ? -1 : undefined} style={{
       position: "relative", border: "none", padding: 0, borderRadius: 18, overflow: "hidden",
       cursor: "pointer", aspectRatio: flach ? "2 / 1" : "4 / 3.4", background: C.beige, width: "100%",
       boxShadow: "0 14px 30px -20px rgba(70,55,130,.5)", display: "block",
@@ -8279,7 +8314,7 @@ function Gemeinschaft({ go, bindung }) {
           {neueste.length > 0 && (
             <>
               <Abschnitt alle={alle.length > neueste.length ? () => setAlleOffen(true) : null}>Zuletzt hinzugefügt</Abschnitt>
-              <Regal>{neueste.map((x) => <Cover key={x.id} b={x} />)}</Regal>
+              <LaufRegal laeuft={neueste.length >= 3} tempo={0.45}>{(k) => neueste.map((x) => <Cover key={x.id + (k ? "k" : "")} b={x} kopie={k} />)}</LaufRegal>
             </>
           )}
 
@@ -8292,7 +8327,7 @@ function Gemeinschaft({ go, bindung }) {
             return (
               <div key={t.id}>
                 <Abschnitt alle={() => setBed(t.id)}>{t.t}</Abschnitt>
-                <Regal>{reihe.map((x) => <Cover key={x.id} b={x} />)}</Regal>
+                <LaufRegal laeuft={reihe.length >= 3} zurueck={(t.id.length % 2) === 0} tempo={0.35}>{(k) => reihe.map((x) => <Cover key={x.id + (k ? "k" : "")} b={x} kopie={k} />)}</LaufRegal>
               </div>
             );
           })}
@@ -11512,7 +11547,9 @@ export default function IlhoApp() {
               padding: "8px 4px calc(14px + env(safe-area-inset-bottom, 0px))", zIndex: 10,
             }}>
               {NAV.map((n) => {
-                const active = tab === n.k || (n.k === "mehr" && isSub);
+                // Ein Unterbildschirm gehoert zu dem Reiter, von dem aus sie ihn geoeffnet hat.
+                const herkunft = isSub ? ([...stack].reverse().find((x) => ROOTS.includes(x)) || "mehr") : null;
+                const active = tab === n.k || (isSub && n.k === herkunft);
                 if (n.center)
                   return (
                     <button key={n.k} onClick={() => goRoot(n.k)} style={{
