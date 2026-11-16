@@ -13,7 +13,11 @@
   --s2g-shadow-hover: 0 22px 40px -22px rgba(120, 60, 110, 0.38), 0 3px 8px -2px rgba(120, 60, 110, 0.1);
 }
 
-html, body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: hidden; }
+html, body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+/* Seitliches Ueberlaufen nur am html abschneiden. Stehen html UND body auf
+   overflow-x: hidden, wird body zu einem eigenen Scroll-Container — dann
+   scrollt am Desktop teils das Falsche. Die Shell schneidet selbst (clip). */
+html { overflow-x: hidden; }
 * { -webkit-tap-highlight-color: transparent; }
 
 /* ── Schrift: system-ui → Inter, Georgia → Fraunces ── */
