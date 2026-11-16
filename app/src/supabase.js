@@ -919,14 +919,26 @@ export async function ladeGemeinschaft(beduerfnis = null, limit = 40) {
   if (!supabase) return [];
   let q = supabase
     .from("gemeinschaft")
-    .select("id, coach_id, titel, einleitung, typ, beduerfnis, dauer_min, datei_pfad, extern_url, text, aufrufe, herzen, anteil_schnitt, anteil_anzahl, created_at, coaches(name, kurzprofil)")
+    .select("id, coach_id, titel, einleitung, typ, beduerfnis, dauer_min, datei_pfad, extern_url, text, aufrufe, herzen, anteil_schnitt, anteil_anzahl, created_at, coaches(name, kurzprofil, schwerpunkte, website, instagram)")
     .eq("freigegeben", true);
   if (beduerfnis) q = q.eq("beduerfnis", beduerfnis);
   const { data, error } = await q
     .order("anteil_schnitt", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(limit);
-  if (error) { console.warn("ladeGemeinschaft:", error.message); return []; }
+  if (error) {
+    console.warn("ladeGemeinschaft:", error.message);
+    // Sicherheitsnetz: fehlt eine der Profil-Spalten, kommt die Liste trotzdem
+    // — dann nur mit Name und Kurzprofil der Coachin.
+    let q2 = supabase
+      .from("gemeinschaft")
+      .select("id, coach_id, titel, einleitung, typ, beduerfnis, dauer_min, datei_pfad, extern_url, text, aufrufe, herzen, anteil_schnitt, anteil_anzahl, created_at, coaches(name, kurzprofil)")
+      .eq("freigegeben", true);
+    if (beduerfnis) q2 = q2.eq("beduerfnis", beduerfnis);
+    const zweit = await q2.order("anteil_schnitt", { ascending: false }).order("created_at", { ascending: false }).limit(limit);
+    if (zweit.error) return [];
+    return (zweit.data || []).map((b) => ({ ...b, coach_name: b.coaches?.name || null }));
+  }
   return (data || []).map((b) => ({ ...b, coach_name: b.coaches?.name || null }));
 }
 

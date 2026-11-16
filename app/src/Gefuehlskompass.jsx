@@ -122,7 +122,7 @@ export function GefuehlsKarte({ C, daten, onCheckin, onOeffnen }) {
   const letzte = heutige[heutige.length - 1];
   const nachfrage = d.sessions.find((s) => !s.followupDone && s.followupAt && s.followupAt <= Date.now());
   return (
-    <div style={{ padding: "0 20px", marginBottom: 18 }}>
+    <div style={{ padding: "0 20px", marginBottom: 32 }}>
       <Kasten C={C} style={{ padding: 18, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
         <Etikett C={C}>Gefühlskompass</Etikett>
         <Titel C={C} kursiv="gerade?">Wie fühlst du dich</Titel>

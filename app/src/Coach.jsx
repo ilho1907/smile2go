@@ -800,7 +800,7 @@ function GemeinschaftCoach({ onGeaendert }) {
 
       {liste.length > 0 && (
         <>
-          <Eyebrow color={C.plum}>Deine Beiträge in der Gemeinschaft</Eyebrow>
+          <Eyebrow color={C.plum}>Deine Beiträge in der Community</Eyebrow>
           <div style={{ display: "grid", gap: 10, marginTop: 8, marginBottom: 16 }}>
             {liste.map((b) => (
               <Card key={b.id}>
@@ -1166,7 +1166,7 @@ export default function CoachPanel() {
     );
 
   const TABS = [
-    ["gemeinschaft", `Gemeinschaft${gemAnzahl === 0 ? " ●" : ""}`],
+    ["gemeinschaft", `Community${gemAnzahl === 0 ? " ●" : ""}`],
     ["klientinnen", "Klientinnen"],
     ["nachrichten", `Nachrichten${Object.values(ungelesen).reduce((a, b) => a + b, 0) ? ` (${Object.values(ungelesen).reduce((a, b) => a + b, 0)})` : ""}`],
     ["termine", "Termine"],
