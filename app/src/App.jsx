@@ -11632,7 +11632,7 @@ export default function IlhoApp() {
                       color: "#fff", animation: "glowPulse 2.6s ease-in-out infinite",
                     }}>
                       <NavIcon art={n.art} hell />
-                      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 8.5, fontWeight: 700, marginTop: 1 }}>{n.t}</span>
+                      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "-0.02em", marginTop: 1 }}>{n.t}</span>
                     </button>
                   );
                 return (
