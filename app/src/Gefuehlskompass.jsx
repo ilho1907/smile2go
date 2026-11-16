@@ -114,6 +114,22 @@ function GefuehlsMarke({ C, e }) {
   return <span style={{ fontFamily: sys, fontSize: 12.5, padding: "4px 10px", borderRadius: 999, background: q ? q.bg : C.goldPale, color: C.espresso }}>{e.label}{e.intensity != null ? ` · ${e.intensity}` : ""}</span>;
 }
 
+/* ── Stand fuer die Zeile auf "Heute" ─────────────────────────── */
+// "Heute" zeigt den Gefuehlskompass als eine Zeile unter der Energie-Skala.
+// Hier steht nur, was diese Zeile wissen muss.
+export function gefuehlsStand(daten) {
+  const d = daten || leereGefuehle();
+  const heute = new Date().toDateString();
+  const heutige = (d.checkins || []).filter((c) => new Date(c.createdAt).toDateString() === heute);
+  const letzte = heutige[heutige.length - 1] || null;
+  const nachfrage = !!(d.sessions || []).find((s) => !s.followupDone && s.followupAt && s.followupAt <= Date.now());
+  return {
+    nachfrage,
+    um: letzte ? fmtTime(letzte.createdAt) : null,
+    worte: letzte ? (letzte.emotions || []).map((e) => e.label).filter(Boolean).join(", ") : "",
+  };
+}
+
 /* ── Karte auf "Heute" ────────────────────────────────────────── */
 export function GefuehlsKarte({ C, daten, onCheckin, onOeffnen }) {
   const d = daten || leereGefuehle();

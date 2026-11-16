@@ -4,7 +4,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
-import Gefuehlskompass, { GefuehlsKarte } from "./Gefuehlskompass";
+import Gefuehlskompass, { gefuehlsStand } from "./Gefuehlskompass";
 import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, IlhoKennenlernen, IlhoWissen, usePassendeBeitraege } from "./IlhoAgent";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
@@ -650,6 +650,43 @@ const AbschnittTitel = ({ children, unter, style }) => (
   </div>
 );
 
+/* Eine Zeile auf "Heute": Zeichen, Titel, eine leise Unterzeile. Antippbar
+   ist sie ein Knopf, sonst nur Text. Aus dieser einen Form sind alle drei
+   Bloecke gebaut — darum sieht die Seite aus einem Guss aus. */
+const HeuteZeile = ({ ikon, sym, titel, unter, onClick, style }) => {
+  const inhalt = (
+    <>
+      <span style={{ flex: "0 0 auto", marginTop: 2, color: C.gold, display: "inline-flex" }}>
+        {ikon ? <Ikon n={ikon} size={19} /> : <Sym e={sym} size={19} />}
+      </span>
+      <span style={{ flex: 1, minWidth: 0, display: "block" }}>
+        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, lineHeight: 1.35, color: C.espresso }}>{titel}</span>
+        {unter && <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13, lineHeight: 1.5, color: C.ink, marginTop: 3, fontVariantNumeric: "tabular-nums" }}>{unter}</span>}
+      </span>
+    </>
+  );
+  const stil = { display: "flex", gap: 13, alignItems: "flex-start", width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, margin: 0, ...style };
+  return onClick
+    ? <button onClick={onClick} style={{ ...stil, cursor: "pointer" }}>{inhalt}</button>
+    : <div style={stil}>{inhalt}</div>;
+};
+
+/* Der Gefuehlskompass auf "Heute": keine eigene Karte mehr, sondern eine Zeile
+   im Feld des Energie-Kompass, direkt unter den Zahlen. */
+const GefuehlsZeileHeute = ({ daten, onCheckin, onOeffnen }) => {
+  const st = gefuehlsStand(daten);
+  return (
+    <HeuteZeile
+      ikon="herz"
+      titel="Wie fühlst du dich gerade?"
+      unter={st.nachfrage ? "Eine kurze Nachfrage zu deiner Übung wartet auf dich."
+        : st.um ? `Zuletzt um ${st.um}${st.worte ? `: ${st.worte}` : ""}`
+        : "Gefühl benennen, eine kleine Übung — unter einer Minute."}
+      onClick={st.nachfrage || st.um ? onOeffnen : onCheckin}
+    />
+  );
+};
+
 const DUNKEL_TON = {
   wald:    { flaeche: "linear-gradient(168deg, #2A3C2E 0%, #1C2A21 100%)", schrift: "#E8F0E4", leise: "rgba(232,240,228,.70)", zeichen: "#C7D9A8", schatten: "rgba(14,26,16,.75)" },
   tinte:   { flaeche: "linear-gradient(168deg, #22354F 0%, #16243A 100%)", schrift: "#E3EBF5", leise: "rgba(227,235,245,.70)", zeichen: "#9DC2E8", schatten: "rgba(8,18,34,.75)" },
@@ -1195,7 +1232,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
 
 /* ── Energie-Kompass ── */
 
-function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries }) {
+function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries, children }) {
   const [impuls, setImpuls] = useState("");
   const [busy, setBusy] = useState(false);
   const heuteStr = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" });
@@ -1237,8 +1274,8 @@ function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries })
   return (
     <div style={{ marginBottom: 32 }}>
       <AbschnittTitel unter="ilho richtet den Tag danach aus.">Wie ist deine Energie heute?</AbschnittTitel>
-      <Dunkel style={{ padding: 20 }}>
-      <div style={{ display: "flex", gap: 5 }}>
+      <Dunkel style={{ padding: 22 }}>
+      <div style={{ display: "flex", gap: 6 }}>
         {ENERGIE.map((x) => {
           const active = energie?.v === x.v;
           return (
@@ -1266,6 +1303,9 @@ function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries })
         <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, lineHeight: 1.55, marginTop: 12 }}>
           {impuls}
         </p>
+      )}
+      {children && (
+        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid rgba(142,76,133,.16)" }}>{children}</div>
       )}
       </Dunkel>
     </div>
@@ -1320,7 +1360,7 @@ const TILE_KATALOG = {
   mail: { icon: "📧", t: "Nachrichten", s: "Dein Postfach öffnen", mail: true },
 };
 
-function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs, setPrefs, ch369, meinZeichen, openPunkte, drawn, horo, entries, setJournalSec, twinTon = "" }) {
+function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermine, prefs, setPrefs, ch369, meinZeichen, openPunkte, drawn, horo, entries, setJournalSec, twinTon = "" }) {
   // Nur eine heute gezogene Karte gilt als gezogen — sonst wartet sie wieder.
   const heutigeKarte = drawn && (!drawn.tag || drawn.tag === new Date().toDateString()) ? drawn : null;
   /* Morning notification: 7-8am ilho prep alert */
@@ -1359,85 +1399,56 @@ function Heute({ name, go, streak, punkte, addPunkte, termine, setTermine, prefs
 
   return (
     <div style={{ padding: "0 20px 20px" }}>
-      {/* ilho bereitet vor — die Tageskarte gehört aber nicht in diese Liste:
-          die zieht die Nutzerin selbst. Deshalb steht sie getrennt darunter. */}
-      {/* Gestrichelt liest sich wie ein Platzhalter, der noch nicht fertig
-          ist. Eine durchgezogene Linie sagt: das steht. */}
-      <AbschnittTitel unter="ilho hat deinen Tag vorbereitet.">Für dich vorbereitet</AbschnittTitel>
+      {/* Block 2 — erhoben: was ilho vorbereitet hat. Jede Zeile hat dieselbe
+          Form; was man antippen kann, fuehrt an seinen Ort. */}
+      <AbschnittTitel>Für dich vorbereitet</AbschnittTitel>
       <Card style={{ marginBottom: 32 }}>
-        <WochenChallenge go={go} />
-        <button
-          onClick={() => !heutigeKarte && go("orakel")}
-          disabled={!!heutigeKarte}
-          style={{
-            display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 44,
-            padding: "8px 10px", marginBottom: 10, textAlign: "left",
-            cursor: heutigeKarte ? "default" : "pointer",
-            background: C.card, border: `1px solid ${C.goldSoft}`, borderRadius: 12,
-          }}
-        >
-          <span style={{ fontSize: 17 }}><Sym e="🎴" size={16} /></span>
-          <span style={{ flex: 1, minWidth: 0, fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>
-            {heutigeKarte ? `Tageskarte gezogen — ${heutigeKarte.n}` : "Deine Tageskarte wartet auf dich"}
-          </span>
-          {!heutigeKarte && <span style={{ color: C.gold, fontSize: 17 }}>›</span>}
-        </button>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <span style={{ fontSize: 17 }}><Sym e="☀️" size={16} /></span>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>Dein Mantra wartet unten</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 17 }}><Sym e="🕯️" size={16} /></span>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>2-Min-Atemritual bereit</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <WochenChallenge go={go} />
+          <MeTimeZeile metime={metime} go={go} />
+          <HeuteZeile
+            ikon="karte"
+            titel={heutigeKarte ? "Deine Tageskarte" : "Deine Tageskarte wartet"}
+            unter={heutigeKarte ? `${heutigeKarte.n} — heute gezogen.` : "Du hast sie heute noch nicht gezogen."}
+            onClick={heutigeKarte ? undefined : () => go("orakel")}
+          />
+          <HeuteZeile ikon="sonne" titel="Dein Mantra" unter={mot.t} />
+          <HeuteZeile ikon="kerze" titel="Zwei Minuten Atem" unter="Wenn der Kopf zu voll ist." onClick={() => go("meditation")} />
         </div>
       </Card>
 
-      {/* Dein heutiger Sonnenstrahl */}
-      {/* Ein Zitat braucht keinen Kasten. Es steht frei auf dem Grund. */}
-      <AbschnittTitel>Dein heutiger Sonnenstrahl</AbschnittTitel>
-      <div style={{ marginBottom: 32 }}>
-        <div>
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontWeight: 400, fontSize: 17, color: C.espresso, lineHeight: 1.6, margin: 0 }}>{mot.t}</p>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, margin: "7px 0 0" }}>{mot.s}</p>
-        </div>
-      </div>
-
-      {/* Dein einziger Schritt heute */}
+      {/* Block 3 — flach: der eine Schritt, darunter der Stand. */}
+      <AbschnittTitel>Dein einziger Schritt heute</AbschnittTitel>
       {uniqueFocus ? (
-        <div style={{ marginBottom: 20 }}>
-          <AbschnittTitel>Dein einziger Schritt heute</AbschnittTitel>
-          <button onClick={() => {
+        <HeuteZeile
+          sym={uniqueFocus.icon}
+          titel={uniqueFocus.t}
+          unter={`${uniqueFocus.p} Lichtpunkte`}
+          onClick={() => {
             if (uniqueFocus.sec && setJournalSec) setJournalSec(uniqueFocus.sec);
             go(uniqueFocus.nav);
-          }} style={{
-            width: "100%", padding: "18px 18px", borderRadius: 20, cursor: "pointer",
-            border: `1px solid ${C.line}`, background: "rgba(255,253,254,.6)", textAlign: "left",
-            display: "flex", alignItems: "center", gap: 12,
-          }}>
-            <span style={{ fontSize: 24 }}><Sym e={uniqueFocus.icon} size={24} /></span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 700, color: C.espresso }}>{uniqueFocus.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, marginTop: 3 }}>{uniqueFocus.p} Lichtpunkte</div>
-            </div>
-          </button>
-        </div>
+          }}
+          style={{ border: "1px solid rgba(239,223,236,.9)", borderRadius: 24, padding: 22 }}
+        />
       ) : (
-        <Card flach style={{ marginBottom: 20 }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 22, letterSpacing: "-0.015em", color: C.espresso, marginBottom: 8 }}>Alles erledigt</div>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.6, marginBottom: 0 }}>Du hast heute alles geschafft. Ruhe dich aus — du verdienst es.</p>
-        </Card>
+        <HeuteZeile
+          ikon="haken"
+          titel="Alles erledigt"
+          unter="Du hast heute alles geschafft. Ruh dich aus — du hast es verdient."
+          style={{ border: "1px solid rgba(239,223,236,.9)", borderRadius: 24, padding: 22 }}
+        />
       )}
-
-      {/* Status: Punkte & Streak */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}><Ikon n="flamme" size={16} style={{ color: C.gold }} />{streak} Tage Serie</span>
-        <button onClick={openPunkte} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum, background: C.roseSoft, border: `1.5px solid ${C.rose}`, borderRadius: 20, padding: "5px 12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}><Ikon n="funke" size={14} />{punkte} Sonnenstrahlen ›</button>
+      <div style={{ display: "flex", gap: 9, flexWrap: "wrap", alignItems: "center", marginTop: 14 }}>
+        {[
+          { k: "serie", inhalt: <><Ikon n="flamme" size={14} />{streak} Tage Serie</> },
+          { k: "punkte", inhalt: <>{punkte} Sonnenstrahlen</>, auf: openPunkte },
+        ].map((c) => {
+          const stil = { display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: C.plum, background: "#FDF4FA", border: `1px solid ${C.line}`, borderRadius: 22, padding: "9px 14px" };
+          return c.auf
+            ? <button key={c.k} onClick={c.auf} style={{ ...stil, cursor: "pointer" }}>{c.inhalt}</button>
+            : <span key={c.k} style={stil}>{c.inhalt}</span>;
+        })}
       </div>
-
-      {/* Mehr: Alle Features */}
-      <Card flach style={{ marginTop: 24, textAlign: "center", padding: "12px" }}>
-        <button onClick={() => go("tagebuch")} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.plum, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Alle Funktionen (25+)</button>
-      </Card>
     </div>
   );
 }
@@ -8635,23 +8646,12 @@ function WochenChallenge({ go }) {
   if (!item) return null;
   const countdown = restZeit(naechsterMontag(jetzt).getTime(), jetzt);
   return (
-    <button
+    <HeuteZeile
+      sym={item.icon}
+      titel="Dein Ritual diese Woche"
+      unter={`${item.t} · noch ${countdown}`}
       onClick={() => go(item.tab)}
-      style={{
-        display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 44,
-        padding: "8px 10px", marginBottom: 8, cursor: "pointer", textAlign: "left",
-        background: C.card, border: `1px solid ${C.goldSoft}`, borderRadius: 12,
-      }}
-    >
-      <span style={{ fontSize: 17 }}><Sym e={item.icon} size={16} /></span>
-      <span style={{ flex: 1, minWidth: 0, fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>
-        Dein Ritual diese Woche — <b style={{ fontWeight: 700 }}>{item.t}</b>
-      </span>
-      <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11.5, color: C.gold, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-        {countdown}
-      </span>
-      <span style={{ color: C.gold, fontSize: 17 }}>›</span>
-    </button>
+    />
   );
 }
 
@@ -10999,29 +10999,19 @@ function MeTime({ metime, setMetime, addPunkte }) {
 
 /* ── Me-Time-Erinnerung auf der Startseite ── */
 
-function MeTimeKarte({ metime, go }) {
+function MeTimeZeile({ metime, go }) {
   const heuteIso = new Date().toISOString().slice(0, 10);
   const heute = (metime || []).filter((t) => t.datum === heuteIso && !t.erledigt);
   if (heute.length === 0) return null;
   const t = heute[0];
   const a = METIME_ARTEN.find((x) => x.k === t.art) || METIME_ARTEN[3];
-
   return (
-    <div style={{ padding: "0 20px 32px" }}>
-      <Card onClick={() => go("metime")} style={{
-        cursor: "pointer", display: "flex", gap: 13, alignItems: "center",
-        background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})`,
-      }}>
-        <div style={{ width: 46, height: 46, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}><Sym e={a.icon} size={22} /></div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>Heute ist deine Me-Time</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>
-            {t.uhrzeit} · {a.t}{t.text ? ` · ${t.text}` : ""}
-          </div>
-        </div>
-        <span style={{ color: C.gold, fontSize: 20 }}>›</span>
-      </Card>
-    </div>
+    <HeuteZeile
+      sym={a.icon}
+      titel="Heute ist deine Me-Time"
+      unter={`${t.uhrzeit} · ${a.t}${t.text ? ` · ${t.text}` : ""}`}
+      onClick={() => go("metime")}
+    />
   );
 }
 
@@ -11570,7 +11560,7 @@ export default function IlhoApp() {
                   ist rund 72 Pixel hoch und sitzt ueber der Leiste; die Zahlen
                   hier sind sein Platz plus der Rand, auf dem die Leiste steht. */}
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 208 : 136, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} avatar={prefs?.avatar} onProfil={() => go("profil")} /><div style={{ padding: "28px 20px 0" }}><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries} /></div><GefuehlsKarte C={C} daten={prefs.gefuehle} onCheckin={() => { setGefStart("checkin"); go("gefuehle"); }} onOeffnen={() => { setGefStart("start"); go("gefuehle"); }} /><MeTimeKarte metime={metime} go={go} /><Heute name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} avatar={prefs?.avatar} onProfil={() => go("profil")} /><div style={{ padding: "28px 20px 0" }}><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries}><GefuehlsZeileHeute daten={prefs.gefuehle} onCheckin={() => { setGefStart("checkin"); go("gefuehle"); }} onOeffnen={() => { setGefStart("start"); go("gefuehle"); }} /></EnergieKompass></div><Heute metime={metime} name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "gemeinschaft" && <Gemeinschaft go={go} bindung={bindung} />}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} bindung={bindung} aufBindung={aufBindung} /></>}
