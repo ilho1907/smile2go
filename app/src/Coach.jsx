@@ -728,6 +728,8 @@ const GEM_BEDUERFNISSE = [
   ["betrug", "Mir wurde online etwas angetan"],
   ["neuanfang", "Ich fange neu an"],
   ["koerper", "Ich bin nicht zuhause in meinem Körper"],
+  ["beziehung", "Meine Beziehung beschäftigt mich"],
+  ["loslassen", "Ich kann nicht loslassen"],
 ];
 
 function GemeinschaftCoach({ onGeaendert }) {
