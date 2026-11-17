@@ -13,7 +13,7 @@ import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, I
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, FUF_LOGO, FUF_PLAKATE } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -2739,10 +2739,13 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
 }
 
 /* — Rituelles Energie-Update — */
+const RITUAL_BILDER = { raeu: ENTDECKEN_BILDER.kerze, natur: ENTDECKEN_BILDER.natur, mond: ENTDECKEN_BILDER.mond, "körper": ENTDECKEN_BILDER.wasser };
+
 function Rituale({ ritual, setRitual, addPunkte }) {
   const RITUALE = [
     {
       k: "raeu",
+      kurz: "Ein Zeichen an dich selbst",
       t: "🕯️ Kerze / Räuchern",
       d: "Eine Kerze anzuzünden dauert zehn Sekunden und macht aus einem Zimmer einen Raum. Es ist kein Zauber — es ist ein Zeichen an dich selbst, dass jetzt etwas anderes beginnt.",
       s: [
@@ -2755,6 +2758,7 @@ function Rituale({ ritual, setRitual, addPunkte }) {
     },
     {
       k: "natur",
+      kurz: "Zwanzig Minuten ohne Ziel",
       t: "🌳 Zeit in der Natur",
       d: "Die Natur macht nichts mit dir, was du nicht selbst tust — sie gibt dir nur den Raum dafür. Zwanzig Minuten draußen ohne Ziel wirken mehr als eine Stunde mit Kopfhörern im Ohr.",
       s: [
@@ -2767,6 +2771,7 @@ function Rituale({ ritual, setRitual, addPunkte }) {
     },
     {
       k: "mond",
+      kurz: "Mit dem Rhythmus des Mondes",
       t: "🌙 Mondritual",
       d: "Der Mond gibt dir einen Rhythmus, der nicht aus deinem Kalender kommt. Zunehmend heißt: etwas beginnen. Abnehmend heißt: etwas abgeben. Mehr braucht es nicht.",
       s: [
@@ -2779,6 +2784,7 @@ function Rituale({ ritual, setRitual, addPunkte }) {
     },
     {
       k: "körper",
+      kurz: "Deinem Körper antworten",
       t: "💧 Körper & Wasser",
       d: "Dein Körper meldet sich lange bevor der Kopf es merkt. Wasser ist der einfachste Weg, ihm zu antworten — trinken, duschen, Hände unter den Hahn.",
       s: [
@@ -2790,7 +2796,7 @@ function Rituale({ ritual, setRitual, addPunkte }) {
       ],
     },
   ];
-  const [offen, setOffen] = useState(null);
+  const [offen, setOffen] = useState("raeu");
   const toggleR = (k) => {
     if (!ritual[k] && addPunkte) addPunkte(2, "Ritual genährt");
     setRitual({ ...ritual, [k]: !ritual[k] });
@@ -2808,68 +2814,43 @@ function Rituale({ ritual, setRitual, addPunkte }) {
         </div>
       </Card>
 
-      <Card style={{ background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
-        <Eyebrow color={C.plum}>🔮 Rituelles Energie-Update · wöchentlich</Eyebrow>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5, marginBottom: 12 }}>
-          Welche Rituale haben dich diese Woche genährt? ({doneCount}/{RITUALE.length})
-        </p>
+      {/* Rituale als Karten zum Wischen — antippen oeffnet Anleitung darunter. */}
+      <Karussell
+        titel="Deine Rituale"
+        unter={`Diese Woche genährt: ${doneCount} von ${RITUALE.length}`}
+        karten={RITUALE.map((r) => ({ key: r.k, titel: r.t.replace(/^\S+\s/, ""), unter: r.kurz, art: ritual[r.k] ? "✓ genährt" : "Ritual", bild: RITUAL_BILDER[r.k] }))}
+        onOeffnen={(k) => { setOffen(k.key); setTimeout(() => document.getElementById("ritual-anleitung")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60); }}
+        stil={{ marginBottom: 18 }}
+      />
 
-        {RITUALE.map((r) => (
-          <div key={r.k} style={{
-            marginBottom: 7, borderRadius: 12,
-            border: `1.5px solid ${ritual[r.k] ? C.rose : C.line}`,
-            background: ritual[r.k] ? "#fff" : "transparent",
-            transition: "border-color .2s, background .2s", overflow: "hidden",
-          }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <button
-                onClick={() => setOffen(offen === r.k ? null : r.k)}
-                aria-expanded={offen === r.k}
-                style={{
-                  flex: 1, display: "flex", alignItems: "center", gap: 8,
-                  padding: "11px 12px", border: "none", background: "transparent",
-                  cursor: "pointer", textAlign: "left", minHeight: 44,
-                }}
-              >
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso, flex: 1 }}>{r.t}</span>
-                <span style={{ color: C.mut, fontSize: 13, transform: offen === r.k ? "rotate(180deg)" : "none", transition: "transform .2s" }}>⌄</span>
-              </button>
-              <button
-                onClick={() => toggleR(r.k)}
-                aria-label={ritual[r.k] ? "Als offen markieren" : "Als genährt markieren"}
-                style={{
-                  border: "none", background: "transparent", cursor: "pointer",
-                  padding: "11px 14px", minHeight: 44,
-                  color: ritual[r.k] ? C.rose : C.line, fontSize: 18,
-                }}
-              >
-                {ritual[r.k] ? "✓" : "○"}
-              </button>
+      {(() => {
+        const r = RITUALE.find((x) => x.k === offen) || RITUALE[0];
+        const fertig = !!ritual[r.k];
+        return (
+          <div id="ritual-anleitung" style={{ borderRadius: 22, overflow: "hidden", background: C.card, border: `1px solid ${C.line}`, boxShadow: "0 10px 26px rgba(110,53,104,.08)", scrollMarginTop: 80 }}>
+            <div style={{ position: "relative", height: 150 }}>
+              <img src={RITUAL_BILDER[r.k]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(42,23,48,0) 30%, rgba(42,23,48,.8) 100%)" }} />
+              <div style={{ position: "absolute", left: 18, bottom: 14, color: "#fff", fontFamily: "Georgia, serif", fontSize: 24 }}>{r.t.replace(/^\S+\s/, "")}</div>
             </div>
-
-            {offen === r.k && (
-              <div style={{ padding: "0 14px 14px", borderTop: `1px solid ${C.line}` }}>
-                <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.ink, lineHeight: 1.6, margin: "12px 0 10px" }}>
-                  {r.d}
-                </p>
-                <ol style={{ margin: 0, paddingLeft: 20 }}>
-                  {r.s.map((schritt, i) => (
-                    <li key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, marginBottom: 5 }}>
-                      {schritt}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
+            <div style={{ padding: "16px 18px 18px" }}>
+              <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>{r.d}</p>
+              <ol style={{ margin: "0 0 16px", paddingLeft: 20 }}>
+                {r.s.map((schritt, i) => (
+                  <li key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6, marginBottom: 6 }}>{schritt}</li>
+                ))}
+              </ol>
+              <Btn full onClick={() => toggleR(r.k)}>{fertig ? "✓ Diese Woche genährt" : "Ritual gemacht (+2 ✨)"}</Btn>
+            </div>
           </div>
-        ))}
+        );
+      })()}
 
-        {doneCount === RITUALE.length && (
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 700, textAlign: "center", marginTop: 8 }}>
-            ✨ Alle Rituale genährt — deine Energie strahlt!
-          </p>
-        )}
-      </Card>
+      {doneCount === RITUALE.length && (
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 700, textAlign: "center", marginTop: 14 }}>
+          ✨ Alle Rituale genährt — deine Energie strahlt!
+        </p>
+      )}
     </div>
   );
 }
