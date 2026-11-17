@@ -7,6 +7,7 @@ import { ENTDECKEN_BILDER } from "./media";
    Sprache sind smile2go. */
 
 const KARTEN = [
+  { key: "tarot", art: "Tarot", titel: "Tarot mit Ivonne", unter: "Die Karten als Spiegel", dauer: "Expertin", bild: "tarot" },
   { key: "meditation", art: "Meditation", titel: "Komm zur Ruhe", unter: "Atem & geführte Meditation", dauer: "10 Min", bild: "meditation" },
   { key: "achtsamkeit", art: "Meditation", titel: "Achtsamkeits-Reise", unter: "Fünf Sinne, sechs Stationen", dauer: "12 Min", bild: "achtsamkeit" },
   { key: "r-kerze", art: "Rituale", titel: "Kerze & Räuchern", unter: "Ein Zeichen an dich selbst", dauer: "5 Min", bild: "kerze", journal: true },
@@ -18,7 +19,7 @@ const KARTEN = [
   { key: "loslassen", art: "Rituale", titel: "Loslassen", unter: "Was darf heute gehen?", dauer: "7 Min", bild: "loslassen" },
 ];
 
-const FILTER = ["Alle", "Meditation", "Rituale", "Bewegung", "Klang"];
+const FILTER = ["Alle", "Meditation", "Rituale", "Tarot", "Bewegung", "Klang"];
 
 const MAGENTA = "#C2418F";
 const PFLAUME = "#2A1730";

@@ -152,6 +152,7 @@ export const ENTDECKEN_BILDER = {
   kerze:       `${HF}/hf_20261117_011216_959c5c9a-7d2e-49b2-9e4f-f29bec3dfa30.png`,
   natur:       `${HF}/hf_20261117_011216_0e0270fd-1875-4734-b809-7566cc9d5da7.png`,
   wasser:      `${HF}/hf_20261117_011216_35c1d788-019e-4e9b-bb71-c6cd58e129cb.png`,
+  tarot:       `${HF}/hf_20261117_021713_6c8af5ab-185b-42c5-b580-83ed474ff0c6.png`,
 };
 
 // Themen-Karussell unter „Mehr" (Higgsfield · gpt_image_2_6, 3:4, 17.11.2026)
@@ -188,4 +189,17 @@ export const MANTRA_MEDIEN = {
   video:  `${HF}/hf_20261117_015707_59588383-b914-4b8f-9878-92b5f0183394.mp4`,
   musik:  `${HF}/hf_20261117_015703_202ccf5d-3ddf-4f9e-a2c0-1e94231fea85.mp3`,
   poster: `${HF}/hf_20261117_004715_61e2b7af-9804-45ba-9d73-d1ba7bb242f4.png`,
+};
+
+// Tarot-Bereich mit Expertin (17.11.2026). Ivonnes Video, Foto, Text und Link hier eintragen.
+export const TAROT_MEDIEN = {
+  titelbild: `${HF}/hf_20261117_021713_6c8af5ab-185b-42c5-b580-83ed474ff0c6.png`,
+  expertin: {
+    name: "Ivonne",
+    rolle: "Tarot-Expertin",
+    video: "",   // z. B. "/media/video/ivonne_tarot.mp4"
+    foto: "",
+    text: "",
+    link: "",
+  },
 };

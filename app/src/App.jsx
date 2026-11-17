@@ -4,6 +4,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import Entdecken, { Karussell } from "./Entdecken";
 import MantraRaum from "./MantraRaum";
+import Tarot from "./Tarot";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
 import Gefuehlskompass, { gefuehlsStand } from "./Gefuehlskompass";
@@ -8789,6 +8790,7 @@ const MEHR_GRUPPEN = [
       { icon: "🕰️", t: "Zukunfts-Ich", s: "Sprich mit dir in 10 Jahren", tab: "zukunftsich" },
       { icon: "🖤", t: "Schattenspiegel", s: "Schreiben & verbrennen — nichts wird gespeichert", tab: "schatten" },
       { icon: "🕯️", t: "Gemeinsame Flamme", s: "Das Licht, das uns allen gehört", tab: "flamme" },
+      { icon: "🃏", t: "Tarot mit Ivonne", s: "Die Karten als Spiegel · mit Expertin", tab: "tarot" },
       { icon: "🌕", t: "Mondrituale", s: "Loslassen & manifestieren im Mondrhythmus", tab: "mondrituale" },
       { icon: "🎡", t: "Jahreskreis", s: "Die acht Feste des Jahres", tab: "jahreskreis" },
       { icon: "🃏", t: "Wochen-Orakel", s: "Die Karte deiner Coachin · jede Woche neu", tab: "wochenorakel" },
@@ -11208,7 +11210,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "gemeinschaft", "tagebuch", "mehr"];
-const TITLES = { mantra: "Mantra", gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { mantra: "Mantra", tarot: "Tarot", gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -11642,6 +11644,7 @@ export default function IlhoApp() {
               {tab === "buchen" && <><MediaBanner video={S2GVID.buchen} poster={S2GIMG.buchen} title="Termin buchen" subtitle="Zeit für dich" height={190} /><Buchen bindung={bindung} aufBindung={aufBindung} termine={termine} setTermine={setTermine} /></>}
               {tab === "coach" && <><MediaBanner video={S2GVID.coach} poster={S2GIMG.coach} title="Coach-Chat" subtitle="Du wirst gehört" height={190} /><CoachChat bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "media" && <><MediaBanner video={S2GVID.mediathek} poster={S2GIMG.mediathek} title="Mediathek" subtitle="Deine Inhalte, dein Raum" height={200} /><Mediathek uploads={uploads} setUploads={setUploads} tools={tools} setTools={setTools} office={office} setOffice={setOffice} bindung={bindung} /></>}
+              {tab === "tarot" && <div style={{ margin: "0 0 -20px" }}><Tarot go={go} /></div>}
               {tab === "mantra" && <div style={{ margin: "0 0 -20px" }}><MantraRaum mantras={MOTIVATION} startIndex={dayIndex()} addPunkte={addPunkte} /></div>}
               {tab === "meditation" && <MeditationCine addPunkte={(n, l) => { tagesAktivitaet("meditation"); addPunkte(n, l || "Meditation abgeschlossen"); }} />}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
