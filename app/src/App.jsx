@@ -7822,6 +7822,14 @@ function LaufRegal({ children, laeuft = true, zurueck = false, tempo = 0.4 }) {
   );
 }
 
+/* WhatsApp-Community: hier den Einladungslink eintragen (chat.whatsapp.com/…). */
+const WHATSAPP_COMMUNITY = "";
+const WhatsAppZeichen = () => (
+  <span aria-hidden="true" style={{ width: 36, height: 36, borderRadius: "50%", background: "#25D366", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.3z"/></svg>
+  </span>
+);
+
 function Gemeinschaft({ go, bindung }) {
   const [bed, setBed] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -8413,6 +8421,23 @@ function Gemeinschaft({ go, bindung }) {
           : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen."}
       </p>
 
+      {/* WhatsApp-Community — Link traegt ilho in WHATSAPP_COMMUNITY ein. */}
+      {WHATSAPP_COMMUNITY ? (
+        <a href={WHATSAPP_COMMUNITY} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", minHeight: 52, borderRadius: 16, background: "#E9F8EF", border: "1.5px solid #BFE8CF", textDecoration: "none", marginBottom: 22 }}>
+          <WhatsAppZeichen />
+          <span style={{ flex: 1 }}>
+            <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: "#14532D" }}>WhatsApp-Community beitreten</span>
+            <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#3F6B51", marginTop: 2 }}>Neuigkeiten, Live-Kreise und Termine direkt aufs Handy</span>
+          </span>
+          <span style={{ color: "#1F8A4C", fontSize: 20 }}>›</span>
+        </a>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", minHeight: 52, borderRadius: 16, background: "#F2FAF5", border: "1.5px dashed #BFE8CF", marginBottom: 22 }}>
+          <WhatsAppZeichen />
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: "#3F6B51" }}>WhatsApp-Community · Link folgt in Kürze</span>
+        </div>
+      )}
+
       <Karussell karten={FUF_PLAKATE} nurBild onOeffnen={() => {}} stil={{ marginBottom: 26 }} />
 
 
@@ -8799,7 +8824,10 @@ const MEHR_GRUPPEN = [
 
 function Mehr({ go, addPunkte, openThema, bindung, openPunkte }) {
   const [auf, setAuf] = useState("Deine Coachin");
-  const gruppen = MEHR_GRUPPEN;
+  // Coach-Chat erst zeigen, wenn sie mit einer Coachin verbunden ist.
+  const gruppen = MEHR_GRUPPEN
+    .map((gr) => ({ ...gr, items: gr.items.filter((it) => it.tab !== "coach" || bindung?.coach_id) }))
+    .filter((gr) => gr.items.length > 0);
   // Alle Übungen der Wochen-Gruppen in einer Reihe — daraus rotiert die offene Tür.
   const wochenPool = gruppen.filter((gr) => WOCHEN_GRUPPEN.includes(gr.g)).flatMap((gr) => gr.items);
   const woche = wochenNummer();
