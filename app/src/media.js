@@ -150,3 +150,17 @@ export const ENTDECKEN_BILDER = {
   klang:       `${HF}/hf_20261117_004715_937f5667-3248-4e4b-895e-6f1ec5d8a5fd.png`,
   loslassen:   `${HF}/hf_20261117_004715_f471a399-faf1-4b96-9a48-43f7c65e8d01.png`,
 };
+
+// Themen-Karussell unter „Mehr" (Higgsfield · gpt_image_2_6, 3:4, 17.11.2026)
+export const THEMEN_BILDER = {
+  trauer:     `${HF}/hf_20261117_010043_4ea1d5c0-b344-4bea-8f2d-eaffe8ba93cb.png`,
+  trennung:   `${HF}/hf_20261117_010042_cf364e7d-d7a0-4701-ab8e-bb8039465d79.png`,
+  beziehung:  `${HF}/hf_20261117_010042_8ce414de-2d69-4d30-8a00-1c576a72605d.png`,
+  selbstwert: `${HF}/hf_20261117_010042_e08223f3-a2a0-4aad-9442-5e09a0bc3aa6.png`,
+  grenzen:    `${HF}/hf_20261117_010041_a0a1b625-0371-4f97-ad86-72d3b6a6cbc1.png`,
+  neuanfang:  `${HF}/hf_20261117_010041_b20a4380-abba-48a9-895e-ac94e2e7862d.png`,
+  geld:       `${HF}/hf_20261117_010042_0638ae9d-4812-4a42-8e97-9c05855e85ca.png`,
+  loslassen:  `${HF}/hf_20261117_010043_cd2f7e90-ef5b-41f7-9429-a102612838e0.png`,
+  unruhe:     `${HF}/hf_20261117_010042_906e2937-375e-4434-984d-298f7a1d0a7e.png`,
+  betrug:     `${HF}/hf_20261117_010042_8c67d928-30f1-4361-986c-fe52bae68432.png`,
+};

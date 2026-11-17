@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
-import Entdecken from "./Entdecken";
+import Entdecken, { Karussell } from "./Entdecken";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
 import Gefuehlskompass, { gefuehlsStand } from "./Gefuehlskompass";
@@ -10,7 +10,7 @@ import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, I
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -2087,44 +2087,76 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
         Atme tief ein — und zieh deine Tageskarte.
       </p>
 
-      <div style={{ perspective: 1100, margin: "0 auto 22px", width: 240, height: 440 }}>
-        <div
-          onClick={() => !card && draw()}
-          style={{
-            width: "100%", height: "100%", position: "relative",
-            transformStyle: "preserve-3d",
-            transform: flip ? "rotateY(180deg)" : "none",
-            transition: "transform .8s cubic-bezier(.4,.1,.2,1)",
-            cursor: card ? "default" : "pointer",
-          }}
-        >
-          {/* Rückseite */}
-          <div style={{
-            position: "absolute", inset: 0, backfaceVisibility: "hidden",
-            borderRadius: 20, background: `linear-gradient(160deg, ${C.plum}, ${C.rose})`,
-            border: `1.5px solid ${C.goldSoft}`, boxShadow: "0 14px 34px rgba(142,74,99,.3)",
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
-          }}>
-            <div style={{ width: 70, height: 70, borderRadius: "50%", border: `1.5px solid ${C.goldPale}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, animation: "floaty 3s ease-in-out infinite" }}><Sym e="🌕" size={30} /></div>
-            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", color: C.goldPale, fontSize: 16.5 }}>
-              Tippe zum Ziehen
+      {/* Kartenbühne — nachtblau mit Gold, die Karte gross in der Mitte,
+          links und rechts schauen zwei Kartenrücken hervor (Tarot-Vorbild). */}
+      <div style={{ margin: "0 -20px 22px", padding: "30px 0 28px", position: "relative", overflow: "hidden", background: "radial-gradient(120% 75% at 50% 0%, #2E3375 0%, #1A1C45 52%, #0F1029 100%)" }}>
+        <svg aria-hidden="true" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: .55, pointerEvents: "none" }}>
+          <g stroke="#D9B56A" strokeWidth=".6" opacity=".55">
+            {Array.from({ length: 36 }).map((_, i) => { const w = (i * Math.PI) / 18; return <line key={i} x1="200" y1="190" x2={200 + Math.cos(w) * 320} y2={190 + Math.sin(w) * 320} />; })}
+          </g>
+          <g fill="#F3DFA6">
+            {[[40,40],[352,60],[70,320],[330,300],[28,190],[372,200],[120,24],[288,28],[96,372],[300,376]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 3 ? 1.2 : 2} />)}
+          </g>
+        </svg>
+        {[-1, 1].map((seite) => (
+          <div key={seite} aria-hidden="true" style={{ position: "absolute", top: 70, [seite < 0 ? "left" : "right"]: -70, width: 130, height: 330, borderRadius: 14, background: "linear-gradient(160deg, #23265A, #12132E)", border: "1.5px solid #B8923F", boxShadow: "0 10px 30px rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", opacity: .85 }}>
+            <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#D9B56A" strokeWidth=".7"><circle cx="12" cy="12" r="4.5" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2L19 19M5 19l2.8-2.8M16.2 7.8L19 5" /></svg>
+          </div>
+        ))}
+
+        <div style={{ perspective: 1200, margin: "0 auto", width: 268, height: 418, position: "relative" }}>
+          <div
+            onClick={() => !card && draw()}
+            style={{
+              width: "100%", height: "100%", position: "relative",
+              transformStyle: "preserve-3d",
+              transform: flip ? "rotateY(180deg)" : "none",
+              transition: "transform .8s cubic-bezier(.4,.1,.2,1)",
+              cursor: card ? "default" : "pointer",
+            }}
+          >
+            {/* Rückseite */}
+            <div style={{
+              position: "absolute", inset: 0, backfaceVisibility: "hidden",
+              borderRadius: 18, background: "linear-gradient(165deg, #2A2E6E 0%, #15163A 100%)",
+              border: "2px solid #D9B56A", boxShadow: "0 22px 50px rgba(0,0,0,.55), 0 0 40px rgba(217,181,106,.18)",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18,
+            }}>
+              <div style={{ position: "absolute", inset: 9, borderRadius: 12, border: "1px solid rgba(217,181,106,.55)" }} />
+              <svg width="120" height="120" viewBox="0 0 120 120" fill="none" stroke="#D9B56A" strokeWidth="1" style={{ animation: "floaty 3s ease-in-out infinite" }}>
+                <circle cx="60" cy="60" r="22" /><circle cx="60" cy="60" r="34" strokeDasharray="2 4" />
+                {Array.from({ length: 16 }).map((_, i) => { const w = (i * Math.PI) / 8; return <line key={i} x1={60 + Math.cos(w) * 40} y1={60 + Math.sin(w) * 40} x2={60 + Math.cos(w) * (i % 2 ? 50 : 58)} y2={60 + Math.sin(w) * (i % 2 ? 50 : 58)} />; })}
+                <path d="M66 46a15 15 0 1 0 0 28a12 12 0 1 1 0-28z" fill="#D9B56A" stroke="none" />
+              </svg>
+              <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", color: "#F3E6C4", fontSize: 17 }}>Tippe zum Ziehen</div>
+            </div>
+            {/* Vorderseite */}
+            <div style={{
+              position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
+              borderRadius: 18, background: "#FBF6EC", padding: 7,
+              boxShadow: "0 22px 50px rgba(0,0,0,.55), 0 0 46px rgba(217,181,106,.28)",
+            }} key={card?.n}>
+              <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: 12, overflow: "hidden", border: "1.5px solid #C9A24A", background: "#1A1C45" }}>
+                {card && ((S2GKARTEN[card.n] || KARTEN_BILDER[card.n])
+                  ? <img src={S2GKARTEN[card.n] || KARTEN_BILDER[card.n]} alt={card.n} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", animation: "fadeUp .5s ease" }} />
+                  : <div style={{ padding: 12 }}><KartenArt g={card} /></div>)}
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "38%", background: "linear-gradient(180deg, rgba(15,16,41,0), rgba(15,16,41,.75))" }} />
+              </div>
+              {card && (
+                <div style={{ position: "absolute", left: "50%", bottom: 16, transform: "translateX(-50%)", maxWidth: "84%", padding: "8px 18px", background: "#121331", border: "1.5px solid #D9B56A", outline: "1px solid rgba(217,181,106,.5)", outlineOffset: 3, borderRadius: 4, textAlign: "center" }}>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: card.n.length > 18 ? 15 : 19, color: "#F6EBCF", lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{card.n}</div>
+                </div>
+              )}
             </div>
           </div>
-          {/* Vorderseite */}
-          <div style={{
-            position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
-            borderRadius: 20, background: C.card, border: `1.5px solid ${C.gold}`,
-            boxShadow: "0 14px 34px rgba(58,42,34,.18)",
-            display: "flex", flexDirection: "column", padding: 12, gap: 8, overflow: "hidden",
-          }} key={card?.n}>
-            {card && ((S2GKARTEN[card.n] || KARTEN_BILDER[card.n])
-              ? <img src={S2GKARTEN[card.n] || KARTEN_BILDER[card.n]} alt={card.n} loading="lazy" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12, display: "block", animation: "fadeUp .5s ease" }} />
-              : <KartenArt g={card} />)}
-            <div style={{ fontFamily: "Georgia, serif", fontSize: card && card.n.length > 18 ? 16.5 : 23, color: C.espresso, marginTop: 2, lineHeight: 1.2 }}>{card?.n}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>{card?.sub} · {card?.b}</div>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, padding: "0 6px" }}>{card?.txt}</p>
-          </div>
         </div>
+
+        {card && (
+          <div style={{ position: "relative", padding: "22px 30px 0", animation: "fadeUp .6s ease" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2.2, textTransform: "uppercase", color: "#D9B56A", fontWeight: 600 }}>{card.sub} · {card.b}</div>
+            <p style={{ fontFamily: "Georgia, serif", fontSize: 19, color: "#F6EBCF", lineHeight: 1.45, margin: "10px 0 0" }}>{card.txt}</p>
+          </div>
+        )}
       </div>
 
       {!card && <Btn onClick={() => draw(false)}>Karte ziehen ✨</Btn>}
@@ -8813,24 +8845,15 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte }) {
         <span style={{ color: C.gold, fontSize: 20 }}>›</span>
       </Card>
 
-      <H size={25} style={{ marginBottom: 6 }}>Themen & Bereiche</H>
-
-      {/* Themen: nach dem sortiert, was gerade los ist — nicht nach Funktion. */}
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.5, margin: "0 0 12px" }}>
-        Was beschäftigt dich gerade?
-      </p>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 22 }}>
-        {THEMEN.map((th) => (
-          <button key={th.id} onClick={() => openThema?.(th.id)} style={{
-            display: "flex", alignItems: "center", gap: 7, minHeight: 40,
-            padding: "9px 13px", borderRadius: 20, cursor: "pointer",
-            border: `1.5px solid ${C.line}`, background: C.card,
-            fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, color: C.espresso,
-          }}>
-            <span style={{ fontSize: 16.5 }}><Sym e={th.icon} size={15} /></span>{th.t}
-          </button>
-        ))}
-      </div>
+      {/* Themen: nach dem sortiert, was gerade los ist — nicht nach Funktion.
+          Wischbar wie „Entdecken" auf Heute. */}
+      <Karussell
+        titel="Themen & Bereiche"
+        unter="Was beschäftigt dich gerade?"
+        karten={THEMEN.map((th) => ({ key: th.id, titel: th.t, unter: th.was, bild: THEMEN_BILDER[th.id] }))}
+        onOeffnen={(k) => openThema?.(k.key)}
+        stil={{ marginBottom: 22 }}
+      />
       {gruppen.map((gr) => {
         const rhythmus = WOCHEN_GRUPPEN.includes(gr.g);
         const ersterBlock = rhythmus && gr.g === gruppen.find((g) => WOCHEN_GRUPPEN.includes(g.g))?.g;
