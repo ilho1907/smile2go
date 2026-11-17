@@ -235,3 +235,6 @@ video { object-fit: cover; background: #EBD8C6; }
   .s2g-card[data-klickbar="1"]:active { transform: none; }
   * { scroll-behavior: auto !important; }
 }
+
+/* Entdecken-Karussell: Scrollbalken ausblenden */
+.s2g-entdecken-leiste::-webkit-scrollbar, .s2g-entdecken-chips::-webkit-scrollbar { display: none; }

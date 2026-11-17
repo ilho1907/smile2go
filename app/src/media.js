@@ -140,3 +140,66 @@ export const PALETTE = {
   bg: "#FBF6FA", card: "#FFFDFE", gold: "#8E4C85",
   rose: "#E8A8D4", sage: "#6FA89C", ink: "#2E2430", mut: "#8E88A0",
 };
+
+// Entdecken-Karussell auf Heute (Higgsfield · gpt_image_2_6, 3:4, 17.11.2026) — vom CDN wie die Videos oben.
+export const ENTDECKEN_BILDER = {
+  meditation:  `${HF}/hf_20261117_004715_c2c3eb3e-347a-4540-9a31-3ea51daa63e8.png`,
+  achtsamkeit: `${HF}/hf_20261117_004715_61e2b7af-9804-45ba-9d73-d1ba7bb242f4.png`,
+  mond:        `${HF}/hf_20261117_004715_8200b8e9-3ce8-4b9f-ba95-35e4bf73216b.png`,
+  qigong:      `${HF}/hf_20261117_004715_519126f8-52d1-44a8-b9cb-0f826c8703b2.png`,
+  klang:       `${HF}/hf_20261117_004715_937f5667-3248-4e4b-895e-6f1ec5d8a5fd.png`,
+  loslassen:   `${HF}/hf_20261117_004715_f471a399-faf1-4b96-9a48-43f7c65e8d01.png`,
+  kerze:       `${HF}/hf_20261117_011216_959c5c9a-7d2e-49b2-9e4f-f29bec3dfa30.png`,
+  natur:       `${HF}/hf_20261117_011216_0e0270fd-1875-4734-b809-7566cc9d5da7.png`,
+  wasser:      `${HF}/hf_20261117_011216_35c1d788-019e-4e9b-bb71-c6cd58e129cb.png`,
+  tarot:       `${HF}/hf_20261117_021713_6c8af5ab-185b-42c5-b580-83ed474ff0c6.png`,
+};
+
+// Themen-Karussell unter „Mehr" (Higgsfield · gpt_image_2_6, 3:4, 17.11.2026)
+export const THEMEN_BILDER = {
+  trauer:     `${HF}/hf_20261117_010043_4ea1d5c0-b344-4bea-8f2d-eaffe8ba93cb.png`,
+  trennung:   `${HF}/hf_20261117_010042_cf364e7d-d7a0-4701-ab8e-bb8039465d79.png`,
+  beziehung:  `${HF}/hf_20261117_010042_8ce414de-2d69-4d30-8a00-1c576a72605d.png`,
+  selbstwert: `${HF}/hf_20261117_010042_e08223f3-a2a0-4aad-9442-5e09a0bc3aa6.png`,
+  grenzen:    `${HF}/hf_20261117_010041_a0a1b625-0371-4f97-ad86-72d3b6a6cbc1.png`,
+  neuanfang:  `${HF}/hf_20261117_010041_b20a4380-abba-48a9-895e-ac94e2e7862d.png`,
+  geld:       `${HF}/hf_20261117_010042_0638ae9d-4812-4a42-8e97-9c05855e85ca.png`,
+  loslassen:  `${HF}/hf_20261117_010043_cd2f7e90-ef5b-41f7-9429-a102612838e0.png`,
+  unruhe:     `${HF}/hf_20261117_010042_906e2937-375e-4434-984d-298f7a1d0a7e.png`,
+  betrug:     `${HF}/hf_20261117_010042_8c67d928-30f1-4361-986c-fe52bae68432.png`,
+};
+
+// FuF · Frauen unterstützen Frauen — Plakate und Logo (lokal, von ilho, 17.11.2026)
+const FUF = "/media/img/fuf";
+export const FUF_LOGO = `${FUF}/logo-foto.webp`;
+export const FUF_LOGO_ZEICHNUNG = `${FUF}/logo-zeichnung.webp`;
+export const FUF_PLAKATE = [
+  { key: "ideen-zu-gross", titel: "Manche Ideen sind zu groß, um sie allein zu leben." },
+  { key: "mehr-zutrauen", titel: "Was wäre, wenn wir uns gegenseitig mehr zutrauen?" },
+  { key: "gemeinsam-magisch", titel: "Gemeinsam sind wir magisch" },
+  { key: "hier-waechst", titel: "Hier wächst etwas, das mir am Herzen liegt." },
+  { key: "miteinander-wachsen", titel: "Miteinander wachsen" },
+  { key: "ideen-teilen", titel: "Es beginnt mit Frauen, die ihre Ideen teilen." },
+  { key: "ideen-gross-sein", titel: "Deine Ideen dürfen groß sein" },
+  { key: "beginnt-fuer-dich", titel: "Vielleicht beginnt hier auch etwas für dich." },
+].map((p) => ({ ...p, bild: `${FUF}/${p.key}.webp` }));
+
+// Mantra-Raum (Higgsfield, 17.11.2026): Naturvideo 9:16 (Seedance 2.5, 1080p, stumm) + Mantra-Musik (ElevenLabs Music, 3 Min, instrumental)
+export const MANTRA_MEDIEN = {
+  video:  `${HF}/hf_20261117_015707_59588383-b914-4b8f-9878-92b5f0183394.mp4`,
+  musik:  `${HF}/hf_20261117_015703_202ccf5d-3ddf-4f9e-a2c0-1e94231fea85.mp3`,
+  poster: `${HF}/hf_20261117_004715_61e2b7af-9804-45ba-9d73-d1ba7bb242f4.png`,
+};
+
+// Tarot-Bereich mit Expertin (17.11.2026). Ivonnes Video, Foto, Text und Link hier eintragen.
+export const TAROT_MEDIEN = {
+  titelbild: `${HF}/hf_20261117_021713_6c8af5ab-185b-42c5-b580-83ed474ff0c6.png`,
+  expertin: {
+    name: "Ivonne",
+    rolle: "Tarot-Expertin",
+    video: "",   // z. B. "/media/video/ivonne_tarot.mp4"
+    foto: "",
+    text: "",
+    link: "",
+  },
+};

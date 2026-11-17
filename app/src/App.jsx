@@ -2,6 +2,10 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
+import Entdecken, { Karussell } from "./Entdecken";
+import MantraRaum from "./MantraRaum";
+import Tarot from "./Tarot";
+import { ExpertinnenKarussell, ExpertinProfil } from "./Expertinnen";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
 import Gefuehlskompass, { gefuehlsStand } from "./Gefuehlskompass";
@@ -9,7 +13,7 @@ import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, I
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, FUF_LOGO, FUF_PLAKATE } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -1401,6 +1405,8 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
     <div style={{ padding: "0 20px 20px" }}>
       {/* Block 2 — erhoben: was ilho vorbereitet hat. Jede Zeile hat dieselbe
           Form; was man antippen kann, fuehrt an seinen Ort. */}
+      <Entdecken go={go} setJournalSec={setJournalSec} />
+
       <AbschnittTitel>Für dich vorbereitet</AbschnittTitel>
       <Card style={{ marginBottom: 32 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1410,9 +1416,9 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
             ikon="karte"
             titel={heutigeKarte ? "Deine Tageskarte" : "Deine Tageskarte wartet"}
             unter={heutigeKarte ? `${heutigeKarte.n} — heute gezogen.` : "Du hast sie heute noch nicht gezogen."}
-            onClick={heutigeKarte ? undefined : () => go("orakel")}
+            onClick={() => go("orakel")}
           />
-          <HeuteZeile ikon="sonne" titel="Dein Mantra" unter={mot.t} />
+          <HeuteZeile ikon="sonne" titel="Dein Mantra · mit Musik und Natur" unter={mot.t} onClick={() => go("mantra")} />
           <HeuteZeile ikon="kerze" titel="Zwei Minuten Atem" unter="Wenn der Kopf zu voll ist." onClick={() => go("meditation")} />
         </div>
       </Card>
@@ -2084,44 +2090,76 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
         Atme tief ein — und zieh deine Tageskarte.
       </p>
 
-      <div style={{ perspective: 1100, margin: "0 auto 22px", width: 240, height: 440 }}>
-        <div
-          onClick={() => !card && draw()}
-          style={{
-            width: "100%", height: "100%", position: "relative",
-            transformStyle: "preserve-3d",
-            transform: flip ? "rotateY(180deg)" : "none",
-            transition: "transform .8s cubic-bezier(.4,.1,.2,1)",
-            cursor: card ? "default" : "pointer",
-          }}
-        >
-          {/* Rückseite */}
-          <div style={{
-            position: "absolute", inset: 0, backfaceVisibility: "hidden",
-            borderRadius: 20, background: `linear-gradient(160deg, ${C.plum}, ${C.rose})`,
-            border: `1.5px solid ${C.goldSoft}`, boxShadow: "0 14px 34px rgba(142,74,99,.3)",
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
-          }}>
-            <div style={{ width: 70, height: 70, borderRadius: "50%", border: `1.5px solid ${C.goldPale}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, animation: "floaty 3s ease-in-out infinite" }}><Sym e="🌕" size={30} /></div>
-            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", color: C.goldPale, fontSize: 16.5 }}>
-              Tippe zum Ziehen
+      {/* Kartenbühne — nachtblau mit Gold, die Karte gross in der Mitte,
+          links und rechts schauen zwei Kartenrücken hervor (Tarot-Vorbild). */}
+      <div style={{ margin: "0 -20px 22px", padding: "30px 0 28px", position: "relative", overflow: "hidden", background: "radial-gradient(120% 75% at 50% 0%, #2E3375 0%, #1A1C45 52%, #0F1029 100%)" }}>
+        <svg aria-hidden="true" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: .55, pointerEvents: "none" }}>
+          <g stroke="#D9B56A" strokeWidth=".6" opacity=".55">
+            {Array.from({ length: 36 }).map((_, i) => { const w = (i * Math.PI) / 18; return <line key={i} x1="200" y1="190" x2={200 + Math.cos(w) * 320} y2={190 + Math.sin(w) * 320} />; })}
+          </g>
+          <g fill="#F3DFA6">
+            {[[40,40],[352,60],[70,320],[330,300],[28,190],[372,200],[120,24],[288,28],[96,372],[300,376]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 3 ? 1.2 : 2} />)}
+          </g>
+        </svg>
+        {[-1, 1].map((seite) => (
+          <div key={seite} aria-hidden="true" style={{ position: "absolute", top: 70, [seite < 0 ? "left" : "right"]: -70, width: 130, height: 330, borderRadius: 14, background: "linear-gradient(160deg, #23265A, #12132E)", border: "1.5px solid #B8923F", boxShadow: "0 10px 30px rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", opacity: .85 }}>
+            <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#D9B56A" strokeWidth=".7"><circle cx="12" cy="12" r="4.5" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2L19 19M5 19l2.8-2.8M16.2 7.8L19 5" /></svg>
+          </div>
+        ))}
+
+        <div style={{ perspective: 1200, margin: "0 auto", width: 268, height: 418, position: "relative" }}>
+          <div
+            onClick={() => !card && draw()}
+            style={{
+              width: "100%", height: "100%", position: "relative",
+              transformStyle: "preserve-3d",
+              transform: flip ? "rotateY(180deg)" : "none",
+              transition: "transform .8s cubic-bezier(.4,.1,.2,1)",
+              cursor: card ? "default" : "pointer",
+            }}
+          >
+            {/* Rückseite */}
+            <div style={{
+              position: "absolute", inset: 0, backfaceVisibility: "hidden",
+              borderRadius: 18, background: "linear-gradient(165deg, #2A2E6E 0%, #15163A 100%)",
+              border: "2px solid #D9B56A", boxShadow: "0 22px 50px rgba(0,0,0,.55), 0 0 40px rgba(217,181,106,.18)",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18,
+            }}>
+              <div style={{ position: "absolute", inset: 9, borderRadius: 12, border: "1px solid rgba(217,181,106,.55)" }} />
+              <svg width="120" height="120" viewBox="0 0 120 120" fill="none" stroke="#D9B56A" strokeWidth="1" style={{ animation: "floaty 3s ease-in-out infinite" }}>
+                <circle cx="60" cy="60" r="22" /><circle cx="60" cy="60" r="34" strokeDasharray="2 4" />
+                {Array.from({ length: 16 }).map((_, i) => { const w = (i * Math.PI) / 8; return <line key={i} x1={60 + Math.cos(w) * 40} y1={60 + Math.sin(w) * 40} x2={60 + Math.cos(w) * (i % 2 ? 50 : 58)} y2={60 + Math.sin(w) * (i % 2 ? 50 : 58)} />; })}
+                <path d="M66 46a15 15 0 1 0 0 28a12 12 0 1 1 0-28z" fill="#D9B56A" stroke="none" />
+              </svg>
+              <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", color: "#F3E6C4", fontSize: 17 }}>Tippe zum Ziehen</div>
+            </div>
+            {/* Vorderseite */}
+            <div style={{
+              position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
+              borderRadius: 18, background: "#FBF6EC", padding: 7,
+              boxShadow: "0 22px 50px rgba(0,0,0,.55), 0 0 46px rgba(217,181,106,.28)",
+            }} key={card?.n}>
+              <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: 12, overflow: "hidden", border: "1.5px solid #C9A24A", background: "#1A1C45" }}>
+                {card && ((S2GKARTEN[card.n] || KARTEN_BILDER[card.n])
+                  ? <img src={S2GKARTEN[card.n] || KARTEN_BILDER[card.n]} alt={card.n} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", animation: "fadeUp .5s ease" }} />
+                  : <div style={{ padding: 12 }}><KartenArt g={card} /></div>)}
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "38%", background: "linear-gradient(180deg, rgba(15,16,41,0), rgba(15,16,41,.75))" }} />
+              </div>
+              {card && (
+                <div style={{ position: "absolute", left: "50%", bottom: 16, transform: "translateX(-50%)", maxWidth: "84%", padding: "8px 18px", background: "#121331", border: "1.5px solid #D9B56A", outline: "1px solid rgba(217,181,106,.5)", outlineOffset: 3, borderRadius: 4, textAlign: "center" }}>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: card.n.length > 18 ? 15 : 19, color: "#F6EBCF", lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{card.n}</div>
+                </div>
+              )}
             </div>
           </div>
-          {/* Vorderseite */}
-          <div style={{
-            position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
-            borderRadius: 20, background: C.card, border: `1.5px solid ${C.gold}`,
-            boxShadow: "0 14px 34px rgba(58,42,34,.18)",
-            display: "flex", flexDirection: "column", padding: 12, gap: 8, overflow: "hidden",
-          }} key={card?.n}>
-            {card && ((S2GKARTEN[card.n] || KARTEN_BILDER[card.n])
-              ? <img src={S2GKARTEN[card.n] || KARTEN_BILDER[card.n]} alt={card.n} loading="lazy" style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12, display: "block", animation: "fadeUp .5s ease" }} />
-              : <KartenArt g={card} />)}
-            <div style={{ fontFamily: "Georgia, serif", fontSize: card && card.n.length > 18 ? 16.5 : 23, color: C.espresso, marginTop: 2, lineHeight: 1.2 }}>{card?.n}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>{card?.sub} · {card?.b}</div>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, padding: "0 6px" }}>{card?.txt}</p>
-          </div>
         </div>
+
+        {card && (
+          <div style={{ position: "relative", padding: "22px 30px 0", animation: "fadeUp .6s ease" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2.2, textTransform: "uppercase", color: "#D9B56A", fontWeight: 600 }}>{card.sub} · {card.b}</div>
+            <p style={{ fontFamily: "Georgia, serif", fontSize: 19, color: "#F6EBCF", lineHeight: 1.45, margin: "10px 0 0" }}>{card.txt}</p>
+          </div>
+        )}
       </div>
 
       {!card && <Btn onClick={() => draw(false)}>Karte ziehen ✨</Btn>}
@@ -2150,17 +2188,22 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
           <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, lineHeight: 1.6, marginBottom: 12 }}>
             Welche Gedanken und Gefühle kommen in dir hoch?
           </p>
+          <div style={{ position: "relative" }}>
           <textarea
             value={reflexion}
             onChange={(e) => setReflexion(e.target.value)}
             rows={4}
-            placeholder="Schreib auf, was diese Karte in dir berührt …"
+            placeholder="Schreib oder sprich, was diese Karte in dir berührt …"
             style={{
-              width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12,
+              width: "100%", boxSizing: "border-box", padding: "12px 56px 12px 12px", borderRadius: 12,
               border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 16.5,
               lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso,
             }}
           />
+            <div style={{ position: "absolute", right: 10, bottom: 14 }}>
+              <Mikro size={40} onText={(t) => setReflexion((r) => (r.trim() ? r.trimEnd() + " " : "") + t)} />
+            </div>
+          </div>
           <div style={{ marginTop: 10 }}>
             <Btn full onClick={reflexionSpeichern} disabled={!reflexion.trim()}>
               {gespeichert ? "🤍 Im Tagebuch gespeichert" : "Ins Tagebuch legen (+10 ✨)"}
@@ -7772,7 +7815,15 @@ function LaufRegal({ children, laeuft = true, zurueck = false, tempo = 0.4 }) {
   );
 }
 
-function Gemeinschaft({ go, bindung }) {
+/* WhatsApp-Community: hier den Einladungslink eintragen (chat.whatsapp.com/…). */
+const WHATSAPP_COMMUNITY = "";
+const WhatsAppZeichen = () => (
+  <span aria-hidden="true" style={{ width: 36, height: 36, borderRadius: "50%", background: "#25D366", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.3z"/></svg>
+  </span>
+);
+
+function Gemeinschaft({ go, bindung, openExpertin }) {
   const [bed, setBed] = useState(null);
   const [detail, setDetail] = useState(null);
   const [zahlen, setZahlen] = useState({});
@@ -8349,13 +8400,39 @@ function Gemeinschaft({ go, bindung }) {
     <div style={{ padding: "26px 20px 28px" }}>
       {audioEl}
 <style>{`.gem-regal { scrollbar-width: none; } .gem-regal::-webkit-scrollbar { display: none; }`}</style>
-      <Eyebrow color={C.plum}>Von Frauen für Frauen</Eyebrow>
-      <H size={30} style={{ marginBottom: 9, lineHeight: 1.18 }}>Community</H>
+      {/* FuF · Frauen unterstützen Frauen — Logo oben, darunter die Plakate zum Wischen. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+        <img src={FUF_LOGO} alt="Frauen unterstützen Frauen" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", objectPosition: "50% 22%", border: `1.5px solid ${C.line}`, background: "#FBF7F2", flexShrink: 0 }} />
+        <div>
+          <Eyebrow color={C.plum}>Frauen unterstützen Frauen</Eyebrow>
+          <H size={30} style={{ marginBottom: 0, lineHeight: 1.18 }}>Community</H>
+        </div>
+      </div>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.62, margin: "0 0 18px" }}>
         {gesamt > 0
           ? `${gesamt} Beiträge, geschenkt von Coachinnen. Frei für dich — ganz gleich, ob du eine Begleitung hast oder nicht.`
           : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen."}
       </p>
+
+      {/* WhatsApp-Community — Link traegt ilho in WHATSAPP_COMMUNITY ein. */}
+      {WHATSAPP_COMMUNITY ? (
+        <a href={WHATSAPP_COMMUNITY} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", minHeight: 52, borderRadius: 16, background: "#E9F8EF", border: "1.5px solid #BFE8CF", textDecoration: "none", marginBottom: 22 }}>
+          <WhatsAppZeichen />
+          <span style={{ flex: 1 }}>
+            <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: "#14532D" }}>WhatsApp-Community beitreten</span>
+            <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#3F6B51", marginTop: 2 }}>Neuigkeiten, Live-Kreise und Termine direkt aufs Handy</span>
+          </span>
+          <span style={{ color: "#1F8A4C", fontSize: 20 }}>›</span>
+        </a>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", minHeight: 52, borderRadius: 16, background: "#F2FAF5", border: "1.5px dashed #BFE8CF", marginBottom: 22 }}>
+          <WhatsAppZeichen />
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: "#3F6B51" }}>WhatsApp-Community · Link folgt in Kürze</span>
+        </div>
+      )}
+
+      <Karussell karten={FUF_PLAKATE} nurBild onOeffnen={() => {}} stil={{ marginBottom: 26 }} />
+      <ExpertinnenKarussell titel="Unsere Expertinnen" onOeffnen={openExpertin} stil={{ marginBottom: 26 }} />
 
 
       {(
@@ -8901,9 +8978,6 @@ function useSekundenTakt(aktiv = true) {
 }
 
 const MEHR_GRUPPEN = [
-    { g: "Von Frauen für Frauen", items: [
-      { icon: "\u{1F49D}", t: "Community", s: "Was Coachinnen für alle Frauen geschenkt haben", tab: "gemeinschaft" },
-    ] },
     { g: "Deine Coachin", items: [
       { icon: "🌸", t: "Coaching", s: "Deine Begleitung, Pakete & Fortschritt", tab: "coaching" },
       { icon: "💬", t: "Coach-Chat", s: "Schreib ihr, wenn dich etwas bewegt", tab: "coach" },
@@ -8930,6 +9004,7 @@ const MEHR_GRUPPEN = [
       { icon: "🕰️", t: "Zukunfts-Ich", s: "Sprich mit dir in 10 Jahren", tab: "zukunftsich" },
       { icon: "🖤", t: "Schattenspiegel", s: "Schreiben & verbrennen — nichts wird gespeichert", tab: "schatten" },
       { icon: "🕯️", t: "Gemeinsame Flamme", s: "Das Licht, das uns allen gehört", tab: "flamme" },
+      { icon: "🃏", t: "Tarot mit Ivonne", s: "Die Karten als Spiegel · mit Expertin", tab: "tarot" },
       { icon: "🌕", t: "Mondrituale", s: "Loslassen & manifestieren im Mondrhythmus", tab: "mondrituale" },
       { icon: "🎡", t: "Jahreskreis", s: "Die acht Feste des Jahres", tab: "jahreskreis" },
       { icon: "🃏", t: "Wochen-Orakel", s: "Die Karte deiner Coachin · jede Woche neu", tab: "wochenorakel" },
@@ -8950,9 +9025,12 @@ const MEHR_GRUPPEN = [
     ] },
 ];
 
-function Mehr({ go, addPunkte, openThema, bindung, openPunkte }) {
+function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
   const [auf, setAuf] = useState("Deine Coachin");
-  const gruppen = MEHR_GRUPPEN;
+  // Coach-Chat erst zeigen, wenn sie mit einer Coachin verbunden ist.
+  const gruppen = MEHR_GRUPPEN
+    .map((gr) => ({ ...gr, items: gr.items.filter((it) => it.tab !== "coach" || bindung?.coach_id) }))
+    .filter((gr) => gr.items.length > 0);
   // Alle Übungen der Wochen-Gruppen in einer Reihe — daraus rotiert die offene Tür.
   const wochenPool = gruppen.filter((gr) => WOCHEN_GRUPPEN.includes(gr.g)).flatMap((gr) => gr.items);
   const woche = wochenNummer();
@@ -9022,24 +9100,16 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte }) {
         <span style={{ color: C.gold, fontSize: 20 }}>›</span>
       </Card>
 
-      <H size={25} style={{ marginBottom: 6 }}>Themen & Bereiche</H>
-
-      {/* Themen: nach dem sortiert, was gerade los ist — nicht nach Funktion. */}
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.5, margin: "0 0 12px" }}>
-        Was beschäftigt dich gerade?
-      </p>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 22 }}>
-        {THEMEN.map((th) => (
-          <button key={th.id} onClick={() => openThema?.(th.id)} style={{
-            display: "flex", alignItems: "center", gap: 7, minHeight: 40,
-            padding: "9px 13px", borderRadius: 20, cursor: "pointer",
-            border: `1.5px solid ${C.line}`, background: C.card,
-            fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, color: C.espresso,
-          }}>
-            <span style={{ fontSize: 16.5 }}><Sym e={th.icon} size={15} /></span>{th.t}
-          </button>
-        ))}
-      </div>
+      {/* Themen: nach dem sortiert, was gerade los ist — nicht nach Funktion.
+          Wischbar wie „Entdecken" auf Heute. */}
+      <Karussell
+        titel="Themen & Bereiche"
+        unter="Was beschäftigt dich gerade?"
+        karten={THEMEN.map((th) => ({ key: th.id, titel: th.t, unter: th.was, bild: THEMEN_BILDER[th.id] }))}
+        onOeffnen={(k) => openThema?.(k.key)}
+        stil={{ marginBottom: 22 }}
+      />
+      <ExpertinnenKarussell onOeffnen={openExpertin} stil={{ marginBottom: 22 }} />
       {gruppen.map((gr) => {
         const rhythmus = WOCHEN_GRUPPEN.includes(gr.g);
         const ersterBlock = rhythmus && gr.g === gruppen.find((g) => WOCHEN_GRUPPEN.includes(g.g))?.g;
@@ -11355,7 +11425,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "gemeinschaft", "tagebuch", "mehr"];
-const TITLES = { gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { expertin: "Expertin", mantra: "Mantra", tarot: "Tarot", gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -11573,6 +11643,8 @@ export default function IlhoApp() {
   // dann spricht ilho in seinem eigenen, neutralen Ton.
   const [twin, setTwin] = useState(null);
   const [themaId, setThemaId] = useState(null);
+  const [expertin, setExpertin] = useState(null);
+  const openExpertin = (e) => { if (e?.tab) { go(e.tab); return; } setExpertin(e); go("expertin"); };
   useEffect(() => {
     if (!supabase || !user || !bindung?.coach_id) { setTwin(null); return; }
     let aktiv = true;
@@ -11774,13 +11846,14 @@ export default function IlhoApp() {
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 208 : 136, animation: "fadeUp .45s ease" }}>
               {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} avatar={prefs?.avatar} onProfil={() => go("profil")} /><div style={{ padding: "28px 20px 0" }}><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries}><GefuehlsZeileHeute daten={prefs.gefuehle} onCheckin={() => { setGefStart("checkin"); go("gefuehle"); }} onOeffnen={() => { setGefStart("start"); go("gefuehle"); }} /></EnergieKompass></div><Heute metime={metime} name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
-              {tab === "gemeinschaft" && <Gemeinschaft go={go} bindung={bindung} />}
+              {tab === "gemeinschaft" && <Gemeinschaft go={go} bindung={bindung} openExpertin={openExpertin} />}
+              {tab === "expertin" && <div style={{ margin: "0 0 -20px" }}><ExpertinProfil e={expertin} go={go} /></div>}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "wochenbericht" && <Wochenbericht bindung={bindung} aufBindung={aufBindung} entries={entries} achtsam={achtsam} dank={dank} qigong={qigong} metime={metime} losgelassen={losgelassen} punkte={punkte} />}
               {tab === "impressum" && <Impressum />}
               {tab === "datenschutz" && <Datenschutz />}
               {tab === "tagebuch" && <Journal entries={entries} setEntries={setEntries} ritual={ritual} setRitual={setRitual} ch369={ch369} setCh369={setCh369} mm={mm} setMm={setMm} briefe={briefe} setBriefe={setBriefe} briefPost={briefPost} setBriefPost={setBriefPost} akarte={akarte} setAkarte={setAkarte} addPunkte={addPunkte} streak={streak} punkte={punkte} initialSec={journalSec} />}
-              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} bindung={bindung} openPunkte={() => setPkModal(true)} openThema={(id) => { setThemaId(id); go("thema"); }} /></>}
+              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} bindung={bindung} openPunkte={() => setPkModal(true)} openThema={(id) => { setThemaId(id); go("thema"); }} openExpertin={openExpertin} /></>}
               {tab === "thema" && <ThemaScreen id={themaId} go={go} bindung={bindung} />}
               {tab === "ziele" && <><MediaBanner video={S2GVID.ziele} poster={S2GIMG.ziele} title="Ziele" subtitle="Deine Richtung, dein Nordstern" height={190} /><Ziele ziele={ziele} setZiele={setZiele} addPunkte={addPunkte} /></>}
               {tab === "aufgaben" && <><MediaBanner video={S2GVID.aufgaben} poster={S2GIMG.aufgaben} title="Aufgaben" subtitle="Schritt für Schritt" height={190} /><Aufgaben aufgaben={aufgaben} setAufgaben={setAufgaben} addPunkte={addPunkte} go={go} ch369={ch369} setCh369={setCh369} akarte={akarte} setAkarte={setAkarte} /></>}
@@ -11789,6 +11862,8 @@ export default function IlhoApp() {
               {tab === "buchen" && <><MediaBanner video={S2GVID.buchen} poster={S2GIMG.buchen} title="Termin buchen" subtitle="Zeit für dich" height={190} /><Buchen bindung={bindung} aufBindung={aufBindung} termine={termine} setTermine={setTermine} /></>}
               {tab === "coach" && <><MediaBanner video={S2GVID.coach} poster={S2GIMG.coach} title="Coach-Chat" subtitle="Du wirst gehört" height={190} /><CoachChat bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "media" && <><MediaBanner video={S2GVID.mediathek} poster={S2GIMG.mediathek} title="Mediathek" subtitle="Deine Inhalte, dein Raum" height={200} /><Mediathek uploads={uploads} setUploads={setUploads} tools={tools} setTools={setTools} office={office} setOffice={setOffice} bindung={bindung} /></>}
+              {tab === "tarot" && <div style={{ margin: "0 0 -20px" }}><Tarot go={go} /></div>}
+              {tab === "mantra" && <div style={{ margin: "0 0 -20px" }}><MantraRaum mantras={MOTIVATION} startIndex={dayIndex()} addPunkte={addPunkte} /></div>}
               {tab === "meditation" && <MeditationCine addPunkte={(n, l) => { tagesAktivitaet("meditation"); addPunkte(n, l || "Meditation abgeschlossen"); }} />}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
               {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} alias={alias} anon={anon} bindung={bindung} /></>}
