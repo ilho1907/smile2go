@@ -10,7 +10,7 @@ import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, I
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, FUF_LOGO, FUF_PLAKATE } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -8399,13 +8399,21 @@ function Gemeinschaft({ go, bindung }) {
     <div style={{ padding: "26px 20px 28px" }}>
       {audioEl}
 <style>{`.gem-regal { scrollbar-width: none; } .gem-regal::-webkit-scrollbar { display: none; }`}</style>
-      <Eyebrow color={C.plum}>Von Frauen für Frauen</Eyebrow>
-      <H size={30} style={{ marginBottom: 9, lineHeight: 1.18 }}>Community</H>
+      {/* FuF · Frauen unterstützen Frauen — Logo oben, darunter die Plakate zum Wischen. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+        <img src={FUF_LOGO} alt="Frauen unterstützen Frauen" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", objectPosition: "50% 22%", border: `1.5px solid ${C.line}`, background: "#FBF7F2", flexShrink: 0 }} />
+        <div>
+          <Eyebrow color={C.plum}>Frauen unterstützen Frauen</Eyebrow>
+          <H size={30} style={{ marginBottom: 0, lineHeight: 1.18 }}>Community</H>
+        </div>
+      </div>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.62, margin: "0 0 18px" }}>
         {gesamt > 0
           ? `${gesamt} Beiträge, geschenkt von Coachinnen. Frei für dich — ganz gleich, ob du eine Begleitung hast oder nicht.`
           : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen."}
       </p>
+
+      <Karussell karten={FUF_PLAKATE} nurBild onOeffnen={() => {}} stil={{ marginBottom: 26 }} />
 
 
       {(

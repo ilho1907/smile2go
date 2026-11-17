@@ -34,7 +34,7 @@ export default function Entdecken({ go, setJournalSec }) {
 
 /* Wiederverwendbar: auch die Themen unter „Mehr" laufen darueber.
    karten: [{ key, titel, unter, art?, dauer?, bild }] · filter: optional */
-export function Karussell({ titel, unter, karten, filter: FILTER, onOeffnen, stil }) {
+export function Karussell({ titel, unter, karten, filter: FILTER, onOeffnen, stil, nurBild = false }) {
   const KARTEN = karten;
   const [filter, setFilter] = useState("Alle");
   const [aktiv, setAktiv] = useState(0);
@@ -93,9 +93,9 @@ export function Karussell({ titel, unter, karten, filter: FILTER, onOeffnen, sti
             <button
               key={k.key}
               onClick={() => (istAktiv ? onOeffnen(k) : leiste.current?.children[i]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" }))}
-              aria-label={`${k.titel} öffnen`}
+              aria-label={nurBild ? k.titel : `${k.titel} öffnen`}
               style={{
-                flex: "0 0 236px", height: 316, scrollSnapAlign: "center", position: "relative",
+                flex: "0 0 236px", height: nurBild ? 295 : 316, scrollSnapAlign: "center", position: "relative",
                 border: 0, padding: 0, borderRadius: 28, overflow: "hidden", cursor: "pointer",
                 background: PFLAUME, textAlign: "left",
                 transform: istAktiv ? "scale(1)" : "scale(.88)",
@@ -104,7 +104,8 @@ export function Karussell({ titel, unter, karten, filter: FILTER, onOeffnen, sti
                 boxShadow: istAktiv ? "0 18px 40px rgba(42,23,48,.38)" : "0 8px 20px rgba(42,23,48,.18)",
               }}
             >
-              <img src={k.bild} alt="" loading="lazy" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={k.bild} alt={nurBild ? k.titel : ""} loading="lazy" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+              {!nurBild && <>
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(42,23,48,0) 45%, rgba(42,23,48,.82) 100%)" }} />
               {k.art && <span style={{ position: "absolute", top: 14, left: 14, padding: "5px 11px", borderRadius: 12, background: "rgba(255,255,255,.18)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: "#fff", fontFamily: "system-ui, sans-serif", fontSize: 11.5, letterSpacing: ".04em" }}>{k.art}</span>}
               <div style={{ position: "absolute", left: 16, right: 60, bottom: 16, color: "#fff" }}>
@@ -115,6 +116,7 @@ export function Karussell({ titel, unter, karten, filter: FILTER, onOeffnen, sti
               <span aria-hidden="true" style={{ position: "absolute", right: 14, bottom: 16, width: 38, height: 38, borderRadius: "50%", background: "rgba(255,255,255,.2)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M7 17L17 7M9 7h8v8" /></svg>
               </span>
+              </>}
             </button>
           );
         })}

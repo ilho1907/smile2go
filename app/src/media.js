@@ -167,3 +167,18 @@ export const THEMEN_BILDER = {
   unruhe:     `${HF}/hf_20261117_010042_906e2937-375e-4434-984d-298f7a1d0a7e.png`,
   betrug:     `${HF}/hf_20261117_010042_8c67d928-30f1-4361-986c-fe52bae68432.png`,
 };
+
+// FuF · Frauen unterstützen Frauen — Plakate und Logo (lokal, von ilho, 17.11.2026)
+const FUF = "/media/img/fuf";
+export const FUF_LOGO = `${FUF}/logo-foto.webp`;
+export const FUF_LOGO_ZEICHNUNG = `${FUF}/logo-zeichnung.webp`;
+export const FUF_PLAKATE = [
+  { key: "ideen-zu-gross", titel: "Manche Ideen sind zu groß, um sie allein zu leben." },
+  { key: "mehr-zutrauen", titel: "Was wäre, wenn wir uns gegenseitig mehr zutrauen?" },
+  { key: "gemeinsam-magisch", titel: "Gemeinsam sind wir magisch" },
+  { key: "hier-waechst", titel: "Hier wächst etwas, das mir am Herzen liegt." },
+  { key: "miteinander-wachsen", titel: "Miteinander wachsen" },
+  { key: "ideen-teilen", titel: "Es beginnt mit Frauen, die ihre Ideen teilen." },
+  { key: "ideen-gross-sein", titel: "Deine Ideen dürfen groß sein" },
+  { key: "beginnt-fuer-dich", titel: "Vielleicht beginnt hier auch etwas für dich." },
+].map((p) => ({ ...p, bild: `${FUF}/${p.key}.webp` }));
