@@ -149,6 +149,9 @@ export const ENTDECKEN_BILDER = {
   qigong:      `${HF}/hf_20261117_004715_519126f8-52d1-44a8-b9cb-0f826c8703b2.png`,
   klang:       `${HF}/hf_20261117_004715_937f5667-3248-4e4b-895e-6f1ec5d8a5fd.png`,
   loslassen:   `${HF}/hf_20261117_004715_f471a399-faf1-4b96-9a48-43f7c65e8d01.png`,
+  kerze:       `${HF}/hf_20261117_011216_959c5c9a-7d2e-49b2-9e4f-f29bec3dfa30.png`,
+  natur:       `${HF}/hf_20261117_011216_0e0270fd-1875-4734-b809-7566cc9d5da7.png`,
+  wasser:      `${HF}/hf_20261117_011216_35c1d788-019e-4e9b-bb71-c6cd58e129cb.png`,
 };
 
 // Themen-Karussell unter „Mehr" (Higgsfield · gpt_image_2_6, 3:4, 17.11.2026)

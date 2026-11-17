@@ -9,6 +9,9 @@ import { ENTDECKEN_BILDER } from "./media";
 const KARTEN = [
   { key: "meditation", art: "Meditation", titel: "Komm zur Ruhe", unter: "Atem & geführte Meditation", dauer: "10 Min", bild: "meditation" },
   { key: "achtsamkeit", art: "Meditation", titel: "Achtsamkeits-Reise", unter: "Fünf Sinne, sechs Stationen", dauer: "12 Min", bild: "achtsamkeit" },
+  { key: "r-kerze", art: "Rituale", titel: "Kerze & Räuchern", unter: "Ein Zeichen an dich selbst", dauer: "5 Min", bild: "kerze", journal: true },
+  { key: "r-natur", art: "Rituale", titel: "Zeit in der Natur", unter: "Zwanzig Minuten ohne Ziel", dauer: "20 Min", bild: "natur", journal: true },
+  { key: "r-wasser", art: "Rituale", titel: "Körper & Wasser", unter: "Deinem Körper antworten", dauer: "5 Min", bild: "wasser", journal: true },
   { key: "mondrituale", art: "Rituale", titel: "Mondritual", unter: "Für Neumond und Vollmond", dauer: "15 Min", bild: "mond" },
   { key: "qigong", art: "Bewegung", titel: "Qigong am Morgen", unter: "Sanft in den Körper kommen", dauer: "8 Min", bild: "qigong" },
   { key: "media", art: "Klang", titel: "Klangräume", unter: "Musik zum Loslassen", dauer: "20 Min", bild: "klang" },
@@ -20,8 +23,13 @@ const FILTER = ["Alle", "Meditation", "Rituale", "Bewegung", "Klang"];
 const MAGENTA = "#C2418F";
 const PFLAUME = "#2A1730";
 
-export default function Entdecken({ go }) {
-  return <Karussell titel="Entdecken" karten={KARTEN.map((k) => ({ ...k, bild: ENTDECKEN_BILDER[k.bild] }))} filter={FILTER} onOeffnen={(k) => go(k.key)} />;
+export default function Entdecken({ go, setJournalSec }) {
+  // Die Wochen-Rituale wohnen im Tagebuch unter „Rituale".
+  const oeffnen = (k) => {
+    if (k.journal) { go("tagebuch"); setJournalSec?.("rituale"); return; }
+    go(k.key);
+  };
+  return <Karussell titel="Entdecken" karten={KARTEN.map((k) => ({ ...k, bild: ENTDECKEN_BILDER[k.bild] }))} filter={FILTER} onOeffnen={oeffnen} />;
 }
 
 /* Wiederverwendbar: auch die Themen unter „Mehr" laufen darueber.

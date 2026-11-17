@@ -654,6 +654,20 @@ const AbschnittTitel = ({ children, unter, style }) => (
 /* Eine Zeile auf "Heute": Zeichen, Titel, eine leise Unterzeile. Antippbar
    ist sie ein Knopf, sonst nur Text. Aus dieser einen Form sind alle drei
    Bloecke gebaut — darum sieht die Seite aus einem Guss aus. */
+/* Mantra laut vorlesen — Sprachausgabe des Geraets, kein Netzwerk. */
+const mantraVorlesen = (text) => {
+  try {
+    const sp = window.speechSynthesis;
+    if (!sp) return;
+    sp.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "de-DE"; u.rate = 0.9;
+    const stimme = sp.getVoices().find((v) => v.lang?.startsWith("de") && /female|anna|petra|helena|katja/i.test(v.name)) || sp.getVoices().find((v) => v.lang?.startsWith("de"));
+    if (stimme) u.voice = stimme;
+    sp.speak(u);
+  } catch { /* still */ }
+};
+
 const HeuteZeile = ({ ikon, sym, titel, unter, onClick, style }) => {
   const inhalt = (
     <>
@@ -1402,7 +1416,7 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
     <div style={{ padding: "0 20px 20px" }}>
       {/* Block 2 — erhoben: was ilho vorbereitet hat. Jede Zeile hat dieselbe
           Form; was man antippen kann, fuehrt an seinen Ort. */}
-      <Entdecken go={go} />
+      <Entdecken go={go} setJournalSec={setJournalSec} />
 
       <AbschnittTitel>Für dich vorbereitet</AbschnittTitel>
       <Card style={{ marginBottom: 32 }}>
@@ -1413,9 +1427,9 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
             ikon="karte"
             titel={heutigeKarte ? "Deine Tageskarte" : "Deine Tageskarte wartet"}
             unter={heutigeKarte ? `${heutigeKarte.n} — heute gezogen.` : "Du hast sie heute noch nicht gezogen."}
-            onClick={heutigeKarte ? undefined : () => go("orakel")}
+            onClick={() => go("orakel")}
           />
-          <HeuteZeile ikon="sonne" titel="Dein Mantra" unter={mot.t} />
+          <HeuteZeile ikon="sonne" titel="Dein Mantra · antippen zum Anhören" unter={mot.t} onClick={() => mantraVorlesen(mot.t)} />
           <HeuteZeile ikon="kerze" titel="Zwei Minuten Atem" unter="Wenn der Kopf zu voll ist." onClick={() => go("meditation")} />
         </div>
       </Card>
@@ -2185,17 +2199,22 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
           <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, lineHeight: 1.6, marginBottom: 12 }}>
             Welche Gedanken und Gefühle kommen in dir hoch?
           </p>
+          <div style={{ position: "relative" }}>
           <textarea
             value={reflexion}
             onChange={(e) => setReflexion(e.target.value)}
             rows={4}
-            placeholder="Schreib auf, was diese Karte in dir berührt …"
+            placeholder="Schreib oder sprich, was diese Karte in dir berührt …"
             style={{
-              width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12,
+              width: "100%", boxSizing: "border-box", padding: "12px 56px 12px 12px", borderRadius: 12,
               border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 16.5,
               lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso,
             }}
           />
+            <div style={{ position: "absolute", right: 10, bottom: 14 }}>
+              <Mikro size={40} onText={(t) => setReflexion((r) => (r.trim() ? r.trimEnd() + " " : "") + t)} />
+            </div>
+          </div>
           <div style={{ marginTop: 10 }}>
             <Btn full onClick={reflexionSpeichern} disabled={!reflexion.trim()}>
               {gespeichert ? "🤍 Im Tagebuch gespeichert" : "Ins Tagebuch legen (+10 ✨)"}
@@ -8724,9 +8743,6 @@ function useSekundenTakt(aktiv = true) {
 }
 
 const MEHR_GRUPPEN = [
-    { g: "Von Frauen für Frauen", items: [
-      { icon: "\u{1F49D}", t: "Community", s: "Was Coachinnen für alle Frauen geschenkt haben", tab: "gemeinschaft" },
-    ] },
     { g: "Deine Coachin", items: [
       { icon: "🌸", t: "Coaching", s: "Deine Begleitung, Pakete & Fortschritt", tab: "coaching" },
       { icon: "💬", t: "Coach-Chat", s: "Schreib ihr, wenn dich etwas bewegt", tab: "coach" },
