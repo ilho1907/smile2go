@@ -182,3 +182,10 @@ export const FUF_PLAKATE = [
   { key: "ideen-gross-sein", titel: "Deine Ideen dürfen groß sein" },
   { key: "beginnt-fuer-dich", titel: "Vielleicht beginnt hier auch etwas für dich." },
 ].map((p) => ({ ...p, bild: `${FUF}/${p.key}.webp` }));
+
+// Mantra-Raum (Higgsfield, 17.11.2026): Naturvideo 9:16 (Seedance 2.5, 1080p, stumm) + Mantra-Musik (ElevenLabs Music, 3 Min, instrumental)
+export const MANTRA_MEDIEN = {
+  video:  `${HF}/hf_20261117_015707_59588383-b914-4b8f-9878-92b5f0183394.mp4`,
+  musik:  `${HF}/hf_20261117_015703_202ccf5d-3ddf-4f9e-a2c0-1e94231fea85.mp3`,
+  poster: `${HF}/hf_20261117_004715_61e2b7af-9804-45ba-9d73-d1ba7bb242f4.png`,
+};

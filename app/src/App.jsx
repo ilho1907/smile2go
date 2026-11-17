@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
 import Entdecken, { Karussell } from "./Entdecken";
+import MantraRaum from "./MantraRaum";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
 import Gefuehlskompass, { gefuehlsStand } from "./Gefuehlskompass";
@@ -654,20 +655,6 @@ const AbschnittTitel = ({ children, unter, style }) => (
 /* Eine Zeile auf "Heute": Zeichen, Titel, eine leise Unterzeile. Antippbar
    ist sie ein Knopf, sonst nur Text. Aus dieser einen Form sind alle drei
    Bloecke gebaut — darum sieht die Seite aus einem Guss aus. */
-/* Mantra laut vorlesen — Sprachausgabe des Geraets, kein Netzwerk. */
-const mantraVorlesen = (text) => {
-  try {
-    const sp = window.speechSynthesis;
-    if (!sp) return;
-    sp.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "de-DE"; u.rate = 0.9;
-    const stimme = sp.getVoices().find((v) => v.lang?.startsWith("de") && /female|anna|petra|helena|katja/i.test(v.name)) || sp.getVoices().find((v) => v.lang?.startsWith("de"));
-    if (stimme) u.voice = stimme;
-    sp.speak(u);
-  } catch { /* still */ }
-};
-
 const HeuteZeile = ({ ikon, sym, titel, unter, onClick, style }) => {
   const inhalt = (
     <>
@@ -1429,7 +1416,7 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
             unter={heutigeKarte ? `${heutigeKarte.n} — heute gezogen.` : "Du hast sie heute noch nicht gezogen."}
             onClick={() => go("orakel")}
           />
-          <HeuteZeile ikon="sonne" titel="Dein Mantra · antippen zum Anhören" unter={mot.t} onClick={() => mantraVorlesen(mot.t)} />
+          <HeuteZeile ikon="sonne" titel="Dein Mantra · mit Musik und Natur" unter={mot.t} onClick={() => go("mantra")} />
           <HeuteZeile ikon="kerze" titel="Zwei Minuten Atem" unter="Wenn der Kopf zu voll ist." onClick={() => go("meditation")} />
         </div>
       </Card>
@@ -11221,7 +11208,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "gemeinschaft", "tagebuch", "mehr"];
-const TITLES = { gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { mantra: "Mantra", gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -11655,6 +11642,7 @@ export default function IlhoApp() {
               {tab === "buchen" && <><MediaBanner video={S2GVID.buchen} poster={S2GIMG.buchen} title="Termin buchen" subtitle="Zeit für dich" height={190} /><Buchen bindung={bindung} aufBindung={aufBindung} termine={termine} setTermine={setTermine} /></>}
               {tab === "coach" && <><MediaBanner video={S2GVID.coach} poster={S2GIMG.coach} title="Coach-Chat" subtitle="Du wirst gehört" height={190} /><CoachChat bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "media" && <><MediaBanner video={S2GVID.mediathek} poster={S2GIMG.mediathek} title="Mediathek" subtitle="Deine Inhalte, dein Raum" height={200} /><Mediathek uploads={uploads} setUploads={setUploads} tools={tools} setTools={setTools} office={office} setOffice={setOffice} bindung={bindung} /></>}
+              {tab === "mantra" && <div style={{ margin: "0 0 -20px" }}><MantraRaum mantras={MOTIVATION} startIndex={dayIndex()} addPunkte={addPunkte} /></div>}
               {tab === "meditation" && <MeditationCine addPunkte={(n, l) => { tagesAktivitaet("meditation"); addPunkte(n, l || "Meditation abgeschlossen"); }} />}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
               {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} alias={alias} anon={anon} bindung={bindung} /></>}
