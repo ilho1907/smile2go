@@ -1456,3 +1456,16 @@ export async function ladeTwinMeinerCoachin(coachId) {
     stimm_anbieter: stimme?.anbieter || null,
   };
 }
+
+// Expertinnen-Verzeichnis: RLS zeigt nur Coachinnen, die schon etwas in der
+// Community geteilt haben („Coachin mit Beitrag ist sichtbar“). Ohne Supabase leer.
+export async function ladeExpertinnen(limit = 30) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("coaches")
+    .select("id, name, kurzprofil, schwerpunkte, website, instagram, buchungslink")
+    .not("name", "is", null)
+    .limit(limit);
+  if (error) { console.warn("ladeExpertinnen:", error.message); return []; }
+  return (data || []).filter((c) => (c.name || "").trim());
+}

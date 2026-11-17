@@ -5,6 +5,7 @@ import HeuteHero from "./HeuteHero";
 import Entdecken, { Karussell } from "./Entdecken";
 import MantraRaum from "./MantraRaum";
 import Tarot from "./Tarot";
+import { ExpertinnenKarussell, ExpertinProfil } from "./Expertinnen";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
 import Gefuehlskompass, { gefuehlsStand } from "./Gefuehlskompass";
@@ -7818,7 +7819,7 @@ const WhatsAppZeichen = () => (
   </span>
 );
 
-function Gemeinschaft({ go, bindung }) {
+function Gemeinschaft({ go, bindung, openExpertin }) {
   const [bed, setBed] = useState(null);
   const [detail, setDetail] = useState(null);
   const [zahlen, setZahlen] = useState({});
@@ -8427,6 +8428,7 @@ function Gemeinschaft({ go, bindung }) {
       )}
 
       <Karussell karten={FUF_PLAKATE} nurBild onOeffnen={() => {}} stil={{ marginBottom: 26 }} />
+      <ExpertinnenKarussell titel="Unsere Expertinnen" onOeffnen={openExpertin} stil={{ marginBottom: 26 }} />
 
 
       {(
@@ -8811,7 +8813,7 @@ const MEHR_GRUPPEN = [
     ] },
 ];
 
-function Mehr({ go, addPunkte, openThema, bindung, openPunkte }) {
+function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
   const [auf, setAuf] = useState("Deine Coachin");
   // Coach-Chat erst zeigen, wenn sie mit einer Coachin verbunden ist.
   const gruppen = MEHR_GRUPPEN
@@ -8895,6 +8897,7 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte }) {
         onOeffnen={(k) => openThema?.(k.key)}
         stil={{ marginBottom: 22 }}
       />
+      <ExpertinnenKarussell onOeffnen={openExpertin} stil={{ marginBottom: 22 }} />
       {gruppen.map((gr) => {
         const rhythmus = WOCHEN_GRUPPEN.includes(gr.g);
         const ersterBlock = rhythmus && gr.g === gruppen.find((g) => WOCHEN_GRUPPEN.includes(g.g))?.g;
@@ -11210,7 +11213,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "gemeinschaft", "tagebuch", "mehr"];
-const TITLES = { mantra: "Mantra", tarot: "Tarot", gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { expertin: "Expertin", mantra: "Mantra", tarot: "Tarot", gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -11428,6 +11431,8 @@ export default function IlhoApp() {
   // dann spricht ilho in seinem eigenen, neutralen Ton.
   const [twin, setTwin] = useState(null);
   const [themaId, setThemaId] = useState(null);
+  const [expertin, setExpertin] = useState(null);
+  const openExpertin = (e) => { if (e?.tab) { go(e.tab); return; } setExpertin(e); go("expertin"); };
   useEffect(() => {
     if (!supabase || !user || !bindung?.coach_id) { setTwin(null); return; }
     let aktiv = true;
@@ -11629,13 +11634,14 @@ export default function IlhoApp() {
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 208 : 136, animation: "fadeUp .45s ease" }}>
               {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} avatar={prefs?.avatar} onProfil={() => go("profil")} /><div style={{ padding: "28px 20px 0" }}><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries}><GefuehlsZeileHeute daten={prefs.gefuehle} onCheckin={() => { setGefStart("checkin"); go("gefuehle"); }} onOeffnen={() => { setGefStart("start"); go("gefuehle"); }} /></EnergieKompass></div><Heute metime={metime} name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
-              {tab === "gemeinschaft" && <Gemeinschaft go={go} bindung={bindung} />}
+              {tab === "gemeinschaft" && <Gemeinschaft go={go} bindung={bindung} openExpertin={openExpertin} />}
+              {tab === "expertin" && <div style={{ margin: "0 0 -20px" }}><ExpertinProfil e={expertin} go={go} /></div>}
               {tab === "coaching" && <><MediaBanner video={S2GVID.coaching} poster={S2GIMG.coaching} title="Deine Begleitung" subtitle="Achtsam begleitet" /><CoachingHub go={go} bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "wochenbericht" && <Wochenbericht bindung={bindung} aufBindung={aufBindung} entries={entries} achtsam={achtsam} dank={dank} qigong={qigong} metime={metime} losgelassen={losgelassen} punkte={punkte} />}
               {tab === "impressum" && <Impressum />}
               {tab === "datenschutz" && <Datenschutz />}
               {tab === "tagebuch" && <Journal entries={entries} setEntries={setEntries} ritual={ritual} setRitual={setRitual} ch369={ch369} setCh369={setCh369} mm={mm} setMm={setMm} briefe={briefe} setBriefe={setBriefe} briefPost={briefPost} setBriefPost={setBriefPost} akarte={akarte} setAkarte={setAkarte} addPunkte={addPunkte} streak={streak} punkte={punkte} initialSec={journalSec} />}
-              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} bindung={bindung} openPunkte={() => setPkModal(true)} openThema={(id) => { setThemaId(id); go("thema"); }} /></>}
+              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} bindung={bindung} openPunkte={() => setPkModal(true)} openThema={(id) => { setThemaId(id); go("thema"); }} openExpertin={openExpertin} /></>}
               {tab === "thema" && <ThemaScreen id={themaId} go={go} bindung={bindung} />}
               {tab === "ziele" && <><MediaBanner video={S2GVID.ziele} poster={S2GIMG.ziele} title="Ziele" subtitle="Deine Richtung, dein Nordstern" height={190} /><Ziele ziele={ziele} setZiele={setZiele} addPunkte={addPunkte} /></>}
               {tab === "aufgaben" && <><MediaBanner video={S2GVID.aufgaben} poster={S2GIMG.aufgaben} title="Aufgaben" subtitle="Schritt für Schritt" height={190} /><Aufgaben aufgaben={aufgaben} setAufgaben={setAufgaben} addPunkte={addPunkte} go={go} ch369={ch369} setCh369={setCh369} akarte={akarte} setAkarte={setAkarte} /></>}
