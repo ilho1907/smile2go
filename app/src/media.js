@@ -140,3 +140,13 @@ export const PALETTE = {
   bg: "#FBF6FA", card: "#FFFDFE", gold: "#8E4C85",
   rose: "#E8A8D4", sage: "#6FA89C", ink: "#2E2430", mut: "#8E88A0",
 };
+
+// Entdecken-Karussell auf Heute (Higgsfield · gpt_image_2_6, 3:4, 17.11.2026) — vom CDN wie die Videos oben.
+export const ENTDECKEN_BILDER = {
+  meditation:  `${HF}/hf_20261117_004715_c2c3eb3e-347a-4540-9a31-3ea51daa63e8.png`,
+  achtsamkeit: `${HF}/hf_20261117_004715_61e2b7af-9804-45ba-9d73-d1ba7bb242f4.png`,
+  mond:        `${HF}/hf_20261117_004715_8200b8e9-3ce8-4b9f-ba95-35e4bf73216b.png`,
+  qigong:      `${HF}/hf_20261117_004715_519126f8-52d1-44a8-b9cb-0f826c8703b2.png`,
+  klang:       `${HF}/hf_20261117_004715_937f5667-3248-4e4b-895e-6f1ec5d8a5fd.png`,
+  loslassen:   `${HF}/hf_20261117_004715_f471a399-faf1-4b96-9a48-43f7c65e8d01.png`,
+};

@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScreens";
 import HeuteHero from "./HeuteHero";
+import Entdecken from "./Entdecken";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
 import Gefuehlskompass, { gefuehlsStand } from "./Gefuehlskompass";
@@ -1401,6 +1402,8 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
     <div style={{ padding: "0 20px 20px" }}>
       {/* Block 2 — erhoben: was ilho vorbereitet hat. Jede Zeile hat dieselbe
           Form; was man antippen kann, fuehrt an seinen Ort. */}
+      <Entdecken go={go} />
+
       <AbschnittTitel>Für dich vorbereitet</AbschnittTitel>
       <Card style={{ marginBottom: 32 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
