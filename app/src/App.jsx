@@ -7618,6 +7618,8 @@ const BEDUERFNISSE = [
   { id: "betrug",        icon: "\u{1F6A9}", t: "Mir wurde online etwas angetan" },
   { id: "neuanfang",     icon: "\u{1F331}", t: "Ich fange neu an" },
   { id: "koerper",       icon: "\u{1FAC2}", t: "Ich bin nicht zuhause in meinem Körper" },
+  { id: "beziehung",     icon: "\u{1F91D}", t: "Meine Beziehung beschäftigt mich" },
+  { id: "loslassen",     icon: "\u{1F343}", t: "Ich kann nicht loslassen" },
 ];
 
 const BED = Object.fromEntries(BEDUERFNISSE.map((b) => [b.id, b]));
@@ -7653,6 +7655,8 @@ const GEM_TOENE = {
   betrug:       ["#2E3A40", "#4A5A62", "rgba(170,200,215,", "rgba(90,120,135,"],
   neuanfang:    ["#2F4A33", "#4F7349", "rgba(190,225,170,", "rgba(100,150,95,"],
   koerper:      ["#4E3456", "#7A5584", "rgba(230,200,240,", "rgba(150,110,170,"],
+  beziehung:    ["#5C2E4E", "#8A4A73", "rgba(250,190,220,", "rgba(170,90,140,"],
+  loslassen:    ["#34483E", "#56705F", "rgba(195,225,205,", "rgba(110,150,125,"],
 };
 
 // Kleine, stabile Zahl aus einem Text — damit derselbe Beitrag immer
@@ -8546,8 +8550,196 @@ const THEMEN = [
   },
 ];
 
+/* Pro Thema: was die Forschung sagt, eine Übung und die Bedürfnisse, unter
+   denen Coachinnen in der Gemeinschaft dazu Beiträge einstellen.
+   Rechtlich wichtig (HeilprG): Die Ansätze stehen hier als Hintergrundwissen
+   „angelehnt an …“ — die App und die Coachinnen bieten Selbsthilfe und
+   Coaching an, keine Therapie. Diese Formulierung nicht verschärfen. */
+const THEMA_WISSEN = {
+  trauer: {
+    bed: ["trauer"],
+    ansatz: "Duales Prozessmodell (Stroebe & Schut)",
+    forschung: "Trauer verläuft nicht in festen Phasen. Sie pendelt zwischen dem Verlust zuwenden („Ich vermisse dich“) und dem Leben zuwenden (Alltag, neue Rollen) — beides ist gesund. Hält sehr starke Trauer länger als ein Jahr an und lähmt den Alltag, gilt das als eigenes Krankheitsbild, das gut behandelbar ist. Dann hilft eine Psychotherapeutin.",
+    uebung: { t: "Hand aufs Herz", dauer: 5, schritte: [
+      "Setz dich bequem hin und leg eine Hand auf dein Herz.",
+      "Atme ein paar Mal langsam ein und aus.",
+      "Sag still zu dir: „Das tut weh. Ich darf vermissen. Ich bin nicht allein damit.“",
+      "Stell dir den Menschen kurz vor und sag ihm einen Satz, den du ihm noch sagen möchtest.",
+    ] },
+  },
+  trennung: {
+    bed: ["liebeskummer", "trennung"],
+    ansatz: "Kognitive Verhaltenstherapie (KVT)",
+    forschung: "Liebeskummer aktiviert im Gehirn ähnliche Stress- und Belohnungssysteme wie ein Entzug. Gut belegt hilft: den Kontakt bewusst begrenzen (keine Profile checken), Grübelschleifen bemerken und unterbrechen und dem Tag wieder Struktur geben — Schlaf, Bewegung, Menschen.",
+    uebung: { t: "RAIN — Gefühle da sein lassen", dauer: 10, schritte: [
+      "Erkennen: Was fühle ich gerade? Gib dem Gefühl einen Namen.",
+      "Zulassen: Es darf da sein. Du musst es nicht wegmachen.",
+      "Erforschen: Wo spürst du es im Körper? Wie fühlt es sich an?",
+      "Fürsorge: Was bräuchtest du jetzt? Gib es dir mit einer freundlichen Geste, etwa einer Hand auf dem Bauch.",
+    ] },
+  },
+  beziehung: {
+    bed: ["beziehung", "einsam"],
+    ansatz: "Emotionsfokussierte Paartherapie (Sue Johnson) und Gottman-Forschung",
+    forschung: "Hinter Streit steckt oft die Frage „Bist du für mich da?“. Paare geraten in einen Kreislauf: Eine verfolgt, der andere zieht sich zurück. Der Kreislauf ist das Problem, nicht der Mensch. Stabile Paare haben im Konflikt etwa fünf freundliche auf eine verletzende Geste.",
+    uebung: { t: "Liebende Güte für uns", dauer: 8, schritte: [
+      "Schließ die Augen und stell dir deinen Partner vor.",
+      "Wünsche ihm still: „Mögest du dich sicher fühlen. Mögest du dich gesehen fühlen.“",
+      "Wünsche dasselbe dir selbst.",
+      "Und zum Schluss euch beiden: „Mögen wir einander finden.“",
+    ] },
+  },
+  selbstwert: {
+    bed: ["selbstzweifel"],
+    ansatz: "Compassion-Focused Therapy (Paul Gilbert) und Selbstmitgefühl (Kristin Neff)",
+    forschung: "Ein stabiler Selbstwert entsteht nicht durch Leistung, sondern durch einen freundlichen Umgang mit dir selbst. Selbstmitgefühl beruhigt den inneren Kritiker, ohne dass du dich größer machen musst — und ist in vielen Studien mit weniger Angst und Grübeln verbunden.",
+    uebung: { t: "Selbstmitgefühls-Pause", dauer: 3, schritte: [
+      "Sag dir: „Das ist gerade schwer.“",
+      "Sag dir: „Andere fühlen das auch. Ich bin nicht allein.“",
+      "Leg eine Hand auf die Brust: „Möge ich freundlich zu mir sein.“",
+    ] },
+  },
+  grenzen: {
+    bed: ["grenzen"],
+    ansatz: "DBT-Fertigkeit DEAR MAN (Dialektisch-Behaviorale Therapie)",
+    forschung: "Grenzen lassen sich üben wie eine Fertigkeit. DEAR MAN heißt: Situation beschreiben, Gefühl ausdrücken, Wunsch klar sagen, bestärken, warum es beiden hilft — dabei achtsam beim Thema bleiben, selbstsicher auftreten und bereit sein zu verhandeln.",
+    uebung: { t: "Ja und Nein im Körper", dauer: 7, schritte: [
+      "Denk an etwas, zu dem du wirklich Ja sagst. Wo wird es in dir weit?",
+      "Denk an etwas, das du eigentlich nicht willst. Wo wird es eng?",
+      "Merk dir dieses enge Gefühl. Dein Körper zeigt deine Grenze oft vor deinem Kopf.",
+    ] },
+  },
+  neuanfang: {
+    bed: ["neuanfang"],
+    ansatz: "Akzeptanz- und Commitment-Therapie (ACT), Wertearbeit",
+    forschung: "Ein Neuanfang trägt besser, wenn er sich an Werten orientiert („Wofür will ich stehen?“) statt nur an Zielen („Was will ich erreichen?“). Kleine Schritte, die zu deinen Werten passen, zählen mehr als der perfekte Plan.",
+    uebung: { t: "Bestes mögliches Selbst", dauer: 10, schritte: [
+      "Stell dir dein Leben in einem Jahr vor, wenn sich vieles gut entwickelt hat.",
+      "Wie fühlt sich ein ganz normaler Morgen an? Wo bist du, wer ist da?",
+      "Halte drei Details fest — im Kopf oder im Tagebuch.",
+    ] },
+  },
+  geld: {
+    bed: ["geld"],
+    ansatz: "Kognitive Verhaltenstherapie bei Geldsorgen",
+    forschung: "Geldsorgen hängen oft an früh gelernten Sätzen wie „Geld ist knapp“ oder „Ich darf nicht viel verlangen“. Hilfreich ist, diese Sätze aufzuschreiben und zu prüfen (Was spricht dafür, was dagegen?) — und dann einen Überblick zu schaffen, statt wegzuschauen. Bei Schulden helfen Schuldnerberatungen kostenlos.",
+    uebung: { t: "Dankbarkeit und Genug", dauer: 5, schritte: [
+      "Nenne still drei Dinge, die heute schon da sind.",
+      "Atme ein und denk: „Ich habe.“",
+      "Atme aus und denk: „Es ist genug für diesen Moment.“",
+    ] },
+  },
+  loslassen: {
+    bed: ["loslassen"],
+    ansatz: "Akzeptanz- und Commitment-Therapie (ACT), Defusion",
+    forschung: "Loslassen heißt nicht, nichts mehr zu fühlen. Es heißt, Gedanken nicht mehr für die ganze Wahrheit zu halten. Aus „Ich bin nichts wert“ wird „Ich habe gerade den Gedanken, dass ich nichts wert bin“ — und schon entsteht ein kleiner Abstand.",
+    uebung: { t: "Blätter auf dem Fluss", dauer: 8, schritte: [
+      "Stell dir einen ruhigen Fluss vor, auf dem Blätter treiben.",
+      "Leg jeden Gedanken, der auftaucht, auf ein Blatt.",
+      "Schau zu, wie es davontreibt. Du musst nichts festhalten und nichts wegschieben.",
+    ] },
+  },
+  unruhe: {
+    bed: ["unruhig", "angst", "schlaflos"],
+    ansatz: "Kognitive Verhaltenstherapie und Progressive Muskelentspannung (Jacobson)",
+    forschung: "Beides gehört zu den am besten untersuchten Methoden gegen Anspannung. Der Körper beruhigt den Kopf: Ein längeres Ausatmen aktiviert den Teil des Nervensystems, der für Ruhe zuständig ist.",
+    uebung: { t: "Atmen 4–6", dauer: 5, schritte: [
+      "Atme vier Sekunden durch die Nase ein.",
+      "Atme sechs Sekunden langsam aus.",
+      "Wiederhole das etwa fünf Minuten lang.",
+      "Wenn du magst: Fäuste fünf Sekunden fest ballen, dann lösen und den Unterschied spüren.",
+    ] },
+  },
+  betrug: {
+    bed: ["betrug"],
+    ansatz: "Psychoedukation, angelehnt an die Kognitive Verarbeitungstherapie",
+    forschung: "Wer betrogen wurde, leidet oft stärker unter Scham und Schuld („Wie konnte ich so dumm sein?“) als unter dem Verlust. Betrüger arbeiten professionell mit Manipulation — das kann jede treffen. Es hilft, festgefahrene Schuldgedanken zu erkennen und darüber zu sprechen.",
+    uebung: { t: "5-4-3-2-1 Erdung", dauer: 5, schritte: [
+      "Nenne fünf Dinge, die du siehst.",
+      "Vier, die du hörst. Drei, die du spürst.",
+      "Zwei, die du riechst. Eins, das du schmeckst.",
+      "Dann still: „Ich wurde getäuscht. Das ist nicht meine Schuld.“",
+    ] },
+  },
+};
+
+function ThemaUebung({ u, farbe }) {
+  const [offen, setOffen] = useState(false);
+  return (
+    <Card style={{ marginTop: 8, marginBottom: 20, padding: 16 }}>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: farbe }}>
+        Meditation · {u.dauer} Min.
+      </div>
+      <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, margin: "6px 0 10px" }}>{u.t}</div>
+      {offen && (
+        <ol style={{ margin: "0 0 12px", paddingLeft: 20, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6 }}>
+          {u.schritte.map((s) => <li key={s} style={{ marginBottom: 6 }}>{s}</li>)}
+        </ol>
+      )}
+      <Btn small ghost={offen} onClick={() => setOffen(!offen)}>{offen ? "Schließen" : "Übung beginnen"}</Btn>
+    </Card>
+  );
+}
+
+function ThemaCoachinnen({ bed, go }) {
+  const [beitraege, setBeitraege] = useState(null);
+  useEffect(() => {
+    let aktiv = true;
+    Promise.all((bed || []).map((b) => ladeGemeinschaft(b, 12)))
+      .then((listen) => {
+        if (!aktiv) return;
+        const gesehen = new Set();
+        const alle = listen.flat().filter((b) => !gesehen.has(b.id) && gesehen.add(b.id));
+        setBeitraege(alle.slice(0, 6));
+      })
+      .catch(() => aktiv && setBeitraege([]));
+    return () => { aktiv = false; };
+  }, [bed?.join(",")]);
+
+  if (beitraege === null) return null;
+  const typName = { video: "Video", audio: "Audio", uebung: "Übung", text: "Impuls" };
+  return (
+    <div style={{ marginTop: 8, marginBottom: 20 }}>
+      {beitraege.length === 0 && (
+        <Card style={{ background: C.beige }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.55, margin: 0 }}>
+            Zu diesem Thema haben Coachinnen noch nichts eingestellt. Neue Beiträge erscheinen hier automatisch.
+          </p>
+        </Card>
+      )}
+      {beitraege.map((b) => (
+        <Card key={b.id} style={{ marginBottom: 9, padding: 14 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: C.gold, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            {typName[b.typ] || "Beitrag"}{b.dauer_min ? ` · ${b.dauer_min} Min.` : ""}
+          </div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso, marginTop: 3 }}>{b.titel}</div>
+          {b.coach_name && (
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>von {b.coach_name}</div>
+          )}
+          <div style={{ display: "flex", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
+            {b.extern_url && (
+              <a href={b.extern_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum }}>
+                {b.typ === "video" ? "▶︎ Video ansehen ↗" : "Öffnen ↗"}
+              </a>
+            )}
+            <button type="button" onClick={() => go("gemeinschaft")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, textDecoration: "underline" }}>
+              In der Gemeinschaft
+            </button>
+          </div>
+        </Card>
+      ))}
+      {beitraege.some((b) => b.typ === "video") && (
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, lineHeight: 1.5, margin: "4px 0 0" }}>
+          Videos öffnen sich auf der Plattform der Coachin (z. B. YouTube). Dort gelten deren Datenschutzregeln.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ThemaScreen({ id, go, bindung }) {
   const th = THEMEN.find((x) => x.id === id) || THEMEN[0];
+  const wissen = THEMA_WISSEN[th.id];
   return (
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow color={C.plum}>Thema</Eyebrow>
@@ -8561,6 +8753,26 @@ function ThemaScreen({ id, go, bindung }) {
       <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.65, margin: "0 0 20px" }}>
         {th.text}
       </p>
+
+      {wissen && (
+        <>
+          <Eyebrow color={C.plum}>Was die Forschung sagt</Eyebrow>
+          <Card style={{ marginTop: 8, marginBottom: 20, background: C.beige }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6, margin: 0 }}>
+              {wissen.forschung}
+            </p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, lineHeight: 1.5, margin: "10px 0 0" }}>
+              Angelehnt an: {wissen.ansatz}. Hier als Selbsthilfe aufbereitet, keine Therapie.
+            </p>
+          </Card>
+
+          <Eyebrow color={C.plum}>Übung zum Thema</Eyebrow>
+          <ThemaUebung u={wissen.uebung} farbe={th.farbe} />
+
+          <Eyebrow color={C.plum}>Von Coachinnen</Eyebrow>
+          <ThemaCoachinnen bed={wissen.bed} go={go} />
+        </>
+      )}
 
       <Eyebrow color={C.plum}>Das ist jetzt da für dich</Eyebrow>
       <div style={{ marginTop: 8, marginBottom: 20 }}>
@@ -8616,7 +8828,7 @@ function ThemaScreen({ id, go, bindung }) {
       {th.krise && (
         <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, lineHeight: 1.6, opacity: 0.85 }}>
           Wenn es dir gerade sehr schlecht geht: Die TelefonSeelsorge ist rund um die Uhr erreichbar,
-          kostenfrei unter <b>0800 111 0 111</b> und <b>0800 111 0 222</b>. Diese App ersetzt keine
+          kostenfrei unter <b>0800 111 0 111</b> und <b>0800 111 0 222</b>. Im Notfall: <b>112</b>. Diese App ersetzt keine
           Therapie und keine ärztliche Behandlung.
         </p>
       )}
