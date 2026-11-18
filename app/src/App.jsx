@@ -29,7 +29,7 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   rolleWunschMerken, rolleAbgleichen, coachRolleSetzen, coachCodePruefen, coachCodeEinloesen,
   ladeGemeinschaft, zaehleGemeinschaft, gemeinschaftDateiUrl, gemeinschaftGesehen,
   gemeinschaftHerz, ladeMeineHerzen, beduerfnisMerken, beduerfnisVergessen,
-  meineBeduerfnisse } from "./supabase";
+  meineBeduerfnisse, istAdmin } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -4715,6 +4715,8 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
   const [dsgvoHinweis, setDsgvoHinweis] = useState("");
   const [loeschDialog, setLoeschDialog] = useState(false);
   const [loeschWort, setLoeschWort] = useState("");
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => { istAdmin().then((ok) => setAdmin(!!ok)).catch(() => {}); }, []);
 
   // Push-Status vom Geraet lesen (Erlaubnis + bestehendes Abo).
   useEffect(() => { pushStatus().then((st) => setPush(st === "aktiv")); }, []);
@@ -5027,6 +5029,11 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
           </Card>
         )}
 
+        {admin && (
+          <div style={{ marginBottom: 12 }}>
+            <Btn full onClick={() => { window.location.hash = "#admin"; }}>Admin-Bereich öffnen</Btn>
+          </div>
+        )}
         <Btn full ghost onClick={onLogout}>Abmelden</Btn>
       </div>
     </div>
