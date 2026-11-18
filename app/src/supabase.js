@@ -1094,7 +1094,7 @@ export async function coachRolleSetzen(an, name = null) {
 // Uebergang: solange die Migration 20261112_coach_codes.sql noch nicht in
 // Supabase laeuft, gibt es die Code-Funktionen dort nicht. Dann gilt ein fester
 // Code. Sobald die Migration laeuft, wird automatisch serverseitig geprueft.
-const FESTER_COACH_CODE = "C-02";
+const FESTER_COACH_CODE = "PROBE1907";
 const normCode = (c) => String(c || "").trim().toUpperCase();
 const funktionFehlt = (error) =>
   error?.code === "PGRST202" || /could not find the function|does not exist/i.test(error?.message || "");
