@@ -10,6 +10,10 @@ export const FEUER_VIDEO = `${HF}/hf_20260728_162308_09b35acf-3ce7-4e67-a8bb-59f
 // Falls das CDN-Video nicht lädt, springt der Player auf diese lokale Datei.
 export const FEUER_VIDEO_ERSATZ = "/media/video/orakel_klein.mp4";
 
+// Dankbarkeit — geführte Dankbarkeitsübung (eigenes Video, 9 Min., 9:16, mit Ton) — Hauptvideo des Bereichs
+export const DANKBARKEIT_VIDEO = "/media/video/dankbarkeit.mp4";
+export const DANKBARKEIT_POSTER = "/media/video/dankbarkeit_poster.jpg";
+
 // Orakel-Kartenbilder (Higgsfield · nano_banana_pro, 4K, 3:4) — 44-Karten-Göttinnen-Deck, einheitlicher 8K-3D-HD-Kartenstil
 export const KARTEN = {
   "Die Göttin der lebendigen Schöpfung": "/media/orakel/hf_20260724_170623_1a9c6d58-26e3-4bb7-95a1-ead35c42d451.jpg",

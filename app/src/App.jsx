@@ -13,7 +13,7 @@ import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, I
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -10890,6 +10890,23 @@ function Dankbarkeit({ dank, setDank, addPunkte }) {
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
         Nicht die großen Dinge — die kleinen zählen genauso. Ein Satz reicht.
       </p>
+
+      <Card style={{ marginBottom: 14, padding: 0, overflow: "hidden" }}>
+        <video
+          controls
+          playsInline
+          preload="metadata"
+          src={DANKBARKEIT_VIDEO}
+          poster={DANKBARKEIT_POSTER}
+          style={{ display: "block", width: "100%", maxHeight: 520, objectFit: "cover", background: C.espresso }}
+        />
+        <div style={{ padding: "12px 14px" }}>
+          <Eyebrow color={C.plum}>Geführte Übung · 9 Min.</Eyebrow>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "4px 0 0" }}>
+            Nimm dir einen ruhigen Moment, schau das Video und schreib danach deine drei Dinge auf.
+          </p>
+        </div>
+      </Card>
 
       <Card style={{ marginBottom: 14, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
         <Eyebrow color={C.plum}>Impuls für heute</Eyebrow>
