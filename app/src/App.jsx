@@ -10902,6 +10902,7 @@ function Dankbarkeit({ dank, setDank, addPunkte }) {
         />
         <div style={{ padding: "12px 14px" }}>
           <Eyebrow color={C.plum}>Geführte Übung · 9 Min.</Eyebrow>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, marginTop: 4 }}>mit Anja Kretschmer</div>
           <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "4px 0 0" }}>
             Nimm dir einen ruhigen Moment, schau das Video und schreib danach deine drei Dinge auf.
           </p>
