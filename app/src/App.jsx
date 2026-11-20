@@ -9,6 +9,8 @@ import TeamNachrichten from "./TeamNachrichten";
 import { ExpertinnenKarussell, ExpertinProfil } from "./Expertinnen";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
+import { THEMA_UEBUNGEN, THEMA_UEBUNGEN_HINWEIS } from "./themaUebungen";
+import SchreibBuch from "./SchreibBuch";
 import Gefuehlskompass, { gefuehlsStand } from "./Gefuehlskompass";
 import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, IlhoKennenlernen, IlhoWissen, usePassendeBeitraege } from "./IlhoAgent";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
@@ -2007,6 +2009,60 @@ function Mystik({ energie, addPunkte, art, setArt }) {
 
 /* ── Orakel · Göttinnen & weibliche Urkräfte ── */
 
+/* Tageskarte bildschirmfüllend — allein, ohne Rahmen drumherum. Tippen schließt. */
+function KarteGross({ card, onClose }) {
+  useEffect(() => {
+    const alt = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const taste = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", taste);
+    return () => { document.body.style.overflow = alt; window.removeEventListener("keydown", taste); };
+  }, []);
+  const bild = S2GKARTEN[card.n] || KARTEN_BILDER[card.n];
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label={card.n} onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 9999, cursor: "zoom-out",
+      background: "radial-gradient(120% 80% at 50% 30%, #2E3375 0%, #1A1C45 55%, #0B0C22 100%)",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: "max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom))",
+      animation: "fadeUp .3s ease both", overflow: "hidden",
+    }}>
+      <svg aria-hidden="true" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: .5, pointerEvents: "none", animation: "s2gStrahlen 60s linear infinite" }}>
+        <g stroke="#D9B56A" strokeWidth=".6" opacity=".5">
+          {Array.from({ length: 36 }).map((_, i) => { const w = (i * Math.PI) / 18; return <line key={i} x1="200" y1="200" x2={200 + Math.cos(w) * 340} y2={200 + Math.sin(w) * 340} />; })}
+        </g>
+      </svg>
+      <button type="button" onClick={onClose} aria-label="Schließen" style={{ position: "absolute", top: "max(10px, env(safe-area-inset-top))", right: 12, background: "rgba(0,0,0,.25)", border: "1px solid rgba(217,181,106,.5)", borderRadius: 20, width: 40, height: 40, color: "#F6EBCF", fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+      <div style={{
+        position: "relative", height: "min(74vh, 150vw)", aspectRatio: "268 / 418", maxWidth: "92vw",
+        borderRadius: 20, background: "#FBF6EC", padding: 8,
+        boxShadow: "0 30px 70px rgba(0,0,0,.6), 0 0 70px rgba(217,181,106,.35)",
+        animation: "s2gKarteGross .55s cubic-bezier(.2,.8,.2,1) both",
+      }}>
+        <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: 13, overflow: "hidden", border: "1.5px solid #C9A24A", background: "#1A1C45" }}>
+          {bild
+            ? <img src={bild} alt={card.n} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            : <div style={{ padding: 14 }}><KartenArt g={card} /></div>}
+          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "34%", background: "linear-gradient(180deg, rgba(15,16,41,0), rgba(15,16,41,.8))" }} />
+          <div style={{ position: "absolute", left: "50%", bottom: 18, transform: "translateX(-50%)", maxWidth: "86%", padding: "9px 20px", background: "#121331", border: "1.5px solid #D9B56A", outline: "1px solid rgba(217,181,106,.5)", outlineOffset: 3, borderRadius: 4, textAlign: "center" }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: card.n.length > 18 ? 17 : 22, color: "#F6EBCF", lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{card.n}</div>
+          </div>
+        </div>
+      </div>
+      <div style={{ position: "relative", textAlign: "center", maxWidth: 520, padding: "16px 10px 0", animation: "fadeUp .6s ease .25s both" }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2.2, textTransform: "uppercase", color: "#D9B56A", fontWeight: 600 }}>{card.sub} · {card.b}</div>
+        <p style={{ fontFamily: "Georgia, serif", fontSize: 17, color: "#F6EBCF", lineHeight: 1.45, margin: "8px 0 0" }}>{card.txt}</p>
+      </div>
+      <style>{`
+        @keyframes s2gKarteGross { from { opacity: 0; transform: scale(.72) rotateY(18deg); } to { opacity: 1; transform: none; } }
+        @keyframes s2gStrahlen { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { [aria-modal] svg { animation: none !important; } }
+      `}</style>
+    </div>,
+    document.body
+  );
+}
+
 function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZeichen, meinZeichen, briefkopf, entries, setEntries, archetyp, twin, twinTon = "" }) {
   const [mode, setMode] = useState("karte");
   const [mystikArt, setMystikArt] = useState("tarot");
@@ -2015,6 +2071,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
   const [busy, setBusy] = useState(false);
   const [reflexion, setReflexion] = useState("");
   const [gespeichert, setGespeichert] = useState(false);
+  const [gross, setGross] = useState(false); // Karte bildschirmfüllend
   const heute = new Date().toDateString();
   // Tageskarte gilt nur für den heutigen Tag — morgens wartet automatisch eine neue.
   useEffect(() => {
@@ -2029,6 +2086,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
     setDeutung("");
     setDrawn({ ...c, tag: heute });
     setFlip(true);
+    setTimeout(() => setGross(true), 850);   // nach dem Umdrehen groß zeigen
     if (addPunkte && !neu) addPunkte(5, "Tageskarte gezogen");
     logEvent("karte_gezogen", c.b);
   };
@@ -2110,13 +2168,13 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
 
         <div style={{ perspective: 1200, margin: "0 auto", width: 268, height: 418, position: "relative" }}>
           <div
-            onClick={() => !card && draw()}
+            onClick={() => (card ? setGross(true) : draw())}
             style={{
               width: "100%", height: "100%", position: "relative",
               transformStyle: "preserve-3d",
               transform: flip ? "rotateY(180deg)" : "none",
               transition: "transform .8s cubic-bezier(.4,.1,.2,1)",
-              cursor: card ? "default" : "pointer",
+              cursor: card ? "zoom-in" : "pointer",
             }}
           >
             {/* Rückseite */}
@@ -2162,6 +2220,8 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
           </div>
         )}
       </div>
+
+      {card && gross && <KarteGross card={card} onClose={() => setGross(false)} />}
 
       {!card && <Btn onClick={() => draw(false)}>Karte ziehen ✨</Btn>}
 
@@ -2600,6 +2660,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
   const [dank, setDank] = useState(["", "", "", "", "", ""]);
   const [stimmung, setStimmung] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [buch, setBuch] = useState(null); // Index der Frage, die gerade im Schreibbuch offen ist
 
   const input = {
     width: "100%", padding: "14px 15px", fontSize: 17,
@@ -2699,8 +2760,10 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
               rows={2}
               placeholder="Schreib es auf …"
               value={dank[i]}
-              onChange={(e) => setDank(dank.map((x, j) => (j === i ? e.target.value : x)))}
-              style={{
+              readOnly
+              onClick={() => setBuch(i)}
+              onFocus={(e) => { e.target.blur(); setBuch(i); }}
+              style={{ cursor: "text",
                 width: "100%", border: "none", outline: "none", resize: "none",
                 background: "repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, rgba(193,145,60,.38) 31px, rgba(193,145,60,.38) 32px)",
                 fontFamily: '"Snell Roundhand", "Savoye LET", "Bradley Hand", "Segoe Script", cursive',
@@ -2713,6 +2776,16 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
         {/* Seitenecke */}
         <div style={{ position: "absolute", right: 0, bottom: 0, width: 26, height: 26, borderRadius: "16px 0 14px 0", background: "linear-gradient(315deg, #E9DAC0 0%, #F8EFDD 55%, transparent 56%)", boxShadow: "-2px -2px 5px rgba(58,42,34,.10)" }} />
       </div>
+
+      {buch !== null && (
+        <SchreibBuch
+          frage={FRAGEN[buch].q}
+          datum={new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}
+          wert={dank[buch]}
+          onChange={(v) => setDank((d) => d.map((x, j) => (j === buch ? v : x)))}
+          onClose={() => setBuch(null)}
+        />
+      )}
 
       <Btn full onClick={save}>Eintrag speichern</Btn>
       {saved && (
@@ -8748,6 +8821,50 @@ function ThemaUebung({ u, farbe }) {
   );
 }
 
+/* Übungen zum Thema — tippbare Karten, die sich aufklappen. Inhalte: themaUebungen.js */
+function ThemaUebungen({ liste, hinweis, farbe }) {
+  const [offen, setOffen] = useState(null);
+  const klein = { fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, lineHeight: 1.5 };
+  return (
+    <div style={{ marginTop: 8, marginBottom: 20 }}>
+      {hinweis && <p style={{ ...klein, margin: "0 0 10px" }}>{hinweis}</p>}
+      {liste.map((u, i) => {
+        const auf = offen === i;
+        return (
+          <Card key={u.t} style={{ marginBottom: 9, padding: 0, overflow: "hidden" }}>
+            <button type="button" onClick={() => setOffen(auf ? null : i)} aria-expanded={auf} style={{
+              width: "100%", display: "flex", alignItems: "center", gap: 12, padding: 14,
+              background: "none", border: "none", cursor: "pointer", textAlign: "left",
+            }}>
+              <div style={{ width: 30, height: 30, borderRadius: 15, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: farbe, color: "#fff", fontFamily: "Georgia, serif", fontSize: 15 }}>{i + 1}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{u.t}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 2 }}>{u.dauer}</div>
+              </div>
+              <div style={{ color: farbe, fontSize: 18, transform: auf ? "rotate(90deg)" : "none", transition: "transform .25s" }}>›</div>
+            </button>
+            {auf && (
+              <div style={{ padding: "0 16px 16px", animation: "fadeUp .35s ease" }}>
+                <ol style={{ margin: "0 0 12px", paddingLeft: 20, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6 }}>
+                  {u.schritte.map((s) => <li key={s} style={{ marginBottom: 6 }}>{s}</li>)}
+                </ol>
+                <div style={{ background: C.beige, borderRadius: 12, padding: "10px 12px", marginBottom: 10 }}>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, color: farbe, marginBottom: 3 }}>Warum es hilft</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, lineHeight: 1.55 }}>{u.warum}</div>
+                </div>
+                {u.hinweis && <p style={{ ...klein, margin: "0 0 8px", fontWeight: 600 }}>{u.hinweis}</p>}
+                <p style={{ ...klein, margin: 0 }}>
+                  Angelehnt an: {u.ansatz}. Keine Therapie. In einer akuten Krise: Notruf <b>112</b> oder TelefonSeelsorge <b>0800 111 0 111</b> (kostenfrei, rund um die Uhr).
+                </p>
+              </div>
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 function ThemaCoachinnen({ bed, go }) {
   const [beitraege, setBeitraege] = useState(null);
   useEffect(() => {
@@ -8835,6 +8952,13 @@ function ThemaScreen({ id, go, bindung }) {
 
           <Eyebrow color={C.plum}>Übung zum Thema</Eyebrow>
           <ThemaUebung u={wissen.uebung} farbe={th.farbe} />
+
+          {THEMA_UEBUNGEN[th.id] && (
+            <>
+              <Eyebrow color={C.plum}>Übungen aus der Forschung</Eyebrow>
+              <ThemaUebungen liste={THEMA_UEBUNGEN[th.id]} hinweis={THEMA_UEBUNGEN_HINWEIS[th.id]} farbe={th.farbe} />
+            </>
+          )}
 
           <Eyebrow color={C.plum}>Von Coachinnen</Eyebrow>
           <ThemaCoachinnen bed={wissen.bed} go={go} />
