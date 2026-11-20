@@ -4,6 +4,7 @@ import {
   supabase, istAdmin, ladeKiQualitaet, ladeFairnessChecks, starteFairnessCheck,
   adminKennzahlen, adminWachstum, adminMitglieder, adminSessions, adminMeldungen, adminMeldungErledigen, adminSystem, cloudErreichbar,
   adminCoachCodes, adminCoachCodeErzeugen, adminCoachCodeUmschalten,
+  adminTeamPostfach, adminTeamVerlauf, adminTeamSenden, adminTeamRundnachricht,
 } from "./supabase";
 import { ILHO_SYSTEM } from "./ilho";
 import { alsCsv } from "./export";
@@ -12,6 +13,7 @@ import { alsCsv } from "./export";
    smile2go — ADMIN DASHBOARD · echte Daten aus Supabase
    Zugang: nur Konten in der Tabelle `admins` (Prüfung in jeder DB-Funktion).
    Datenschutz: keine Nachrichten-, Journal- oder Anfragetexte — nur Zähler.
+   Ausnahme: Team-Nachrichten — was eine Frau bewusst ans Team schreibt.
    ───────────────────────────────────────────── */
 
 // Dieselbe Perlmutt-Welt wie in der Mitglieder-App; die Namen beschreiben
@@ -56,6 +58,8 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState("uebersicht");
   const [k, setK] = useState(null);
   const [wachstum, setWachstum] = useState([]);
+  const [teamZiel, setTeamZiel] = useState(null);   // { user_id, email } aus „Mitglieder“
+  const [teamOffen, setTeamOffen] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -63,6 +67,7 @@ export default function AdminDashboard() {
       setAdmin(ok);
       if (!ok) return;
       const [kz, w] = await Promise.all([adminKennzahlen(), adminWachstum()]);
+      adminTeamPostfach().then((p) => setTeamOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0)));
       setK(kz); setWachstum(w.map((z) => ({ m: new Date(z.monat).toLocaleDateString("de-DE", { month: "short" }), neu: Number(z.neu) })));
     })();
   }, []);
@@ -82,7 +87,8 @@ export default function AdminDashboard() {
     );
 
   const TABS = [
-    ["uebersicht", "📊 Übersicht"], ["mitglieder", "👥 Mitglieder"], ["coachcodes", "🔑 Coach-Codes"], ["sessions", "📅 Sessions"],
+    ["uebersicht", "📊 Übersicht"], ["mitglieder", "👥 Mitglieder"],
+    ["nachrichten", `💬 Nachrichten${teamOffen ? ` (${teamOffen})` : ""}`], ["coachcodes", "🔑 Coach-Codes"], ["sessions", "📅 Sessions"],
     ["moderation", `🛡️ Moderation${k?.meldungen_offen ? ` (${k.meldungen_offen})` : ""}`],
     ["fairness", "⚖️ KI & Fairness"], ["system", "🛠️ System"],
   ];
@@ -108,7 +114,8 @@ export default function AdminDashboard() {
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 20px 60px" }}>
         {tab === "uebersicht" && <Uebersicht k={k} wachstum={wachstum} />}
-        {tab === "mitglieder" && <Mitglieder />}
+        {tab === "mitglieder" && <Mitglieder onNachricht={(m) => { setTeamZiel({ user_id: m.id, email: m.email }); setTab("nachrichten"); }} />}
+        {tab === "nachrichten" && <TeamNachrichten ziel={teamZiel} setZiel={setTeamZiel} setOffen={setTeamOffen} />}
         {tab === "coachcodes" && <CoachCodes />}
         {tab === "sessions" && <Sessions />}
         {tab === "moderation" && <Moderation />}
@@ -156,7 +163,7 @@ function Uebersicht({ k, wachstum }) {
   );
 }
 
-function Mitglieder() {
+function Mitglieder({ onNachricht }) {
   const [suche, setSuche] = useState("");
   const [liste, setListe] = useState(null);
   const [filter, setFilter] = useState("Alle");
@@ -194,10 +201,116 @@ function Mitglieder() {
           {m.ist_coach && <Badge tone="rose">Coachin</Badge>}
           {m.hat_coach && <Badge tone="ok">begleitet</Badge>}
           <span style={{ ...sys, fontSize: 13, color: C.ink, minWidth: 64, textAlign: "right" }}>✨ {m.punkte == null ? "–" : zahl(m.punkte)}</span>
+          <button onClick={() => onNachricht(m)} title="Nachricht schreiben" style={{ ...sys, fontSize: 12.5, fontWeight: 700, padding: "7px 11px", borderRadius: 14, cursor: "pointer", border: `1.5px solid ${C.line}`, background: C.card, color: C.plum }}>💬 Nachricht</button>
         </div>
       ))}
       <Hinweis>Angezeigt werden bis zu 200 Konten. Löschen einer Nutzerin bitte über ihren eigenen „Konto löschen“-Weg oder das Supabase-Dashboard (DSGVO-Protokoll).</Hinweis>
     </Card>
+  );
+}
+
+// ── Team-Nachrichten ───────────────────────────────────────────────────────
+// Links das Postfach (wer hat geschrieben), rechts der Verlauf mit einer Frau.
+// Oben: Rundnachricht an alle. Antworten gehen per Push aufs Handy der Frau.
+function TeamNachrichten({ ziel, setZiel, setOffen }) {
+  const [postfach, setPostfach] = useState(undefined);   // undefined = lädt, null = Tabelle fehlt
+  const [verlauf, setVerlauf] = useState([]);
+  const [text, setText] = useState("");
+  const [rund, setRund] = useState("");
+  const [meldung, setMeldung] = useState("");
+  const [sendet, setSendet] = useState(false);
+
+  const ladePostfach = () => adminTeamPostfach().then((p) => {
+    setPostfach(p);
+    setOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0));
+  });
+  useEffect(() => { ladePostfach(); const t = setInterval(ladePostfach, 30000); return () => clearInterval(t); }, []);
+
+  const ladeVerlauf = () => ziel && adminTeamVerlauf(ziel.user_id).then((v) => { setVerlauf(v); ladePostfach(); });
+  useEffect(() => { setVerlauf([]); ladeVerlauf(); }, [ziel?.user_id]);
+
+  const senden = async () => {
+    if (!ziel || !text.trim() || sendet) return;
+    setSendet(true);
+    const ok = await adminTeamSenden(ziel.user_id, text.trim());
+    setSendet(false);
+    if (ok) { setText(""); ladeVerlauf(); } else setMeldung("Senden fehlgeschlagen.");
+  };
+  const rundSenden = async () => {
+    if (!rund.trim() || sendet) return;
+    if (!window.confirm("Diese Nachricht geht an ALLE Mitglieder. Senden?")) return;
+    setSendet(true);
+    const n = await adminTeamRundnachricht(rund.trim());
+    setSendet(false);
+    if (n != null) { setRund(""); setMeldung(`Rundnachricht an ${zahl(n)} Mitglieder verschickt.`); }
+    else setMeldung("Rundnachricht fehlgeschlagen.");
+  };
+
+  if (postfach === null)
+    return <Card><Leer>Die Team-Nachrichten sind noch nicht eingerichtet. Bitte die Migration <code>20261120_team_nachrichten.sql</code> im Supabase-SQL-Editor ausführen.</Leer></Card>;
+
+  const feld = { width: "100%", boxSizing: "border-box", padding: "11px 14px", fontSize: 15, ...sys, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.cream, color: C.espresso, outline: "none", resize: "vertical" };
+  const knopf = { ...sys, fontSize: 13.5, fontWeight: 700, padding: "10px 16px", borderRadius: 14, cursor: "pointer", border: "none", background: C.gold, color: "#fff" };
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <Card>
+        <Eyebrow color={C.plum}>📣 Rundnachricht an alle Mitglieder</Eyebrow>
+        <textarea rows={2} value={rund} onChange={(e) => setRund(e.target.value)} placeholder="z. B. Neues Ritual zum Vollmond ist online …" style={feld} />
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 9, flexWrap: "wrap" }}>
+          <button onClick={rundSenden} disabled={sendet} style={knopf}>An alle senden</button>
+          {meldung && <span style={{ ...sys, fontSize: 13, color: C.ink }}>{meldung}</span>}
+        </div>
+        <Hinweis>Erscheint bei jeder Frau unter „Mein Bereich → Nachricht ans Team“. Ohne Push — damit niemand nachts geweckt wird.</Hinweis>
+      </Card>
+
+      <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", alignItems: "start" }}>
+        <Card>
+          <Eyebrow color={C.plum}>Postfach</Eyebrow>
+          {postfach === undefined ? <Leer>Lade …</Leer> : postfach.length === 0 ? <Leer>Noch keine Nachrichten. Neue Unterhaltung: im Tab „Mitglieder“ auf 💬 tippen.</Leer> :
+            postfach.map((p) => (
+              <button key={p.user_id} onClick={() => setZiel({ user_id: p.user_id, email: p.email })} style={{
+                all: "unset", cursor: "pointer", display: "block", width: "100%", boxSizing: "border-box", padding: "10px 8px", borderRadius: 12,
+                borderBottom: `1px solid ${C.line}`, background: ziel?.user_id === p.user_id ? C.goldPale : "transparent",
+              }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span style={{ ...sys, fontWeight: 700, fontSize: 14, color: C.espresso, flex: 1, wordBreak: "break-all" }}>{p.email}</span>
+                  {Number(p.ungelesen) > 0 && <Badge tone="rose">{p.ungelesen} neu</Badge>}
+                </div>
+                <div style={{ ...sys, fontSize: 12.5, color: C.ink, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {p.letzte_von === "team" ? "Du: " : ""}{p.letzte}
+                </div>
+              </button>
+            ))}
+        </Card>
+
+        <Card>
+          {!ziel ? <Leer>Wähle links eine Unterhaltung.</Leer> : (
+            <>
+              <Eyebrow color={C.plum}>Verlauf mit {ziel.email}</Eyebrow>
+              <div style={{ maxHeight: 420, overflowY: "auto", display: "grid", gap: 8, padding: "4px 2px 10px" }}>
+                {verlauf.length === 0 && <Leer>Noch nichts geschrieben.</Leer>}
+                {verlauf.map((n) => (
+                  <div key={n.id} style={{
+                    justifySelf: n.absender === "team" ? "end" : "start", maxWidth: "85%", padding: "9px 13px", borderRadius: 14,
+                    background: n.absender === "team" ? C.goldPale : C.beige, ...sys, fontSize: 14.5, color: C.espresso, whiteSpace: "pre-wrap",
+                  }}>
+                    {n.text}
+                    <div style={{ fontSize: 10.5, color: C.ink, marginTop: 4 }}>{n.rund ? "Rundnachricht · " : ""}{datumZeit(n.created_at)}</div>
+                  </div>
+                ))}
+              </div>
+              <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Antwort schreiben …" style={feld}
+                onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) senden(); }} />
+              <div style={{ display: "flex", gap: 10, marginTop: 9 }}>
+                <button onClick={senden} disabled={sendet || !text.trim()} style={{ ...knopf, opacity: text.trim() ? 1 : 0.5 }}>Senden</button>
+              </div>
+              <Hinweis>Sie bekommt eine Push-Mitteilung, falls sie Benachrichtigungen erlaubt hat.</Hinweis>
+            </>
+          )}
+        </Card>
+      </div>
+    </div>
   );
 }
 

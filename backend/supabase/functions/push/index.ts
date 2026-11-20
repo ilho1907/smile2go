@@ -48,7 +48,12 @@ Deno.serve(async (req) => {
           .select("id", { count: "exact", head: true })
           .in("status", ["aktiv", "pausiert"])
           .or(`and(coach_id.eq.${aufruferin},user_id.eq.${user_id}),and(user_id.eq.${aufruferin},coach_id.eq.${user_id})`);
-        if (!count) return json({ error: "keine Verbindung zu dieser Person" }, 403);
+        // Admins (smile2go-Team) dürfen jede Nutzerin benachrichtigen — für Team-Nachrichten.
+        const { count: istAdmin } = await admin
+          .from("admins")
+          .select("user_id", { count: "exact", head: true })
+          .eq("user_id", aufruferin);
+        if (!count && !istAdmin) return json({ error: "keine Verbindung zu dieser Person" }, 403);
       }
     }
 

@@ -5,6 +5,7 @@ import HeuteHero from "./HeuteHero";
 import Entdecken, { Karussell } from "./Entdecken";
 import MantraRaum from "./MantraRaum";
 import Tarot from "./Tarot";
+import TeamNachrichten from "./TeamNachrichten";
 import { ExpertinnenKarussell, ExpertinProfil } from "./Expertinnen";
 import { alsPdf } from "./export";
 import { ILHO_SYSTEM } from "./ilho";
@@ -4838,6 +4839,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
           {[
             { icon: "🤍", t: "Me-Time", s: "Termin mit dir selbst", tab: "metime" },
             { icon: "🌿", t: "Wochenbericht", s: "Deine Woche für deine Coachin", tab: "wochenbericht" },
+            { icon: "💬", t: "Nachricht ans Team", s: "Fragen & Ideen an smile2go", tab: "team" },
           ].map((x) => (
             <Card key={x.tab} onClick={() => go(x.tab)} style={{ padding: 13 }}>
               <div style={{ fontSize: 20 }}><Sym e={x.icon} size={20} /></div>
@@ -4989,7 +4991,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
             { t: "🧠 Wissensarchiv (Coach-Werkstatt)", fn: () => go("wissen") },
             { t: "🔎 Recherche mit Quellen (Coach-Werkstatt)", fn: () => go("recherche") },
             { t: "🛠️ KI-Werkstatt: Übungen, Programme, Content (Coach)", fn: () => go("werkstatt") },
-            { t: "💬 Support kontaktieren", fn: null },
+            { t: "💬 Support kontaktieren", fn: () => go("team") },
             { t: "🆘 In Krisen: TelefonSeelsorge 0800 111 0 111 · Notruf 112", fn: null },
             { t: "📄 Datenschutzerklärung", fn: () => go("datenschutz") },
             { t: "📄 Impressum", fn: () => go("impressum") },
@@ -9010,6 +9012,7 @@ const MEHR_GRUPPEN = [
     { g: "Konto", items: [
       { icon: "👤", t: "Profil & Einstellungen", s: "Mein Bereich, Benachrichtigung, Abo, DSGVO", tab: "profil" },
       { icon: "💼", t: "Mein Office", s: "Deine Marke, Angebote & Rechnungen", tab: "office" },
+      { icon: "💬", t: "Nachricht ans Team", s: "Fragen & Ideen an smile2go", tab: "team" },
     ] },
 ];
 
@@ -11413,7 +11416,7 @@ function PasswortNeu({ onFertig }) {
 }
 
 const ROOTS = ["heute", "orakel", "gemeinschaft", "tagebuch", "mehr"];
-const TITLES = { expertin: "Expertin", mantra: "Mantra", tarot: "Tarot", gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
+const TITLES = { team: "smile2go-Team", expertin: "Expertin", mantra: "Mantra", tarot: "Tarot", gefuehle: "Gefühlskompass", gemeinschaft: "Community", recherche: "Recherche", werkstatt: "KI-Werkstatt", zweifaktor: "Sicherheit", ziele: "Ziele & Meilensteine", aufgaben: "Challenges & Ziele", kurse: "Kurse", buchen: "Termin buchen", coach: "Coach-Nachrichten", media: "Mediathek", meditation: "Meditation", podcast: "Podcast", community: "Community", fortschritt: "Fortschritt", fragebogen: "Willkommens-Fragebogen", pakete: "Coaching-Pakete", coaching: "Coaching", wochenbericht: "Wochenbericht", profil: "Mein Bereich", appguide: "App-Guide", impressum: "Impressum", datenschutz: "Datenschutz", schatten: "Schattenspiegel", zukunftsich: "Zukunfts-Ich", archetyp: "Archetypen-Test", flamme: "Gemeinsame Flamme", qigong: "Qigong", metime: "Me-Time", achtsamkeit: "Achtsamkeit", dankbarkeit: "Dankbarkeit", loslassen: "Loslassen", kreis: "Freundinnen-Kreis", mondrituale: "Mondrituale", geocaching: "Orakel-Geocaching", intuition: "Intuitions-Training", reisen: "Transformations-Reisen", jahreskreis: "Jahreskreis", leere: "Ritual der Leere", wochenorakel: "Wochen-Orakel", rueckblick: "Jahres-Rückblick" };
 
 export default function IlhoApp() {
   const [user, setUser] = useState(null);
@@ -11436,7 +11439,8 @@ export default function IlhoApp() {
     const w = new URLSearchParams(window.location.search).get("start");
     return w === "coach" || w === "klientin" ? w : null;
   });
-  const [tab, setTab] = useState("heute");
+  // Push „Nachricht vom smile2go-Team“ öffnet direkt den Team-Verlauf (?team=1).
+  const [tab, setTab] = useState(() => (typeof window !== "undefined" && /[?&]team=1(&|$)/.test(window.location.search) ? "team" : "heute"));
   const [stack, setStack] = useState([]);
   const [entries, setEntries] = useState([]);
   const [drawn, setDrawn] = useState(null);
@@ -11850,6 +11854,7 @@ export default function IlhoApp() {
               {tab === "buchen" && <><MediaBanner video={S2GVID.buchen} poster={S2GIMG.buchen} title="Termin buchen" subtitle="Zeit für dich" height={190} /><Buchen bindung={bindung} aufBindung={aufBindung} termine={termine} setTermine={setTermine} /></>}
               {tab === "coach" && <><MediaBanner video={S2GVID.coach} poster={S2GIMG.coach} title="Coach-Chat" subtitle="Du wirst gehört" height={190} /><CoachChat bindung={bindung} aufBindung={aufBindung} /></>}
               {tab === "media" && <><MediaBanner video={S2GVID.mediathek} poster={S2GIMG.mediathek} title="Mediathek" subtitle="Deine Inhalte, dein Raum" height={200} /><Mediathek uploads={uploads} setUploads={setUploads} tools={tools} setTools={setTools} office={office} setOffice={setOffice} bindung={bindung} /></>}
+              {tab === "team" && <TeamNachrichten />}
               {tab === "tarot" && <div style={{ margin: "0 0 -20px" }}><Tarot go={go} /></div>}
               {tab === "mantra" && <div style={{ margin: "0 0 -20px" }}><MantraRaum mantras={MOTIVATION} startIndex={dayIndex()} addPunkte={addPunkte} /></div>}
               {tab === "meditation" && <MeditationCine addPunkte={(n, l) => { tagesAktivitaet("meditation"); addPunkte(n, l || "Meditation abgeschlossen"); }} />}

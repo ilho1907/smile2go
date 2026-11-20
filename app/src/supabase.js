@@ -717,6 +717,59 @@ export const adminCoachCodes = () => adminRpc("admin_coach_codes").then((d) => d
 export const adminCoachCodeErzeugen = (notiz, tage = null) => adminRpc("admin_coach_code_erzeugen", { p_notiz: notiz || null, p_tage: tage });
 export const adminCoachCodeUmschalten = (code, aktiv) => adminRpc("admin_coach_code_umschalten", { p_code: code, p_aktiv: aktiv });
 
+// ── Team-Nachrichten (Nutzerin ↔ smile2go-Team) ────────────────────────────
+// Eigener Kanal, getrennt vom Coach-Chat: der Admin sieht nur, was eine Frau
+// bewusst ans Team schreibt. Fehlt die Tabelle (Migration noch nicht gelaufen),
+// liefern die Funktionen leer bzw. null — die Oberfläche sagt das dann ehrlich.
+export const adminTeamPostfach = () => adminRpc("admin_team_postfach").then((d) => d);
+export const adminTeamVerlauf = (userId) => adminRpc("admin_team_verlauf", { p_user: userId }).then((d) => d || []);
+export async function adminTeamSenden(userId, text) {
+  const id = await adminRpc("admin_team_senden", { p_user: userId, p_text: text });
+  if (id) sendePush({ userId, titel: "Nachricht vom smile2go-Team", text, url: "/?team=1", tag: "team" });
+  return id;
+}
+export const adminTeamRundnachricht = (text) => adminRpc("admin_team_rundnachricht", { p_text: text });
+
+export async function ladeTeamNachrichten() {
+  const user = await nutzerin();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from("team_nachrichten")
+    .select("id, absender, text, gelesen_am, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(300);
+  if (error) { console.warn("ladeTeamNachrichten:", error.message); return null; }
+  return data || [];
+}
+
+export async function sendeTeamNachricht(text) {
+  const user = await nutzerin();
+  if (!user || !String(text || "").trim()) return null;
+  const { data, error } = await supabase
+    .from("team_nachrichten")
+    .insert({ user_id: user.id, absender: "mitglied", text: String(text).trim().slice(0, 4000) })
+    .select("id, absender, text, gelesen_am, created_at")
+    .single();
+  if (error) { console.warn("sendeTeamNachricht:", error.message); return null; }
+  return data;
+}
+
+export async function teamNachrichtenGelesen() {
+  if (!supabase) return;
+  await supabase.rpc("team_nachrichten_gelesen");
+}
+
+export async function teamUngelesen() {
+  const user = await nutzerin();
+  if (!user) return 0;
+  const { count, error } = await supabase
+    .from("team_nachrichten")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id).eq("absender", "team").is("gelesen_am", null);
+  return error ? 0 : count || 0;
+}
+
 export async function ladeKiQualitaet(tage = 90) {
   const { data, error } = await supabase.rpc("ki_qualitaet", { p_tage: tage });
   if (error) { console.warn("ladeKiQualitaet:", error.message); return []; }
