@@ -10898,7 +10898,7 @@ function Dankbarkeit({ dank, setDank, addPunkte }) {
           preload="metadata"
           src={DANKBARKEIT_VIDEO}
           poster={DANKBARKEIT_POSTER}
-          style={{ display: "block", width: "100%", maxHeight: 520, objectFit: "cover", background: C.espresso }}
+          style={{ display: "block", width: "100%", height: "min(50vh, 440px)", objectFit: "cover", objectPosition: "center 30%", background: C.espresso }}
         />
         <div style={{ padding: "12px 14px" }}>
           <Eyebrow color={C.plum}>Geführte Übung · 9 Min.</Eyebrow>
