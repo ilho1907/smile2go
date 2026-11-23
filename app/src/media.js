@@ -16,9 +16,9 @@ export const DANKBARKEIT_POSTER = "/media/video/dankbarkeit_poster.jpg";
 // Rituale: gefuehrte Hochformat-Videos (9:16), Schluessel wie in Rituale (App.jsx).
 export const RITUAL_VIDEOS = {
   raeu:     { video: "/media/video/kerze_ritual.mp4",   poster: "/media/video/kerze_ritual_poster.jpg" },
-  natur:    { video: "/media/video/natur_ritual.mp4",   poster: "/media/video/natur_ritual_poster.jpg"", grund: "#FBF4EF" },
-  mond:     { video: "/media/video/mond_ritual.mp4",    poster: "/media/video/mond_ritual_poster.jpg"", grund: "#FBF4EF" },
-  "körper": { video: "/media/video/koerper_ritual.mp4", poster: "/media/video/koerper_ritual_poster.jpg"", grund: "#FBF4EF" },
+  natur:    { video: "/media/video/natur_ritual.mp4",   poster: "/media/video/natur_ritual_poster.jpg", grund: "#FBF4EF" },
+  mond:     { video: "/media/video/mond_ritual.mp4",    poster: "/media/video/mond_ritual_poster.jpg", grund: "#FBF4EF" },
+  "körper": { video: "/media/video/koerper_ritual.mp4", poster: "/media/video/koerper_ritual_poster.jpg", grund: "#FBF4EF" },
 };
 
 // Orakel-Kartenbilder (Higgsfield · nano_banana_pro, 4K, 3:4) — 44-Karten-Göttinnen-Deck, einheitlicher 8K-3D-HD-Kartenstil
