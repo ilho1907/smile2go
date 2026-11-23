@@ -13,6 +13,9 @@ export const FEUER_VIDEO_ERSATZ = "/media/video/orakel_klein.mp4";
 // Dankbarkeit — geführte Dankbarkeitsübung (eigenes Video, 9 Min., 9:16, mit Ton) — Hauptvideo des Bereichs
 export const DANKBARKEIT_VIDEO = "/media/video/dankbarkeit.mp4";
 export const DANKBARKEIT_POSTER = "/media/video/dankbarkeit_poster.jpg";
+// Rituale › Kerze & Räuchern: gefuehrtes Hochformat-Video (9:16).
+export const KERZE_VIDEO = "/media/video/kerze_ritual.mp4";
+export const KERZE_POSTER = "/media/video/kerze_ritual_poster.jpg";
 
 // Orakel-Kartenbilder (Higgsfield · nano_banana_pro, 4K, 3:4) — 44-Karten-Göttinnen-Deck, einheitlicher 8K-3D-HD-Kartenstil
 export const KARTEN = {

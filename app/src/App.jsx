@@ -17,7 +17,7 @@ import MediaBanner from "./MediaBanner";
 import BookOpen from "./BookOpen";
 import Federkiel from "./Federkiel";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, KERZE_VIDEO, KERZE_POSTER } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -2859,11 +2859,21 @@ function Rituale({ ritual, setRitual, addPunkte }) {
         const fertig = !!ritual[r.k];
         return (
           <div id="ritual-anleitung" style={{ borderRadius: 22, overflow: "hidden", background: C.card, border: `1px solid ${C.line}`, boxShadow: "0 10px 26px rgba(110,53,104,.08)", scrollMarginTop: 80 }}>
+            {r.k === "raeu" ? (
+              // Kerze & Räuchern hat ein eigenes gefuehrtes Video (Titel steht im Video).
+              <div style={{ background: "#1c1024", display: "flex", justifyContent: "center" }}>
+                <video
+                  key="kerze" src={KERZE_VIDEO} poster={KERZE_POSTER} controls playsInline preload="metadata"
+                  style={{ display: "block", width: "100%", maxHeight: "72dvh", aspectRatio: "9 / 16", objectFit: "contain", background: "#1c1024" }}
+                />
+              </div>
+            ) : (
             <div style={{ position: "relative", height: 150 }}>
               <img src={RITUAL_BILDER[r.k]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(42,23,48,0) 30%, rgba(42,23,48,.8) 100%)" }} />
               <div style={{ position: "absolute", left: 18, bottom: 14, color: "#fff", fontFamily: "Georgia, serif", fontSize: 24 }}>{r.t.replace(/^\S+\s/, "")}</div>
             </div>
+            )}
             <div style={{ padding: "16px 18px 18px" }}>
               <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>{r.d}</p>
               <ol style={{ margin: "0 0 16px", paddingLeft: 20 }}>
