@@ -2634,6 +2634,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
   const [dank, setDank] = useState(["", "", "", "", "", ""]);
   const [stimmung, setStimmung] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [blatt, setBlatt] = useState(null); // Index der aufgeschlagenen früheren Seite
 
   const input = {
     width: "100%", padding: "14px 15px", fontSize: 18,
@@ -2696,9 +2697,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
       }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 6 }}>
           <Eyebrow color={C.plum}>📖 Deine Ausrichtung für heute</Eyebrow>
-          <span style={{ fontFamily: '"Snell Roundhand", "Savoye LET", "Segoe Script", cursive', fontSize: 21, color: C.espresso, opacity: 0.85 }}>
-            {new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}
-          </span>
+          <DatumZeile datum={new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })} />
         </div>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso, marginBottom: 14 }}>✍️ 7 Fragen · dein täglicher Check-in</div>
 
@@ -2757,20 +2756,146 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
       )}
 
       {entries.length > 0 && (
-        <div style={{ marginTop: 24 }}>
-          <Eyebrow color={C.ink}>Deine Einträge</Eyebrow>
-          {entries.map((e, i) => (
-            <Card key={i} style={{ marginBottom: 10, padding: 16 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{e.date}</div>
-              {e.intention && <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 19, color: C.espresso, lineHeight: 1.6 }}>🌅 {e.intention}</div>}
-              {e.items?.map((it, j) => (
-                <div key={j} style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 19, color: C.espresso, lineHeight: 1.6 }}>{it}</div>
-              ))}
-            </Card>
-          ))}
+        <div style={{ marginTop: 28 }}>
+          <Eyebrow color={C.plum}>📖 Frühere Seiten in deinem Tagebuch</Eyebrow>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, opacity: .8, margin: "2px 0 12px" }}>Tippe eine Seite an, um sie aufzuschlagen.</div>
+          {entries.map((e, i) => {
+            const erste = e.intention || (e.items || []).map((it) => seitenZeile(it).antwort).find(Boolean) || "";
+            return (
+              <button key={i} onClick={() => setBlatt(i)} style={{
+                display: "block", width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 10,
+                borderRadius: "4px 14px 14px 4px", padding: "14px 16px 14px 20px", position: "relative",
+                background: "linear-gradient(105deg, #EFE2CC 0%, #FDF8EC 8%, #FFFDF6 60%, #F8EFDD 100%)",
+                border: `1px solid ${C.line}`, borderLeft: `5px solid ${C.gold}`,
+                boxShadow: "inset 12px 0 14px -12px rgba(58,42,34,.25), 0 6px 14px -10px rgba(58,42,34,.35)",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+                  <span style={{ fontFamily: HANDSCHRIFT, fontSize: 22, color: "#3A2614" }}>{e.date}</span>
+                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.plum, fontWeight: 600, whiteSpace: "nowrap" }}>Seite {entries.length - i} ›</span>
+                </div>
+                {erste && <div style={{ fontFamily: HANDSCHRIFT, fontSize: 19, color: "#5A4330", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{erste}</div>}
+              </button>
+            );
+          })}
         </div>
       )}
+
+      {blatt !== null && entries[blatt] && (
+        <TagebuchBlaettern entries={entries} index={blatt} setIndex={setBlatt} onClose={() => setBlatt(null)} />
+      )}
     </div>
+  );
+}
+
+/* — Frühere Tagebuchseiten: aufschlagen und blättern — */
+const HANDSCHRIFT = '"Snell Roundhand", "Savoye LET", "Bradley Hand", "Segoe Script", cursive';
+
+/* Eine gespeicherte Zeile („🏆 Ich bin stolz auf …“) wieder ihrer Frage zuordnen. */
+function seitenZeile(it) {
+  const f = FRAGEN.find((x) => it.startsWith(x.icon + " "));
+  if (f) return { frage: f.q, antwort: it.slice(f.icon.length + 1) };
+  return { frage: null, antwort: it };
+}
+
+/* Die Datumszeile oben auf jeder Seite — wie in einem gedruckten Tagebuch. */
+function DatumZeile({ datum }) {
+  return (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6 }}>
+      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum }}>Datum</span>
+      <span style={{ flex: 1, fontFamily: HANDSCHRIFT, fontSize: 23, color: "#3A2614", borderBottom: "1.5px solid rgba(193,145,60,.55)", paddingBottom: 2 }}>{datum}</span>
+    </div>
+  );
+}
+
+function TagebuchBlaettern({ entries, index, setIndex, onClose }) {
+  const [richtung, setRichtung] = useState("vor");
+  const wisch = useRef(null);
+  const e = entries[index];
+  const n = entries.length;
+  // Wie in einem Buch: links liegen die früheren Seiten, rechts die späteren.
+  const aelter = () => { if (index < n - 1) { setRichtung("zurueck"); setIndex(index + 1); } };
+  const neuer = () => { if (index > 0) { setRichtung("vor"); setIndex(index - 1); } };
+
+  useEffect(() => {
+    const taste = (ev) => {
+      if (ev.key === "Escape") onClose();
+      if (ev.key === "ArrowLeft") aelter();
+      if (ev.key === "ArrowRight") neuer();
+    };
+    window.addEventListener("keydown", taste);
+    return () => window.removeEventListener("keydown", taste);
+  });
+
+  const zeilen = (e.items || []).map(seitenZeile);
+  const linien = "repeating-linear-gradient(to bottom, transparent 0px, transparent 41px, rgba(193,145,60,.45) 41px, rgba(193,145,60,.45) 42px)";
+  const knopf = (aktiv) => ({
+    minWidth: 120, minHeight: 46, borderRadius: 23, cursor: aktiv ? "pointer" : "default",
+    border: `1.5px solid ${aktiv ? C.gold : C.line}`, background: aktiv ? "#fff" : "transparent",
+    color: aktiv ? C.plum : "#B9AAB6", fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600,
+  });
+
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label={`Tagebuchseite vom ${e.date}`} style={{
+      position: "fixed", inset: 0, zIndex: 9500, perspective: 1600,
+      background: "radial-gradient(120% 80% at 50% 35%, #4A2346 0%, #2A1428 55%, #160A16 100%)",
+      display: "flex", flexDirection: "column",
+    }}
+      onTouchStart={(ev) => { wisch.current = ev.touches[0].clientX; }}
+      onTouchEnd={(ev) => {
+        if (wisch.current == null) return;
+        const dx = ev.changedTouches[0].clientX - wisch.current;
+        wisch.current = null;
+        if (dx > 60) aelter();
+        if (dx < -60) neuer();
+      }}
+    >
+      <div key={index} style={{
+        flex: 1, overflowY: "auto", margin: "calc(env(safe-area-inset-top, 0px) + 12px) 10px 0",
+        borderRadius: "6px 18px 18px 6px", transformOrigin: richtung === "vor" ? "0% 50%" : "100% 50%",
+        animation: `${richtung === "vor" ? "s2gBlattVor" : "s2gBlattZurueck"} .55s cubic-bezier(.3,.6,.2,1) both`,
+        background: "linear-gradient(105deg, #EFE2CC 0%, #FDF8EC 6%, #FFFDF6 55%, #F8EFDD 100%)",
+        boxShadow: "inset 18px 0 24px -18px rgba(58,42,34,.35), 0 20px 40px -20px rgba(0,0,0,.6)",
+        borderLeft: `6px solid ${C.gold}`,
+      }}>
+        <div style={{ maxWidth: 560, margin: "0 auto", padding: "18px 20px 28px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum }}>Seite {n - index} von {n}</span>
+            <button onClick={onClose} aria-label="Seite schließen" style={{ width: 44, height: 44, borderRadius: "50%", border: `1.5px solid ${C.plum}`, background: "rgba(255,255,255,.7)", color: C.plum, fontSize: 21, cursor: "pointer" }}>✕</button>
+          </div>
+          <DatumZeile datum={e.date} />
+
+          <div style={{ marginTop: 22, background: linien, minHeight: 42 * 8 }}>
+            {e.intention && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum, lineHeight: "42px" }}>🌅 Meine Intention</div>
+                <div style={{ fontFamily: HANDSCHRIFT, fontSize: 25, lineHeight: "42px", color: "#3A2614" }}>{e.intention}</div>
+              </div>
+            )}
+            {zeilen.map((z, j) => (
+              <div key={j} style={{ marginBottom: 6 }}>
+                {z.frage && <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum, lineHeight: "42px" }}>{z.frage}</div>}
+                <div style={{ fontFamily: HANDSCHRIFT, fontSize: 25, lineHeight: "42px", color: "#3A2614", whiteSpace: "pre-wrap" }}>{z.antwort}</div>
+              </div>
+            ))}
+            {!e.intention && !zeilen.length && (
+              <div style={{ fontFamily: HANDSCHRIFT, fontSize: 23, lineHeight: "42px", color: "#8A7560" }}>Diese Seite ist leer geblieben.</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "14px 14px calc(env(safe-area-inset-bottom, 0px) + 16px)" }}>
+        <button onClick={aelter} disabled={index === n - 1} style={knopf(index < n - 1)}>‹ Frühere Seite</button>
+        <button onClick={neuer} disabled={index === 0} style={knopf(index > 0)}>Spätere Seite ›</button>
+      </div>
+
+      <style>{`
+        @keyframes s2gBlattVor { from { transform: rotateY(-70deg); opacity: .2 } to { transform: none; opacity: 1 } }
+        @keyframes s2gBlattZurueck { from { transform: rotateY(70deg); opacity: .2 } to { transform: none; opacity: 1 } }
+        @media (prefers-reduced-motion: reduce) { [style*="s2gBlatt"] { animation: none !important } }
+      `}</style>
+    </div>,
+    document.body,
   );
 }
 
