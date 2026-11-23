@@ -31,26 +31,20 @@ body, input, textarea, select, button { font-family: 'Inter', system-ui, -apple-
 
 /* ── Bühne hinter der App (Desktop): warmes Licht + feines Punktraster ── */
 .s2g-stage {
-  background:
-    radial-gradient(60% 50% at 15% 25%, rgba(142, 76, 133, 0.16) 0%, rgba(142, 76, 133, 0) 70%),
-    radial-gradient(55% 45% at 85% 80%, rgba(232, 168, 212, 0.14) 0%, rgba(232, 168, 212, 0) 70%),
-    radial-gradient(70% 40% at 50% 0%, rgba(230, 160, 206, 0.22) 0%, rgba(230, 160, 206, 0) 70%),
-    #F5EBF3 !important;
+  background: var(--s2g-buehne, #F5EBF3) !important;
   position: relative;
 }
 .s2g-stage::before {
   content: "";
   position: fixed; inset: 0;
   pointer-events: none;
-  background-image: radial-gradient(rgba(170, 110, 160, 0.16) 1.1px, transparent 1.1px);
+  background-image: radial-gradient(var(--s2g-punkt, rgba(170, 110, 160, 0.16)) 1.1px, transparent 1.1px);
   background-size: 26px 26px;
   -webkit-mask-image: radial-gradient(80% 70% at 50% 40%, #000 20%, transparent 100%);
   mask-image: radial-gradient(80% 70% at 50% 40%, #000 20%, transparent 100%);
 }
 .s2g-shell {
-  background:
-    radial-gradient(120% 40% at 50% 0%, rgba(230, 160, 206, 0.16) 0%, rgba(230, 160, 206, 0) 60%),
-    #FBF6FA !important;
+  background: var(--s2g-grund, #FBF6FA) !important;
   box-shadow: 0 40px 100px -30px rgba(120, 60, 110, 0.35), 0 0 0 1px rgba(240, 222, 236, 0.7) !important;
   overflow-x: clip;
 }
@@ -78,7 +72,7 @@ textarea:focus, select:focus {
 
 /* ── Navigation: Glas-Effekt ── */
 .s2g-nav {
-  background: rgba(255, 255, 254, 0.86) !important;
+  background: var(--s2g-nav, rgba(255, 255, 254, 0.86)) !important;
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
   backdrop-filter: blur(18px) saturate(1.2);
   box-shadow: 0 -12px 30px -22px rgba(120, 60, 110, 0.35);
@@ -97,17 +91,13 @@ textarea:focus, select:focus {
 
 /* ── Replika-Look: Logo, Punktraster, warmes Licht (nur Optik) ── */
 .s2g-shell {
-  background:
-    radial-gradient(120% 60% at 50% -10%, rgba(240, 180, 220, 0.32) 0%, rgba(240, 180, 220, 0) 55%),
-    radial-gradient(90% 55% at 90% 110%, rgba(232, 168, 212, 0.14) 0%, rgba(232, 168, 212, 0) 60%),
-    radial-gradient(80% 50% at 5% 100%, rgba(142, 76, 133, 0.12) 0%, rgba(142, 76, 133, 0) 60%),
-    #FFFDFE !important;
+  background: var(--s2g-grund, #FFFDFE) !important;
 }
 .s2g-shell::before {
   content: "";
   position: absolute; inset: 0;
   pointer-events: none;
-  background-image: radial-gradient(rgba(170, 110, 160, 0.16) 1.1px, transparent 1.1px);
+  background-image: radial-gradient(var(--s2g-punkt, rgba(170, 110, 160, 0.16)) 1.1px, transparent 1.1px);
   background-size: 26px 26px;
   -webkit-mask-image: linear-gradient(#000 0, rgba(0,0,0,.55) 600px, transparent 1400px);
   mask-image: linear-gradient(#000 0, rgba(0,0,0,.55) 600px, transparent 1400px);
@@ -171,7 +161,7 @@ p, h1, h2, h3, li, td, input, textarea {
    Dieselben Markenfarben, nur im größeren Farbraum gerechnet. Gold wird
    wärmer, Altrosa satter, ohne dass sich der Farbton verschiebt. */
 @supports (color: color(display-p3 1 1 1)) {
-  :root {
+  :root:not([data-thema]) {
     --s2g-gold: color(display-p3 0.557 0.298 0.521);
     --s2g-rose: color(display-p3 0.910 0.659 0.831);
   }
@@ -201,7 +191,7 @@ button:not(:disabled):active { transform: scale(0.955); }
 
 /* ── Tab-Leiste: dichteres Glas, sichere Zone, weicher Wechsel ── */
 .s2g-nav {
-  background: rgba(255, 254, 255, 0.82) !important;
+  background: var(--s2g-nav, rgba(255, 254, 255, 0.82)) !important;
   -webkit-backdrop-filter: blur(26px) saturate(1.5);
   backdrop-filter: blur(26px) saturate(1.5);
   border-top: 1px solid rgba(240, 222, 236, 0.65) !important;
