@@ -5,6 +5,7 @@ import HeuteHero from "./HeuteHero";
 import Entdecken, { Karussell } from "./Entdecken";
 import MantraRaum from "./MantraRaum";
 import Tarot from "./Tarot";
+import KarteVollbild from "./KarteVollbild";
 import TeamNachrichten from "./TeamNachrichten";
 import { ExpertinnenKarussell, ExpertinProfil } from "./Expertinnen";
 import { alsPdf } from "./export";
@@ -2022,6 +2023,8 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
   const [busy, setBusy] = useState(false);
   const [reflexion, setReflexion] = useState("");
   const [gespeichert, setGespeichert] = useState(false);
+  const [vollbild, setVollbild] = useState(false);
+  const karteRef = useRef(null);
   const heute = new Date().toDateString();
   // Tageskarte gilt nur für den heutigen Tag — morgens wartet automatisch eine neue.
   useEffect(() => {
@@ -2098,8 +2101,8 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
         Atme tief ein — und zieh deine Tageskarte.
       </p>
 
-      {/* Kartenbühne — nachtblau mit Gold, die Karte gross in der Mitte,
-          links und rechts schauen zwei Kartenrücken hervor (Tarot-Vorbild). */}
+      {/* Kartenbühne — nachtblau mit Gold, eine einzige Karte gross in der Mitte.
+          Nach dem Ziehen öffnet ein Tipp die Karte im Vollbild (KarteVollbild). */}
       <div style={{ margin: "0 -20px 22px", padding: "30px 0 28px", position: "relative", overflow: "hidden", background: "radial-gradient(120% 75% at 50% 0%, #2E3375 0%, #1A1C45 52%, #0F1029 100%)" }}>
         <svg aria-hidden="true" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: .55, pointerEvents: "none" }}>
           <g stroke="#D9B56A" strokeWidth=".6" opacity=".55">
@@ -2109,21 +2112,18 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
             {[[40,40],[352,60],[70,320],[330,300],[28,190],[372,200],[120,24],[288,28],[96,372],[300,376]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 3 ? 1.2 : 2} />)}
           </g>
         </svg>
-        {[-1, 1].map((seite) => (
-          <div key={seite} aria-hidden="true" style={{ position: "absolute", top: 70, [seite < 0 ? "left" : "right"]: -70, width: 130, height: 330, borderRadius: 14, background: "linear-gradient(160deg, #23265A, #12132E)", border: "1.5px solid #B8923F", boxShadow: "0 10px 30px rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", opacity: .85 }}>
-            <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#D9B56A" strokeWidth=".7"><circle cx="12" cy="12" r="4.5" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.8 2.8M16.2 16.2L19 19M5 19l2.8-2.8M16.2 7.8L19 5" /></svg>
-          </div>
-        ))}
 
-        <div style={{ perspective: 1200, margin: "0 auto", width: 268, height: 418, position: "relative" }}>
+        <div ref={karteRef} style={{ perspective: 1200, margin: "0 auto", width: 268, height: 418, position: "relative", visibility: vollbild ? "hidden" : "visible" }}>
           <div
-            onClick={() => !card && draw()}
+            onClick={() => (card ? setVollbild(true) : draw())}
+            role="button"
+            aria-label={card ? `${card.n} im Vollbild öffnen` : "Karte ziehen"}
             style={{
               width: "100%", height: "100%", position: "relative",
               transformStyle: "preserve-3d",
               transform: flip ? "rotateY(180deg)" : "none",
               transition: "transform .8s cubic-bezier(.4,.1,.2,1)",
-              cursor: card ? "default" : "pointer",
+              cursor: "pointer",
             }}
           >
             {/* Rückseite */}
@@ -2162,8 +2162,24 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
           </div>
         </div>
 
+        {card && !vollbild && (
+          <div style={{ position: "relative", marginTop: 14, fontFamily: "system-ui, sans-serif", fontSize: 11.5, letterSpacing: 1.6, textTransform: "uppercase", color: "rgba(246,235,207,.6)", animation: "fadeUp .6s .9s ease both" }}>
+            ⤢ Tippe die Karte für Vollbild
+          </div>
+        )}
+
+        {card && vollbild && (
+          <KarteVollbild
+            karte={card}
+            bild={S2GKARTEN[card.n] || KARTEN_BILDER[card.n]}
+            fallback={<KartenArt g={card} />}
+            quelle={karteRef}
+            onClose={() => setVollbild(false)}
+          />
+        )}
+
         {card && (
-          <div style={{ position: "relative", padding: "22px 30px 0", animation: "fadeUp .6s ease" }}>
+          <div style={{ position: "relative", padding: "18px 30px 0", animation: "fadeUp .6s ease" }}>
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, letterSpacing: 2.2, textTransform: "uppercase", color: "#D9B56A", fontWeight: 600 }}>{card.sub} · {card.b}</div>
             <p style={{ fontFamily: "Georgia, serif", fontSize: 19, color: "#F6EBCF", lineHeight: 1.45, margin: "10px 0 0" }}>{card.txt}</p>
           </div>
