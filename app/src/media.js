@@ -14,6 +14,7 @@ export const FEUER_VIDEO_ERSATZ = "/media/video/orakel_klein.mp4";
 export const DANKBARKEIT_VIDEO = "/media/video/dankbarkeit.mp4";
 export const DANKBARKEIT_POSTER = "/media/video/dankbarkeit_poster.jpg";
 // Rituale: gefuehrte Hochformat-Videos (9:16), Schluessel wie in Rituale (App.jsx).
+// Kerze: Schritt-Video mit Higgsfield-Bildern (23.11.2026).
 // Natur, Mond, Koerper: echte Szenen aus Higgsfield (Kling 3.0) + Text und Musik, liegen auf dem Higgsfield-CDN.
 export const RITUAL_VIDEOS = {
   raeu:     { video: "/media/video/kerze_ritual.mp4",   poster: "/media/video/kerze_ritual_poster.jpg" },
@@ -21,6 +22,9 @@ export const RITUAL_VIDEOS = {
   mond:     { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/5e2a020c-e434-49b1-b9da-4d042e9b80b0.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/2be64d32-ecb9-4751-86be-937a95ece9e1.jpg", grund: "#FBF4EF" },
   "körper": { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/3b95841c-f3b6-4e2c-be4e-e6d93ac1e838.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/f5099337-a0f8-4096-b976-77fe330135ae.jpg", grund: "#FBF4EF" },
 };
+
+// Zukunftsbrief: gefuehrtes Schritt-Video (Higgsfield-Bilder, 23.11.2026)
+export const BRIEF_VIDEO = { video: "/media/video/brief_ritual.mp4", poster: "/media/video/brief_ritual_poster.jpg" };
 
 // Orakel-Kartenbilder (Higgsfield · nano_banana_pro, 4K, 3:4) — 44-Karten-Göttinnen-Deck, einheitlicher 8K-3D-HD-Kartenstil
 export const KARTEN = {
