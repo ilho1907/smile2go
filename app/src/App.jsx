@@ -2650,6 +2650,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
     setEntries([{
       date: new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long" }),
       intention: intention.trim(), items, stimmung,
+      aff: affirmationDesTages().s,
     }, ...entries]);
     setIntention(""); setDank(["", "", "", "", "", ""]); setStimmung(null);
     if (addPunkte) addPunkte(10, "Tagebuch-Eintrag");
@@ -2695,7 +2696,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
         boxShadow: "inset 14px 0 18px -14px rgba(58,42,34,.22), 0 6px 18px rgba(58,42,34,.08)",
         position: "relative",
       }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 6 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "4px 12px", marginBottom: 6 }}>
           <Eyebrow color={C.plum}>📖 Deine Ausrichtung für heute</Eyebrow>
           <DatumZeile datum={new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })} />
         </div>
@@ -2744,6 +2745,11 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
             />
           </div>
         ))}
+        {/* Fußzeile: die Affirmation des Tages, wie auf jeder Tagebuchseite */}
+        <div style={{ marginTop: 22, paddingTop: 14, borderTop: "1.5px solid rgba(193,145,60,.55)", textAlign: "center" }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: C.plum }}>✦ Affirmation ✦</div>
+          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, lineHeight: 1.5, color: "#3A2614", marginTop: 6 }}>„{affirmationDesTages().s}“</div>
+        </div>
         {/* Seitenecke */}
         <div style={{ position: "absolute", right: 0, bottom: 0, width: 26, height: 26, borderRadius: "16px 0 14px 0", background: "linear-gradient(315deg, #E9DAC0 0%, #F8EFDD 55%, transparent 56%)", boxShadow: "-2px -2px 5px rgba(58,42,34,.10)" }} />
       </div>
@@ -2781,7 +2787,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
       )}
 
       {blatt !== null && entries[blatt] && (
-        <TagebuchBlaettern entries={entries} index={blatt} setIndex={setBlatt} onClose={() => setBlatt(null)} />
+        <TagebuchBlaettern entries={entries} start={blatt} onClose={() => setBlatt(null)} />
       )}
     </div>
   );
@@ -2797,45 +2803,73 @@ function seitenZeile(it) {
   return { frage: null, antwort: it };
 }
 
-/* Die Datumszeile oben auf jeder Seite — wie in einem gedruckten Tagebuch. */
+/* Die Datumszeile oben rechts auf jeder Seite — wie in einem gedruckten Tagebuch. */
 function DatumZeile({ datum }) {
   return (
-    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6 }}>
-      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum }}>Datum</span>
-      <span style={{ flex: 1, fontFamily: HANDSCHRIFT, fontSize: 23, color: "#3A2614", borderBottom: "1.5px solid rgba(193,145,60,.55)", paddingBottom: 2 }}>{datum}</span>
+    <div style={{ marginLeft: "auto", textAlign: "right", minWidth: 150 }}>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum }}>Datum</div>
+      <div style={{ fontFamily: HANDSCHRIFT, fontSize: 23, color: "#3A2614", borderBottom: "1.5px solid rgba(193,145,60,.55)", paddingBottom: 1, whiteSpace: "nowrap" }}>{datum}</div>
     </div>
   );
 }
 
-function TagebuchBlaettern({ entries, index, setIndex, onClose }) {
+/* Feste Auswahl aus einem Text: dieselbe Seite bekommt immer dieselbe Affirmation. */
+const affirmationAus = (text) => {
+  let h = 0;
+  for (const z of String(text)) h = (h * 31 + z.charCodeAt(0)) >>> 0;
+  return AFFIRMATIONEN[h % AFFIRMATIONEN.length];
+};
+const affirmationFuerEintrag = (e) => e.aff || affirmationAus(e.date).s;
+const monatAus = (datum) => (String(datum).match(/\d+\.\s*(.+)$/) || [, String(datum)])[1].trim();
+
+/* Ein Buch zum Blättern: links die früheren Seiten, rechts die späteren. Am Anfang
+   jedes Monats steht eine ganze Seite mit der Affirmation des Monats. */
+function TagebuchBlaettern({ entries, start, onClose }) {
+  // Blätter in Buchreihenfolge (älteste zuerst), Monatsseiten dazwischen
+  const blaetter = useMemo(() => {
+    const liste = [];
+    let monat = null, nr = 0;
+    entries.map((e, i) => ({ e, i })).reverse().forEach(({ e, i }) => {
+      const m = monatAus(e.date);
+      if (m !== monat) { monat = m; liste.push({ art: "monat", monat: m, aff: affirmationAus("monat:" + m) }); }
+      nr += 1;
+      liste.push({ art: "seite", e, i, nr });
+    });
+    return liste;
+  }, [entries]);
+  const n = entries.length;
+  const [pos, setPos] = useState(() => Math.max(0, blaetter.findIndex((b) => b.art === "seite" && b.i === start)));
   const [richtung, setRichtung] = useState("vor");
   const wisch = useRef(null);
-  const e = entries[index];
-  const n = entries.length;
-  // Wie in einem Buch: links liegen die früheren Seiten, rechts die späteren.
-  const aelter = () => { if (index < n - 1) { setRichtung("zurueck"); setIndex(index + 1); } };
-  const neuer = () => { if (index > 0) { setRichtung("vor"); setIndex(index - 1); } };
+  const blatt = blaetter[pos];
+
+  const frueher = () => { if (pos > 0) { setRichtung("zurueck"); setPos(pos - 1); } };
+  const spaeter = () => { if (pos < blaetter.length - 1) { setRichtung("vor"); setPos(pos + 1); } };
 
   useEffect(() => {
     const taste = (ev) => {
       if (ev.key === "Escape") onClose();
-      if (ev.key === "ArrowLeft") aelter();
-      if (ev.key === "ArrowRight") neuer();
+      if (ev.key === "ArrowLeft") frueher();
+      if (ev.key === "ArrowRight") spaeter();
     };
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
   });
 
-  const zeilen = (e.items || []).map(seitenZeile);
   const linien = "repeating-linear-gradient(to bottom, transparent 0px, transparent 41px, rgba(193,145,60,.45) 41px, rgba(193,145,60,.45) 42px)";
   const knopf = (aktiv) => ({
-    minWidth: 120, minHeight: 46, borderRadius: 23, cursor: aktiv ? "pointer" : "default",
-    border: `1.5px solid ${aktiv ? C.gold : C.line}`, background: aktiv ? "#fff" : "transparent",
-    color: aktiv ? C.plum : "#B9AAB6", fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600,
+    minHeight: 46, padding: "0 16px", borderRadius: 23, cursor: aktiv ? "pointer" : "default",
+    border: `1.5px solid ${aktiv ? C.gold : "rgba(255,255,255,.18)"}`, background: aktiv ? "#fff" : "transparent",
+    color: aktiv ? C.plum : "rgba(255,255,255,.35)", fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 600,
   });
+  const papier = {
+    background: "linear-gradient(105deg, #EFE2CC 0%, #FDF8EC 6%, #FFFDF6 55%, #F8EFDD 100%)",
+    boxShadow: "inset 18px 0 24px -18px rgba(58,42,34,.35), 0 20px 40px -20px rgba(0,0,0,.6)",
+    borderLeft: `6px solid ${C.gold}`,
+  };
 
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-label={`Tagebuchseite vom ${e.date}`} style={{
+    <div role="dialog" aria-modal="true" aria-label="Frühere Tagebuchseiten" style={{
       position: "fixed", inset: 0, zIndex: 9500, perspective: 1600,
       background: "radial-gradient(120% 80% at 50% 35%, #4A2346 0%, #2A1428 55%, #160A16 100%)",
       display: "flex", flexDirection: "column",
@@ -2845,48 +2879,38 @@ function TagebuchBlaettern({ entries, index, setIndex, onClose }) {
         if (wisch.current == null) return;
         const dx = ev.changedTouches[0].clientX - wisch.current;
         wisch.current = null;
-        if (dx > 60) aelter();
-        if (dx < -60) neuer();
+        if (dx > 60) frueher();
+        if (dx < -60) spaeter();
       }}
     >
-      <div key={index} style={{
+      <div key={pos} style={{
         flex: 1, overflowY: "auto", margin: "calc(env(safe-area-inset-top, 0px) + 12px) 10px 0",
         borderRadius: "6px 18px 18px 6px", transformOrigin: richtung === "vor" ? "0% 50%" : "100% 50%",
         animation: `${richtung === "vor" ? "s2gBlattVor" : "s2gBlattZurueck"} .55s cubic-bezier(.3,.6,.2,1) both`,
-        background: "linear-gradient(105deg, #EFE2CC 0%, #FDF8EC 6%, #FFFDF6 55%, #F8EFDD 100%)",
-        boxShadow: "inset 18px 0 24px -18px rgba(58,42,34,.35), 0 20px 40px -20px rgba(0,0,0,.6)",
-        borderLeft: `6px solid ${C.gold}`,
+        display: "flex", flexDirection: "column",
+        ...(blatt.art === "monat"
+          ? { background: "radial-gradient(120% 90% at 50% 30%, #6B3364 0%, #4A2346 55%, #2E1530 100%)", borderLeft: `6px solid ${C.gold}`, boxShadow: "inset 18px 0 24px -18px rgba(0,0,0,.5), 0 20px 40px -20px rgba(0,0,0,.6)" }
+          : papier),
       }}>
-        <div style={{ maxWidth: 560, margin: "0 auto", padding: "18px 20px 28px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum }}>Seite {n - index} von {n}</span>
-            <button onClick={onClose} aria-label="Seite schließen" style={{ width: 44, height: 44, borderRadius: "50%", border: `1.5px solid ${C.plum}`, background: "rgba(255,255,255,.7)", color: C.plum, fontSize: 21, cursor: "pointer" }}>✕</button>
+        {blatt.art === "monat" ? (
+          /* Monatsseite: eine ganze Seite nur für die Affirmation */
+          <div style={{ flex: 1, boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "40px 28px", position: "relative" }}>
+            <div style={{ position: "absolute", inset: 16, border: "1.5px solid rgba(231,194,106,.55)", borderRadius: 12, pointerEvents: "none" }} />
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: "#E7C26A" }}>Dein Monat</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 42, color: "#FFF6E2", margin: "6px 0 26px" }}>{blatt.monat}</div>
+            <div style={{ fontSize: 34, marginBottom: 14 }}>{blatt.aff.icon}</div>
+            <div style={{ fontFamily: HANDSCHRIFT, fontSize: 31, lineHeight: 1.45, color: "#FFF6E2", maxWidth: 420, textShadow: "0 0 14px rgba(212,114,190,.45)" }}>„{blatt.aff.s}“</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,246,226,.75)", marginTop: 22 }}>Affirmation · {blatt.aff.t}</div>
           </div>
-          <DatumZeile datum={e.date} />
-
-          <div style={{ marginTop: 22, background: linien, minHeight: 42 * 8 }}>
-            {e.intention && (
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum, lineHeight: "42px" }}>🌅 Meine Intention</div>
-                <div style={{ fontFamily: HANDSCHRIFT, fontSize: 25, lineHeight: "42px", color: "#3A2614" }}>{e.intention}</div>
-              </div>
-            )}
-            {zeilen.map((z, j) => (
-              <div key={j} style={{ marginBottom: 6 }}>
-                {z.frage && <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum, lineHeight: "42px" }}>{z.frage}</div>}
-                <div style={{ fontFamily: HANDSCHRIFT, fontSize: 25, lineHeight: "42px", color: "#3A2614", whiteSpace: "pre-wrap" }}>{z.antwort}</div>
-              </div>
-            ))}
-            {!e.intention && !zeilen.length && (
-              <div style={{ fontFamily: HANDSCHRIFT, fontSize: 23, lineHeight: "42px", color: "#8A7560" }}>Diese Seite ist leer geblieben.</div>
-            )}
-          </div>
-        </div>
+        ) : (
+          <SeiteInhalt e={blatt.e} nr={blatt.nr} n={n} linien={linien} />
+        )}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "14px 14px calc(env(safe-area-inset-bottom, 0px) + 16px)" }}>
-        <button onClick={aelter} disabled={index === n - 1} style={knopf(index < n - 1)}>‹ Frühere Seite</button>
-        <button onClick={neuer} disabled={index === 0} style={knopf(index > 0)}>Spätere Seite ›</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "14px 12px calc(env(safe-area-inset-bottom, 0px) + 16px)" }}>
+        <button onClick={frueher} disabled={pos === 0} style={knopf(pos > 0)}>‹ Früher</button>
+        <button onClick={onClose} aria-label="Seite schließen" style={{ width: 48, height: 48, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,.5)", background: "rgba(255,255,255,.08)", color: "#fff", fontSize: 20, cursor: "pointer" }}>✕</button>
+        <button onClick={spaeter} disabled={pos === blaetter.length - 1} style={knopf(pos < blaetter.length - 1)}>Später ›</button>
       </div>
 
       <style>{`
@@ -2896,6 +2920,43 @@ function TagebuchBlaettern({ entries, index, setIndex, onClose }) {
       `}</style>
     </div>,
     document.body,
+  );
+}
+
+/* Eine beschriebene Seite: oben rechts das Datum, unten die Affirmation des Tages. */
+function SeiteInhalt({ e, nr, n, linien }) {
+  const zeilen = (e.items || []).map(seitenZeile);
+  return (
+    <div style={{ flex: 1, width: "100%", boxSizing: "border-box", maxWidth: 560, margin: "0 auto", padding: "18px 20px 24px", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum, marginTop: 4 }}>Seite {nr} von {n}</span>
+        <DatumZeile datum={e.date} />
+      </div>
+
+      <div style={{ marginTop: 22, background: linien, minHeight: 42 * 6, flex: 1 }}>
+        {e.intention && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum, lineHeight: "42px" }}>🌅 Meine Intention</div>
+            <div style={{ fontFamily: HANDSCHRIFT, fontSize: 25, lineHeight: "42px", color: "#3A2614" }}>{e.intention}</div>
+          </div>
+        )}
+        {zeilen.map((z, j) => (
+          <div key={j} style={{ marginBottom: 6 }}>
+            {z.frage && <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum, lineHeight: "42px" }}>{z.frage}</div>}
+            <div style={{ fontFamily: HANDSCHRIFT, fontSize: 25, lineHeight: "42px", color: "#3A2614", whiteSpace: "pre-wrap" }}>{z.antwort}</div>
+          </div>
+        ))}
+        {!e.intention && !zeilen.length && (
+          <div style={{ fontFamily: HANDSCHRIFT, fontSize: 23, lineHeight: "42px", color: "#8A7560" }}>Diese Seite ist leer geblieben.</div>
+        )}
+      </div>
+
+      {/* Fußzeile: die Affirmation dieses Tages */}
+      <div style={{ marginTop: 22, paddingTop: 14, borderTop: "1.5px solid rgba(193,145,60,.55)", textAlign: "center" }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: C.plum }}>✦ Affirmation ✦</div>
+        <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, lineHeight: 1.5, color: "#3A2614", marginTop: 6 }}>„{affirmationFuerEintrag(e)}“</div>
+      </div>
+    </div>
   );
 }
 
