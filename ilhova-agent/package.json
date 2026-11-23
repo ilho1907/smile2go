@@ -1,0 +1,31 @@
+{
+  "name": "ilhova-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ilhova agent – persönlicher KI-Assistent (Pilot) auf Claude Managed Agents",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "setup": "tsx scripts/setup.ts",
+    "serve": "tsx src/server.ts",
+    "test:session": "tsx scripts/test-session.ts",
+    "test:unit": "tsx scripts/test-handlers.ts",
+    "agent:update": "tsx scripts/update-agent.ts",
+    "agent:versions": "tsx scripts/agent-versions.ts",
+    "agent:pin": "tsx scripts/agent-pin.ts",
+    "session:delete": "tsx scripts/delete-session.ts",
+    "typecheck": "tsc --noEmit",
+    "test:loop": "tsx scripts/test-loop-offline.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.13.0",
+    "dotenv": "^18.0.10"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
