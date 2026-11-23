@@ -660,15 +660,16 @@ const AbschnittTitel = ({ children, unter, style }) => (
 /* Eine Zeile auf "Heute": Zeichen, Titel, eine leise Unterzeile. Antippbar
    ist sie ein Knopf, sonst nur Text. Aus dieser einen Form sind alle drei
    Bloecke gebaut — darum sieht die Seite aus einem Guss aus. */
-const HeuteZeile = ({ ikon, sym, titel, unter, onClick, style }) => {
+const HeuteZeile = ({ ikon, sym, titel, unter, onClick, style, dunkel }) => {
+  const d = dunkel ? DUNKEL_TON.pflaume : null;
   const inhalt = (
     <>
-      <span style={{ flex: "0 0 auto", marginTop: 2, color: C.gold, display: "inline-flex" }}>
+      <span style={{ flex: "0 0 auto", marginTop: 2, color: d ? d.zeichen : C.gold, display: "inline-flex" }}>
         {ikon ? <Ikon n={ikon} size={19} /> : <Sym e={sym} size={19} />}
       </span>
       <span style={{ flex: 1, minWidth: 0, display: "block" }}>
-        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: C.espresso }}>{titel}</span>
-        {unter && <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14.5, lineHeight: 1.5, color: C.ink, marginTop: 3, fontVariantNumeric: "tabular-nums" }}>{unter}</span>}
+        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: d ? d.schrift : C.espresso }}>{titel}</span>
+        {unter && <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14.5, lineHeight: 1.5, color: d ? d.leise : C.ink, marginTop: 3, fontVariantNumeric: "tabular-nums" }}>{unter}</span>}
       </span>
     </>
   );
@@ -680,10 +681,11 @@ const HeuteZeile = ({ ikon, sym, titel, unter, onClick, style }) => {
 
 /* Der Gefuehlskompass auf "Heute": keine eigene Karte mehr, sondern eine Zeile
    im Feld des Energie-Kompass, direkt unter den Zahlen. */
-const GefuehlsZeileHeute = ({ daten, onCheckin, onOeffnen }) => {
+const GefuehlsZeileHeute = ({ daten, onCheckin, onOeffnen, dunkel }) => {
   const st = gefuehlsStand(daten);
   return (
     <HeuteZeile
+      dunkel={dunkel}
       ikon="herz"
       titel="Wie fühlst du dich gerade?"
       unter={st.nachfrage ? "Eine kurze Nachfrage zu deiner Übung wartet auf dich."
@@ -1277,42 +1279,45 @@ function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries, c
   };
 
   const aktuelles = ENERGIE.find((x) => x.v === energie?.v);
+  const PF = DUNKEL_TON.pflaume;
 
   return (
     <div style={{ marginBottom: 32 }}>
       <AbschnittTitel unter="ilho richtet den Tag danach aus.">Wie ist deine Energie heute?</AbschnittTitel>
-      <Dunkel style={{ padding: 22 }}>
+      {/* Der eine dunkle Block der Seite: Pflaume. Er trennt den Check-in
+          sichtbar vom hellen Rest — vorher lag hier Perlmutt auf Creme. */}
+      <Dunkel ton="pflaume" style={{ padding: 22 }}>
       <div style={{ display: "flex", gap: 6 }}>
         {ENERGIE.map((x) => {
           const active = energie?.v === x.v;
           return (
             <button key={x.v} onClick={() => pick(x)} style={{
               flex: 1, minWidth: 0, minHeight: 42, padding: 0, borderRadius: 11, cursor: "pointer",
-              border: active ? `1px solid ${C.gold}` : `1px solid ${C.line}`,
-              background: active ? C.gold : "rgba(255,255,255,.72)",
-              color: active ? "#fff" : C.ink,
+              border: active ? `1px solid ${PF.zeichen}` : "1px solid rgba(240,226,235,.20)",
+              background: active ? PF.zeichen : "rgba(255,255,255,.07)",
+              color: active ? "#2A1626" : PF.schrift,
               fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: active ? 700 : 500,
             }}>{x.v}</button>
           );
         })}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>erschöpft</span>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>voller Energie</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: PF.leise }}>erschöpft</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: PF.leise }}>voller Energie</span>
       </div>
       {aktuelles && (
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: C.plum, marginTop: 10 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: PF.zeichen, marginTop: 10 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Sym e={aktuelles.e} size={16} />{aktuelles.t}</span>
         </div>
       )}
-      {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.plum, marginTop: 12 }}>ilho spürt in deinen Tag hinein …</p>}
+      {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: PF.zeichen, marginTop: 12 }}>ilho spürt in deinen Tag hinein …</p>}
       {impuls && !busy && (
-        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.55, marginTop: 12 }}>
+        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: PF.schrift, lineHeight: 1.55, marginTop: 12 }}>
           {impuls}
         </p>
       )}
       {children && (
-        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid rgba(142,76,133,.16)" }}>{children}</div>
+        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid rgba(240,226,235,.16)" }}>{children}</div>
       )}
       </Dunkel>
     </div>
@@ -1411,7 +1416,7 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
       <Entdecken go={go} setJournalSec={setJournalSec} />
 
       <AbschnittTitel>Für dich vorbereitet</AbschnittTitel>
-      <Card style={{ marginBottom: 32 }}>
+      <Card style={{ marginBottom: 32, background: "linear-gradient(150deg, #FBEFF7 0%, #F4DDEC 100%)", border: "1px solid #EACBDF" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <WochenChallenge go={go} />
           <MeTimeZeile metime={metime} go={go} />
@@ -1437,14 +1442,14 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
             if (uniqueFocus.sec && setJournalSec) setJournalSec(uniqueFocus.sec);
             go(uniqueFocus.nav);
           }}
-          style={{ border: "1px solid rgba(239,223,236,.9)", borderRadius: 24, padding: 22 }}
+          style={{ background: "linear-gradient(135deg, #FFF6E8 0%, #FBE7CF 100%)", border: "1px solid #F0D3AE", borderLeft: `5px solid ${C.gold}`, borderRadius: 24, padding: 22, boxShadow: "0 14px 30px -22px rgba(150,95,40,.45)" }}
         />
       ) : (
         <HeuteZeile
           ikon="haken"
           titel="Alles erledigt"
           unter="Du hast heute alles geschafft. Ruh dich aus — du hast es verdient."
-          style={{ border: "1px solid rgba(239,223,236,.9)", borderRadius: 24, padding: 22 }}
+          style={{ background: "linear-gradient(135deg, #FFF6E8 0%, #FBE7CF 100%)", border: "1px solid #F0D3AE", borderLeft: `5px solid ${C.gold}`, borderRadius: 24, padding: 22, boxShadow: "0 14px 30px -22px rgba(150,95,40,.45)" }}
         />
       )}
       <div style={{ display: "flex", gap: 9, flexWrap: "wrap", alignItems: "center", marginTop: 14 }}>
@@ -11863,7 +11868,7 @@ export default function IlhoApp() {
                   ist rund 72 Pixel hoch und sitzt ueber der Leiste; die Zahlen
                   hier sind sein Platz plus der Rand, auf dem die Leiste steht. */}
             <div key={tab} style={{ paddingBottom: tab === "luma" ? 0 : ilhoAktiv ? 208 : 136, animation: "fadeUp .45s ease" }}>
-              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} avatar={prefs?.avatar} onProfil={() => go("profil")} /><div style={{ padding: "28px 20px 0" }}><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries}><GefuehlsZeileHeute daten={prefs.gefuehle} onCheckin={() => { setGefStart("checkin"); go("gefuehle"); }} onOeffnen={() => { setGefStart("start"); go("gefuehle"); }} /></EnergieKompass></div><Heute metime={metime} name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
+              {tab === "heute" && <><HeuteHero name={anzeigeName} punkte={punkte} avatar={prefs?.avatar} onProfil={() => go("profil")} /><div style={{ padding: "28px 20px 0" }}><EnergieKompass energie={energie} setEnergie={setEnergie} addPunkte={addPunkte} entries={entries} setEntries={setEntries}><GefuehlsZeileHeute dunkel daten={prefs.gefuehle} onCheckin={() => { setGefStart("checkin"); go("gefuehle"); }} onOeffnen={() => { setGefStart("start"); go("gefuehle"); }} /></EnergieKompass></div><Heute metime={metime} name={anzeigeName} go={go} streak={streak} punkte={punkte} addPunkte={addPunkte} termine={termine} setTermine={setTermine} prefs={prefs} setPrefs={setPrefs} ch369={ch369} meinZeichen={meinZeichen} openPunkte={() => setPkModal(true)} drawn={drawn} horo={horo} entries={entries} setJournalSec={setJournalSec} twinTon={twinTon} /></>}
               {tab === "orakel" && <><MediaBanner video={S2GVID.orakel} poster={S2GIMG.orakel} title="Orakel" subtitle="Zieh deine Tageskarte" /><Orakel drawn={drawn} setDrawn={setDrawn} energie={energie} horo={horo} setHoro={setHoro} addPunkte={addPunkte} setMeinZeichen={setMeinZeichen} meinZeichen={meinZeichen} briefkopf={office.briefkopf} entries={entries} setEntries={setEntries} archetyp={archetyp} twin={twin} twinTon={twinTon} /></>}
               {tab === "gemeinschaft" && <Gemeinschaft go={go} bindung={bindung} openExpertin={openExpertin} />}
               {tab === "expertin" && <div style={{ margin: "0 0 -20px" }}><ExpertinProfil e={expertin} go={go} /></div>}
