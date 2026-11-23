@@ -6,6 +6,8 @@ import {
   adminCoachCodes, adminCoachCodeErzeugen, adminCoachCodeUmschalten,
   adminTeamPostfach, adminTeamVerlauf, adminTeamSenden, adminTeamRundnachricht,
 } from "./supabase";
+import { brauchtZweitenFaktor } from "./supabase";
+import { ZweiFaktorAbfrage } from "./ZweiFaktor";
 import { ILHO_SYSTEM } from "./ilho";
 import { alsCsv } from "./export";
 
@@ -55,35 +57,76 @@ const Leer = ({ children }) => <p style={{ ...sys, fontSize: 14.5, color: C.ink,
 
 export default function AdminDashboard() {
   const [admin, setAdmin] = useState(null);
+  const [session, setSession] = useState(undefined);  // undefined = lädt
+  const [mfaFaktor, setMfaFaktor] = useState(null);
   const [tab, setTab] = useState("uebersicht");
   const [k, setK] = useState(null);
   const [wachstum, setWachstum] = useState([]);
   const [teamZiel, setTeamZiel] = useState(null);   // { user_id, email } aus „Mitglieder“
   const [teamOffen, setTeamOffen] = useState(0);
 
+  // Die Dock-App (s2g.admin) hat ihren eigenen Speicher — darum meldet sich
+  // ilho hier direkt an, statt erst über die Mitglieder-App zu gehen.
   useEffect(() => {
-    (async () => {
-      const ok = supabase ? await istAdmin() : false;
-      setAdmin(ok);
-      if (!ok) return;
-      const [kz, w] = await Promise.all([adminKennzahlen(), adminWachstum()]);
-      adminTeamPostfach().then((p) => setTeamOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0)));
-      setK(kz); setWachstum(w.map((z) => ({ m: new Date(z.monat).toLocaleDateString("de-DE", { month: "short" }), neu: Number(z.neu) })));
-    })();
+    if (!supabase) { setSession(null); setAdmin(false); return; }
+    supabase.auth.getSession().then(({ data }) => setSession(data.session || null));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s || null));
+    return () => sub?.subscription?.unsubscribe();
   }, []);
 
+  const laden = async () => {
+    const faktor = await brauchtZweitenFaktor();
+    if (faktor) { setMfaFaktor(faktor); return; }
+    const ok = await istAdmin();
+    setAdmin(ok);
+    if (!ok) return;
+    const [kz, w] = await Promise.all([adminKennzahlen(), adminWachstum()]);
+    adminTeamPostfach().then((p) => setTeamOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0)));
+    setK(kz); setWachstum(w.map((z) => ({ m: new Date(z.monat).toLocaleDateString("de-DE", { month: "short" }), neu: Number(z.neu) })));
+  };
+
+  // Schlüssel: „lädt“ / „aus“ / User-ID — sonst bemerkt der Effekt den
+  // Wechsel von „lädt“ zu „abgemeldet“ nicht und die Seite bleibt leer.
+  const sitzungsSchluessel = session === undefined ? "laedt" : session?.user?.id || "aus";
+  useEffect(() => {
+    if (session === undefined) return;
+    if (!session) { setAdmin(false); return; }
+    setAdmin(null); laden();
+  }, [sitzungsSchluessel]);
+
+  // Nachrichten-Zähler im Hintergrund aktuell halten
+  useEffect(() => {
+    if (!admin) return;
+    const t = setInterval(() => adminTeamPostfach().then((p) => setTeamOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0))).catch(() => {}), 60000);
+    return () => clearInterval(t);
+  }, [admin]);
+
+  useEffect(() => { document.title = teamOffen ? `(${teamOffen}) s2g.admin` : "s2g.admin"; }, [teamOffen]);
+
+  const abmelden = () => supabase.auth.signOut().then(() => { setAdmin(false); setK(null); });
+
+  if (session === undefined) return <div style={{ minHeight: "100vh", background: C.cream }} />;
+  if (supabase && !session) return <AdminAnmeldung />;
+  if (mfaFaktor)
+    return (
+      <Mitte><Card style={{ maxWidth: 400, width: "100%" }}>
+        <ZweiFaktorAbfrage C={C} faktorId={mfaFaktor} onOk={() => { setMfaFaktor(null); laden(); }} onAbbruch={abmelden} />
+      </Card></Mitte>
+    );
   if (admin === null) return <div style={{ minHeight: "100vh", background: C.cream }} />;
   if (!admin)
     return (
-      <div style={{ minHeight: "100vh", background: C.cream, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <Mitte>
         <Card style={{ maxWidth: 440 }}>
           <Eyebrow>Admin · kein Zugriff</Eyebrow>
           <p style={{ ...sys, fontSize: 15.5, color: C.espresso, lineHeight: 1.6, margin: 0 }}>
-            Dieses Dashboard zeigt echte Plattformdaten und ist nur für eingetragene Admins. Melde dich in der App mit deinem Admin-Konto an und öffne dann wieder <code>#admin</code>.
+            {supabase
+              ? <>Dieses Konto ({session?.user?.email}) ist nicht als Admin eingetragen. Melde dich mit deinem Admin-Konto an.</>
+              : <>Keine Cloud konfiguriert — das Dashboard zeigt nur echte Daten.</>}
           </p>
-          <a href="/" style={{ ...sys, display: "inline-block", marginTop: 14, fontSize: 14.5, fontWeight: 700, color: C.plum }}>← Zur App</a>
+          {supabase && <button onClick={abmelden} style={{ ...sys, marginTop: 14, fontSize: 14.5, fontWeight: 700, color: C.plum, background: "none", border: "none", padding: 0, cursor: "pointer" }}>Mit anderem Konto anmelden</button>}
         </Card>
-      </div>
+      </Mitte>
     );
 
   const TABS = [
@@ -100,7 +143,9 @@ export default function AdminDashboard() {
           smile<span style={{ color: C.rose, fontStyle: "italic" }}>2</span>go <span style={{ fontSize: 13, color: "#D4B87A", letterSpacing: 2, textTransform: "uppercase", marginLeft: 6 }}>Admin</span>
         </div>
         <div style={{ flex: 1 }} />
-        <a href="/" style={{ ...sys, fontSize: 13, color: "#D4B87A", textDecoration: "none" }}>← Zur App</a>
+        <span style={{ ...sys, fontSize: 12.5, color: "#BFAFC0" }}>{session?.user?.email}</span>
+        <a href="/" target="_blank" rel="noreferrer" style={{ ...sys, fontSize: 13, color: "#D4B87A", textDecoration: "none" }}>Mitglieder-App ↗</a>
+        <button onClick={abmelden} style={{ ...sys, fontSize: 13, color: "#D4B87A", background: "none", border: "1px solid #5A4A5C", borderRadius: 14, padding: "4px 10px", cursor: "pointer" }}>Abmelden</button>
       </div>
 
       <div style={{ display: "flex", gap: 7, padding: "14px 20px 0", flexWrap: "wrap", maxWidth: 1100, margin: "0 auto" }}>
@@ -123,6 +168,48 @@ export default function AdminDashboard() {
         {tab === "system" && <SystemTab k={k} />}
       </div>
     </div>
+  );
+}
+
+const Mitte = ({ children }) => (
+  <div style={{ minHeight: "100vh", background: C.cream, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>{children}</div>
+);
+
+function AdminAnmeldung() {
+  const [mail, setMail] = useState("");
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const feld = { ...sys, width: "100%", boxSizing: "border-box", fontSize: 16, padding: "11px 12px", borderRadius: 10, border: `1.5px solid ${C.line}`, background: "#fff", color: C.espresso, marginBottom: 12 };
+
+  const anmelden = async () => {
+    if (busy) return;
+    setErr(""); setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: mail.trim(), password: pw });
+    setBusy(false);
+    if (error) setErr("Anmeldung fehlgeschlagen — E-Mail oder Passwort stimmt nicht.");
+  };
+
+  return (
+    <Mitte>
+      <div style={{ width: "100%", maxWidth: 380 }}>
+        <div style={{ textAlign: "center", marginBottom: 22 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 34, color: C.espresso }}>
+            s<span style={{ color: C.gold, fontStyle: "italic" }}>2</span>g<span style={{ color: C.ink }}>.admin</span>
+          </div>
+          <div style={{ ...sys, fontSize: 14, color: C.ink, marginTop: 4 }}>Plattform-Zentrale</div>
+        </div>
+        <Card>
+          <input style={feld} type="email" autoComplete="username" placeholder="E-Mail" value={mail} onChange={(e) => setMail(e.target.value)} />
+          <input style={feld} type="password" autoComplete="current-password" placeholder="Passwort" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && anmelden()} />
+          {err && <div style={{ ...sys, fontSize: 14, color: C.rot, marginBottom: 10 }}>{err}</div>}
+          <button onClick={anmelden} disabled={busy} style={{ ...sys, width: "100%", fontSize: 15.5, fontWeight: 700, padding: "12px", borderRadius: 22, border: "none", background: C.plum, color: "#fff", cursor: "pointer" }}>
+            {busy ? "Einen Moment …" : "Anmelden"}
+          </button>
+          <Hinweis>Dasselbe Konto wie in der App. Zugang nur für Konten in der Admin-Liste.</Hinweis>
+        </Card>
+      </div>
+    </Mitte>
   );
 }
 

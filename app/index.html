@@ -21,6 +21,17 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="icon" href="/icon-192.png" />
   <title>smile2go — Dein Raum für Ruhe & Wachstum</title>
+  <script>
+    // /admin ist eine eigene installierbare App („s2g.admin“): eigener Name,
+    // eigenes Icon, eigenes Manifest — Safari „Zum Dock hinzufügen“ liest das.
+    if (location.pathname.replace(/\/+$/, "") === "/admin") {
+      document.querySelector('link[rel="manifest"]').href = "/admin.webmanifest";
+      document.querySelector('link[rel="apple-touch-icon"]').href = "/admin-icon-512.png";
+      document.querySelector('link[rel="icon"]').href = "/admin-icon-192.png";
+      document.querySelector('meta[name="apple-mobile-web-app-title"]').content = "s2g.admin";
+      document.title = "s2g.admin";
+    }
+  </script>
 
   <style>
     html, body { margin: 0; background: #FBF6FA; }
