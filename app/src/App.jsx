@@ -821,28 +821,34 @@ async function erzeugeTeilbild({ eyebrow, titel, text, fuss = "smile2go" }) {
   return new Promise((res) => c.toBlob(res, "image/png"));
 }
 
+/* Teilt ein Bild über das System-Teilen-Menü; ohne Teilen-Menü wird es geladen.
+   Gibt einen Hinweistext zurück (leer, wenn nichts zu sagen ist). */
+async function teileAlsBild({ eyebrow, titel, text }) {
+  try {
+    const blob = await erzeugeTeilbild({ eyebrow, titel, text });
+    const datei = new File([blob], "smile2go.png", { type: "image/png" });
+    if (navigator.canShare?.({ files: [datei] })) {
+      await navigator.share({ files: [datei], text: `${titel} · smile2go` });
+      return "";
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "smile2go.png"; a.click();
+    URL.revokeObjectURL(url);
+    return "Bild gespeichert — du findest es in deinen Downloads.";
+  } catch (e) {
+    return e?.name === "AbortError" ? "" : "Teilen hat gerade nicht geklappt.";
+  }
+}
+
 function TeilenBtn({ eyebrow, titel, text, klein = true, beschriftung = "Teilen" }) {
   const [busy, setBusy] = useState(false);
   const [hinweis, setHinweis] = useState("");
 
   const teilen = async () => {
     setBusy(true); setHinweis("");
-    try {
-      const blob = await erzeugeTeilbild({ eyebrow, titel, text });
-      const datei = new File([blob], "smile2go.png", { type: "image/png" });
-      if (navigator.canShare?.({ files: [datei] })) {
-        await navigator.share({ files: [datei], text: `${titel} · smile2go` });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = "smile2go.png"; a.click();
-        URL.revokeObjectURL(url);
-        setHinweis("Bild gespeichert — du findest es in deinen Downloads.");
-        setTimeout(() => setHinweis(""), 4000);
-      }
-    } catch (e) {
-      if (e?.name !== "AbortError") setHinweis("Teilen hat gerade nicht geklappt.");
-    }
+    const h = await teileAlsBild({ eyebrow, titel, text });
+    if (h) { setHinweis(h); setTimeout(() => setHinweis(""), 4000); }
     setBusy(false);
   };
 
@@ -2039,6 +2045,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
     setDeutung("");
     setDrawn({ ...c, tag: heute });
     setFlip(true);
+    setVollbild("zieh"); // Ziehen öffnet sofort die Vollbild-Bühne mit drehender Karte
     if (addPunkte && !neu) addPunkte(5, "Tageskarte gezogen");
     logEvent("karte_gezogen", c.b);
   };
@@ -2102,7 +2109,8 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
       </p>
 
       {/* Kartenbühne — nachtblau mit Gold, eine einzige Karte gross in der Mitte.
-          Nach dem Ziehen öffnet ein Tipp die Karte im Vollbild (KarteVollbild). */}
+          Ziehen öffnet die Vollbild-Bühne mit drehender Karte; danach öffnet
+          ein Tipp die Karte erneut im Vollbild (KarteVollbild). */}
       <div style={{ margin: "0 -20px 22px", padding: "30px 0 28px", position: "relative", overflow: "hidden", background: "radial-gradient(120% 75% at 50% 0%, #2E3375 0%, #1A1C45 52%, #0F1029 100%)" }}>
         <svg aria-hidden="true" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: .55, pointerEvents: "none" }}>
           <g stroke="#D9B56A" strokeWidth=".6" opacity=".55">
@@ -2115,7 +2123,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
 
         <div ref={karteRef} style={{ perspective: 1200, margin: "0 auto", width: 268, height: 418, position: "relative", visibility: vollbild ? "hidden" : "visible" }}>
           <div
-            onClick={() => (card ? setVollbild(true) : draw())}
+            onClick={() => (card ? setVollbild("zeigen") : draw())}
             role="button"
             aria-label={card ? `${card.n} im Vollbild öffnen` : "Karte ziehen"}
             style={{
@@ -2174,6 +2182,8 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
             bild={S2GKARTEN[card.n] || KARTEN_BILDER[card.n]}
             fallback={<KartenArt g={card} />}
             quelle={karteRef}
+            modus={vollbild}
+            onTeilen={() => teileAlsBild({ eyebrow: "Meine Tageskarte", titel: card.n, text: card.txt })}
             onClose={() => setVollbild(false)}
           />
         )}
@@ -2190,7 +2200,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
 
       {card && (
         <div style={{ marginTop: 14 }}>
-          <TeilenBtn eyebrow="Meine Tageskarte" titel={card.n} text={card.txt} beschriftung="Karte teilen" />
+          <Btn ghost small onClick={() => draw(true)}>🔄 Neue Karte ziehen</Btn>
         </div>
       )}
 
@@ -2239,12 +2249,6 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
             </div>
           )}
         </Card>
-      )}
-
-      {card && (
-        <div style={{ marginTop: 16 }}>
-          <Btn ghost small onClick={() => draw(true)}>🔄 Neue Karte ziehen</Btn>
-        </div>
       )}
 
       {card?.tief && (
