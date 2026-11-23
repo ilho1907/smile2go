@@ -13,6 +13,7 @@ import Gefuehlskompass, { gefuehlsStand } from "./Gefuehlskompass";
 import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, IlhoKennenlernen, IlhoWissen, usePassendeBeitraege } from "./IlhoAgent";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
+import BookOpen from "./BookOpen";
 import { Ikon, Sym } from "./Ikon";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
@@ -2575,9 +2576,14 @@ function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, 
         ))}
       </div>
 
-      {sm && <MediaBanner video={sm.v} poster={sm.p} title={sm.t} subtitle={sm.s} height={190} />}
+      {/* Journaling: statt Bild ein 3D-Tagebuch, das sich beim Tippen öffnet */}
+      {sm && sec !== "heute" && <MediaBanner video={sm.v} poster={sm.p} title={sm.t} subtitle={sm.s} height={190} />}
 
-      {sec === "heute" && <JournalHeute entries={entries} setEntries={setEntries} addPunkte={addPunkte} />}
+      {sec === "heute" && (
+        <BookOpen key="tagebuch">
+          <JournalHeute entries={entries} setEntries={setEntries} addPunkte={addPunkte} />
+        </BookOpen>
+      )}
       {sec === "rituale" && <Rituale ritual={ritual} setRitual={setRitual} addPunkte={addPunkte} />}
       {sec === "brief" && <Brief briefe={briefe} setBriefe={setBriefe} briefPost={briefPost} setBriefPost={setBriefPost} addPunkte={addPunkte} />}
       {sec === "money" && <MoneyMind mm={mm} setMm={setMm} addPunkte={addPunkte} />}
