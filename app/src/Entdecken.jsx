@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { FARBEN } from "./themen";
 import { ENTDECKEN_BILDER } from "./media";
 
 /* Entdecken — drei Karten nebeneinander, die mittlere gross, links und rechts
@@ -63,8 +64,8 @@ export function Karussell({ titel, unter, karten, filter: FILTER, onOeffnen, sti
 
   return (
     <div style={{ margin: "0 -20px 32px", ...stil }}>
-      {titel && <div style={{ padding: "0 20px", marginBottom: unter ? 4 : 12, fontFamily: "Georgia, serif", fontSize: 23, letterSpacing: "-0.018em", color: "#2E2430" }}>{titel}</div>}
-      {unter && <div style={{ padding: "0 20px", marginBottom: 12, fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#7A6B7A" }}>{unter}</div>}
+      {titel && <div style={{ padding: "0 20px", marginBottom: unter ? 4 : 12, fontFamily: "Georgia, serif", fontSize: 23, letterSpacing: "-0.018em", color: FARBEN.espresso || "#2E2430" }}>{titel}</div>}
+      {unter && <div style={{ padding: "0 20px", marginBottom: 12, fontFamily: "system-ui, sans-serif", fontSize: 15, color: FARBEN.ink || "#7A6B7A" }}>{unter}</div>}
 
       {FILTER && <div className="s2g-entdecken-chips" style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 20px 14px", scrollbarWidth: "none" }}>
         {FILTER.map((f) => {

@@ -18,6 +18,7 @@
 // und das Atemritual hat weiter unten seinen eigenen Platz.
 import { useRef } from "react";
 import { VIDEO, IMG, PALETTE as P } from "./media";
+import { FARBEN } from "./themen";
 import { Ikon } from "./Ikon";
 
 export default function HeuteHero({ name = "", punkte = 0, avatar = null, onProfil = null }) {
@@ -40,9 +41,9 @@ export default function HeuteHero({ name = "", punkte = 0, avatar = null, onProf
       <div style={S.oben}>
         <span style={S.marke}>smile2go</span>
         <span style={S.rechts}>
-          <span style={S.lp}><Ikon n="flamme" size={13} />{punkte} Lichtpunkte</span>
+          <span style={{ ...S.lp, color: FARBEN.gold || P.gold }}><Ikon n="flamme" size={13} />{punkte} Lichtpunkte</span>
           {onProfil && (
-            <button onClick={onProfil} aria-label="Mein Bereich" style={S.profil}>
+            <button onClick={onProfil} aria-label="Mein Bereich" style={{ ...S.profil, color: FARBEN.gold || P.gold }}>
               {avatar
                 ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 : <Ikon n="person" size={19} />}
@@ -57,7 +58,7 @@ export default function HeuteHero({ name = "", punkte = 0, avatar = null, onProf
           <br />
           <span style={S.titelZwei}>Dein Ritual wartet.</span>
         </h1>
-        <button onClick={beginnen} style={S.knopf}>Dein Ritual beginnen</button>
+        <button onClick={beginnen} style={{ ...S.knopf, background: FARBEN.gold || P.gold, color: FARBEN.aufGold || "#FFF8FC" }}>Dein Ritual beginnen</button>
       </div>
     </div>
   );

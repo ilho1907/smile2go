@@ -14,12 +14,13 @@ export const FEUER_VIDEO_ERSATZ = "/media/video/orakel_klein.mp4";
 export const DANKBARKEIT_VIDEO = "/media/video/dankbarkeit.mp4";
 export const DANKBARKEIT_POSTER = "/media/video/dankbarkeit_poster.jpg";
 // Rituale: gefuehrte Hochformat-Videos (9:16), Schluessel wie in Rituale (App.jsx).
-// Ritual-Videos: Schritt-Videos mit Higgsfield-Bildern (Kerze, Natur, Körper & Wasser: 23.11.2026)
+// Kerze: Schritt-Video mit Higgsfield-Bildern (23.11.2026).
+// Natur, Mond, Koerper: echte Szenen aus Higgsfield (Kling 3.0) + Text und Musik, liegen auf dem Higgsfield-CDN.
 export const RITUAL_VIDEOS = {
   raeu:     { video: "/media/video/kerze_ritual.mp4",   poster: "/media/video/kerze_ritual_poster.jpg" },
-  natur:    { video: "/media/video/natur_ritual.mp4",   poster: "/media/video/natur_ritual_poster.jpg" },
-  mond:     { video: "/media/video/mond_ritual.mp4",    poster: "/media/video/mond_ritual_poster.jpg" },
-  "körper": { video: "/media/video/koerper_ritual.mp4", poster: "/media/video/koerper_ritual_poster.jpg" },
+  natur:    { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/5d043205-852b-449d-80a6-0750ea11ac10.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/494a6ca0-ae84-4d01-9779-30611144e20d.jpg", grund: "#FBF4EF" },
+  mond:     { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/5e2a020c-e434-49b1-b9da-4d042e9b80b0.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/2be64d32-ecb9-4751-86be-937a95ece9e1.jpg", grund: "#FBF4EF" },
+  "körper": { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/3b95841c-f3b6-4e2c-be4e-e6d93ac1e838.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/f5099337-a0f8-4096-b976-77fe330135ae.jpg", grund: "#FBF4EF" },
 };
 
 // Zukunftsbrief: gefuehrtes Schritt-Video (Higgsfield-Bilder, 23.11.2026)
