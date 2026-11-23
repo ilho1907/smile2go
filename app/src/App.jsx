@@ -2665,12 +2665,12 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
           <Card style={{ marginBottom: 14, background: C.goldPale, border: `1px solid ${C.goldSoft}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <Eyebrow>🌅 Deine Tages-Inspiration</Eyebrow>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum, fontWeight: 700 }}><Sym e={a.icon} size={14} /> {a.t}</span>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum, fontWeight: 700 }}><Sym e={a.icon} size={14} /> {a.t}</span>
             </div>
             <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18.5, color: C.espresso, lineHeight: 1.55, margin: "4px 0 10px" }}>
               „{a.s}“
             </p>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.85 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso, opacity: 0.85 }}>
               Sprich diesen Satz heute ein paar Mal langsam aus — morgen wartet ein neuer.
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center" }}>
@@ -2694,17 +2694,17 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
         boxShadow: "inset 14px 0 18px -14px rgba(58,42,34,.22), 0 6px 18px rgba(58,42,34,.08)",
         position: "relative",
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 6 }}>
           <Eyebrow color={C.plum}>📖 Deine Ausrichtung für heute</Eyebrow>
-          <span style={{ fontFamily: '"Snell Roundhand", "Savoye LET", "Segoe Script", cursive', fontSize: 18, color: C.ink, opacity: 0.8 }}>
+          <span style={{ fontFamily: '"Snell Roundhand", "Savoye LET", "Segoe Script", cursive', fontSize: 21, color: C.espresso, opacity: 0.85 }}>
             {new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}
           </span>
         </div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 12 }}>✍️ 7 Fragen · dein täglicher Check-in</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso, marginBottom: 14 }}>✍️ 7 Fragen · dein täglicher Check-in</div>
 
         {/* Frage 1 — Stimmungsskala 1–10 */}
         <div style={{ marginBottom: 18 }}>
-          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, marginBottom: 8 }}>📊 Wie geht es mir heute?</div>
+          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 20, color: C.espresso, marginBottom: 10 }}>📊 Wie geht es mir heute?</div>
           <div style={{ display: "flex", gap: 4 }}>
             {Array.from({ length: 10 }).map((_, i) => {
               const n = i + 1;
@@ -2715,30 +2715,31 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
                   border: aktiv ? `2px solid ${C.gold}` : `1px solid ${C.line}`,
                   background: aktiv ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : "rgba(255,255,255,.6)",
                   color: aktiv ? "#fff" : C.ink,
-                  fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: aktiv ? 700 : 500,
+                  fontFamily: "system-ui, sans-serif", fontSize: 17.5, fontWeight: aktiv ? 700 : 500,
                 }}>{n}</button>
               );
             })}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.75 }}>schwer</span>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.75 }}>wunderbar</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, opacity: 0.8 }}>schwer</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, opacity: 0.8 }}>wunderbar</span>
           </div>
         </div>
 
         {FRAGEN.map((f, i) => (
           <div key={i} style={{ marginBottom: i < FRAGEN.length - 1 ? 14 : 0 }}>
-            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, margin: "4px 0 2px" }}><Sym e={f.icon} size={14} /> {f.q}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 20, lineHeight: 1.4, color: C.espresso, margin: "8px 0 4px" }}><Sym e={f.icon} size={14} /> {f.q}</div>
             <textarea
               rows={2}
+              className="s2g-tagebuch-zeile"
               placeholder="Schreib es auf …"
               value={dank[i]}
               onChange={(e) => setDank(dank.map((x, j) => (j === i ? e.target.value : x)))}
               style={{
                 width: "100%", border: "none", outline: "none", resize: "none",
-                background: "repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, rgba(193,145,60,.38) 31px, rgba(193,145,60,.38) 32px)",
+                background: "repeating-linear-gradient(to bottom, transparent 0px, transparent 41px, rgba(193,145,60,.45) 41px, rgba(193,145,60,.45) 42px)",
                 fontFamily: '"Snell Roundhand", "Savoye LET", "Bradley Hand", "Segoe Script", cursive',
-                fontSize: 19, lineHeight: "32px", color: "#4A3320",
+                fontSize: 25, lineHeight: "42px", color: "#3A2614",
                 padding: "0 2px", caretColor: C.plum,
               }}
             />
@@ -2760,10 +2761,10 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
           <Eyebrow color={C.ink}>Deine Einträge</Eyebrow>
           {entries.map((e, i) => (
             <Card key={i} style={{ marginBottom: 10, padding: 16 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.rose, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{e.date}</div>
-              {e.intention && <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.6 }}>🌅 {e.intention}</div>}
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{e.date}</div>
+              {e.intention && <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 19, color: C.espresso, lineHeight: 1.6 }}>🌅 {e.intention}</div>}
               {e.items?.map((it, j) => (
-                <div key={j} style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.6 }}>{it}</div>
+                <div key={j} style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 19, color: C.espresso, lineHeight: 1.6 }}>{it}</div>
               ))}
             </Card>
           ))}
