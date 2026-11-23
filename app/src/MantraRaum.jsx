@@ -40,7 +40,7 @@ export default function MantraRaum({ mantras, startIndex = 0, addPunkte }) {
     height: 48, padding: "0 20px", borderRadius: 24, cursor: "pointer",
     border: "1px solid rgba(255,255,255,.45)", background: "rgba(255,255,255,.14)",
     backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-    color: "#fff", fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600,
+    color: "#fff", fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600,
     display: "inline-flex", alignItems: "center", gap: 8,
   };
 
@@ -55,7 +55,7 @@ export default function MantraRaum({ mantras, startIndex = 0, addPunkte }) {
       <audio ref={audio} src={MANTRA_MEDIEN.musik} loop preload="none" onEnded={() => setMusik(false)} />
 
       <div style={{ position: "relative", padding: "40px 28px 48px", textAlign: "center", color: "#fff" }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, letterSpacing: 2.4, textTransform: "uppercase", opacity: .85 }}>Dein Mantra {m.s}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, letterSpacing: 2.4, textTransform: "uppercase", opacity: .85 }}>Dein Mantra {m.s}</div>
         <p key={i} style={{ fontFamily: "Georgia, serif", fontSize: 27, lineHeight: 1.4, margin: "18px 0 30px", textShadow: "0 2px 18px rgba(0,0,0,.45)", animation: "fadeUp .7s ease" }}>
           {m.t}
         </p>
@@ -77,7 +77,7 @@ export default function MantraRaum({ mantras, startIndex = 0, addPunkte }) {
           Anderes Mantra
         </button>
 
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, opacity: .8, marginTop: 22, lineHeight: 1.6 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, opacity: .8, marginTop: 22, lineHeight: 1.6 }}>
           Lies es dreimal leise mit. Atme dabei ruhig ein und aus.
         </p>
       </div>

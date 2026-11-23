@@ -130,7 +130,7 @@ const S = {
   badge: {
     display: "inline-block", padding: "5px 16px", borderRadius: 20,
     background: `linear-gradient(180deg, #F6DC93, ${GOLD} 55%, ${GOLD_D})`,
-    color: PLUM_D, fontFamily: "system-ui, sans-serif", fontWeight: 800, fontSize: 12,
+    color: PLUM_D, fontFamily: "system-ui, sans-serif", fontWeight: 800, fontSize: 13.5,
     letterSpacing: 2, textTransform: "uppercase", boxShadow: "0 3px 10px rgba(91,42,87,.35), inset 0 1px 0 rgba(255,255,255,.6)",
   },
   btn: { border: "none", background: "transparent", padding: 0, cursor: "pointer", WebkitTapHighlightColor: "transparent" },
@@ -159,7 +159,7 @@ const S = {
     animation: "s2gGlow 3.5s ease-in-out infinite",
   },
   title: { fontFamily: "Georgia, serif", fontSize: 25, fontWeight: 600, color: "#FFF6E2", textShadow: `0 2px 0 ${PLUM_D}, 0 0 12px rgba(231,194,106,.55)` },
-  sub: { fontFamily: "system-ui, sans-serif", fontSize: 12, marginTop: 6, color: "#F3D9EC", letterSpacing: .4 },
+  sub: { fontFamily: "system-ui, sans-serif", fontSize: 13.5, marginTop: 6, color: "#F3D9EC", letterSpacing: .4 },
   sheen: { position: "absolute", inset: 0, background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,.16) 42%, transparent 52%)", pointerEvents: "none" },
   pagesV: {
     top: 4, height: H - 8,
@@ -185,5 +185,5 @@ const S = {
   },
   firstPage: { borderRadius: "3px 12px 12px 3px", background: "linear-gradient(105deg, #F3E9D8, #FFFDF6 30%, #F8EFDD)", display: "flex", alignItems: "center", justifyContent: "center", top: 3, height: H - 6, width: W - 4 },
   firstPageText: { fontFamily: '"Snell Roundhand", "Savoye LET", "Segoe Script", cursive', fontSize: 20, color: "#4A3320", opacity: .8 },
-  hint: { fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#7A6B7A", letterSpacing: .3, marginTop: -6, transition: "opacity .3s" },
+  hint: { fontFamily: "system-ui, sans-serif", fontSize: 14, color: "#7A6B7A", letterSpacing: .3, marginTop: -6, transition: "opacity .3s" },
 };

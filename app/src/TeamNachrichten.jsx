@@ -35,7 +35,7 @@ export default function TeamNachrichten() {
   if (!supabase || verlauf === null)
     return (
       <div style={{ padding: 22 }}>
-        <p style={{ ...sys, fontSize: 15, color: F.ink, lineHeight: 1.6 }}>
+        <p style={{ ...sys, fontSize: 16.5, color: F.ink, lineHeight: 1.6 }}>
           Nachrichten ans Team sind gerade nicht erreichbar. Bitte prüfe, ob du angemeldet und online bist, und versuche es etwas später noch einmal.
         </p>
       </div>
@@ -43,27 +43,27 @@ export default function TeamNachrichten() {
 
   return (
     <div style={{ padding: "18px 18px 28px" }}>
-      <p style={{ fontFamily: "Georgia, serif", fontSize: 17, lineHeight: 1.55, color: F.espresso, margin: "0 0 6px" }}>
+      <p style={{ fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 1.55, color: F.espresso, margin: "0 0 6px" }}>
         Schreib uns, wenn du eine Frage hast, etwas nicht klappt oder du eine Idee für smile2go hast.
       </p>
-      <p style={{ ...sys, fontSize: 12, color: F.ink, lineHeight: 1.5, margin: "0 0 18px" }}>
+      <p style={{ ...sys, fontSize: 13.5, color: F.ink, lineHeight: 1.5, margin: "0 0 18px" }}>
         Diese Nachrichten liest nur das smile2go-Team — nicht deine Coachin. In einer Krise ruf bitte die TelefonSeelsorge an (0800 111 0 111) oder im Notfall die 112.
       </p>
 
       <div style={{ display: "grid", gap: 9, marginBottom: 16 }}>
-        {verlauf === undefined && <p style={{ ...sys, fontSize: 14, color: F.ink }}>Lade …</p>}
-        {verlauf?.length === 0 && <p style={{ ...sys, fontSize: 14, color: F.ink }}>Noch keine Nachrichten.</p>}
+        {verlauf === undefined && <p style={{ ...sys, fontSize: 15.5, color: F.ink }}>Lade …</p>}
+        {verlauf?.length === 0 && <p style={{ ...sys, fontSize: 15.5, color: F.ink }}>Noch keine Nachrichten.</p>}
         {(verlauf || []).map((n) => {
           const team = n.absender === "team";
           return (
             <div key={n.id} style={{
               justifySelf: team ? "start" : "end", maxWidth: "86%", padding: "10px 14px", borderRadius: 16,
               background: team ? F.card : F.goldPale, border: `1px solid ${F.line}`,
-              ...sys, fontSize: 15, lineHeight: 1.5, color: F.espresso, whiteSpace: "pre-wrap",
+              ...sys, fontSize: 16.5, lineHeight: 1.5, color: F.espresso, whiteSpace: "pre-wrap",
             }}>
-              {team && <div style={{ fontSize: 10.5, letterSpacing: 1.6, textTransform: "uppercase", color: F.gold, fontWeight: 700, marginBottom: 3 }}>smile2go-Team</div>}
+              {team && <div style={{ fontSize: 12, letterSpacing: 1.6, textTransform: "uppercase", color: F.gold, fontWeight: 700, marginBottom: 3 }}>smile2go-Team</div>}
               {n.text}
-              <div style={{ fontSize: 10.5, color: F.ink, marginTop: 4, textAlign: "right" }}>{zeit(n.created_at)}</div>
+              <div style={{ fontSize: 12, color: F.ink, marginTop: 4, textAlign: "right" }}>{zeit(n.created_at)}</div>
             </div>
           );
         })}
@@ -71,11 +71,11 @@ export default function TeamNachrichten() {
       </div>
 
       <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} maxLength={4000} placeholder="Deine Nachricht an uns …"
-        style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", fontSize: 16, ...sys, border: `1.5px solid ${F.line}`, borderRadius: 14, background: F.card, color: F.espresso, outline: "none", resize: "vertical" }} />
-      {fehler && <p style={{ ...sys, fontSize: 13, color: "#B0492F", margin: "6px 0 0" }}>{fehler}</p>}
+        style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", fontSize: 17.5, ...sys, border: `1.5px solid ${F.line}`, borderRadius: 14, background: F.card, color: F.espresso, outline: "none", resize: "vertical" }} />
+      {fehler && <p style={{ ...sys, fontSize: 14.5, color: "#B0492F", margin: "6px 0 0" }}>{fehler}</p>}
       <button onClick={senden} disabled={sendet || !text.trim()} style={{
         marginTop: 10, width: "100%", padding: "14px 16px", borderRadius: 16, border: "none", cursor: "pointer",
-        background: F.gold, color: "#fff", ...sys, fontSize: 15.5, fontWeight: 700, opacity: text.trim() && !sendet ? 1 : 0.5,
+        background: F.gold, color: "#fff", ...sys, fontSize: 17, fontWeight: 700, opacity: text.trim() && !sendet ? 1 : 0.5,
       }}>{sendet ? "Wird gesendet …" : "An das Team senden"}</button>
     </div>
   );

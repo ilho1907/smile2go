@@ -14,6 +14,7 @@ import { ILHO_ZIELE, leeresProfil, agentKontext, verarbeiteAntwort, notizDazu, I
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import MediaBanner from "./MediaBanner";
 import BookOpen from "./BookOpen";
+import Federkiel from "./Federkiel";
 import { Ikon, Sym } from "./Ikon";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
@@ -513,7 +514,7 @@ function Hoerknopf({ text, kategorie = "karte", twin, klein = false }) {
       }}>
         {laedt ? "…" : <Ikon n="laut" size={16} />} {laedt ? "wird gesprochen" : "Anhören"}
       </button>
-      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>
+      <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.7 }}>
         KI-Stimme{twin?.voice_id ? " deiner Coachin" : ""}
       </span>
       {url && <audio ref={audioRef} src={url} preload="none" />}
@@ -562,19 +563,19 @@ function Hoerspur({ src, titel = "Anhören", beiEnde, dunkel = false }) {
         aria-label={laeuft ? "Pause" : titel}
         style={{
           width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "none", cursor: "pointer",
-          background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 17,
+          background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 18,
         }}
       >
         {laeuft ? "❚❚" : "▶"}
       </button>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, color: schrift }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: schrift }}>
           {laeuft ? "Läuft — leg das Handy weg" : titel}
         </div>
         <div style={{ height: 4, borderRadius: 3, background: rand, margin: "7px 0 5px", overflow: "hidden" }}>
           <div style={{ height: "100%", width: `${dauer ? (jetzt / dauer) * 100 : 0}%`, background: C.gold, transition: "width .25s linear" }} />
         </div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: leise }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: leise }}>
           {zeit(jetzt)} / {zeit(dauer)}
         </div>
       </div>
@@ -652,7 +653,7 @@ const Card = ({ children, style, onClick, flach }) => (
 const AbschnittTitel = ({ children, unter, style }) => (
   <div style={{ marginBottom: 14, ...style }}>
     <div style={{ fontFamily: "Georgia, serif", fontSize: 23, letterSpacing: "-0.018em", lineHeight: 1.2, color: C.espresso }}>{children}</div>
-    {unter && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, marginTop: 5 }}>{unter}</div>}
+    {unter && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.55, marginTop: 5 }}>{unter}</div>}
   </div>
 );
 
@@ -666,8 +667,8 @@ const HeuteZeile = ({ ikon, sym, titel, unter, onClick, style }) => {
         {ikon ? <Ikon n={ikon} size={19} /> : <Sym e={sym} size={19} />}
       </span>
       <span style={{ flex: 1, minWidth: 0, display: "block" }}>
-        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, lineHeight: 1.35, color: C.espresso }}>{titel}</span>
-        {unter && <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13, lineHeight: 1.5, color: C.ink, marginTop: 3, fontVariantNumeric: "tabular-nums" }}>{unter}</span>}
+        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: C.espresso }}>{titel}</span>
+        {unter && <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14.5, lineHeight: 1.5, color: C.ink, marginTop: 3, fontVariantNumeric: "tabular-nums" }}>{unter}</span>}
       </span>
     </>
   );
@@ -851,15 +852,15 @@ function TeilenBtn({ eyebrow, titel, text, klein = true, beschriftung = "Teilen"
         fontFamily: "system-ui, sans-serif", fontSize: klein ? 13 : 14.5,
         fontWeight: 700, color: C.plum, opacity: busy ? 0.6 : 1,
       }}>
-        <span style={{ fontSize: 16.5 }}><Sym e="↗" size={15} /></span> {busy ? "einen Moment …" : beschriftung}
+        <span style={{ fontSize: 18 }}><Sym e="↗" size={15} /></span> {busy ? "einen Moment …" : beschriftung}
       </button>
-      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 6 }}>{hinweis}</div>}
+      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 6 }}>{hinweis}</div>}
     </>
   );
 }
 
 const Eyebrow = ({ children, color = C.gold }) => (
-  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2.8, textTransform: "uppercase", color, fontWeight: 600, marginBottom: 7 }}>
+  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, letterSpacing: 2.8, textTransform: "uppercase", color, fontWeight: 600, marginBottom: 7 }}>
     {children}
   </div>
 );
@@ -1004,7 +1005,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
   };
 
   const input = {
-    width: "100%", minHeight: 54, padding: "14px 16px 14px 48px", fontSize: 17,
+    width: "100%", minHeight: 54, padding: "14px 16px 14px 48px", fontSize: 18,
     fontFamily: "system-ui, sans-serif",
     border: `1px solid ${C.line}`, borderRadius: 18,
     background: "#fff", color: C.espresso, marginBottom: 0, outline: "none",
@@ -1082,12 +1083,12 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
       <div style={{ padding: "60px 24px", textAlign: "center" }}>
         <div style={{ fontSize: 52, marginBottom: 18 }}><Sym e="💌" size={52} /></div>
         <H size={26} style={{ marginBottom: 12 }}>Fast geschafft!</H>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 28 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 18, color: C.ink, lineHeight: 1.6, marginBottom: 28 }}>
           Wir haben dir eine E-Mail an <strong>{email}</strong> geschickt. Bitte bestätige deine Anmeldung (Double-Opt-in).
         </p>
-        {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>}
+        {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>}
         <Btn full onClick={nachBestaetigungPruefen}>{busy ? "Prüfe …" : "Ich habe bestätigt → Weiter"}</Btn>
-        {!echterBackend && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 16 }}>(Prototyp: Bestätigung wird simuliert)</p>}
+        {!echterBackend && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 16 }}>(Prototyp: Bestätigung wird simuliert)</p>}
       </div>
     );
 
@@ -1099,7 +1100,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
         <div className="s2g-rise" style={{ fontFamily: "Georgia, serif", fontSize: 46, fontWeight: 600, color: C.espresso, lineHeight: 1.05, letterSpacing: "-0.01em", animationDelay: ".16s" }}>
           smile<span style={{ color: C.rose, fontStyle: "italic" }}>2</span>go
         </div>
-        <p className="s2g-rise" style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.ink, marginTop: 10, animationDelay: ".22s" }}>
+        <p className="s2g-rise" style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 19, color: C.ink, marginTop: 10, animationDelay: ".22s" }}>
           Dein Raum für Ruhe & Wachstum
         </p>
       </div>
@@ -1112,7 +1113,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
           width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
           padding: "14px 20px", borderRadius: 14, border: `1.5px solid ${C.line}`,
           background: "#fff", cursor: "pointer", minHeight: 48,
-          fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 600, color: C.espresso,
+          fontFamily: "system-ui, sans-serif", fontSize: 18, fontWeight: 600, color: C.espresso,
           marginBottom: 18,
         }}
       >
@@ -1127,7 +1128,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 18px" }}>
         <div style={{ flex: 1, height: 1, background: C.line }} />
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>oder mit E-Mail</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>oder mit E-Mail</span>
         <div style={{ flex: 1, height: 1, background: C.line }} />
       </div>
       </>)}
@@ -1136,7 +1137,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
         {[["login", "Anmelden"], ["register", "Registrieren"]].map(([k, label]) => (
           <button key={k} onClick={() => { setMode(k); setErr(""); }} style={{
             flex: 1, minHeight: 46, padding: "12px 0", borderRadius: 999, border: "none", cursor: "pointer",
-            fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600,
+            fontFamily: "system-ui, sans-serif", fontSize: 17.5, fontWeight: 600,
             background: mode === k ? "#fff" : "transparent",
             color: mode === k ? C.espresso : C.ink,
             boxShadow: mode === k ? "0 6px 16px -6px rgba(120,90,50,.35)" : "none",
@@ -1146,7 +1147,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
 
       {mode === "register" && (
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginBottom: 7 }}>
+          <label style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginBottom: 7 }}>
             Wer bist du?
           </label>
           <div style={{ display: "flex", gap: 9 }}>
@@ -1164,19 +1165,19 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
                   boxShadow: aktiv ? "0 2px 10px rgba(194,82,110,.15)" : "none",
                 }}>
                   <div style={{ fontSize: 19, marginBottom: 4 }}><Sym e={r.e} size={19} /></div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: aktiv ? C.plum : C.espresso, lineHeight: 1.3 }}>{r.t}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 3, lineHeight: 1.35 }}>{r.s}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: aktiv ? C.plum : C.espresso, lineHeight: 1.3 }}>{r.t}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3, lineHeight: 1.35 }}>{r.s}</div>
                 </button>
               );
             })}
           </div>
           {rolle === "coach" && (
             <>
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.55, marginTop: 9, opacity: .85 }}>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, marginTop: 9, opacity: .85 }}>
                 Du bekommst zusätzlich deinen Coach-Bereich: Klientinnen, Nachrichten, Termine,
                 Material und dein öffentliches Profil. Die App selbst kannst du weiterhin ganz normal nutzen.
               </p>
-              <label htmlFor="s2g-coach-code" style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, margin: "10px 0 6px" }}>
+              <label htmlFor="s2g-coach-code" style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, margin: "10px 0 6px" }}>
                 Dein Coach-Code <span style={{ color: C.plum }}>· von smile2go</span>
               </label>
               <input id="s2g-coach-code" value={coachCode} onChange={(e) => setCoachCode(e.target.value.toUpperCase())}
@@ -1192,27 +1193,27 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
 
       {mode === "register" && (
         <>
-          <label style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginBottom: 5 }}>Geburtsdatum <span style={{ color: C.plum }}>· für dein persönliches Sternzeichen</span></label>
+          <label style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginBottom: 5 }}>Geburtsdatum <span style={{ color: C.plum }}>· für dein persönliches Sternzeichen</span></label>
           <FeldMitIcon icon="kalender"><input style={input} type="date" value={geburt} onChange={(e) => setGeburt(e.target.value)} /></FeldMitIcon>
         </>
       )}
 
       {mode === "register" && (
-        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5, marginBottom: 14, cursor: "pointer" }}>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.5, marginBottom: 14, cursor: "pointer" }}>
           <input type="checkbox" checked={dsgvo} onChange={(e) => setDsgvo(e.target.checked)} style={{ width: 20, height: 20, accentColor: C.gold, flexShrink: 0, marginTop: 1 }} />
           <span>Ich stimme der <u>Datenschutzerklärung</u> zu. Meine Daten werden DSGVO-konform in der EU gespeichert.</span>
         </label>
       )}
 
       {mode === "register" && (
-        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5, marginBottom: 14, cursor: "pointer" }}>
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.5, marginBottom: 14, cursor: "pointer" }}>
           <input type="checkbox" checked={ilhoOn} onChange={(e) => setIlhoOn(e.target.checked)} style={{ width: 20, height: 20, accentColor: C.gold, flexShrink: 0, marginTop: 1 }} />
           <span><strong>ilho</strong>, meinen KI-Begleiter, aktivieren. Jederzeit in den Einstellungen änderbar.</span>
         </label>
       )}
 
       {err && (
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>
       )}
 
       <Btn full onClick={submit} disabled={busy}>{busy ? "Einen Moment …" : mode === "login" ? "Anmelden" : "Konto erstellen"}</Btn>
@@ -1220,16 +1221,16 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
       {mode === "login" && (
         <button onClick={passwortVergessen} disabled={busy} style={{
           width: "100%", background: "none", border: "none", cursor: "pointer", marginTop: 14,
-          fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.rose, fontWeight: 500,
+          fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.rose, fontWeight: 500,
           textDecoration: "underline", textUnderlineOffset: 3, minHeight: 44,
         }}>Passwort vergessen?</button>
       )}
 
       {resetHinweis && (
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#3E7A4A", background: "#EAF6EC", borderRadius: 12, padding: "11px 14px", marginTop: 12, lineHeight: 1.5 }}>{resetHinweis}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: "#3E7A4A", background: "#EAF6EC", borderRadius: 12, padding: "11px 14px", marginTop: 12, lineHeight: 1.5 }}>{resetHinweis}</div>
       )}
 
-      <p style={{ textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 20, lineHeight: 1.6 }}>
+      <p style={{ textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 20, lineHeight: 1.6 }}>
         🇪🇺 Hosting in der EU · DSGVO-konform · Jederzeit kündbar
       </p>
     </div>
@@ -1290,23 +1291,23 @@ function EnergieKompass({ energie, setEnergie, addPunkte, entries, setEntries, c
               border: active ? `1px solid ${C.gold}` : `1px solid ${C.line}`,
               background: active ? C.gold : "rgba(255,255,255,.72)",
               color: active ? "#fff" : C.ink,
-              fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: active ? 700 : 500,
+              fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: active ? 700 : 500,
             }}>{x.v}</button>
           );
         })}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink }}>erschöpft</span>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink }}>voller Energie</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>erschöpft</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>voller Energie</span>
       </div>
       {aktuelles && (
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, color: C.plum, marginTop: 10 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: C.plum, marginTop: 10 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Sym e={aktuelles.e} size={16} />{aktuelles.t}</span>
         </div>
       )}
-      {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, marginTop: 12 }}>ilho spürt in deinen Tag hinein …</p>}
+      {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.plum, marginTop: 12 }}>ilho spürt in deinen Tag hinein …</p>}
       {impuls && !busy && (
-        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, lineHeight: 1.55, marginTop: 12 }}>
+        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.55, marginTop: 12 }}>
           {impuls}
         </p>
       )}
@@ -1339,14 +1340,14 @@ function HeuteWidget({ termine, setTermine }) {
     <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
       {/* Datum */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: `linear-gradient(135deg, ${C.goldPale}, ${C.card})` }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, fontWeight: 600 }}>{datum}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, fontWeight: 600 }}>{datum}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {wetter && (
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, display: "flex", alignItems: "center", gap: 4 }} title={`${wetter.stadt} · ${wetter.txt}`}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, display: "flex", alignItems: "center", gap: 4 }} title={`${wetter.stadt} · ${wetter.txt}`}>
               <Sym e={wetter.icon} size={16} /><span>{wetter.temp}°C</span>
             </div>
           )}
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold }}>KW {kw}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold }}>KW {kw}</div>
         </div>
       </div>
     </Card>
@@ -1451,7 +1452,7 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
           { k: "serie", inhalt: <><Ikon n="flamme" size={14} />{streak} Tage Serie</> },
           { k: "punkte", inhalt: <>{punkte} Sonnenstrahlen</>, auf: openPunkte },
         ].map((c) => {
-          const stil = { display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: C.plum, background: "#FDF4FA", border: `1px solid ${C.line}`, borderRadius: 22, padding: "9px 14px" };
+          const stil = { display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, color: C.plum, background: "#FDF4FA", border: `1px solid ${C.line}`, borderRadius: 22, padding: "9px 14px" };
           return c.auf
             ? <button key={c.k} onClick={c.auf} style={{ ...stil, cursor: "pointer" }}>{c.inhalt}</button>
             : <span key={c.k} style={stil}>{c.inhalt}</span>;
@@ -1485,12 +1486,12 @@ function IlhoGrenzen() {
     </div>
   );
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.5, textAlign: "left", background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px" }}>
+    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.5, textAlign: "left", background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px" }}>
       <div style={{ fontWeight: 700, color: C.espresso, marginBottom: 6 }}>Was ilho kann</div>
       {ILHO_KANN.map((t) => zeile(t, "✓", C.sage))}
       <div style={{ fontWeight: 700, color: C.espresso, margin: "10px 0 6px" }}>Was ilho nicht kann</div>
       {ILHO_NICHT.map((t) => zeile(t, "✕", C.rose))}
-      <div style={{ fontSize: 11.5, opacity: 0.75, marginTop: 8 }}>ilho ist eine künstliche Intelligenz, kein Mensch. Deine Daumen-Bewertungen helfen, ilho besser zu machen — gespeichert wird nur dein Daumen, nie dein Text.</div>
+      <div style={{ fontSize: 13, opacity: 0.75, marginTop: 8 }}>ilho ist eine künstliche Intelligenz, kein Mensch. Deine Daumen-Bewertungen helfen, ilho besser zu machen — gespeichert wird nur dein Daumen, nie dein Text.</div>
     </div>
   );
 }
@@ -1589,7 +1590,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
           <div style={{ width: 46, height: 46, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}><Sym e="✨" size={22} /></div>
           <div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>ilho</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.sage, fontWeight: 600 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.sage, fontWeight: 600 }}>
               ● Dein KI-Assistent · {twinTon ? "im Ton deiner Coachin" : "immer für dich da"}
             </div>
           </div>
@@ -1605,14 +1606,14 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
           <div style={{ textAlign: "center", padding: "30px 10px" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}><Sym e="✨" size={40} /></div>
             <H size={19} style={{ marginBottom: 8 }}>Hallo{name ? ` ${name}` : ""} 🤍</H>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.6, marginBottom: 20 }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.ink, lineHeight: 1.6, marginBottom: 20 }}>
               Ich bin ilho. Was dich bewegt, hat hier Raum — ohne Bewertung, in deinem Tempo.
             </p>
             <div style={{ marginBottom: 20 }}><IlhoGrenzen /></div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {starters.map((s) => (
                 <button key={s} onClick={() => setInput(s)} style={{
-                  fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.plum,
+                  fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.plum,
                   background: C.roseSoft, border: "none", borderRadius: 20, padding: "12px 16px", cursor: "pointer",
                 }}>{s}</button>
               ))}
@@ -1628,7 +1629,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
               background: m.role === "user" ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.card,
               border: m.role === "user" ? "none" : `1px solid ${C.line}`,
               color: m.role === "user" ? "#fff" : C.espresso,
-              fontFamily: "system-ui, sans-serif", fontSize: 16, lineHeight: 1.55,
+              fontFamily: "system-ui, sans-serif", fontSize: 17.5, lineHeight: 1.55,
               whiteSpace: "pre-wrap",
             }}>{m.content}</div>
             {m.role === "assistant" && (
@@ -1636,7 +1637,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
                 {[["gut", "👍", "Hilfreich"], ["schlecht", "👎", "Nicht hilfreich"]].map(([wert, zeichen, label]) => (
                   <button key={wert} onClick={() => bewerten(i, wert)} aria-label={label} title={label}
                     disabled={!!m.bewertung} style={{
-                      border: "none", background: "none", fontSize: 15.5, padding: 2,
+                      border: "none", background: "none", fontSize: 17, padding: 2,
                       cursor: m.bewertung ? "default" : "pointer",
                       opacity: !m.bewertung ? 0.45 : m.bewertung === wert ? 1 : 0.15,
                     }}>{zeichen}</button>
@@ -1645,36 +1646,36 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
             )}
             {m.role === "assistant" && m.oeffne && go && ILHO_ZIELE[m.oeffne] && (
               <div style={{ flexBasis: "100%", marginTop: 6 }}>
-                <button onClick={() => go(m.oeffne)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, color: C.plum, background: C.goldPale, border: `1px solid ${C.line}`, borderRadius: 18, padding: "9px 15px", cursor: "pointer" }}>{ILHO_ZIELE[m.oeffne]} →</button>
+                <button onClick={() => go(m.oeffne)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 600, color: C.plum, background: C.goldPale, border: `1px solid ${C.line}`, borderRadius: 18, padding: "9px 15px", cursor: "pointer" }}>{ILHO_ZIELE[m.oeffne]} →</button>
               </div>
             )}
             {m.role === "assistant" && m.gemerkt && (
-              <div style={{ flexBasis: "100%", fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 5, lineHeight: 1.45 }}>
+              <div style={{ flexBasis: "100%", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 5, lineHeight: 1.45 }}>
                 {(profil.notizen || []).some((n) => n.t === m.gemerkt) ? (
-                  <>ilho hat sich gemerkt: „{m.gemerkt}“ · <button onClick={() => setProfil({ ...profil, notizen: (profil.notizen || []).filter((n) => n.t !== m.gemerkt) })} style={{ border: "none", background: "none", color: C.plum, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, textDecoration: "underline" }}>Nicht merken</button></>
+                  <>ilho hat sich gemerkt: „{m.gemerkt}“ · <button onClick={() => setProfil({ ...profil, notizen: (profil.notizen || []).filter((n) => n.t !== m.gemerkt) })} style={{ border: "none", background: "none", color: C.plum, fontSize: 13.5, fontWeight: 600, cursor: "pointer", padding: 0, textDecoration: "underline" }}>Nicht merken</button></>
                 ) : <span style={{ opacity: 0.7 }}>Nicht gemerkt.</span>}
               </div>
             )}
             {m.role === "assistant" && m.bewertung === "schlecht" && !m.grund && (
               <div style={{ flexBasis: "100%", display: "flex", gap: 6, flexWrap: "wrap", margin: "6px 0 4px" }}>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, alignSelf: "center" }}>Was hat nicht gepasst?</span>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, alignSelf: "center" }}>Was hat nicht gepasst?</span>
                 {ILHO_GRUENDE.map(([k, l]) => (
-                  <button key={k} onClick={() => grundGeben(i, k)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.plum, background: C.roseSoft, border: "none", borderRadius: 12, padding: "5px 10px", cursor: "pointer" }}>{l}</button>
+                  <button key={k} onClick={() => grundGeben(i, k)} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, background: C.roseSoft, border: "none", borderRadius: 12, padding: "5px 10px", cursor: "pointer" }}>{l}</button>
                 ))}
               </div>
             )}
-            {m.role === "assistant" && m.grund && <div style={{ flexBasis: "100%", fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 4 }}>Danke — das hilft, ilho fairer und besser zu machen.</div>}
+            {m.role === "assistant" && m.grund && <div style={{ flexBasis: "100%", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.7, marginTop: 4 }}>Danke — das hilft, ilho fairer und besser zu machen.</div>}
           </div>
         ))}
         {busy && (
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, padding: "4px 2px" }}>✨ ilho schreibt …</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.plum, padding: "4px 2px" }}>✨ ilho schreibt …</div>
         )}
         {grenzenOffen && msgs.length > 0 && <div style={{ marginTop: 8 }}><IlhoGrenzen /></div>}
         {setPrefs && profil.fertig && !kennenOffen && (grenzenOffen || msgs.length === 0) && (
           <div style={{ marginTop: 10 }}><IlhoWissen C={C} beduerfnisse={BEDUERFNISSE} profil={profil} setProfil={setProfil} onBearbeiten={() => setKennenOffen(true)} /></div>
         )}
         {(grenzenOffen || msgs.length === 0) && setPrefs && !kennenOffen && (profil.fertig || spaeter) && (
-          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 10, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.45, cursor: "pointer" }}>
+          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 10, fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.45, cursor: "pointer" }}>
             <input type="checkbox" checked={!!prefs.ilhoJournal} onChange={(e) => setPrefs({ ...prefs, ilhoJournal: e.target.checked })} style={{ marginTop: 2 }} />
             <span>ilho darf meine letzten 3 Journal-Einträge kennen, um sich auf frühere Gedanken zu beziehen. Jederzeit abschaltbar.</span>
           </label>
@@ -1685,7 +1686,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
       {msgs.length > 0 && (
         <div style={{ padding: "6px 14px 0", background: C.cream, borderTop: `1px solid ${C.line}` }}>
           <button onClick={() => setGrenzenOffen((o) => !o)} aria-expanded={grenzenOffen} style={{
-            fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 600, color: C.plum,
+            fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: C.plum,
             background: "none", border: "none", padding: "2px 2px", cursor: "pointer",
           }}>{grenzenOffen ? "✕ Hinweis schließen" : "ⓘ Was ilho kann und über dich weiß"}</button>
         </div>
@@ -1696,7 +1697,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder={hoert ? "ilho hört zu …" : "Schreib ilho …"}
-          style={{ flex: 1, padding: "13px 16px", fontSize: 16.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${hoert ? C.rose : C.line}`, borderRadius: 22, background: C.card, color: hoert && gehoert ? C.ink : C.espresso, outline: "none", transition: "border-color .2s" }}
+          style={{ flex: 1, padding: "13px 16px", fontSize: 18, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${hoert ? C.rose : C.line}`, borderRadius: 22, background: C.card, color: hoert && gehoert ? C.ink : C.espresso, outline: "none", transition: "border-color .2s" }}
         />
         {mikroMoeglich && (
           <button
@@ -1722,7 +1723,7 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
         )}
         <button onClick={send} disabled={busy} style={{
           width: 48, height: 48, borderRadius: "50%", border: "none", cursor: "pointer",
-          background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 18, flexShrink: 0,
+          background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 19, flexShrink: 0,
           opacity: busy ? 0.6 : 1,
         }}>↑</button>
       </div>
@@ -1814,7 +1815,7 @@ function Horoskop({ horo, setHoro, energie, addPunkte, setMeinZeichen, meinZeich
     <div>
       {!horo?.sign && (
         <>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, marginBottom: 16, lineHeight: 1.55 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.ink, marginBottom: 16, lineHeight: 1.55 }}>
             {meinZeichen
               ? `Dein Sternzeichen: ${meinZeichen.n} ${meinZeichen.e} — tippe, und ilho liest die Energie des Tages für dich.`
               : "Dein Sternzeichen wird aus deinem Geburtsdatum bei der Registrierung berechnet. Tippe zum Lesen."}
@@ -1823,8 +1824,8 @@ function Horoskop({ horo, setHoro, energie, addPunkte, setMeinZeichen, meinZeich
             {(meinZeichen ? [meinZeichen] : STERNZEICHEN).map((z) => (
               <Card key={z.n} onClick={() => lesen(z)} style={{ padding: "13px 8px", textAlign: "center" }}>
                 <div style={{ fontSize: 24, color: C.plum }}><Sym e={z.e} size={24} /></div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.espresso, marginTop: 3 }}>{z.n}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 9.5, color: C.ink, marginTop: 1 }}>{z.d}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.espresso, marginTop: 3 }}>{z.n}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 1 }}>{z.d}</div>
               </Card>
             ))}
           </div>
@@ -1836,13 +1837,13 @@ function Horoskop({ horo, setHoro, energie, addPunkte, setMeinZeichen, meinZeich
           <Card style={{ textAlign: "center", marginBottom: 14, background: `linear-gradient(150deg, ${C.plum}, ${C.rose} 150%)`, border: "none" }}>
             <div style={{ fontSize: 40, color: C.goldPale }}>{horo.sign.e}</div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: "#FFF8F0" }}>{horo.sign.n}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: C.goldPale, marginTop: 4 }}>Tageshoroskop · {heute}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, letterSpacing: 2, textTransform: "uppercase", color: C.goldPale, marginTop: 4 }}>Tageshoroskop · {heute}</div>
           </Card>
           {busy ? (
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.plum, textAlign: "center" }}>✨ ilho liest die Sterne für dich …</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.plum, textAlign: "center" }}>✨ ilho liest die Sterne für dich …</p>
           ) : (
             <Card style={{ background: C.roseSoft, border: "none" }}>
-              <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16.5, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{horo.text}</p>
+              <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{horo.text}</p>
             </Card>
           )}
           {!busy && horo.text && (() => {
@@ -1856,19 +1857,19 @@ function Horoskop({ horo, setHoro, energie, addPunkte, setMeinZeichen, meinZeich
                 <Eyebrow>🍀 Dein Glück heute · {horo.sign.n}</Eyebrow>
                 <div style={{ display: "flex", gap: 22, alignItems: "center", marginBottom: 4 }}>
                   <div>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.ink, fontWeight: 700 }}>Glückszahl</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase", color: C.ink, fontWeight: 700 }}>Glückszahl</div>
                     <div style={{ fontFamily: "Georgia, serif", fontSize: 30, color: C.plum }}>{zahl}</div>
                   </div>
                   <div>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.ink, fontWeight: 700 }}>Glücksfarbe</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase", color: C.ink, fontWeight: 700 }}>Glücksfarbe</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 5 }}>
                       <span style={{ width: 24, height: 24, borderRadius: "50%", background: gf[1], border: "1.5px solid rgba(0,0,0,.12)" }} />
-                      <span style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>{gf[0]}</span>
+                      <span style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>{gf[0]}</span>
                     </div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                  <button onClick={() => openMystik && openMystik("tarot")} style={{ flex: 1, padding: "11px 0", borderRadius: 13, cursor: "pointer", border: `1.5px solid ${C.line}`, background: C.card, fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.espresso }}>🎴 Tarot</button>
+                  <button onClick={() => openMystik && openMystik("tarot")} style={{ flex: 1, padding: "11px 0", borderRadius: 13, cursor: "pointer", border: `1.5px solid ${C.line}`, background: C.card, fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: C.espresso }}>🎴 Tarot</button>
                 </div>
               </Card>
             );
@@ -1877,15 +1878,15 @@ function Horoskop({ horo, setHoro, energie, addPunkte, setMeinZeichen, meinZeich
           {!busy && horo.text && (
             <Card style={{ marginTop: 12 }}>
               <Eyebrow color={C.plum}>💌 Dieses Horoskop verschenken</Eyebrow>
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.5, marginBottom: 10 }}>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5, marginBottom: 10 }}>
                 Hast du für eine Freundin nachgeschaut? Schick es ihr per Mail{briefkopf ? " — mit deinem Briefkopf" : " (Briefkopf in „Mein Office“ einrichten für deine Marke)"}.
               </p>
               <div style={{ display: "flex", gap: 8 }}>
                 <input value={mail} onChange={(e) => setMail(e.target.value)} placeholder="E-Mail der Empfängerin …"
-                  style={{ flex: 1, padding: "11px 14px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none" }} />
+                  style={{ flex: 1, padding: "11px 14px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none" }} />
                 <Btn small onClick={senden}>Senden</Btn>
               </div>
-              {hinweis && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum, marginTop: 9, animation: "fadeUp .3s ease" }}>{hinweis}</p>}
+              {hinweis && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.plum, marginTop: 9, animation: "fadeUp .3s ease" }}>{hinweis}</p>}
             </Card>
           )}
           {!busy && (
@@ -1957,7 +1958,7 @@ function Mystik({ energie, addPunkte, art, setArt }) {
       <div style={{ display: "flex", gap: 7, marginBottom: 16, flexWrap: "wrap" }}>
         {ARTEN.map(([k, label]) => (
           <button key={k} onClick={() => wechsel(k)} style={{
-            fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600,
+            fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600,
             padding: "9px 13px", borderRadius: 20, cursor: "pointer", minHeight: 38,
             border: `1.5px solid ${art === k ? C.rose : C.line}`,
             background: art === k ? C.roseSoft : "transparent",
@@ -1968,10 +1969,10 @@ function Mystik({ energie, addPunkte, art, setArt }) {
 
       {brauchtText ? (
         <textarea value={eingabe} onChange={(ev) => setEingabe(ev.target.value)} placeholder={platzhalter} rows={4}
-          style={{ width: "100%", padding: "14px 15px", fontSize: 16.5, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, marginBottom: 12, outline: "none", resize: "vertical", lineHeight: 1.6 }} />
+          style={{ width: "100%", padding: "14px 15px", fontSize: 18, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, marginBottom: 12, outline: "none", resize: "vertical", lineHeight: 1.6 }} />
       ) : (
         <input value={eingabe} onChange={(ev) => setEingabe(ev.target.value)} placeholder={platzhalter}
-          style={{ width: "100%", padding: "14px 15px", fontSize: 16.5, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, marginBottom: 12, outline: "none" }} />
+          style={{ width: "100%", padding: "14px 15px", fontSize: 18, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, marginBottom: 12, outline: "none" }} />
       )}
 
       <Btn full onClick={start} disabled={busy}>
@@ -1982,11 +1983,11 @@ function Mystik({ energie, addPunkte, art, setArt }) {
         <div style={{ display: "flex", gap: 9, margin: "16px 0 0", justifyContent: "center" }}>
           {karten.map((k, i) => (
             <div key={i} style={{ flex: 1, maxWidth: 110, background: C.card, border: `1.5px solid ${C.goldSoft}`, borderRadius: 13, padding: "13px 6px", textAlign: "center", animation: `fadeUp .4s ease ${i * 0.12}s both` }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 9, letterSpacing: 1, textTransform: "uppercase", color: C.gold, fontWeight: 700, marginBottom: 5 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 1, textTransform: "uppercase", color: C.gold, fontWeight: 700, marginBottom: 5 }}>
                 {art === "tarot" ? ["Vergangenheit", "Gegenwart", "Zukunft"][i] : `Karte ${i + 1}`}
               </div>
               {k.e && <div style={{ fontSize: 24 }}><Sym e={k.e} size={24} /></div>}
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 13.5, color: C.espresso, marginTop: 4, lineHeight: 1.25 }}>{k.n}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 15, color: C.espresso, marginTop: 4, lineHeight: 1.25 }}>{k.n}</div>
             </div>
           ))}
         </div>
@@ -1995,11 +1996,11 @@ function Mystik({ energie, addPunkte, art, setArt }) {
       {lesung && (
         <Card style={{ marginTop: 16, background: C.roseSoft, border: "none", animation: "fadeUp .5s ease" }}>
           <Eyebrow color={C.plum}>✨ Deine Lesung</Eyebrow>
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{lesung}</p>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{lesung}</p>
         </Card>
       )}
 
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, opacity: 0.75, textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.75, textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
         Zur Inspiration & liebevollen Selbstreflexion ✨ — keine Vorhersage, kein Ersatz für professionellen Rat.
       </p>
     </div>
@@ -2082,13 +2083,13 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
     <div style={{ padding: "26px 20px", textAlign: "center" }}>
       <Eyebrow>Orakel</Eyebrow>
       <H size={25} style={{ marginBottom: 8 }}>Deine Karte für heute</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, opacity: 0.7, lineHeight: 1.5, marginBottom: 14 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.7, lineHeight: 1.5, marginBottom: 14 }}>
         Zur Inspiration &amp; Unterhaltung — keine Beratung, Diagnose oder Vorhersage.
       </p>
 
       {true && (
         <>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, marginBottom: 16, lineHeight: 1.55 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.ink, marginBottom: 16, lineHeight: 1.55 }}>
         Atme tief ein — und zieh deine Tageskarte.
       </p>
 
@@ -2133,7 +2134,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
                 {Array.from({ length: 16 }).map((_, i) => { const w = (i * Math.PI) / 8; return <line key={i} x1={60 + Math.cos(w) * 40} y1={60 + Math.sin(w) * 40} x2={60 + Math.cos(w) * (i % 2 ? 50 : 58)} y2={60 + Math.sin(w) * (i % 2 ? 50 : 58)} />; })}
                 <path d="M66 46a15 15 0 1 0 0 28a12 12 0 1 1 0-28z" fill="#D9B56A" stroke="none" />
               </svg>
-              <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", color: "#F3E6C4", fontSize: 17 }}>Tippe zum Ziehen</div>
+              <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", color: "#F3E6C4", fontSize: 18 }}>Tippe zum Ziehen</div>
             </div>
             {/* Vorderseite */}
             <div style={{
@@ -2158,7 +2159,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
 
         {card && (
           <div style={{ position: "relative", padding: "22px 30px 0", animation: "fadeUp .6s ease" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2.2, textTransform: "uppercase", color: "#D9B56A", fontWeight: 600 }}>{card.sub} · {card.b}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, letterSpacing: 2.2, textTransform: "uppercase", color: "#D9B56A", fontWeight: 600 }}>{card.sub} · {card.b}</div>
             <p style={{ fontFamily: "Georgia, serif", fontSize: 19, color: "#F6EBCF", lineHeight: 1.45, margin: "10px 0 0" }}>{card.txt}</p>
           </div>
         )}
@@ -2179,7 +2180,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
       {deutung && (
         <Card style={{ textAlign: "left", marginTop: 18, background: C.roseSoft, border: "none", animation: "fadeUp .5s ease" }}>
           <Eyebrow color={C.plum}>✨ Deine persönliche Deutung</Eyebrow>
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16.5, color: C.espresso, lineHeight: 1.65 }}>{deutung}</p>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.espresso, lineHeight: 1.65 }}>{deutung}</p>
           <Hoerknopf text={deutung} kategorie="karte" twin={twin} />
         </Card>
       )}
@@ -2187,7 +2188,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
       {card && (
         <Card style={{ textAlign: "left", marginTop: 18, animation: "fadeUp .5s ease" }}>
           <Eyebrow color={C.plum}>📝 Deine Reflexion</Eyebrow>
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, lineHeight: 1.6, marginBottom: 12 }}>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.espresso, lineHeight: 1.6, marginBottom: 12 }}>
             Welche Gedanken und Gefühle kommen in dir hoch?
           </p>
           <div style={{ position: "relative" }}>
@@ -2198,7 +2199,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
             placeholder="Schreib oder sprich, was diese Karte in dir berührt …"
             style={{
               width: "100%", boxSizing: "border-box", padding: "12px 56px 12px 12px", borderRadius: 12,
-              border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 16.5,
+              border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 18,
               lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso,
             }}
           />
@@ -2212,7 +2213,7 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
             </Btn>
           </div>
           {gespeichert && (
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 8, textAlign: "center" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 8, textAlign: "center" }}>
               Du findest deine Reflexion jetzt im Tagebuch. 🤍
             </div>
           )}
@@ -2228,30 +2229,30 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
       {card?.tief && (
         <Card style={{ textAlign: "left", marginTop: 18, animation: "fadeUp .5s ease" }}>
           <Eyebrow color={C.plum}>🌹 Orakelfrage</Eyebrow>
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16.5, color: C.espresso, lineHeight: 1.6, marginBottom: 16 }}>{card.frage}</p>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.espresso, lineHeight: 1.6, marginBottom: 16 }}>{card.frage}</p>
 
           <Eyebrow>✨ Affirmationen</Eyebrow>
           <div style={{ marginBottom: 16 }}>
             {card.affirmationen.map((a, i) => (
-              <p key={i} style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15, color: C.ink, lineHeight: 1.7 }}>· {a}</p>
+              <p key={i} style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16.5, color: C.ink, lineHeight: 1.7 }}>· {a}</p>
             ))}
           </div>
 
           <Eyebrow color={C.plum}>🌊 Tiefere Botschaft</Eyebrow>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, lineHeight: 1.65, marginBottom: 16 }}>{card.tief}</p>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.65, marginBottom: 16 }}>{card.tief}</p>
 
           <Eyebrow color={C.ink}>🌑 Schattenfrage</Eyebrow>
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, lineHeight: 1.6, marginBottom: 16 }}>{card.schatten}</p>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.6, marginBottom: 16 }}>{card.schatten}</p>
 
           <div style={{ background: C.roseSoft, borderRadius: 14, padding: 14 }}>
             <Eyebrow color={C.plum}>🕯️ Ritualimpuls</Eyebrow>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, lineHeight: 1.65 }}>{card.ritual}</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.65 }}>{card.ritual}</p>
           </div>
         </Card>
       )}
 
       {card && (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 16 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginTop: 16 }}>
           ✨ Deine Karte für heute ist gezogen. Morgen wartet eine neue.
         </p>
       )}
@@ -2338,24 +2339,24 @@ function KursDetail({ angebot, bindung, zurueck, addPunkte }) {
 
   return (
     <div style={{ padding: "20px 20px" }}>
-      <button onClick={zurueck} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "0 0 12px" }}>
+      <button onClick={zurueck} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 700, cursor: "pointer", padding: "0 0 12px" }}>
         ← Alle Angebote
       </button>
 
       <Eyebrow>{TYP_TITEL[angebot.typ] || "Angebot"}</Eyebrow>
       <H size={24} style={{ marginBottom: 6 }}>{angebot.titel}</H>
       {angebot.untertitel && (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 10 }}>{angebot.untertitel}</p>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 10 }}>{angebot.untertitel}</p>
       )}
       {angebot.beschreibung && (
-        <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.65, marginBottom: 16 }}>{angebot.beschreibung}</p>
+        <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.65, marginBottom: 16 }}>{angebot.beschreibung}</p>
       )}
 
       {module.length > 0 && (
         <Card style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.espresso }}>Dein Fortschritt</span>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 700 }}>{fertig}/{module.length}</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: C.espresso }}>Dein Fortschritt</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.plum, fontWeight: 700 }}>{fertig}/{module.length}</span>
           </div>
           <div style={{ height: 8, borderRadius: 6, background: C.beige, overflow: "hidden" }}>
             <div style={{ width: `${pct}%`, height: "100%", borderRadius: 6, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})`, transition: "width .4s ease" }} />
@@ -2363,11 +2364,11 @@ function KursDetail({ angebot, bindung, zurueck, addPunkte }) {
         </Card>
       )}
 
-      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Lade Inhalte …</p>}
+      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink }}>Lade Inhalte …</p>}
 
       {!laedt && module.length === 0 && (
         <Card>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
             Für dieses Angebot sind noch keine Inhalte hinterlegt. Frag gern im Chat nach — deine Coachin schaltet sie dir frei.
           </p>
         </Card>
@@ -2383,21 +2384,21 @@ function KursDetail({ angebot, bindung, zurueck, addPunkte }) {
                 {MODUL_ICON[m.typ] || "📖"}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{m.nr}. {m.titel}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: erledigt ? C.sage : C.ink, marginTop: 2, fontWeight: erledigt ? 700 : 400 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>{m.nr}. {m.titel}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: erledigt ? C.sage : C.ink, marginTop: 2, fontWeight: erledigt ? 700 : 400 }}>
                   {erledigt ? "✓ abgeschlossen" : m.dauer_min ? `${m.dauer_min} Min` : "offen"}
                 </div>
               </div>
-              <span style={{ color: C.gold, fontSize: 18 }}>{auf ? "▾" : "›"}</span>
+              <span style={{ color: C.gold, fontSize: 19 }}>{auf ? "▾" : "›"}</span>
             </div>
 
             {auf && (
               <div style={{ marginTop: 12, animation: "fadeUp .3s ease" }}>
                 {m.text && (
-                  <p style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{m.text}</p>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{m.text}</p>
                 )}
                 {m.datei_pfad && !medienUrl && (
-                  <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Lade Medien …</p>
+                  <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Lade Medien …</p>
                 )}
                 {medienUrl && m.typ === "video" && (
                   <video controls playsInline src={medienUrl} style={{ width: "100%", borderRadius: 12, background: C.espresso, maxHeight: 320 }} />
@@ -2406,7 +2407,7 @@ function KursDetail({ angebot, bindung, zurueck, addPunkte }) {
                   <audio controls src={medienUrl} style={{ width: "100%" }} />
                 )}
                 {medienUrl && m.typ !== "video" && m.typ !== "audio" && (
-                  <a href={medienUrl} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.plum }}>↗ Datei öffnen</a>
+                  <a href={medienUrl} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: C.plum }}>↗ Datei öffnen</a>
                 )}
                 <div style={{ marginTop: 12 }}>
                   <Btn small ghost={erledigt} onClick={() => umschalten(m)}>
@@ -2465,20 +2466,20 @@ function Kurse({ bindung, aufBindung, addPunkte }) {
     <div style={{ padding: "20px 20px" }}>
       <Eyebrow>Kurse & Angebote</Eyebrow>
       <H size={24} style={{ marginBottom: 4 }}>Was unsere Coachinnen anbieten</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.5, marginBottom: 12 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.5, marginBottom: 12 }}>
         Zuerst das, was {bindung.coach_name || "deine Coachin"} für dich hinterlegt hat.
       </p>
 
       {hinweis && (
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "11px 14px", marginBottom: 14, lineHeight: 1.5 }}>{hinweis}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "11px 14px", marginBottom: 14, lineHeight: 1.5 }}>{hinweis}</div>
       )}
 
-      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Lade Angebote …</p>}
+      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink }}>Lade Angebote …</p>}
 
       {!laedt && angebote.length === 0 && (
         <Card style={{ textAlign: "center" }}>
           <div style={{ fontSize: 30, marginBottom: 8 }}><Sym e="🌱" size={30} /></div>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.ink, lineHeight: 1.6, margin: 0 }}>
             {bindung.coach_name || "Deine Coachin"} hat hier noch keine Kurse oder Pakete eingestellt.
             Sobald sie etwas anlegt, findest du es hier.
           </p>
@@ -2494,13 +2495,13 @@ function Kurse({ bindung, aufBindung, addPunkte }) {
                 <div style={{ display: "flex", gap: 13, alignItems: "center" }}>
                   <div style={{ width: 48, height: 48, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, flexShrink: 0 }}>{TYP_ICON[typ]}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{a.titel}</div>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>{a.titel}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>
                       {[a.untertitel, a.einheiten, a.thema].filter(Boolean).join(" · ")}
                     </div>
                   </div>
                   {preisText(a) && (
-                    <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.plum, whiteSpace: "nowrap" }}>{preisText(a)}</div>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.plum, whiteSpace: "nowrap" }}>{preisText(a)}</div>
                   )}
                 </div>
 
@@ -2520,7 +2521,7 @@ function Kurse({ bindung, aufBindung, addPunkte }) {
                       onChange={(e) => setAnfrageText(e.target.value)}
                       rows={3}
                       placeholder="Magst du kurz schreiben, was dich daran anspricht? (optional)"
-                      style={{ width: "100%", padding: "11px 13px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }}
+                      style={{ width: "100%", padding: "11px 13px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }}
                     />
                     <Btn small full onClick={() => anfragen(a)}>Anfrage senden</Btn>
                   </div>
@@ -2531,7 +2532,7 @@ function Kurse({ bindung, aufBindung, addPunkte }) {
         </div>
       ))}
 
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 6 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 6 }}>
         Bezahlung läuft noch nicht über die App: deine Anfrage geht direkt an deine Coachin, ihr klärt alles Weitere im Chat.
       </p>
     </div>
@@ -2567,7 +2568,7 @@ function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, 
       <div style={{ display: "flex", gap: 7, marginBottom: 20, flexWrap: "wrap" }}>
         {chips.map((c) => (
           <button key={c.k} onClick={() => setSec(c.k)} style={{
-            fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600,
+            fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600,
             padding: "9px 13px", borderRadius: 20, cursor: "pointer", minHeight: 38,
             border: `1.5px solid ${sec === c.k ? C.rose : C.line}`,
             background: sec === c.k ? C.roseSoft : "transparent",
@@ -2581,7 +2582,9 @@ function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, 
 
       {sec === "heute" && (
         <BookOpen key="tagebuch">
-          <JournalHeute entries={entries} setEntries={setEntries} addPunkte={addPunkte} />
+          <Federkiel>
+            <JournalHeute entries={entries} setEntries={setEntries} addPunkte={addPunkte} />
+          </Federkiel>
         </BookOpen>
       )}
       {sec === "rituale" && <Rituale ritual={ritual} setRitual={setRitual} addPunkte={addPunkte} />}
@@ -2608,7 +2611,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
   const [saved, setSaved] = useState(false);
 
   const input = {
-    width: "100%", padding: "14px 15px", fontSize: 17,
+    width: "100%", padding: "14px 15px", fontSize: 18,
     fontFamily: "Georgia, serif", fontStyle: "italic",
     border: `1.5px solid ${C.line}`, borderRadius: 14,
     background: C.card, color: C.espresso, marginBottom: 12, outline: "none",
@@ -2637,12 +2640,12 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
           <Card style={{ marginBottom: 14, background: C.goldPale, border: `1px solid ${C.goldSoft}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <Eyebrow>🌅 Deine Tages-Inspiration</Eyebrow>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum, fontWeight: 700 }}><Sym e={a.icon} size={14} /> {a.t}</span>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase", color: C.plum, fontWeight: 700 }}><Sym e={a.icon} size={14} /> {a.t}</span>
             </div>
             <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18.5, color: C.espresso, lineHeight: 1.55, margin: "4px 0 10px" }}>
               „{a.s}“
             </p>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.85 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.85 }}>
               Sprich diesen Satz heute ein paar Mal langsam aus — morgen wartet ein neuer.
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center" }}>
@@ -2668,15 +2671,15 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
           <Eyebrow color={C.plum}>📖 Deine Ausrichtung für heute</Eyebrow>
-          <span style={{ fontFamily: '"Snell Roundhand", "Savoye LET", "Segoe Script", cursive', fontSize: 16.5, color: C.ink, opacity: 0.8 }}>
+          <span style={{ fontFamily: '"Snell Roundhand", "Savoye LET", "Segoe Script", cursive', fontSize: 18, color: C.ink, opacity: 0.8 }}>
             {new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}
           </span>
         </div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginBottom: 12 }}>✍️ 7 Fragen · dein täglicher Check-in</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 12 }}>✍️ 7 Fragen · dein täglicher Check-in</div>
 
         {/* Frage 1 — Stimmungsskala 1–10 */}
         <div style={{ marginBottom: 18 }}>
-          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.espresso, marginBottom: 8 }}>📊 Wie geht es mir heute?</div>
+          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, marginBottom: 8 }}>📊 Wie geht es mir heute?</div>
           <div style={{ display: "flex", gap: 4 }}>
             {Array.from({ length: 10 }).map((_, i) => {
               const n = i + 1;
@@ -2687,20 +2690,20 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
                   border: aktiv ? `2px solid ${C.gold}` : `1px solid ${C.line}`,
                   background: aktiv ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : "rgba(255,255,255,.6)",
                   color: aktiv ? "#fff" : C.ink,
-                  fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: aktiv ? 700 : 500,
+                  fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: aktiv ? 700 : 500,
                 }}>{n}</button>
               );
             })}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.75 }}>schwer</span>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.75 }}>wunderbar</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.75 }}>schwer</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.75 }}>wunderbar</span>
           </div>
         </div>
 
         {FRAGEN.map((f, i) => (
           <div key={i} style={{ marginBottom: i < FRAGEN.length - 1 ? 14 : 0 }}>
-            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.espresso, margin: "4px 0 2px" }}><Sym e={f.icon} size={14} /> {f.q}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, margin: "4px 0 2px" }}><Sym e={f.icon} size={14} /> {f.q}</div>
             <textarea
               rows={2}
               placeholder="Schreib es auf …"
@@ -2722,7 +2725,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
 
       <Btn full onClick={save}>Eintrag speichern</Btn>
       {saved && (
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.sage, textAlign: "center", marginTop: 12, fontWeight: 600 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.sage, textAlign: "center", marginTop: 12, fontWeight: 600 }}>
           ✓ Gespeichert — schön, dass du dir den Moment genommen hast.
         </div>
       )}
@@ -2732,10 +2735,10 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
           <Eyebrow color={C.ink}>Deine Einträge</Eyebrow>
           {entries.map((e, i) => (
             <Card key={i} style={{ marginBottom: 10, padding: 16 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.rose, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{e.date}</div>
-              {e.intention && <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, lineHeight: 1.6 }}>🌅 {e.intention}</div>}
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.rose, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{e.date}</div>
+              {e.intention && <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.6 }}>🌅 {e.intention}</div>}
               {e.items?.map((it, j) => (
-                <div key={j} style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, lineHeight: 1.6 }}>{it}</div>
+                <div key={j} style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.6 }}>{it}</div>
               ))}
             </Card>
           ))}
@@ -2816,8 +2819,8 @@ function Rituale({ ritual, setRitual, addPunkte }) {
       <Card style={{ marginBottom: 14, display: "flex", gap: 14, alignItems: "center", background: C.goldPale, border: `1px solid ${C.goldSoft}` }}>
         <div style={{ fontSize: 36, animation: "floaty 3s ease-in-out infinite" }}><Sym e={mond.e} size={36} /></div>
         <div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>{mond.n}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5, marginTop: 2 }}>{mond.imp}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>{mond.n}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.5, marginTop: 2 }}>{mond.imp}</div>
         </div>
       </Card>
 
@@ -2841,10 +2844,10 @@ function Rituale({ ritual, setRitual, addPunkte }) {
               <div style={{ position: "absolute", left: 18, bottom: 14, color: "#fff", fontFamily: "Georgia, serif", fontSize: 24 }}>{r.t.replace(/^\S+\s/, "")}</div>
             </div>
             <div style={{ padding: "16px 18px 18px" }}>
-              <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>{r.d}</p>
+              <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>{r.d}</p>
               <ol style={{ margin: "0 0 16px", paddingLeft: 20 }}>
                 {r.s.map((schritt, i) => (
-                  <li key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6, marginBottom: 6 }}>{schritt}</li>
+                  <li key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, lineHeight: 1.6, marginBottom: 6 }}>{schritt}</li>
                 ))}
               </ol>
               <Btn full onClick={() => toggleR(r.k)}>{fertig ? "✓ Diese Woche genährt" : "Ritual gemacht (+2 ✨)"}</Btn>
@@ -2854,7 +2857,7 @@ function Rituale({ ritual, setRitual, addPunkte }) {
       })()}
 
       {doneCount === RITUALE.length && (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 700, textAlign: "center", marginTop: 14 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.plum, fontWeight: 700, textAlign: "center", marginTop: 14 }}>
           ✨ Alle Rituale genährt — deine Energie strahlt!
         </p>
       )}
@@ -2875,7 +2878,7 @@ function Challenge369({ ch, setCh, akarte, setAkarte, addPunkte }) {
         <Eyebrow>🃏 Aufgaben-Karte des Tages</Eyebrow>
         {!akarte ? (
           <>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.55, marginBottom: 12 }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.55, marginBottom: 12 }}>
               Zieh deine kleine Tagesaufgabe — ein liebevoller Mini-Impuls für heute.
             </p>
             <Btn small onClick={ziehen}>Karte ziehen ✨</Btn>
@@ -2883,8 +2886,8 @@ function Challenge369({ ch, setCh, akarte, setAkarte, addPunkte }) {
         ) : (
           <div style={{ animation: "fadeUp .4s ease" }}>
             <div style={{ fontSize: 34, margin: "4px 0 8px" }}><Sym e={akarte.icon} size={34} /></div>
-            <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, lineHeight: 1.6 }}>{akarte.t}</p>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 10 }}>Deine Aufgabe für heute — morgen wartet eine neue.</p>
+            <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.espresso, lineHeight: 1.6 }}>{akarte.t}</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 10 }}>Deine Aufgabe für heute — morgen wartet eine neue.</p>
           </div>
         )}
       </Card>
@@ -2937,13 +2940,13 @@ function DankbarkeitsChallenge({ ch, setCh, addPunkte }) {
     <>
       <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, ${C.plum}, ${C.rose} 140%)`, border: "none" }}>
         <Eyebrow color={C.goldPale}>🏆 Dankbarkeits-Challenge · 21 Tage</Eyebrow>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#FFF3F0", lineHeight: 1.65 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: "#FFF3F0", lineHeight: 1.65 }}>
           <strong>So funktioniert's:</strong> Du schreibst 21 Tage lang deine Dankbarkeiten auf — und <strong>mit jedem Tag eine mehr</strong>.
           An Tag 1 eine, an Tag 4 vier, an Tag 21 einundzwanzig. So lernt dein Blick, immer mehr Schönes zu sehen.
         </p>
         <div style={{ marginTop: 12, padding: "10px 12px", background: "rgba(255,255,255,.14)", borderRadius: 12 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: C.goldPale, fontWeight: 700, marginBottom: 5 }}>Beispiel · Tag 4</div>
-          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15, color: "#FFF3F0", lineHeight: 1.7 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.goldPale, fontWeight: 700, marginBottom: 5 }}>Beispiel · Tag 4</div>
+          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16.5, color: "#FFF3F0", lineHeight: 1.7 }}>
             Ich bin dankbar für die schöne Rückmeldung meiner Kollegin.<br />
             Ich bin dankbar für das Telefonat mit meiner Freundin.<br />
             Ich bin dankbar für den schönen Sonnenaufgang.<br />
@@ -2954,7 +2957,7 @@ function DankbarkeitsChallenge({ ch, setCh, addPunkte }) {
           <div style={{ flex: 1, height: 9, borderRadius: 8, background: "rgba(255,255,255,.25)", overflow: "hidden" }}>
             <div style={{ width: `${((heuteFertig ? tag : tag - 1) / 21) * 100}%`, height: "100%", background: C.goldPale, borderRadius: 8, transition: "width .5s" }} />
           </div>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: "#fff" }}>Tag {tag}/21</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: "#fff" }}>Tag {tag}/21</span>
         </div>
       </Card>
 
@@ -2962,7 +2965,7 @@ function DankbarkeitsChallenge({ ch, setCh, addPunkte }) {
         <Card style={{ textAlign: "center", background: C.goldPale }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}><Sym e="🌟" size={40} /></div>
           <H size={19} style={{ marginBottom: 8 }}>21 Tage — du hast es geschafft!</H>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7 }}>
             Insgesamt <strong>{gesamt} Dankbarkeiten</strong> hast du aufgeschrieben. Dein Blick hat sich verändert — und das bleibt.
           </p>
         </Card>
@@ -2970,7 +2973,7 @@ function DankbarkeitsChallenge({ ch, setCh, addPunkte }) {
         <Card style={{ textAlign: "center", background: C.roseSoft, border: "none", animation: gefeiert ? "fadeUp .5s ease" : "none" }}>
           <div style={{ fontSize: 34, marginBottom: 6 }}><Sym e="🎉" size={34} /></div>
           <H size={17} style={{ marginBottom: 6 }}>Tag {tag} geschafft — {tag} {tag === 1 ? "Dankbarkeit" : "Dankbarkeiten"}!</H>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 14, lineHeight: 1.6 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 14, lineHeight: 1.6 }}>
             Morgen wartet Tag {tag + 1} — dann sind es {tag + 1}. Du schaffst das.
           </p>
           <Btn small onClick={naechsterTag}>Tag {tag + 1} starten →</Btn>
@@ -2979,9 +2982,9 @@ function DankbarkeitsChallenge({ ch, setCh, addPunkte }) {
         <Card>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
             <Eyebrow color={C.plum}>Tag {tag} · {tag} {tag === 1 ? "Dankbarkeit" : "Dankbarkeiten"}</Eyebrow>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: alleGefuellt ? C.sage : C.ink }}>{gefuellt}/{tag}</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: alleGefuellt ? C.sage : C.ink }}>{gefuellt}/{tag}</span>
           </div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 14 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 14 }}>
             Wofür bist du heute dankbar? Ganz konkrete kleine Dinge wirken am stärksten.
           </p>
           <div style={{ display: "flex", gap: 5, marginBottom: 14 }}>
@@ -2991,13 +2994,13 @@ function DankbarkeitsChallenge({ ch, setCh, addPunkte }) {
           </div>
           {felder.map((f, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 9 }}>
-              <span style={{ fontFamily: "Georgia, serif", fontSize: 14.5, color: f.trim() ? C.gold : C.line, width: 18, textAlign: "right", flexShrink: 0 }}>{i + 1}.</span>
+              <span style={{ fontFamily: "Georgia, serif", fontSize: 16, color: f.trim() ? C.gold : C.line, width: 18, textAlign: "right", flexShrink: 0 }}>{i + 1}.</span>
               <input
                 value={f}
                 onChange={(e) => setFelder(felder.map((x, j) => (j === i ? e.target.value : x)))}
                 placeholder="Ich bin dankbar für …"
                 style={{
-                  flex: 1, minWidth: 0, padding: "11px 13px", fontSize: 16,
+                  flex: 1, minWidth: 0, padding: "11px 13px", fontSize: 17.5,
                   fontFamily: "Georgia, serif", fontStyle: "italic",
                   border: `1.5px solid ${f.trim() ? C.goldSoft : C.line}`, borderRadius: 12,
                   background: f.trim() ? C.goldPale : C.cream, color: C.espresso, outline: "none",
@@ -3018,16 +3021,16 @@ function DankbarkeitsChallenge({ ch, setCh, addPunkte }) {
           <Eyebrow color={C.ink}>Deine gesammelten Dankbarkeiten ({gesamt})</Eyebrow>
           {Object.keys(archiv).sort((a, b) => b - a).map((d) => (
             <div key={d} style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.line}` }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, letterSpacing: 1.2, textTransform: "uppercase", color: C.gold, fontWeight: 700, marginBottom: 6 }}>Tag {d}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, letterSpacing: 1.2, textTransform: "uppercase", color: C.gold, fontWeight: 700, marginBottom: 6 }}>Tag {d}</div>
               {archiv[d].map((x, i) => (
-                <div key={i} style={{ fontFamily: "Georgia, serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.7 }}>🤍 {x}</div>
+                <div key={i} style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.7 }}>🤍 {x}</div>
               ))}
             </div>
           ))}
         </Card>
       )}
 
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, textAlign: "center", marginTop: 14, lineHeight: 1.6, opacity: 0.85 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, textAlign: "center", marginTop: 14, lineHeight: 1.6, opacity: 0.85 }}>
         Tipp: Wiederhole dich ruhig nicht — such jeden Tag neue Momente. Genau darin liegt die Kraft dieser Übung.
       </p>
     </>
@@ -3076,7 +3079,7 @@ function BriefUmschlag({ onOffen }) {
             position: "absolute", left: "9%", width: "82%", height: "80%", bottom: "8%", borderRadius: 8,
             background: `linear-gradient(180deg, #FFFFFF, ${C.card})`, boxShadow: "0 4px 14px rgba(0,0,0,.12)",
             transform: auf ? "translateY(-50%)" : "translateY(0)", transition: "transform 1s .55s cubic-bezier(.2,.8,.2,1)", zIndex: 2,
-            padding: "16px 14px", textAlign: "left", fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 14.5, color: C.plum,
+            padding: "16px 14px", textAlign: "left", fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.plum,
           }}>
             Liebe Ich, …
             <div style={{ marginTop: 10, height: 1, background: C.line }} />
@@ -3101,7 +3104,7 @@ function BriefUmschlag({ onOffen }) {
           }}>♡</div>
         </div>
       </div>
-      <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.plum }}>
+      <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum }}>
         {auf ? "Dein Brief öffnet sich …" : "Tippe auf den Umschlag, um deinen Brief zu öffnen"}
       </div>
     </div>
@@ -3169,8 +3172,8 @@ function Brief({ briefe, setBriefe, briefPost, setBriefPost, addPunkte }) {
     if (addPunkte) addPunkte(20, "Zukunftsbrief per Post");
   };
 
-  const feld = { width: "100%", padding: "12px 14px", fontSize: 16.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", marginBottom: 9 };
-  const klein = { fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55 };
+  const feld = { width: "100%", padding: "12px 14px", fontSize: 18, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", marginBottom: 9 };
+  const klein = { fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.55 };
 
   return (
     <div>
@@ -3182,7 +3185,7 @@ function Brief({ briefe, setBriefe, briefPost, setBriefPost, addPunkte }) {
         <div style={{ animation: "fadeUp .6s ease both" }}>
           <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, ${C.plum}, ${C.rose} 150%)`, border: "none" }}>
             <Eyebrow color={C.goldPale}>💌 Zukunftsbrief</Eyebrow>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#FFF3F0", lineHeight: 1.6 }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: "#FFF3F0", lineHeight: 1.6 }}>
               Schreib oder sprich zu deinem zukünftigen Ich — deine Wünsche, deine Worte von heute.
             </p>
           </Card>
@@ -3193,11 +3196,11 @@ function Brief({ briefe, setBriefe, briefPost, setBriefPost, addPunkte }) {
               onChange={(e) => setText(e.target.value)}
               placeholder={"Liebe Ich,\n\nwenn du das liest, dann …"}
               rows={8}
-              style={{ width: "100%", padding: "15px 16px", fontSize: 17, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${hoeren ? C.rose : C.line}`, borderRadius: 14, background: `repeating-linear-gradient(180deg, ${C.card} 0 31px, ${C.line} 31px 32px)`, color: C.espresso, marginBottom: 12, outline: "none", resize: "vertical", lineHeight: "32px" }}
+              style={{ width: "100%", padding: "15px 16px", fontSize: 18, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${hoeren ? C.rose : C.line}`, borderRadius: 14, background: `repeating-linear-gradient(180deg, ${C.card} 0 31px, ${C.line} 31px 32px)`, color: C.espresso, marginBottom: 12, outline: "none", resize: "vertical", lineHeight: "32px" }}
             />
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <button onClick={diktieren} style={{
-                flex: 1, minHeight: 44, borderRadius: 999, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 700,
+                flex: 1, minHeight: 44, borderRadius: 999, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 17, fontWeight: 700,
                 border: `1.5px solid ${hoeren ? C.rose : C.gold}`, background: hoeren ? C.roseSoft : "rgba(255,255,255,.7)", color: hoeren ? C.plum : C.gold,
                 animation: hoeren ? "glowPulse 1.6s ease-in-out infinite" : "none",
               }}>{hoeren ? "⏹ Aufnahme beenden" : "🎙️ Sprechen statt tippen"}</button>
@@ -3215,13 +3218,13 @@ function Brief({ briefe, setBriefe, briefPost, setBriefPost, addPunkte }) {
             <Card style={{ marginBottom: 14, animation: "fadeUp .4s ease both" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <Eyebrow>✉️ Brief per Post</Eyebrow>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: guthaben > 0 ? C.plum : C.rose, background: guthaben > 0 ? C.goldPale : C.roseSoft, borderRadius: 999, padding: "6px 12px" }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: guthaben > 0 ? C.plum : C.rose, background: guthaben > 0 ? C.goldPale : C.roseSoft, borderRadius: 999, padding: "6px 12px" }}>
                   Guthaben: {guthaben} {guthaben === 1 ? "Brief" : "Briefe"}
                 </div>
               </div>
 
               <div style={{ background: C.goldPale, borderRadius: 12, padding: "11px 13px", marginBottom: 14 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum }}>⏳ Bitte rechtzeitig abschicken</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.plum }}>⏳ Bitte rechtzeitig abschicken</div>
                 <p style={{ ...klein, marginTop: 3 }}>
                   Damit dein Brief pünktlich ankommt, schick ihn <b>mindestens 3 Wochen</b> vor dem Wunschdatum ab — am besten <b>4–6 Wochen</b> vorher.
                 </p>
@@ -3262,12 +3265,12 @@ function Brief({ briefe, setBriefe, briefPost, setBriefPost, addPunkte }) {
             <H size={21} style={{ marginBottom: 14 }}>Stimmen Datum und Adresse?</H>
             <div style={{ background: C.goldPale, borderRadius: 14, padding: "12px 14px", marginBottom: 10 }}>
               <div style={{ ...klein, fontWeight: 700, color: C.plum }}>📅 Zustellung</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, marginTop: 3 }}>{deDatum(datum)}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17.5, color: C.espresso, marginTop: 3 }}>{deDatum(datum)}</div>
               <div style={{ ...klein, marginTop: 2 }}>in {tageBis} Tagen ({Math.floor(tageBis / 7)} Wochen)</div>
             </div>
             <div style={{ background: C.goldPale, borderRadius: 14, padding: "12px 14px", marginBottom: 10 }}>
               <div style={{ ...klein, fontWeight: 700, color: C.plum }}>🏠 Adresse</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, marginTop: 3, lineHeight: 1.5 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17.5, color: C.espresso, marginTop: 3, lineHeight: 1.5 }}>
                 {adr.name}<br />{adr.strasse}<br />{adr.plz} {adr.ort}<br />{adr.land}
               </div>
             </div>
@@ -3288,22 +3291,22 @@ function Brief({ briefe, setBriefe, briefPost, setBriefPost, addPunkte }) {
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <div style={{ fontSize: 26 }}>{b.art === "post" ? "📮" : offen === i ? "📖" : "✉️"}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.espresso }}>Geschrieben am {b.geschrieben}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: b.art === "post" ? C.rose : C.gold, marginTop: 2 }}>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 700, color: C.espresso }}>Geschrieben am {b.geschrieben}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: b.art === "post" ? C.rose : C.gold, marginTop: 2 }}>
                     {b.art === "post" ? `Per Post · kommt am ${deDatum(b.zustellung)}` : offen === i ? "Tippen zum Schließen" : "Tippen zum Lesen"}
                   </div>
                 </div>
-                <div style={{ fontSize: 16.5, color: C.gold }}>{offen === i ? "▾" : "›"}</div>
+                <div style={{ fontSize: 18, color: C.gold }}>{offen === i ? "▾" : "›"}</div>
               </div>
               {offen === i && (
                 <div style={{ marginTop: 12, borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
-                  <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{b.txt}</p>
+                  <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{b.txt}</p>
                   {b.art === "post" && b.adresse && (
                     <div style={{ ...klein, marginTop: 10 }}>📮 An: {b.adresse.name}, {b.adresse.strasse}, {b.adresse.plz} {b.adresse.ort}</div>
                   )}
                   <div style={{ marginTop: 12, background: C.goldPale, borderRadius: 12, padding: "10px 13px" }}>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: C.plum }}>🪞 Reflexion</div>
-                    <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5, marginTop: 3 }}>Was hat sich seitdem verändert? Was möchtest du deinem heutigen Ich sagen?</p>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.plum }}>🪞 Reflexion</div>
+                    <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.5, marginTop: 3 }}>Was hat sich seitdem verändert? Was möchtest du deinem heutigen Ich sagen?</p>
                   </div>
                 </div>
               )}
@@ -3345,14 +3348,14 @@ function MoneyMind({ mm, setMm, addPunkte }) {
     <div>
       <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, #3E5C46, ${C.sage} 160%)`, border: "none" }}>
         <Eyebrow color={C.goldPale}>💰 Fülle-Affirmation des Tages</Eyebrow>
-        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: "#F5FAF2", lineHeight: 1.5 }}>
+        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 19, color: "#F5FAF2", lineHeight: 1.5 }}>
           „{AFFS[di % AFFS.length]}"
         </p>
       </Card>
 
       <Card style={{ marginBottom: 14 }}>
         <Eyebrow color={C.plum}>✍️ Fülle-Impuls</Eyebrow>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.55, marginBottom: 12, fontWeight: 600 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.espresso, lineHeight: 1.55, marginBottom: 12, fontWeight: 600 }}>
           {PROMPTS[di % PROMPTS.length]}
         </p>
         <textarea
@@ -3360,7 +3363,7 @@ function MoneyMind({ mm, setMm, addPunkte }) {
           onChange={(e) => setNote(e.target.value)}
           placeholder="Schreib frei — ohne Bewertung …"
           rows={4}
-          style={{ width: "100%", padding: "14px 15px", fontSize: 16.5, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, marginBottom: 12, outline: "none", resize: "vertical" }}
+          style={{ width: "100%", padding: "14px 15px", fontSize: 18, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, marginBottom: 12, outline: "none", resize: "vertical" }}
         />
         <Btn full onClick={save}>Notiz speichern</Btn>
       </Card>
@@ -3370,8 +3373,8 @@ function MoneyMind({ mm, setMm, addPunkte }) {
           <Eyebrow color={C.ink}>Deine Fülle-Notizen</Eyebrow>
           {mm.map((e, i) => (
             <Card key={i} style={{ marginBottom: 10, padding: 16 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.sage, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{e.date}</div>
-              <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, lineHeight: 1.6 }}>{e.txt}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.sage, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{e.date}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.6 }}>{e.txt}</div>
             </Card>
           ))}
         </>
@@ -3396,7 +3399,7 @@ function Musik() {
       <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
         {["Alle", ...cats].map((c) => (
           <button key={c} onClick={() => setCat(c)} style={{
-            fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600,
+            fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600,
             padding: "9px 16px", borderRadius: 20, cursor: "pointer", minHeight: 38,
             border: `1.5px solid ${cat === c ? C.rose : C.line}`,
             background: cat === c ? C.roseSoft : "transparent",
@@ -3413,10 +3416,10 @@ function Musik() {
               {active ? "❚❚" : t.icon}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>{t.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>{t.cat} · {t.len}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>{t.t}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>{t.cat} · {t.len}</div>
             </div>
-            {!active && <div style={{ color: C.rose, fontSize: 17 }}>▶</div>}
+            {!active && <div style={{ color: C.rose, fontSize: 18 }}>▶</div>}
           </Card>
         );
       })}
@@ -3429,7 +3432,7 @@ function Musik() {
         }}>
           <div style={{ fontSize: 20 }}><Sym e={playing.icon} size={20} /></div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700 }}>{playing.t}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 700 }}>{playing.t}</div>
             <div style={{ height: 3, borderRadius: 3, background: "rgba(255,255,255,.22)", marginTop: 7 }}>
               <div style={{ width: "34%", height: "100%", borderRadius: 3, background: C.goldSoft }} />
             </div>
@@ -3555,7 +3558,7 @@ function WissensSuche({ addPunkte }) {
     <div style={{ padding: "12px 0" }}>
       <Eyebrow>Coach-Werkstatt</Eyebrow>
       <H size={24} style={{ marginBottom: 6 }}>Dein Wissensarchiv</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
         Alles, was du hier ablegst, findest du später mit einer normalen Frage wieder — z. B. „Was habe ich über Selbstwert gesagt?".
         Gefunden wird nur, was wirklich da ist; erfunden wird nichts.
       </p>
@@ -3565,17 +3568,17 @@ function WissensSuche({ addPunkte }) {
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <input value={frage} onChange={(e) => setFrage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && suchen()}
             placeholder="z. B. Was habe ich über Grenzen setzen gesagt?"
-            style={{ flex: 1, padding: "12px 14px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none" }} />
-          <button onClick={suchen} disabled={busy} style={{ width: 46, borderRadius: 12, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 18, opacity: busy ? 0.6 : 1 }}><Sym e="🔍" size={17} /></button>
+            style={{ flex: 1, padding: "12px 14px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none" }} />
+          <button onClick={suchen} disabled={busy} style={{ width: 46, borderRadius: 12, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 19, opacity: busy ? 0.6 : 1 }}><Sym e="🔍" size={17} /></button>
         </div>
       </Card>
 
-      {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, marginBottom: 12 }}>✨ ilho durchsucht dein Archiv …</p>}
+      {busy && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.plum, marginBottom: 12 }}>✨ ilho durchsucht dein Archiv …</p>}
 
       {treffer !== null && !busy && (
         treffer.length === 0 ? (
           <Card style={{ marginBottom: 14 }}>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, lineHeight: 1.55 }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.55 }}>
               Dazu finde ich nichts in deinen Inhalten. {uebersicht.length === 0 ? "Dein Archiv ist noch leer — leg unten den ersten Inhalt ab." : "Vielleicht mit anderen Worten suchen?"}
             </p>
           </Card>
@@ -3585,16 +3588,16 @@ function WissensSuche({ addPunkte }) {
               <Card style={{ marginBottom: 12, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <Eyebrow color={C.gold}>Antwort aus deinem Archiv</Eyebrow>
-                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>ilho · KI</span>
+                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.7 }}>ilho · KI</span>
                 </div>
-                <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{antwort}</p>
+                <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{antwort}</p>
               </Card>
             )}
             <Eyebrow color={C.plum}>Fundstellen</Eyebrow>
             {treffer.map((t) => (
               <Card key={t.id} style={{ marginTop: 8, marginBottom: 8 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.plum }}>{t.titel} <span style={{ fontWeight: 400, opacity: 0.7 }}>· {t.quelle}</span></div>
-                <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.55, marginTop: 5 }}>{t.chunk.slice(0, 260)}{t.chunk.length > 260 ? " …" : ""}</p>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.plum }}>{t.titel} <span style={{ fontWeight: 400, opacity: 0.7 }}>· {t.quelle}</span></div>
+                <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, lineHeight: 1.55, marginTop: 5 }}>{t.chunk.slice(0, 260)}{t.chunk.length > 260 ? " …" : ""}</p>
               </Card>
             ))}
           </>
@@ -3604,18 +3607,18 @@ function WissensSuche({ addPunkte }) {
       <Card style={{ marginTop: 16, marginBottom: 14 }}>
         <Eyebrow color={C.plum}>Inhalt ablegen</Eyebrow>
         <input value={neuTitel} onChange={(e) => setNeuTitel(e.target.value)} placeholder="Titel — z. B. Reel Selbstwert, Mai 2024"
-          style={{ width: "100%", padding: "11px 13px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", margin: "8px 0" }} />
+          style={{ width: "100%", padding: "11px 13px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", margin: "8px 0" }} />
         <textarea rows={5} value={neuText} onChange={(e) => setNeuText(e.target.value)} placeholder="Text, Transkript oder Notiz einfügen …"
-          style={{ width: "100%", padding: "12px 14px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10, lineHeight: 1.5 }} />
+          style={{ width: "100%", padding: "12px 14px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10, lineHeight: 1.5 }} />
         <Btn small ghost={!neuText.trim()} onClick={hinzufuegen}>Ins Archiv legen</Btn>
-        {status && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.sage, marginLeft: 10 }}>{status}</span>}
+        {status && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.sage, marginLeft: 10 }}>{status}</span>}
       </Card>
 
       {uebersicht.length > 0 && (
         <Card>
           <Eyebrow color={C.plum}>Im Archiv · {uebersicht.length} Inhalt(e)</Eyebrow>
           {uebersicht.slice(0, 12).map((u, i) => (
-            <div key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, padding: "7px 0", borderBottom: i < Math.min(11, uebersicht.length - 1) ? `1px solid ${C.line}` : "none" }}>
+            <div key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, padding: "7px 0", borderBottom: i < Math.min(11, uebersicht.length - 1) ? `1px solid ${C.line}` : "none" }}>
               {u.titel} <span style={{ opacity: 0.6 }}>· {u.quelle} · {u.teile} Abschnitt(e)</span>
             </div>
           ))}
@@ -3694,30 +3697,30 @@ function CoachWerkstatt({ addPunkte }) {
     <div style={{ padding: "12px 0" }}>
       <Eyebrow>Coach-Werkstatt</Eyebrow>
       <H size={24} style={{ marginBottom: 6 }}>Deine KI-Werkstatt</H>
-      <p style={{ ...sys, fontSize: 14.5, color: C.ink, lineHeight: 1.55, marginBottom: 14 }}>
+      <p style={{ ...sys, fontSize: 16, color: C.ink, lineHeight: 1.55, marginBottom: 14 }}>
         ilho liefert Entwürfe — du prüfst, passt an und entscheidest. Bitte keine Namen oder Gesundheitsdaten von Klientinnen eingeben.
       </p>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
         {WERKSTATT_MODI.map((x) => (
           <button key={x.k} onClick={() => { setModus(x.k); setErgebnis(""); }} style={{
-            ...sys, fontSize: 13.5, fontWeight: 600, borderRadius: 16, padding: "7px 12px", cursor: "pointer",
+            ...sys, fontSize: 15, fontWeight: 600, borderRadius: 16, padding: "7px 12px", cursor: "pointer",
             border: `1.5px solid ${modus === x.k ? C.plum : C.line}`, background: modus === x.k ? C.roseSoft : C.card, color: C.plum,
           }}>{x.t}</button>
         ))}
       </div>
       <Card style={{ marginBottom: 12 }}>
         <textarea rows={4} value={eingabe} onChange={(e) => setEingabe(e.target.value)} placeholder={m.hint}
-          style={{ ...sys, width: "100%", padding: "12px 14px", fontSize: 15.5, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
-        {modus === "content" && <div style={{ ...sys, fontSize: 11.5, color: C.ink, opacity: 0.8, margin: "6px 0" }}>{dossier ? "✓ Dein Ton aus dem Coach-Twin-Interview wird verwendet." : "Tipp: Mit dem KI-Coach-Twin-Interview klingt der Text nach dir."}</div>}
+          style={{ ...sys, width: "100%", padding: "12px 14px", fontSize: 17, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
+        {modus === "content" && <div style={{ ...sys, fontSize: 13, color: C.ink, opacity: 0.8, margin: "6px 0" }}>{dossier ? "✓ Dein Ton aus dem Coach-Twin-Interview wird verwendet." : "Tipp: Mit dem KI-Coach-Twin-Interview klingt der Text nach dir."}</div>}
         <div style={{ marginTop: 8 }}><Btn small disabled={busy || !eingabe.trim()} onClick={erzeugen}>{busy ? "ilho arbeitet …" : "Entwurf erstellen"}</Btn></div>
       </Card>
       {ergebnis && (
         <Card style={{ background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Eyebrow color={C.gold}>Entwurf</Eyebrow>
-            <span style={{ ...sys, fontSize: 10.5, color: C.ink, opacity: 0.7 }}>ilho · KI · bitte prüfen</span>
+            <span style={{ ...sys, fontSize: 12, color: C.ink, opacity: 0.7 }}>ilho · KI · bitte prüfen</span>
           </div>
-          <p style={{ ...sys, fontSize: 15.5, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{ergebnis}</p>
+          <p style={{ ...sys, fontSize: 17, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{ergebnis}</p>
           <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
             <Btn small ghost onClick={kopieren}>{kopiert ? "✓ Kopiert" : "Kopieren"}</Btn>
             <Btn small ghost onClick={() => alsPdf(m.t.replace(/^\S+\s/, ""), ergebnis, eingabe.trim().slice(0, 120))}>Als PDF</Btn>
@@ -3753,7 +3756,7 @@ function Recherche({ addPunkte }) {
     <div style={{ padding: "12px 0" }}>
       <Eyebrow>Coach-Werkstatt</Eyebrow>
       <H size={24} style={{ marginBottom: 6 }}>Recherche mit Quellen</H>
-      <p style={{ ...feld, fontSize: 14.5, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
+      <p style={{ ...feld, fontSize: 16, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
         ilho sucht im Web nach Studien und Fachquellen und zeigt dir jede Quelle. Prüfe die Quellen, bevor du etwas weitergibst — die Verantwortung bleibt bei dir.
       </p>
 
@@ -3761,11 +3764,11 @@ function Recherche({ addPunkte }) {
         <Eyebrow color={C.plum}>Deine Frage</Eyebrow>
         <textarea rows={3} value={frage} onChange={(e) => setFrage(e.target.value)}
           placeholder="z. B. Was sagt die Forschung zu Selbstmitgefühl und Perfektionismus bei Frauen?"
-          style={{ ...feld, width: "100%", marginTop: 8, padding: "12px 14px", fontSize: 15.5, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
+          style={{ ...feld, width: "100%", marginTop: 8, padding: "12px 14px", fontSize: 17, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
           {[["kurz", "Kurzüberblick"], ["ausfuehrlich", "Ausführlich"]].map(([k, l]) => (
             <button key={k} onClick={() => setTiefe(k)} style={{
-              ...feld, fontSize: 13.5, fontWeight: 600, borderRadius: 16, padding: "7px 13px", cursor: "pointer",
+              ...feld, fontSize: 15, fontWeight: 600, borderRadius: 16, padding: "7px 13px", cursor: "pointer",
               border: `1.5px solid ${tiefe === k ? C.plum : C.line}`, background: tiefe === k ? C.roseSoft : C.card, color: C.plum,
             }}>{l}</button>
           ))}
@@ -3773,33 +3776,33 @@ function Recherche({ addPunkte }) {
         </div>
       </Card>
 
-      {busy && <p style={{ ...feld, fontSize: 14.5, color: C.plum, marginBottom: 12 }}>✨ ilho sucht und liest Quellen … {tiefe === "ausfuehrlich" ? "das kann bis zu einer Minute dauern." : ""}</p>}
+      {busy && <p style={{ ...feld, fontSize: 16, color: C.plum, marginBottom: 12 }}>✨ ilho sucht und liest Quellen … {tiefe === "ausfuehrlich" ? "das kann bis zu einer Minute dauern." : ""}</p>}
 
-      {ergebnis?.fehler && <Card><p style={{ ...feld, fontSize: 15, color: C.espresso }}>{ergebnis.fehler}</p></Card>}
+      {ergebnis?.fehler && <Card><p style={{ ...feld, fontSize: 16.5, color: C.espresso }}>{ergebnis.fehler}</p></Card>}
 
       {ergebnis && !ergebnis.fehler && (
         <>
           <Card style={{ marginBottom: 12, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Eyebrow color={C.gold}>Ergebnis</Eyebrow>
-              <span style={{ ...feld, fontSize: 10.5, color: C.ink, opacity: 0.7 }}>ilho · KI · bitte Quellen prüfen</span>
+              <span style={{ ...feld, fontSize: 12, color: C.ink, opacity: 0.7 }}>ilho · KI · bitte Quellen prüfen</span>
             </div>
-            <p style={{ ...feld, fontSize: 15.5, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{ergebnis.text || "Dazu habe ich nichts Belastbares gefunden."}</p>
+            <p style={{ ...feld, fontSize: 17, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{ergebnis.text || "Dazu habe ich nichts Belastbares gefunden."}</p>
           </Card>
           {ergebnis.quellen.length > 0 && (
             <Card>
               <Eyebrow color={C.plum}>Quellen · {ergebnis.quellen.length}</Eyebrow>
               {ergebnis.quellen.map((q, i) => (
-                <div key={q.url} style={{ ...feld, fontSize: 14.5, padding: "7px 0", borderBottom: i < ergebnis.quellen.length - 1 ? `1px solid ${C.line}` : "none" }}>
+                <div key={q.url} style={{ ...feld, fontSize: 16, padding: "7px 0", borderBottom: i < ergebnis.quellen.length - 1 ? `1px solid ${C.line}` : "none" }}>
                   <span style={{ color: C.plum, fontWeight: 700 }}>[{i + 1}]</span>{" "}
                   <a href={q.url} target="_blank" rel="noopener noreferrer" style={{ color: C.espresso }}>{q.titel}</a>
-                  <div style={{ fontSize: 11, opacity: 0.6, wordBreak: "break-all" }}>{(() => { try { return new URL(q.url).hostname; } catch { return q.url; } })()}</div>
+                  <div style={{ fontSize: 12.5, opacity: 0.6, wordBreak: "break-all" }}>{(() => { try { return new URL(q.url).hostname; } catch { return q.url; } })()}</div>
                 </div>
               ))}
             </Card>
           )}
           {ergebnis.quellen.length === 0 && ergebnis.text && (
-            <p style={{ ...feld, fontSize: 13, color: C.ink, opacity: 0.75 }}>Keine Quellen zurückgegeben — betrachte das Ergebnis als unbelegt.</p>
+            <p style={{ ...feld, fontSize: 14.5, color: C.ink, opacity: 0.75 }}>Keine Quellen zurückgegeben — betrachte das Ergebnis als unbelegt.</p>
           )}
         </>
       )}
@@ -3891,7 +3894,7 @@ function SessionIntelligenz({ addPunkte }) {
     <div style={{ padding: "12px 0" }}>
       <Eyebrow>Coach-Werkstatt</Eyebrow>
       <H size={24} style={{ marginBottom: 6 }}>Session-Notiz</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
         Sprich oder füge dein Transkript ein — ilho strukturiert daraus einen <strong>Entwurf</strong>: Kernthemen, Vereinbarungen, Aufgaben, offene Punkte.
         Nur, was tatsächlich gesagt wurde. Keine Deutung, keine Bewertung.
       </p>
@@ -3901,36 +3904,36 @@ function SessionIntelligenz({ addPunkte }) {
           <Card style={{ marginBottom: 14 }}>
             <Eyebrow color={C.plum}>Bezeichnung (ohne Klarnamen)</Eyebrow>
             <input value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="z. B. Session 12.08. · A."
-              style={{ width: "100%", padding: "11px 13px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginTop: 8 }} />
+              style={{ width: "100%", padding: "11px 13px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginTop: 8 }} />
           </Card>
 
           <Card style={{ marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <Eyebrow color={C.plum}>Transkript</Eyebrow>
-              <button onClick={diktieren} style={{ border: "none", background: hoeren ? C.rose : C.roseSoft, color: hoeren ? "#fff" : C.plum, borderRadius: 18, padding: "7px 14px", fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}>
+              <button onClick={diktieren} style={{ border: "none", background: hoeren ? C.rose : C.roseSoft, color: hoeren ? "#fff" : C.plum, borderRadius: 18, padding: "7px 14px", fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
                 {hoeren ? "⏹ Aufnahme stoppen" : "🎙️ Diktieren"}
               </button>
             </div>
             <textarea rows={9} value={transkript} onChange={(e) => setTranskript(e.target.value)} placeholder="Transkript einfügen oder diktieren …"
-              style={{ width: "100%", padding: "12px 14px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.5 }} />
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 6 }}>{transkript.trim().length} Zeichen{transkript.trim().length < 40 ? " · mindestens 40 nötig" : ""}</div>
+              style={{ width: "100%", padding: "12px 14px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.5 }} />
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 6 }}>{transkript.trim().length} Zeichen{transkript.trim().length < 40 ? " · mindestens 40 nötig" : ""}</div>
           </Card>
 
           {/* Einwilligungs-Gate — Pflicht vor der Analyse */}
           <Card style={{ marginBottom: 14, border: `1.5px solid ${einwilligung ? C.sage : "#E7B7A8"}`, background: einwilligung ? "#F2F8F0" : "#FBF6F2" }}>
             <div onClick={() => setEinwilligung(!einwilligung)} style={{ display: "flex", gap: 11, alignItems: "flex-start", cursor: "pointer" }}>
-              <div style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, marginTop: 1, border: `1.5px solid ${einwilligung ? C.sage : C.line}`, background: einwilligung ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14.5 }}>{einwilligung ? "✓" : ""}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.5 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, marginTop: 1, border: `1.5px solid ${einwilligung ? C.sage : C.line}`, background: einwilligung ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{einwilligung ? "✓" : ""}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, lineHeight: 1.5 }}>
                 Meine Klientin hat der Verarbeitung dieser Session durch eine KI <strong>ausdrücklich zugestimmt</strong> (Art. 9 DSGVO). Ohne diese Zustimmung darf die Analyse nicht erfolgen.
               </div>
             </div>
           </Card>
 
-          {fehler && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#B0492F", marginBottom: 10 }}>{fehler}</p>}
+          {fehler && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: "#B0492F", marginBottom: 10 }}>{fehler}</p>}
           <Btn full ghost={!einwilligung || transkript.trim().length < 40} onClick={analysieren} disabled={busy}>
             {busy ? "✨ ilho strukturiert …" : "Notiz-Entwurf erstellen"}
           </Btn>
-          {!einwilligung && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, textAlign: "center", marginTop: 8 }}>Ohne bestätigte Einwilligung ist die Analyse gesperrt.</p>}
+          {!einwilligung && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, textAlign: "center", marginTop: 8 }}>Ohne bestätigte Einwilligung ist die Analyse gesperrt.</p>}
         </>
       )}
 
@@ -3939,21 +3942,21 @@ function SessionIntelligenz({ addPunkte }) {
           <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Eyebrow color={C.gold}>{entwurf.freigegeben ? "✅ Freigegeben" : "📝 Entwurf — noch nicht freigegeben"}</Eyebrow>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>von ilho · KI-generiert</span>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.7 }}>von ilho · KI-generiert</span>
             </div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.65, marginTop: 10, whiteSpace: "pre-wrap" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.espresso, lineHeight: 1.65, marginTop: 10, whiteSpace: "pre-wrap" }}>
               {entwurf.notiz_text || "— keine strukturierten Inhalte gefunden —"}
             </div>
           </Card>
           {!entwurf.freigegeben ? (
             <>
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.5, marginBottom: 10 }}>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.5, marginBottom: 10 }}>
                 Prüfe den Entwurf. Erst nach deiner Freigabe darf er weiterverwendet oder mit deiner Klientin geteilt werden.
               </p>
               <Btn full onClick={freigeben}>Entwurf freigeben</Btn>
             </>
           ) : (
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, marginBottom: 10 }}>✓ Freigegeben — die Notiz ist jetzt für die weitere Verwendung markiert.</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, marginBottom: 10 }}>✓ Freigegeben — die Notiz ist jetzt für die weitere Verwendung markiert.</p>
           )}
           <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
             {entwurf.freigegeben && <Btn small ghost onClick={() => alsPdf(titel.trim() || "Session-Notiz", entwurf.notiz_text)}>Als PDF</Btn>}
@@ -3996,17 +3999,17 @@ function SessionArchiv({ neu }) {
       <Eyebrow color={C.plum}>Frühere Notizen · freigegeben</Eyebrow>
       <Card style={{ marginTop: 8, marginBottom: 12 }}>
         {freie.map((n, i) => (
-          <div key={n.id} style={{ ...sys, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, fontSize: 14.5, color: C.espresso, padding: "8px 0", borderBottom: i < freie.length - 1 ? `1px solid ${C.line}` : "none" }}>
+          <div key={n.id} style={{ ...sys, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, fontSize: 16, color: C.espresso, padding: "8px 0", borderBottom: i < freie.length - 1 ? `1px solid ${C.line}` : "none" }}>
             <span>{n.titel || "Session"} <span style={{ opacity: 0.6 }}>· {new Date(n.created_at).toLocaleDateString("de-DE")}</span></span>
-            <button onClick={() => alsPdf(n.titel || "Session-Notiz", n.notiz_text, new Date(n.created_at).toLocaleDateString("de-DE"))} style={{ ...sys, background: "none", border: "none", color: C.plum, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>PDF</button>
+            <button onClick={() => alsPdf(n.titel || "Session-Notiz", n.notiz_text, new Date(n.created_at).toLocaleDateString("de-DE"))} style={{ ...sys, background: "none", border: "none", color: C.plum, fontWeight: 700, fontSize: 14.5, cursor: "pointer" }}>PDF</button>
           </div>
         ))}
       </Card>
       <Btn small ghost disabled={busy} onClick={briefErstellen}>{busy ? "ilho bereitet vor …" : "🧭 Brief für die nächste Session"}</Btn>
       {brief && (
         <Card style={{ marginTop: 10, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}><Eyebrow color={C.gold}>Vorbereitung</Eyebrow><span style={{ ...sys, fontSize: 10.5, opacity: 0.7 }}>ilho · KI</span></div>
-          <p style={{ ...sys, fontSize: 15, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{brief}</p>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><Eyebrow color={C.gold}>Vorbereitung</Eyebrow><span style={{ ...sys, fontSize: 12, opacity: 0.7 }}>ilho · KI</span></div>
+          <p style={{ ...sys, fontSize: 16.5, color: C.espresso, lineHeight: 1.6, marginTop: 8, whiteSpace: "pre-wrap" }}>{brief}</p>
           <Btn small ghost onClick={() => alsPdf("Vorbereitung nächste Session", brief)}>Als PDF</Btn>
         </Card>
       )}
@@ -4044,7 +4047,7 @@ function StimmProfil() {
       <Eyebrow color={C.plum}>🔊 Deine Stimme</Eyebrow>
       {profil ? (
         <>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, lineHeight: 1.55, margin: "8px 0 10px" }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.55, margin: "8px 0 10px" }}>
             ✅ Aktiv seit {new Date(profil.einwilligung_am).toLocaleDateString("de-DE")}. Kartenbotschaften und Rituale
             werden in deiner Stimme gesprochen — immer sichtbar als KI-Stimme gekennzeichnet.
           </p>
@@ -4052,7 +4055,7 @@ function StimmProfil() {
         </>
       ) : !zeigen ? (
         <>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>
             44 Kartenbotschaften, jedes Ritual, jede Meditation — das könntest du nie alles selbst einsprechen.
             Ein Stimmodell übernimmt genau diesen Teil. <strong>Dein persönlicher Wochenimpuls bleibt deine echte Aufnahme</strong> —
             das ist der Moment, in dem deine Klientinnen wirklich dich hören sollen.
@@ -4061,15 +4064,15 @@ function StimmProfil() {
         </>
       ) : (
         <>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.espresso, lineHeight: 1.55, background: C.card, borderRadius: 12, padding: 12, margin: "10px 0" }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.55, background: C.card, borderRadius: 12, padding: 12, margin: "10px 0" }}>
             {STIMME_EINWILLIGUNG_TEXT}
           </div>
           <div onClick={() => setZugestimmt(!zugestimmt)} style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", marginBottom: 10 }}>
-            <div style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, marginTop: 1, border: `1.5px solid ${zugestimmt ? C.sage : C.line}`, background: zugestimmt ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14.5 }}>{zugestimmt ? "✓" : ""}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso }}>Ich stimme dem oben stehenden Text zu.</div>
+            <div style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, marginTop: 1, border: `1.5px solid ${zugestimmt ? C.sage : C.line}`, background: zugestimmt ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{zugestimmt ? "✓" : ""}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso }}>Ich stimme dem oben stehenden Text zu.</div>
           </div>
           <input value={voiceId} onChange={(e) => setVoiceId(e.target.value)} placeholder="Voice-ID deines Stimmodells"
-            style={{ width: "100%", padding: "11px 13px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginBottom: 10 }} />
+            style={{ width: "100%", padding: "11px 13px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginBottom: 10 }} />
           <div style={{ display: "flex", gap: 8 }}>
             <Btn small ghost={!zugestimmt || !voiceId.trim()} onClick={speichern}>{busy ? "…" : "Aktivieren"}</Btn>
             <Btn small ghost onClick={() => setZeigen(false)}>Abbrechen</Btn>
@@ -4159,10 +4162,10 @@ Zu "stilproben": Wähle aus ihren Antworten — vor allem aus den eingefügten e
       <div style={{ padding: "12px 0" }}>
         <Eyebrow>KI Coach Twin</Eyebrow>
         <H size={22} style={{ marginBottom: 4 }}>Dein Methoden-Dossier</H>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginBottom: 14 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginBottom: 14 }}>
           Version {dossier.version} · {dossier.freigegeben ? "✅ freigegeben — ilho spricht jetzt in deinem Ton" : "Entwurf — noch nicht freigegeben"}
         </p>
-        <Card style={{ marginBottom: 14, whiteSpace: "pre-wrap", fontFamily: "system-ui, sans-serif", fontSize: 14.5, lineHeight: 1.6, color: C.espresso }}>
+        <Card style={{ marginBottom: 14, whiteSpace: "pre-wrap", fontFamily: "system-ui, sans-serif", fontSize: 16, lineHeight: 1.6, color: C.espresso }}>
           {dossier.dossier_text}
         </Card>
         <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
@@ -4183,16 +4186,16 @@ Zu "stilproben": Wähle aus ihren Antworten — vor allem aus den eingefügten e
 
         <Eyebrow>Probesprechen mit „deiner" ilho</Eyebrow>
         <Card style={{ marginBottom: 10, minHeight: 100 }}>
-          {probeMsgs.length === 0 && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Schreib etwas, wie es eine Klientin tun würde — ilho antwortet in deinem konfigurierten Ton.</p>}
+          {probeMsgs.length === 0 && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Schreib etwas, wie es eine Klientin tun würde — ilho antwortet in deinem konfigurierten Ton.</p>}
           {probeMsgs.map((m, i) => (
             <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
-              <div style={{ maxWidth: "82%", padding: "9px 13px", borderRadius: 16, fontFamily: "system-ui, sans-serif", fontSize: 15, background: m.role === "user" ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.beige, color: m.role === "user" ? "#fff" : C.espresso }}>{m.content}</div>
+              <div style={{ maxWidth: "82%", padding: "9px 13px", borderRadius: 16, fontFamily: "system-ui, sans-serif", fontSize: 16.5, background: m.role === "user" ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.beige, color: m.role === "user" ? "#fff" : C.espresso }}>{m.content}</div>
             </div>
           ))}
         </Card>
         <div style={{ display: "flex", gap: 8 }}>
           <input value={probeText} onChange={(e) => setProbeText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && probeSprechen()} placeholder="Nachricht wie eine Klientin…"
-            style={{ flex: 1, padding: "11px 14px", borderRadius: 12, border: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 15.5 }} />
+            style={{ flex: 1, padding: "11px 14px", borderRadius: 12, border: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 17 }} />
           <button onClick={probeSprechen} style={{ padding: "11px 16px", borderRadius: 12, border: "none", background: C.espresso, color: "#fff", cursor: "pointer" }}>→</button>
         </div>
       </div>
@@ -4203,7 +4206,7 @@ Zu "stilproben": Wähle aus ihren Antworten — vor allem aus den eingefügten e
     return (
       <div style={{ padding: "40px 0", textAlign: "center" }}>
         <div style={{ fontSize: 34, marginBottom: 12 }}><Sym e="✨" size={34} /></div>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink }}>ilho erstellt dein Methoden-Dossier aus deinen Antworten …</p>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.ink }}>ilho erstellt dein Methoden-Dossier aus deinen Antworten …</p>
       </div>
     );
   }
@@ -4214,17 +4217,17 @@ Zu "stilproben": Wähle aus ihren Antworten — vor allem aus den eingefügten e
     <div style={{ padding: "12px 0" }}>
       <Eyebrow>KI Coach Twin · Konfigurationsinterview</Eyebrow>
       <H size={22} style={{ marginBottom: 4 }}>Frage {schritt + 1}/{COACH_TWIN_FRAGEN.length}</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, marginBottom: 16 }}>Block: {COACH_TWIN_BLOCKS[Math.min(blockIndex, 3)]}</p>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, marginBottom: 16 }}>Block: {COACH_TWIN_BLOCKS[Math.min(blockIndex, 3)]}</p>
       <div style={{ height: 4, background: C.line, borderRadius: 2, marginBottom: 20 }}>
         <div style={{ height: 4, borderRadius: 2, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})`, width: `${((schritt + 1) / COACH_TWIN_FRAGEN.length) * 100}%`, transition: "width .3s" }} />
       </div>
       <Card style={{ marginBottom: 16 }}>
-        <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.5 }}>{frage.f}</p>
+        <p style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, lineHeight: 1.5 }}>{frage.f}</p>
       </Card>
-      {fehler && <p style={{ color: C.rose, fontSize: 13.5, marginBottom: 10 }}>{fehler}</p>}
+      {fehler && <p style={{ color: C.rose, fontSize: 15, marginBottom: 10 }}>{fehler}</p>}
       <textarea value={eingabe} onChange={(e) => setEingabe(e.target.value)} rows={4} placeholder="Deine Antwort…"
-        style={{ width: "100%", padding: 14, borderRadius: 14, border: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 16, marginBottom: 14, resize: "vertical" }} />
-      <button onClick={weiter} disabled={!eingabe.trim()} style={{ width: "100%", padding: 14, borderRadius: 14, border: "none", background: eingabe.trim() ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.line, color: "#fff", fontWeight: 700, fontSize: 16.5, cursor: eingabe.trim() ? "pointer" : "default" }}>
+        style={{ width: "100%", padding: 14, borderRadius: 14, border: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 17.5, marginBottom: 14, resize: "vertical" }} />
+      <button onClick={weiter} disabled={!eingabe.trim()} style={{ width: "100%", padding: 14, borderRadius: 14, border: "none", background: eingabe.trim() ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.line, color: "#fff", fontWeight: 700, fontSize: 18, cursor: eingabe.trim() ? "pointer" : "default" }}>
         {schritt + 1 < COACH_TWIN_FRAGEN.length ? "Weiter →" : "✨ Dossier erstellen"}
       </button>
     </div>
@@ -4275,19 +4278,19 @@ function CoachReflexion({ ci, checkins, streak }) {
     <Card style={{ marginTop: 14, background: `linear-gradient(150deg, ${C.card}, ${C.goldPale})` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Eyebrow color={C.gold}>🪞 Deine Reflexion</Eyebrow>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>KI-Frage · Antwort bleibt privat</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.7 }}>KI-Frage · Antwort bleibt privat</span>
       </div>
       {frage ? (
         <>
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16.5, color: C.espresso, lineHeight: 1.6, margin: "8px 0 10px" }}>{frage}</p>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.espresso, lineHeight: 1.6, margin: "8px 0 10px" }}>{frage}</p>
           <textarea rows={3} value={antwort} placeholder="Dein Gedanke dazu — nur für dich …"
             onChange={(e) => { setAntwort(e.target.value); localStorage.setItem("s2g_reflex_antwort", e.target.value); }}
-            style={{ width: "100%", padding: "11px 13px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }} />
+            style={{ width: "100%", padding: "11px 13px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }} />
           <Btn small ghost onClick={holen} disabled={busy}>{busy ? "…" : "Neue Frage"}</Btn>
         </>
       ) : (
         <>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>Nach dem Blick aufs Lagebild: eine Frage an dich selbst. Auch du wächst.</p>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>Nach dem Blick aufs Lagebild: eine Frage an dich selbst. Auch du wächst.</p>
           <Btn small onClick={holen} disabled={busy}>{busy ? "…" : "Reflexionsfrage erhalten"}</Btn>
         </>
       )}
@@ -4310,7 +4313,7 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
     <div style={{ padding: "12px 0" }}>
       <Eyebrow>Coach-Ansicht · Demo</Eyebrow>
       <H size={23} style={{ marginBottom: 4 }}>Klientin: {name || "—"}</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 16 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 16 }}>
         Prototyp — zeigt aktuell nur diese Einzelnutzerin. Für echte Klientinnen-Konten braucht es Login je Nutzerin + Coach-Zuweisung in der Datenbank.
       </p>
 
@@ -4322,22 +4325,22 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
             <Eyebrow color={C.gold}>☀️ Heute wichtig</Eyebrow>
             {aktionen.length ? aktionen.map((x, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < aktionen.length - 1 ? `1px solid ${C.line}` : "none" }}>
-                <span style={{ fontSize: 17 }}><Sym e={x.icon} size={16} /></span>
-                <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.4 }}>{x.t}</span>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: C.plum, flexShrink: 0 }}>{x.art}</span>
+                <span style={{ fontSize: 18 }}><Sym e={x.icon} size={16} /></span>
+                <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, lineHeight: 1.4 }}>{x.t}</span>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: C.plum, flexShrink: 0 }}>{x.art}</span>
               </div>
             )) : (
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 6 }}>✓ Nichts offen — alles im grünen Bereich.</p>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginTop: 6 }}>✓ Nichts offen — alles im grünen Bereich.</p>
             )}
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7, marginTop: 8 }}>Regelbasiert aus den Signalen — keine KI-Auswahl.</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.7, marginTop: 8 }}>Regelbasiert aus den Signalen — keine KI-Auswahl.</div>
           </Card>
         );
       })()}
 
       <Card style={{ marginBottom: 14, textAlign: "center", background: `linear-gradient(150deg, ${C.plum}, ${C.rose} 140%)`, border: "none" }}>
         <Eyebrow color={C.goldPale}>Wohlbefindens-Index</Eyebrow>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 44, color: "#FFF8F0" }}>{ci.index}<span style={{ fontSize: 18 }}>/100</span></div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: "#FFF3F0", display: "flex", alignItems: "center", gap: 6 }}><Ikon n="flamme" size={14} />{streak} Tage Serie</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 44, color: "#FFF8F0" }}>{ci.index}<span style={{ fontSize: 19 }}>/100</span></div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#FFF3F0", display: "flex", alignItems: "center", gap: 6 }}><Ikon n="flamme" size={14} />{streak} Tage Serie</div>
       </Card>
 
       {/* Dankbarkeits-Challenge: eigene, hervorgehobene Karte — zählt stärker als andere Aufgaben
@@ -4349,8 +4352,8 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
       }}>
         <span style={{ fontSize: 26 }}><Sym e="🏆" size={26} /></span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.plum }}>Dankbarkeits-Challenge</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: C.espresso, marginTop: 2 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.plum }}>Dankbarkeits-Challenge</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 600, color: C.espresso, marginTop: 2 }}>
             {ch369?.tag ? `Tag ${ch369.tag}/21 · heute ${ci.dankbarkeitHeute ? "erledigt ✓" : "noch offen"}` : "Noch nicht gestartet"}
           </div>
         </div>
@@ -4359,23 +4362,23 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
       <Card style={{ marginBottom: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <Eyebrow color={C.plum}>Heutige Aufgaben · {heuteStr}</Eyebrow>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: erledigt === tasks.length ? C.sage : C.plum }}>{erledigt}/{tasks.length}</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: erledigt === tasks.length ? C.sage : C.plum }}>{erledigt}/{tasks.length}</span>
         </div>
         {tasks.map((t, i) => (
           <div key={i} style={{
             display: "flex", alignItems: "center", gap: 11, padding: "9px 11px", marginBottom: 6,
             borderRadius: 12, border: `1.5px solid ${t.done ? C.sage : C.line}`, background: t.done ? "#F2F8F0" : C.card,
           }}>
-            <span style={{ fontSize: 17 }}><Sym e={t.icon} size={16} /></span>
-            <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: C.espresso, opacity: t.done ? 0.75 : 1 }}>{t.t}</span>
-            <div style={{ width: 22, height: 22, borderRadius: 7, border: `1.5px solid ${t.done ? C.sage : C.line}`, background: t.done ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14.5 }}>{t.done ? "✓" : ""}</div>
+            <span style={{ fontSize: 18 }}><Sym e={t.icon} size={16} /></span>
+            <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 600, color: C.espresso, opacity: t.done ? 0.75 : 1 }}>{t.t}</span>
+            <div style={{ width: 22, height: 22, borderRadius: 7, border: `1.5px solid ${t.done ? C.sage : C.line}`, background: t.done ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{t.done ? "✓" : ""}</div>
           </div>
         ))}
       </Card>
 
       {ci.warnungen.length > 0 && (
         <Card style={{ marginBottom: 14, background: "#F9E8E2", border: `1px solid #E7B7A8` }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#B0492F" }}>⚠ Frühwarnung</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#B0492F" }}>⚠ Frühwarnung</div>
           {ci.warnungen.map((w, i) => (
             <button
               key={i}
@@ -4386,14 +4389,14 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
                 marginTop: 6, padding: "8px 10px", textAlign: "left",
                 background: "rgba(255,255,255,.6)", border: "1px solid #E7B7A8", borderRadius: 10,
                 cursor: go ? "pointer" : "default",
-                fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso,
+                fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso,
               }}
             >
               <span style={{ flex: 1, minWidth: 0 }}>{w.t}</span>
               {go && (
                 <>
-                  <span style={{ fontSize: 11, color: "#B0492F", whiteSpace: "nowrap" }}>{w.hin}</span>
-                  <span style={{ color: "#B0492F", fontSize: 16.5 }}>›</span>
+                  <span style={{ fontSize: 12.5, color: "#B0492F", whiteSpace: "nowrap" }}>{w.hin}</span>
+                  <span style={{ color: "#B0492F", fontSize: 18 }}>›</span>
                 </>
               )}
             </button>
@@ -4404,11 +4407,11 @@ function CoachDashboard({ name, streak, entries, ch369, drawn, horo, energie, au
       <Card>
         <Eyebrow color={C.plum}>Letzte Check-ins</Eyebrow>
         {checkins?.length ? checkins.slice(0, 5).map((c, i) => (
-          <div key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, padding: "6px 0", borderBottom: i < 4 ? `1px solid ${C.line}` : "none" }}>
+          <div key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, padding: "6px 0", borderBottom: i < 4 ? `1px solid ${C.line}` : "none" }}>
             {c.datum} · Wert {c.wert}/5{c.notiz ? ` · „${c.notiz}"` : ""}
           </div>
         )) : (
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>Noch keine Check-ins.</p>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink }}>Noch keine Check-ins.</p>
         )}
       </Card>
 
@@ -4436,28 +4439,28 @@ function WochenCheckin({ checkins, setCheckins, addPunkte, prefs, setPrefs }) {
     <Card style={{ marginBottom: 14 }}>
       <Eyebrow color={C.plum}>Wöchentlicher Check-in</Eyebrow>
       {schonHeute ? (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, marginTop: 6 }}>✓ Heute schon eingecheckt — schön, dass du dranbleibst. 🤍</p>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso, marginTop: 6 }}>✓ Heute schon eingecheckt — schön, dass du dranbleibst. 🤍</p>
       ) : (
         <>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, margin: "6px 0 10px", lineHeight: 1.5 }}>Wie fühlst du dich mit deinen Zielen diese Woche?</p>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, margin: "6px 0 10px", lineHeight: 1.5 }}>Wie fühlst du dich mit deinen Zielen diese Woche?</p>
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             {SMILEYS.map(([e, v]) => (
               <button key={v} onClick={() => setWert(v)} style={{ flex: 1, padding: "10px 0", borderRadius: 13, cursor: "pointer", border: `1.5px solid ${wert === v ? C.rose : C.line}`, background: wert === v ? C.roseSoft : C.card, fontSize: 22 }}>{e}</button>
             ))}
           </div>
-          <textarea rows={2} value={notiz} onChange={(e) => setNotiz(e.target.value)} placeholder="Kurze Notiz für deine Coachin (optional)" style={{ width: "100%", padding: "11px 13px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }} />
+          <textarea rows={2} value={notiz} onChange={(e) => setNotiz(e.target.value)} placeholder="Kurze Notiz für deine Coachin (optional)" style={{ width: "100%", padding: "11px 13px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box", marginBottom: 10 }} />
           <Btn small ghost={!wert} onClick={speichern}>Check-in speichern</Btn>
         </>
       )}
       <div onClick={() => setPrefs && setPrefs({ ...(prefs || {}), checkinReminder: !erinnerung })} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.line}`, cursor: "pointer" }}>
-        <span style={{ fontSize: 18 }}><Sym e="🔔" size={17} /></span>
-        <div style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>Erinnerung: Sonntagabend</div>
+        <span style={{ fontSize: 19 }}><Sym e="🔔" size={17} /></span>
+        <div style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink }}>Erinnerung: Sonntagabend</div>
         <div style={{ width: 42, height: 24, borderRadius: 14, background: erinnerung ? C.gold : C.line, position: "relative", transition: "background .2s" }}>
           <div style={{ position: "absolute", top: 2, left: erinnerung ? 20 : 2, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
         </div>
       </div>
       {letzte && (
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 10 }}>Letzter Check-in: {letzte.datum} · {(SMILEYS.find((s) => s[1] === letzte.wert) || ["–"])[0]}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 10 }}>Letzter Check-in: {letzte.datum} · {(SMILEYS.find((s) => s[1] === letzte.wert) || ["–"])[0]}</div>
       )}
     </Card>
   );
@@ -4507,17 +4510,17 @@ function Wochenbild({ entries, checkins, streak, prefs, setPrefs, addPunkte, twi
     <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, ${C.card}, ${C.roseSoft})` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Eyebrow color={C.plum}>🌙 Dein Wochenbild</Eyebrow>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>von ilho · KI</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.7 }}>von ilho · KI</span>
       </div>
       {aktuell ? (
         <>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso, lineHeight: 1.65, margin: "8px 0 10px", whiteSpace: "pre-wrap" }}>{aktuell.text}</p>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink }}>Erstellt am {aktuell.datum} · aus deinen eigenen Worten dieser Woche</div>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, lineHeight: 1.65, margin: "8px 0 10px", whiteSpace: "pre-wrap" }}>{aktuell.text}</p>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink }}>Erstellt am {aktuell.datum} · aus deinen eigenen Worten dieser Woche</div>
           <div style={{ marginTop: 10 }}><Btn small ghost onClick={erstellen} disabled={busy}>{busy ? "✨ entsteht …" : "Neu erstellen"}</Btn></div>
         </>
       ) : (
         <>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>
             ilho fasst deine Woche in Worte — nur aus dem, was du selbst geschrieben hast. Nichts wird bewertet, nichts gemessen.
           </p>
           <Btn small onClick={erstellen} disabled={busy}>{busy ? "✨ ilho liest deine Woche …" : "Wochenbild erstellen"}</Btn>
@@ -4542,11 +4545,11 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
       <Card style={{ marginBottom: 14, textAlign: "center", background: `linear-gradient(150deg, ${C.plum}, ${C.rose} 140%)`, border: "none" }}>
         <Eyebrow color={C.goldPale}>Wohlbefindens-Index</Eyebrow>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 52, color: "#FFF8F0", lineHeight: 1.1 }}>{index}<span style={{ fontSize: 22 }}>/100</span></div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#FFF3F0", fontWeight: 600 }}>{trendUp ? "↑ steigend diese Woche" : "→ stabil diese Woche"}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: "#FFF3F0", fontWeight: 600 }}>{trendUp ? "↑ steigend diese Woche" : "→ stabil diese Woche"}</div>
         <div style={{ height: 8, borderRadius: 6, background: "rgba(255,255,255,.25)", overflow: "hidden", margin: "12px 6px 8px" }}>
           <div style={{ width: `${index}%`, height: "100%", borderRadius: 6, background: "#FFF8F0" }} />
         </div>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: "#FFF3F0", opacity: 0.9, lineHeight: 1.5 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#FFF3F0", opacity: 0.9, lineHeight: 1.5 }}>
           Aus deinen täglichen Signalen (Energie, Journal, Aufgaben, Streak) berechnet. Mit deiner Einwilligung sieht deine Coachin diesen Verlauf.
         </p>
       </Card>
@@ -4569,7 +4572,7 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
       {/* Frühwarnung (aus der Analyse-Engine) */}
       {ci.warnungen.length > 0 && (
         <Card style={{ marginBottom: 14, background: "#F9E8E2", border: `1px solid #E7B7A8` }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#B0492F" }}>⚠ Frühwarnung</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#B0492F" }}>⚠ Frühwarnung</div>
           {ci.warnungen.map((w, i) => (
             <button
               key={i}
@@ -4580,14 +4583,14 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
                 marginTop: 6, padding: "8px 10px", textAlign: "left",
                 background: "rgba(255,255,255,.6)", border: "1px solid #E7B7A8", borderRadius: 10,
                 cursor: go ? "pointer" : "default",
-                fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso,
+                fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso,
               }}
             >
               <span style={{ flex: 1, minWidth: 0 }}>{w.t}</span>
               {go && (
                 <>
-                  <span style={{ fontSize: 11, color: "#B0492F", whiteSpace: "nowrap" }}>{w.hin}</span>
-                  <span style={{ color: "#B0492F", fontSize: 16.5 }}>›</span>
+                  <span style={{ fontSize: 12.5, color: "#B0492F", whiteSpace: "nowrap" }}>{w.hin}</span>
+                  <span style={{ color: "#B0492F", fontSize: 18 }}>›</span>
                 </>
               )}
             </button>
@@ -4599,8 +4602,8 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
       <Card style={{ marginBottom: 14, display: "flex", gap: 12, alignItems: "flex-start", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
         <div style={{ fontSize: 22, flexShrink: 0 }}><Sym e="🌿" size={22} /></div>
         <div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.gold }}>ilho empfiehlt</div>
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.espresso, lineHeight: 1.55, marginTop: 3 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.gold }}>ilho empfiehlt</div>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, lineHeight: 1.55, marginTop: 3 }}>
             Dein schwächster Bereich ist gerade <strong>{ci.schwaechster}</strong>. Fokus diese Woche: {ci.empfehlung}. 🤍
           </p>
         </div>
@@ -4612,7 +4615,7 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
       <Card style={{ textAlign: "center", marginBottom: 14, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, border: "none" }}>
         <div style={{ fontSize: 38 }}><Sym e="🔥" size={38} /></div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 42, color: C.plum }}>{streak}</div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, fontWeight: 600 }}>Tage in Folge aktiv</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, fontWeight: 600 }}>Tage in Folge aktiv</div>
       </Card>
 
       {(() => {
@@ -4628,14 +4631,14 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
                 <div style={{ fontFamily: "Georgia, serif", fontSize: 30, color: C.espresso }}>{punkte}</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>Stufe {lvl}</div>
-                <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum }}>{STUFEN[lvl - 1]}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>Stufe {lvl}</div>
+                <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 19, color: C.plum }}>{STUFEN[lvl - 1]}</div>
               </div>
             </div>
             <div style={{ height: 8, borderRadius: 6, background: C.beige, overflow: "hidden" }}>
               <div style={{ width: `${pct}%`, height: "100%", borderRadius: 6, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})` }} />
             </div>
-            {next && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 7 }}>Noch {next - punkte} Punkte bis „{STUFEN[lvl]}" — sammle täglich: Karte ziehen, Journal, Challenge & Rituale ✨</div>}
+            {next && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 7 }}>Noch {next - punkte} Punkte bis „{STUFEN[lvl]}" — sammle täglich: Karte ziehen, Journal, Challenge & Rituale ✨</div>}
           </Card>
         );
       })()}
@@ -4643,11 +4646,11 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
         <Card style={{ textAlign: "center" }}>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 30, color: C.espresso }}>{12 + entries.length}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Tagebuch-Einträge</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>Tagebuch-Einträge</div>
         </Card>
         <Card style={{ textAlign: "center" }}>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 30, color: C.espresso }}>4 h 20</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Meditation gesamt</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>Meditation gesamt</div>
         </Card>
       </div>
 
@@ -4657,7 +4660,7 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
           {week.map((v, i) => (
             <div key={i} style={{ flex: 1, textAlign: "center" }}>
               <div style={{ height: `${(v / max) * 70}px`, borderRadius: 6, background: i === 6 ? `linear-gradient(180deg, ${C.gold}, ${C.rose})` : C.beige }} />
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, marginTop: 6 }}>{["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][i]}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, marginTop: 6 }}>{["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][i]}</div>
             </div>
           ))}
         </div>
@@ -4668,7 +4671,7 @@ function Fortschritt({ streak, entries, punkte, energie, aufgaben, ch369, checki
         {BADGES.map((b) => (
           <Card key={b.t} style={{ textAlign: "center", padding: 14, opacity: b.got ? 1 : 0.42 }}>
             <div style={{ fontSize: 26 }}><Sym e={b.icon} size={26} /></div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.espresso, fontWeight: 600, marginTop: 5 }}>{b.t}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.espresso, fontWeight: 600, marginTop: 5 }}>{b.t}</div>
           </Card>
         ))}
       </div>
@@ -4780,7 +4783,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
   const Row = ({ children }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 0", borderBottom: `1px solid ${C.line}` }}>{children}</div>
   );
-  const Label = ({ children }) => <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, fontWeight: 600 }}>{children}</div>;
+  const Label = ({ children }) => <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17.5, color: C.espresso, fontWeight: 600 }}>{children}</div>;
 
   const plans = [
     { n: "Starter", p: "29 €", f: "Spruch, Orakel, Tagebuch, Mondkalender" },
@@ -4824,17 +4827,17 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
       <div style={{ position: "relative", height: 178, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft} 65%, ${C.beige})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ position: "relative" }}>
           <div style={{ width: 116, height: 116, borderRadius: "50%", background: C.card, border: `3px solid ${C.gold}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 52, color: C.gold, boxShadow: "0 6px 20px rgba(58,42,34,.15)", overflow: "hidden" }}>{prefs.avatar ? <img src={prefs.avatar} alt="Profilfoto" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "👤"}</div>
-          <button aria-label="Foto ändern" onClick={() => fotoRef.current?.click()} style={{ position: "absolute", bottom: 2, right: 2, width: 34, height: 34, borderRadius: "50%", border: "none", background: C.card, boxShadow: "0 2px 8px rgba(58,42,34,.25)", cursor: "pointer", fontSize: 16.5 }}><Sym e="✏️" size={15} /></button>
+          <button aria-label="Foto ändern" onClick={() => fotoRef.current?.click()} style={{ position: "absolute", bottom: 2, right: 2, width: 34, height: 34, borderRadius: "50%", border: "none", background: C.card, boxShadow: "0 2px 8px rgba(58,42,34,.25)", cursor: "pointer", fontSize: 18 }}><Sym e="✏️" size={15} /></button>
           <input ref={fotoRef} type="file" accept="image/*" onChange={fotoGewaehlt} style={{ display: "none" }} />
         </div>
       </div>
 
       <div style={{ padding: "14px 20px 4px", textAlign: "center" }}>
         <H size={22}>{nameShown}</H>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>{email}</p>
-        {fotoHinweis && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#A8552F", marginTop: 6 }}>{fotoHinweis}</p>}
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginTop: 2 }}>{email}</p>
+        {fotoHinweis && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#A8552F", marginTop: 6 }}>{fotoHinweis}</p>}
         {prefs.avatar && (
-          <button onClick={() => setPrefs && setPrefs({ ...prefs, avatar: null })} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, background: "none", border: "none", cursor: "pointer", marginTop: 4, textDecoration: "underline" }}>Foto entfernen</button>
+          <button onClick={() => setPrefs && setPrefs({ ...prefs, avatar: null })} style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, background: "none", border: "none", cursor: "pointer", marginTop: 4, textDecoration: "underline" }}>Foto entfernen</button>
         )}
       </div>
 
@@ -4849,8 +4852,8 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
           ].map((x) => (
             <Card key={x.tab} onClick={() => go(x.tab)} style={{ padding: 13 }}>
               <div style={{ fontSize: 20 }}><Sym e={x.icon} size={20} /></div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso, marginTop: 5 }}>{x.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 2 }}>{x.s}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso, marginTop: 5 }}>{x.t}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 2 }}>{x.s}</div>
             </Card>
           ))}
         </div>
@@ -4858,11 +4861,11 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
         {/* Account */}
         <Eyebrow color={C.plum}>Account</Eyebrow>
         <Card style={{ marginTop: 8, marginBottom: 16, paddingTop: 4, paddingBottom: 4 }}>
-          <Row><Label>Name</Label><div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink }}>{nameShown}</div></Row>
-          <Row><Label>E-Mail</Label><div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink }}>{email}</div></Row>
+          <Row><Label>Name</Label><div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.ink }}>{nameShown}</div></Row>
+          <Row><Label>E-Mail</Label><div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.ink }}>{email}</div></Row>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 0" }}>
             <Label>Passwort ändern</Label>
-            <span style={{ color: C.gold, fontSize: 18 }}>›</span>
+            <span style={{ color: C.gold, fontSize: 19 }}>›</span>
           </div>
         </Card>
 
@@ -4876,7 +4879,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
             </button>
           </Row>
           {pushHinweis && (
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#A8552F", lineHeight: 1.5, padding: "0 0 12px" }}>{pushHinweis}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#A8552F", lineHeight: 1.5, padding: "0 0 12px" }}>{pushHinweis}</div>
           )}
           <Row>
             <Label>Tägliche Erinnerung</Label>
@@ -4887,10 +4890,10 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
           {erinnerung.aktiv && (
             <Row>
               <Label>Um</Label>
-              <input type="time" value={erinnerung.uhrzeit} onChange={(e) => e.target.value && erinnerungSetzen({ uhrzeit: e.target.value })} style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, padding: "8px 12px", border: `1.5px solid ${C.line}`, borderRadius: 10, background: C.card, color: C.espresso }} />
+              <input type="time" value={erinnerung.uhrzeit} onChange={(e) => e.target.value && erinnerungSetzen({ uhrzeit: e.target.value })} style={{ fontFamily: "system-ui, sans-serif", fontSize: 18, padding: "8px 12px", border: `1.5px solid ${C.line}`, borderRadius: 10, background: C.card, color: C.espresso }} />
             </Row>
           )}
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: erinnerungInfo ? C.sage : C.ink, lineHeight: 1.5, padding: "0 0 12px" }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: erinnerungInfo ? C.sage : C.ink, lineHeight: 1.5, padding: "0 0 12px" }}>
             {erinnerungInfo || (push ? "Einmal am Tag, sanft: was heute noch offen ist (Tagebuch, Stille, Dankbarkeit). Hast du schon alles gemacht, bleibt dein Handy still." : "Schalte oben Push ein, damit die Erinnerung auf dein Handy kommt.")}
           </div>
         </Card>
@@ -4899,12 +4902,12 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
         <Eyebrow color={C.plum}>Meine Coachin</Eyebrow>
         {bindung?.coach_id ? (
           <Card style={{ marginTop: 8, marginBottom: 16, display: "flex", gap: 12, alignItems: "center" }}>
-            <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", fontSize: 18, flexShrink: 0 }}>
+            <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", fontSize: 19, flexShrink: 0 }}>
               {(bindung.coach_name || "C").charAt(0)}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>{bindung.coach_name || "Deine Coachin"}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.sage, fontWeight: 600 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>{bindung.coach_name || "Deine Coachin"}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.sage, fontWeight: 600 }}>
                 ✓ verbunden seit {new Date(bindung.verbunden_am).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}
               </div>
             </div>
@@ -4917,8 +4920,8 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
         <Eyebrow color={C.plum}>Als Coachin arbeiten</Eyebrow>
         {istCoach ? (
           <Card style={{ marginTop: 8, marginBottom: 16, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>Dein Coach-Bereich</div>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 4 }}>Dein Coach-Bereich</div>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
               Klientinnen, Nachrichten, Termine, Material und dein öffentliches Profil — alles
               an einem Ort. Du kommst jederzeit wieder hierher zurück.
             </p>
@@ -4926,7 +4929,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
           </Card>
         ) : (
           <Card style={{ marginTop: 8, marginBottom: 16 }}>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.6, margin: "0 0 12px" }}>
               Begleitest du selbst Frauen? Mit deinem Coach-Code von smile2go schalten wir dir
               deinen eigenen Coach-Bereich frei — mit Klientinnenliste, Nachrichten, Terminen und
               deinem öffentlichen Profil. Deine eigene App bleibt genau so, wie sie ist.
@@ -4940,15 +4943,15 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
         <Card style={{ marginTop: 8, marginBottom: 16, paddingTop: 4, paddingBottom: 4 }}>
           <div onClick={() => go && go("fragebogen")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 0", cursor: "pointer" }}>
             <Label>📝 Willkommens-Fragebogen</Label>
-            <span style={{ color: C.gold, fontSize: 18 }}>›</span>
+            <span style={{ color: C.gold, fontSize: 19 }}>›</span>
           </div>
         </Card>
 
         {/* Einladen */}
         <Eyebrow color={C.plum}>Weitersagen</Eyebrow>
         <Card style={{ marginTop: 8, marginBottom: 16, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>Eine Freundin einladen</div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 4 }}>Eine Freundin einladen</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
             Schick ihr den Link — sie meldet sich selbst an. Wir schreiben ihr nichts, solange sie das nicht ausdrücklich möchte.
           </p>
           <Btn small onClick={einladen}>↗ Einladung teilen</Btn>
@@ -4961,9 +4964,9 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
             <Card style={{ marginTop: 8, marginBottom: 16, paddingTop: 4, paddingBottom: 4 }}>
               {connect.map((c, i) => (
                 <a key={c.t} href={c.url} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: i < connect.length - 1 ? `1px solid ${C.line}` : "none", textDecoration: "none" }}>
-                  <span style={{ fontSize: 18 }}><Sym e={c.icon} size={18} /></span>
-                  <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso }}>{c.t}</span>
-                  <span style={{ color: C.gold, fontSize: 18 }}>›</span>
+                  <span style={{ fontSize: 19 }}><Sym e={c.icon} size={18} /></span>
+                  <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.espresso }}>{c.t}</span>
+                  <span style={{ color: C.gold, fontSize: 19 }}>›</span>
                 </a>
               ))}
             </Card>
@@ -4978,10 +4981,10 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
             return (
               <Card key={p.n} onClick={() => setPlan(p.n)} style={{ borderColor: active ? C.rose : C.line, background: active ? C.roseSoft : C.card, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                 <div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: C.espresso }}>{p.n} {active && "✓"}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>{p.f}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: C.espresso }}>{p.n} {active && "✓"}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>{p.f}</div>
                 </div>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.plum, whiteSpace: "nowrap" }}>{p.p}<span style={{ fontSize: 11, fontFamily: "system-ui, sans-serif", color: C.ink }}>/Monat</span></div>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.plum, whiteSpace: "nowrap" }}>{p.p}<span style={{ fontSize: 12.5, fontFamily: "system-ui, sans-serif", color: C.ink }}>/Monat</span></div>
               </Card>
             );
           })}
@@ -5006,20 +5009,20 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
             { t: "🗑️ Konto & alle Daten löschen", fn: () => setLoeschDialog(true) },
           ].map((x, i, arr) => (
             <div key={x.t} onClick={x.fn || undefined} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 0", borderBottom: i < arr.length - 1 ? `1px solid ${C.line}` : "none", cursor: x.fn ? "pointer" : "default", opacity: x.fn ? 1 : 0.55 }}>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso }}>{x.t}</span>
-              <span style={{ color: C.gold, fontSize: 18 }}>{x.fn ? "›" : ""}</span>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.espresso }}>{x.t}</span>
+              <span style={{ color: C.gold, fontSize: 19 }}>{x.fn ? "›" : ""}</span>
             </div>
           ))}
         </Card>
 
         {dsgvoHinweis && (
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "11px 14px", marginBottom: 14, lineHeight: 1.5 }}>{dsgvoHinweis}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "11px 14px", marginBottom: 14, lineHeight: 1.5 }}>{dsgvoHinweis}</div>
         )}
 
         {loeschDialog && (
           <Card style={{ marginBottom: 16, border: `1.5px solid ${C.rose}` }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 6 }}>Konto wirklich löschen?</div>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 6 }}>Konto wirklich löschen?</div>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
               Damit werden dein Konto, dein Tagebuch, deine Nachrichten, Termine und Dateien
               endgültig gelöscht. Das lässt sich nicht rückgängig machen.
               Tippe zur Bestätigung <strong>LÖSCHEN</strong> ein.
@@ -5028,7 +5031,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
               value={loeschWort}
               onChange={(e) => setLoeschWort(e.target.value)}
               placeholder="LÖSCHEN"
-              style={{ width: "100%", padding: "13px 14px", fontSize: 16.5, letterSpacing: 1, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginBottom: 12 }}
+              style={{ width: "100%", padding: "13px 14px", fontSize: 18, letterSpacing: 1, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginBottom: 12 }}
             />
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ flex: 1 }}><Btn full ghost onClick={() => { setLoeschDialog(false); setLoeschWort(""); }}>Abbrechen</Btn></div>
@@ -5069,16 +5072,16 @@ function CoachCodeFreischalten({ alias, onFrei }) {
   };
   return (
     <>
-      <label htmlFor="s2g-coach-code-profil" style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginBottom: 6 }}>
+      <label htmlFor="s2g-coach-code-profil" style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginBottom: 6 }}>
         Dein Coach-Code <span style={{ color: C.plum }}>· von smile2go</span>
       </label>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <input id="s2g-coach-code-profil" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="COACH-XXXX-XXXX" autoCapitalize="characters" autoComplete="off" spellCheck={false}
-          style={{ flex: "1 1 180px", minHeight: 46, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, background: "#fff", color: C.espresso, fontSize: 15.5, letterSpacing: 1.5, fontFamily: "ui-monospace, Menlo, monospace", outline: "none" }} />
+          style={{ flex: "1 1 180px", minHeight: 46, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, background: "#fff", color: C.espresso, fontSize: 17, letterSpacing: 1.5, fontFamily: "ui-monospace, Menlo, monospace", outline: "none" }} />
         <Btn small ghost onClick={einloesen}>{busy ? "Prüfe …" : "Freischalten"}</Btn>
       </div>
-      {fehler && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, lineHeight: 1.5, margin: "8px 0 0" }}>{fehler}</p>}
+      {fehler && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, lineHeight: 1.5, margin: "8px 0 0" }}>{fehler}</p>}
     </>
   );
 }
@@ -5115,13 +5118,13 @@ function CoachVerbinden({ onVerbunden, kompakt = false }) {
       {!kompakt && (
         <>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 21, letterSpacing: "-0.015em", color: C.espresso, marginBottom: R.eng }}>Mit deiner Coachin verbinden</div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: `0 0 ${R.mittel}px` }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: `0 0 ${R.mittel}px` }}>
             Deine Coachin hat dir einen Einladungscode gegeben. Damit gehören Nachrichten, Termine und Materialien ab sofort euch beiden — und niemandem sonst.
           </p>
         </>
       )}
       <label style={{
-        display: "block", fontFamily: "system-ui, sans-serif", fontSize: 11,
+        display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5,
         fontWeight: 700, letterSpacing: 1.4, textTransform: "uppercase",
         color: C.ink, opacity: .8, marginBottom: 7,
       }} htmlFor="s2g-code">Einladungscode</label>
@@ -5136,7 +5139,7 @@ function CoachVerbinden({ onVerbunden, kompakt = false }) {
         spellCheck={false}
         style={{
           width: "100%", boxSizing: "border-box", minHeight: 52,
-          padding: "14px 16px", fontSize: 17, letterSpacing: 1.5, fontWeight: 600,
+          padding: "14px 16px", fontSize: 18, letterSpacing: 1.5, fontWeight: 600,
           fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.gold}55`,
           borderRadius: 14, background: "#FFFDF9", color: C.espresso, outline: "none",
         }}
@@ -5144,7 +5147,7 @@ function CoachVerbinden({ onVerbunden, kompakt = false }) {
       <div style={{ marginTop: R.klein }}>
         <Btn full onClick={einloesen} disabled={busy}>{busy ? "Einen Moment …" : "Verbinden"}</Btn>
       </div>
-      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#A8552F", marginTop: 10 }}>{err}</div>}
+      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#A8552F", marginTop: 10 }}>{err}</div>}
     </Card>
   );
 }
@@ -5199,7 +5202,7 @@ function Buchen({ bindung, aufBindung, termine, setTermine }) {
         <Eyebrow>Termin buchen</Eyebrow>
         <H size={24} style={{ marginBottom: 10 }}>Erst verbinden, dann buchen</H>
         <CoachVerbinden onVerbunden={aufBindung} />
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6 }}>
           Sobald ihr verbunden seid, siehst du hier die echten freien Zeiten deiner Coachin.
         </p>
       </div>
@@ -5219,7 +5222,7 @@ function Buchen({ bindung, aufBindung, termine, setTermine }) {
       <Eyebrow>Termin buchen</Eyebrow>
       <H size={24} style={{ marginBottom: 8 }}>Deine Sessions</H>
 
-      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>}
+      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>}
 
       {meine.length > 0 && (
         <div style={{ marginBottom: 22 }}>
@@ -5230,7 +5233,7 @@ function Buchen({ bindung, aufBindung, termine, setTermine }) {
                 <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso }}>
                   {d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })} · {d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
                 </div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 4 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginTop: 4 }}>
                   {t.titel || "1:1 Coaching-Session"}{bindung.coach_name ? ` mit ${bindung.coach_name}` : ""} · {t.dauer_min} Min · {t.kanal === "video" ? "Video" : t.kanal === "telefon" ? "Telefon" : "Vor Ort"}
                 </div>
                 <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
@@ -5248,11 +5251,11 @@ function Buchen({ bindung, aufBindung, termine, setTermine }) {
       )}
 
       {laedt ? (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Lade freie Zeiten …</p>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink }}>Lade freie Zeiten …</p>
       ) : tage.length === 0 ? (
         <Card>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.espresso, fontWeight: 600, marginBottom: 4 }}>Gerade keine freien Zeiten</div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: 0 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.espresso, fontWeight: 600, marginBottom: 4 }}>Gerade keine freien Zeiten</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: 0 }}>
             {bindung.coach_name || "Deine Coachin"} hat aktuell keine offenen Zeitfenster eingetragen. Schreib ihr gern im Chat — sie öffnet dir eines.
           </p>
         </Card>
@@ -5269,9 +5272,9 @@ function Buchen({ bindung, aufBindung, termine, setTermine }) {
                   border: `1.5px solid ${aktiv ? C.rose : C.line}`,
                   background: aktiv ? C.roseSoft : C.card, textAlign: "center",
                 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: aktiv ? C.plum : C.ink }}>{d.toLocaleDateString("de-DE", { weekday: "short" })}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: aktiv ? C.plum : C.ink }}>{d.toLocaleDateString("de-DE", { weekday: "short" })}</div>
                   <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginTop: 2 }}>{d.getDate()}.</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.sage, fontWeight: 700, marginTop: 2 }}>{nachTag[k].length} frei</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.sage, fontWeight: 700, marginTop: 2 }}>{nachTag[k].length} frei</div>
                 </button>
               );
             })}
@@ -5285,7 +5288,7 @@ function Buchen({ bindung, aufBindung, termine, setTermine }) {
                   <button key={sl.id} onClick={() => buchen(sl)} disabled={busy} style={{
                     padding: "15px 0", borderRadius: 14, cursor: busy ? "default" : "pointer",
                     border: `1.5px solid ${C.gold}`, background: C.card, opacity: busy ? 0.6 : 1,
-                    fontFamily: "system-ui, sans-serif", fontSize: 17, fontWeight: 700, color: C.espresso, minHeight: 50,
+                    fontFamily: "system-ui, sans-serif", fontSize: 18, fontWeight: 700, color: C.espresso, minHeight: 50,
                   }}>{new Date(sl.beginn).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr</button>
                 ))}
               </div>
@@ -5385,7 +5388,7 @@ function CoachChat({ bindung, aufBindung }) {
         <Eyebrow>Coach-Chat</Eyebrow>
         <H size={24} style={{ marginBottom: 10 }}>Noch keine Coachin verbunden</H>
         <CoachVerbinden onVerbunden={aufBindung} />
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6 }}>
           Deine Nachrichten sind Ende-zu-Ende an eure Verbindung gebunden: nur du und deine Coachin könnt sie lesen.
         </p>
       </div>
@@ -5398,17 +5401,17 @@ function CoachChat({ bindung, aufBindung }) {
           {(bindung.coach_name || "C").charAt(0)}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: C.espresso }}>{bindung.coach_name || "Deine Coachin"}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.sage, fontWeight: 600 }}>Antwortet meist innerhalb eines Tages</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: C.espresso }}>{bindung.coach_name || "Deine Coachin"}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.sage, fontWeight: 600 }}>Antwortet meist innerhalb eines Tages</div>
         </div>
       </Card>
 
-      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "10px 13px", marginBottom: 10 }}>{err}</div>}
+      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "10px 13px", marginBottom: 10 }}>{err}</div>}
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
-        {laedt && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Lade Verlauf …</div>}
+        {laedt && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink }}>Lade Verlauf …</div>}
         {!laedt && msgs.length === 0 && (
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, textAlign: "center", padding: "20px 10px" }}>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.ink, lineHeight: 1.6, textAlign: "center", padding: "20px 10px" }}>
             Noch keine Nachrichten. Schreib den ersten Gedanken — auch ein Satz reicht. 🤍
           </p>
         )}
@@ -5421,7 +5424,7 @@ function CoachChat({ bindung, aufBindung }) {
                 color: ich ? "#fff" : C.espresso,
                 border: ich ? "none" : `1px solid ${C.line}`,
                 borderRadius: ich ? "18px 18px 5px 18px" : "18px 18px 18px 5px",
-                padding: "11px 14px", fontFamily: "system-ui, sans-serif", fontSize: 16, lineHeight: 1.55,
+                padding: "11px 14px", fontFamily: "system-ui, sans-serif", fontSize: 17.5, lineHeight: 1.55,
               }}>
                 {m.audio_pfad ? (
                   audioLinks[m.id]
@@ -5429,7 +5432,7 @@ function CoachChat({ bindung, aufBindung }) {
                     : <span>🎙️ Sprachnachricht {m.audio_sek ? `· 0:${String(m.audio_sek).padStart(2, "0")}` : ""}</span>
                 ) : m.text}
               </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7, marginTop: 3, textAlign: ich ? "right" : "left" }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.7, marginTop: 3, textAlign: ich ? "right" : "left" }}>
                 {new Date(m.created_at).toLocaleString("de-DE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                 {ich && m.gelesen_am ? " · gelesen" : ""}
               </div>
@@ -5454,7 +5457,7 @@ function CoachChat({ bindung, aufBindung }) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && senden()}
           placeholder={`Nachricht an ${bindung.coach_name || "deine Coachin"} …`}
-          style={{ flex: 1, padding: "13px 15px", fontSize: 16.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 22, background: C.card, color: C.espresso, outline: "none" }}
+          style={{ flex: 1, padding: "13px 15px", fontSize: 18, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 22, background: C.card, color: C.espresso, outline: "none" }}
         />
         <Btn small onClick={senden}>Senden</Btn>
       </div>
@@ -5587,19 +5590,19 @@ function MarkeVorschau({ setup, logoImg }) {
           ? <img src={logoImg} alt="" style={{ height: 34, borderRadius: st.radius }} />
           : <span style={{ fontSize: 24 }}>{setup.logo || "🌹"}</span>}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: st.kopf, letterSpacing: st.spur, textTransform: st.gross ? "uppercase" : "none", fontSize: 18, color: f1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontFamily: st.kopf, letterSpacing: st.spur, textTransform: st.gross ? "uppercase" : "none", fontSize: 19, color: f1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {setup.firma || "Dein Markenname"}
           </div>
-          <div style={{ fontFamily: st.text, fontSize: 10.5, color: C.ink }}>{setup.nische || "Deine Nische"}</div>
+          <div style={{ fontFamily: st.text, fontSize: 12, color: C.ink }}>{setup.nische || "Deine Nische"}</div>
         </div>
       </div>
-      <div style={{ fontFamily: st.kopf, letterSpacing: st.spur, textTransform: st.gross ? "uppercase" : "none", fontSize: 15.5, color: C.espresso, margin: "12px 0 4px" }}>
+      <div style={{ fontFamily: st.kopf, letterSpacing: st.spur, textTransform: st.gross ? "uppercase" : "none", fontSize: 17, color: C.espresso, margin: "12px 0 4px" }}>
         Angebot <span style={{ color: f2 }}>A-2026-001</span>
       </div>
-      <div style={{ fontFamily: st.text, fontSize: 13, color: C.ink, lineHeight: 1.6 }}>
+      <div style={{ fontFamily: st.text, fontSize: 14.5, color: C.ink, lineHeight: 1.6 }}>
         Liebe Kundin, hier kommt dein persönliches Angebot …
       </div>
-      <div style={{ background: pale, borderRadius: st.radius, padding: "7px 11px", marginTop: 10, fontFamily: st.text, fontSize: 11, color: C.ink }}>
+      <div style={{ background: pale, borderRadius: st.radius, padding: "7px 11px", marginTop: 10, fontFamily: st.text, fontSize: 12.5, color: C.ink }}>
         Gesamt <b style={{ color: f1 }}>480,00 €</b>
       </div>
     </div>
@@ -5785,14 +5788,14 @@ function Office({ office, setOffice, addPunkte }) {
     setTimeout(() => setInfo(""), 3200);
   };
 
-  const input = { width: "100%", padding: "12px 14px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, marginBottom: 10, outline: "none" };
+  const input = { width: "100%", padding: "12px 14px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, marginBottom: 10, outline: "none" };
 
   return (
     <div style={{ padding: "20px 20px" }}>
       <Eyebrow>Mein Office</Eyebrow>
       <H size={24} style={{ marginBottom: 16 }}>Business an einem Ort</H>
 
-      {info && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "10px 14px", marginBottom: 12, animation: "fadeUp .3s ease" }}>{info}</div>}
+      {info && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "10px 14px", marginBottom: 12, animation: "fadeUp .3s ease" }}>{info}</div>}
 
       {/* Käufe */}
       <Eyebrow color={C.plum}>🛍️ Meine Käufe</Eyebrow>
@@ -5801,8 +5804,8 @@ function Office({ office, setOffice, addPunkte }) {
           <Card key={i} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center", padding: 14 }}>
             <span style={{ fontSize: 20 }}><Sym e="🌕" size={20} /></span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{k.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>{k.d} · {k.p}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: C.espresso }}>{k.t}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>{k.d} · {k.p}</div>
             </div>
             <Btn small ghost>Beleg</Btn>
           </Card>
@@ -5812,13 +5815,13 @@ function Office({ office, setOffice, addPunkte }) {
       {/* Dokumente (Business) */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         <Eyebrow color={C.plum}>📄 Dokumente · Angebote & Rechnungen</Eyebrow>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.gold, border: `1px solid ${C.goldSoft}`, borderRadius: 20, padding: "2px 8px" }}>Business</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.gold, border: `1px solid ${C.goldSoft}`, borderRadius: 20, padding: "2px 8px" }}>Business</span>
       </div>
 
       {!bk ? (
         <Card style={{ marginBottom: 16 }}>
           <Eyebrow>✨ Deine Marke — in drei Schritten</Eyebrow>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.55, margin: "6px 0 4px" }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.55, margin: "6px 0 4px" }}>
             Logo, Farben, Schrift. Danach trägt jedes Angebot und jede Rechnung deine Handschrift — automatisch.
           </p>
 
@@ -5827,7 +5830,7 @@ function Office({ office, setOffice, addPunkte }) {
               <div key={n} style={{ flex: 1, height: 4, borderRadius: 4, background: schritt >= n ? (setup.farbe || C.rose) : C.line, transition: "background .25s" }} />
             ))}
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.mut, marginTop: 6 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.mut, marginTop: 6 }}>
             Schritt {schritt} von 3 · {schritt === 1 ? "Logo & Name" : schritt === 2 ? "Farben" : "Schrift & Angaben"}
           </div>
 
@@ -5837,16 +5840,16 @@ function Office({ office, setOffice, addPunkte }) {
             <>
               <Eyebrow color={C.plum}>Logo</Eyebrow>
               <div style={{ display: "flex", gap: 10, alignItems: "center", margin: "8px 0 14px", flexWrap: "wrap" }}>
-                <label style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 15px", borderRadius: 13, border: `1.5px dashed ${C.rose}`, background: C.roseSoft, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, color: C.plum, minHeight: 44 }}>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 15px", borderRadius: 13, border: `1.5px dashed ${C.rose}`, background: C.roseSoft, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: C.plum, minHeight: 44 }}>
                   🖼️ {office.logoImg ? "Logo austauschen" : "Logo hochladen"}
                   <input type="file" accept="image/*" onChange={logoWaehlen} style={{ display: "none" }} />
                 </label>
                 {office.logoImg && (
-                  <button onClick={() => setOffice({ ...office, logoImg: null })} style={{ background: "none", border: "none", color: C.mut, fontFamily: "system-ui, sans-serif", fontSize: 13, cursor: "pointer", textDecoration: "underline" }}>entfernen</button>
+                  <button onClick={() => setOffice({ ...office, logoImg: null })} style={{ background: "none", border: "none", color: C.mut, fontFamily: "system-ui, sans-serif", fontSize: 14.5, cursor: "pointer", textDecoration: "underline" }}>entfernen</button>
                 )}
                 <input value={setup.logo} onChange={(e) => setSetup({ ...setup, logo: e.target.value })} maxLength={2} style={{ ...input, width: 62, marginBottom: 0, textAlign: "center", fontSize: 20 }} />
               </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.mut, marginTop: -8, marginBottom: 12 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.mut, marginTop: -8, marginBottom: 12 }}>
                 Kein Logo? Das Emoji rechts wird stattdessen verwendet. Dein Bild bleibt auf deinem Gerät — die Farben werden hier im Browser gelesen.
               </div>
 
@@ -5867,15 +5870,15 @@ function Office({ office, setOffice, addPunkte }) {
                     {vorschlaege.map((f, i) => (
                       <button key={f + i} onClick={() => setSetup({ ...setup, ...paletteAus(f, vorschlaege.find((v) => v !== f)) })} title={f} style={{ width: 40, height: 40, borderRadius: "50%", background: f, border: setup.farbe === lesbar(f) ? `3px solid ${C.espresso}` : "2px solid #fff", cursor: "pointer", boxShadow: "0 2px 7px rgba(0,0,0,.18)" }} />
                     ))}
-                    <button onClick={() => setSetup({ ...setup, ...paletteAus(vorschlaege[0], vorschlaege[1]) })} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>Vorschlag übernehmen</button>
+                    <button onClick={() => setSetup({ ...setup, ...paletteAus(vorschlaege[0], vorschlaege[1]) })} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>Vorschlag übernehmen</button>
                   </div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.mut, marginBottom: 12 }}>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.mut, marginBottom: 12 }}>
                     Aus deinem Logo. Zu helle Töne werden automatisch abgedunkelt, damit sie auf Papier lesbar bleiben.
                   </div>
                 </>
               )}
               {!office.logoImg && (
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.mut, margin: "4px 0 12px", lineHeight: 1.5 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.mut, margin: "4px 0 12px", lineHeight: 1.5 }}>
                   Noch kein Logo hochgeladen — such dir unten eine Farbe aus, oder geh zurück und lade dein Logo hoch, dann schlage ich passende Farben vor.
                 </div>
               )}
@@ -5885,7 +5888,7 @@ function Office({ office, setOffice, addPunkte }) {
                 {FARBEN.map((f) => (
                   <button key={f} onClick={() => setSetup({ ...setup, ...paletteAus(f) })} style={{ width: 36, height: 36, borderRadius: "50%", background: f, border: setup.farbe === f ? `3px solid ${C.espresso}` : "2px solid #fff", cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,.15)" }} />
                 ))}
-                <label style={{ width: 36, height: 36, borderRadius: "50%", border: `2px dashed ${C.line}`, display: "grid", placeItems: "center", cursor: "pointer", fontSize: 16.5 }}>
+                <label style={{ width: 36, height: 36, borderRadius: "50%", border: `2px dashed ${C.line}`, display: "grid", placeItems: "center", cursor: "pointer", fontSize: 18 }}>
                   🎨
                   <input type="color" value={setup.farbe || FARBEN[0]} onChange={(e) => setSetup({ ...setup, ...paletteAus(e.target.value) })} style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
                 </label>
@@ -5896,7 +5899,7 @@ function Office({ office, setOffice, addPunkte }) {
                 {[["Hauptfarbe", setup.farbe], ["Akzent", setup.farbe2], ["Fläche", setup.farbePale]].map(([n, f]) => (
                   <div key={n} style={{ flex: 1, textAlign: "center" }}>
                     <div style={{ height: 34, borderRadius: 10, background: f || C.line, border: `1px solid ${C.line}` }} />
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, color: C.mut, marginTop: 4 }}>{n}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.mut, marginTop: 4 }}>{n}</div>
                   </div>
                 ))}
               </div>
@@ -5921,8 +5924,8 @@ function Office({ office, setOffice, addPunkte }) {
                       padding: "12px 14px", borderRadius: 14, cursor: "pointer", minHeight: 44,
                       border: `1.5px solid ${an ? C.rose : C.line}`, background: an ? C.roseSoft : "transparent",
                     }}>
-                      <div style={{ fontFamily: st.kopf, letterSpacing: st.spur, textTransform: st.gross ? "uppercase" : "none", fontSize: 17, color: an ? C.plum : C.espresso }}>{s}</div>
-                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 3 }}>{st.beschreibung}</div>
+                      <div style={{ fontFamily: st.kopf, letterSpacing: st.spur, textTransform: st.gross ? "uppercase" : "none", fontSize: 18, color: an ? C.plum : C.espresso }}>{s}</div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 3 }}>{st.beschreibung}</div>
                     </button>
                   );
                 })}
@@ -5944,12 +5947,12 @@ function Office({ office, setOffice, addPunkte }) {
           {/* Briefkopf-Vorschau */}
           <div style={{ borderBottom: `${bkStil.linie}px solid ${bk.farbe}`, paddingBottom: 10, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ ...bkKopf, fontSize: 18, color: bk.farbe, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ ...bkKopf, fontSize: 19, color: bk.farbe, display: "flex", alignItems: "center", gap: 8 }}>
                 {office.logoImg ? <img src={office.logoImg} alt="" style={{ height: 30, borderRadius: bkStil.radius }} /> : bk.logo} {bk.firma}
               </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink }}>{bk.nische}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink }}>{bk.nische}</div>
             </div>
-            <button onClick={() => { setSetup({ ...setup, ...bk }); setSchritt(1); setOffice({ ...office, briefkopf: null }); }} style={{ background: "none", border: "none", color: C.plum, fontSize: 13, fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontFamily: "system-ui, sans-serif" }}>Bearbeiten</button>
+            <button onClick={() => { setSetup({ ...setup, ...bk }); setSchritt(1); setOffice({ ...office, briefkopf: null }); }} style={{ background: "none", border: "none", color: C.plum, fontSize: 14.5, fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontFamily: "system-ui, sans-serif" }}>Bearbeiten</button>
           </div>
 
           <Eyebrow>2 · Schnellstart — Vorlagen für deine Nische</Eyebrow>
@@ -5960,8 +5963,8 @@ function Office({ office, setOffice, addPunkte }) {
                 border: `1.5px solid ${C.goldSoft}`, background: C.goldPale,
               }}>
                 <div style={{ fontSize: 19 }}><Sym e={v.icon} size={19} /></div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.espresso, marginTop: 3 }}>{v.t}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, color: C.ink, marginTop: 1 }}>{v.typ}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.espresso, marginTop: 3 }}>{v.t}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 1 }}>{v.typ}</div>
               </button>
             ))}
           </div>
@@ -5969,7 +5972,7 @@ function Office({ office, setOffice, addPunkte }) {
           <Eyebrow>3 · Variablen anpassen</Eyebrow>
           <div style={{ display: "flex", gap: 8, margin: "8px 0 12px", background: C.beige, borderRadius: 13, padding: 4 }}>
             {["Angebot", "Rechnung"].map((t) => (
-              <button key={t} onClick={() => setTyp(t)} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, background: typ === t ? C.card : "transparent", color: typ === t ? C.plum : C.ink }}>{t === "Angebot" ? "📋 Angebot" : "🧾 Rechnung"}</button>
+              <button key={t} onClick={() => setTyp(t)} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 700, background: typ === t ? C.card : "transparent", color: typ === t ? C.plum : C.ink }}>{t === "Angebot" ? "📋 Angebot" : "🧾 Rechnung"}</button>
             ))}
           </div>
 
@@ -5983,12 +5986,12 @@ function Office({ office, setOffice, addPunkte }) {
             </div>
           ))}
           {positionen.length < 4 && (
-            <button onClick={() => setPositionen([...positionen, { t: "", p: "" }])} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, cursor: "pointer", padding: "0 0 12px", textDecoration: "underline" }}>+ Position hinzufügen</button>
+            <button onClick={() => setPositionen([...positionen, { t: "", p: "" }])} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, cursor: "pointer", padding: "0 0 12px", textDecoration: "underline" }}>+ Position hinzufügen</button>
           )}
 
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
             <textarea style={{ ...input, flex: 1, resize: "vertical" }} rows={2} placeholder="Sag ilho, was wichtig ist (Ton, Details) — oder nutze 🎤" value={wunsch} onChange={(e) => setWunsch(e.target.value)} />
-            <button onClick={sprachEingabe} style={{ width: 46, height: 46, borderRadius: "50%", border: `1.5px solid ${C.rose}`, background: hoerend ? C.rose : C.roseSoft, fontSize: 18, cursor: "pointer", flexShrink: 0, boxShadow: hoerend ? `0 0 0 4px ${C.roseSoft}` : "none", transition: "box-shadow .3s" }}><Sym e="🎤" size={18} /></button>
+            <button onClick={sprachEingabe} style={{ width: 46, height: 46, borderRadius: "50%", border: `1.5px solid ${C.rose}`, background: hoerend ? C.rose : C.roseSoft, fontSize: 19, cursor: "pointer", flexShrink: 0, boxShadow: hoerend ? `0 0 0 4px ${C.roseSoft}` : "none", transition: "box-shadow .3s" }}><Sym e="🎤" size={18} /></button>
           </div>
 
           <Btn full onClick={erstellen} disabled={busy}>{busy ? "✨ ilho schreibt dein Dokument …" : `✨ ilho, erstelle mein ${typ}`}</Btn>
@@ -5997,27 +6000,27 @@ function Office({ office, setOffice, addPunkte }) {
         <Card style={{ marginBottom: 16 }}>
           {/* Dokument-Vorschau */}
           <div style={{ borderBottom: `${bkStil.linie}px solid ${bk.farbe}`, paddingBottom: 10, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
-            <div style={{ ...bkKopf, fontSize: 18, color: bk.farbe, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ ...bkKopf, fontSize: 19, color: bk.farbe, display: "flex", alignItems: "center", gap: 8 }}>
               {office.logoImg ? <img src={office.logoImg} alt="" style={{ height: 28, borderRadius: bkStil.radius }} /> : bk.logo} {bk.firma}
             </div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, textAlign: "right" }}>{doc.datum}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, textAlign: "right" }}>{doc.datum}</div>
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 8 }}>{doc.empfaenger}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 8 }}>{doc.empfaenger}</div>
           <H size={18} style={{ marginBottom: 10 }}>{doc.typ} <span style={{ color: bk.farbe2 || bk.farbe }}>{doc.nr}</span></H>
 
           {bearbeiten ? (
             <textarea value={doc.text} onChange={(e) => setDoc({ ...doc, text: e.target.value })} rows={9}
-              style={{ width: "100%", padding: "13px 14px", fontSize: 15, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.rose}`, borderRadius: 13, background: C.card, color: C.espresso, marginBottom: 10, outline: "none", resize: "vertical", lineHeight: 1.6 }} />
+              style={{ width: "100%", padding: "13px 14px", fontSize: 16.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.rose}`, borderRadius: 13, background: C.card, color: C.espresso, marginBottom: 10, outline: "none", resize: "vertical", lineHeight: 1.6 }} />
           ) : (
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, lineHeight: 1.65, whiteSpace: "pre-wrap", marginBottom: 12 }}>{doc.text}</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.65, whiteSpace: "pre-wrap", marginBottom: 12 }}>{doc.text}</p>
           )}
 
           {doc.positionen.map((p, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 14.5 }}>
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 16 }}>
               <span style={{ color: C.espresso }}>{p.t}</span><span style={{ color: C.ink }}>{p.p} €</span>
             </div>
           ))}
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 14px", fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 14px", fontFamily: "system-ui, sans-serif", fontSize: 17.5, fontWeight: 700 }}>
             <span>Gesamt</span>
             <span style={{ color: bk.farbe }}>{doc.positionen.reduce((s, p) => s + (parseFloat(String(p.p).replace(",", ".")) || 0), 0).toFixed(2).replace(".", ",")} €</span>
           </div>
@@ -6031,7 +6034,7 @@ function Office({ office, setOffice, addPunkte }) {
             <input style={{ ...input, flex: 1, marginBottom: 0 }} placeholder="E-Mail der Empfängerin …" value={mail} onChange={(e) => setMail(e.target.value)} />
             <Btn small onClick={senden}>📧 Senden</Btn>
           </div>
-          <button onClick={() => { setDoc(null); setBearbeiten(false); }} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, cursor: "pointer", textDecoration: "underline", padding: "6px 0" }}>← Neues Dokument</button>
+          <button onClick={() => { setDoc(null); setBearbeiten(false); }} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, cursor: "pointer", textDecoration: "underline", padding: "6px 0" }}>← Neues Dokument</button>
         </Card>
       )}
 
@@ -6044,8 +6047,8 @@ function Office({ office, setOffice, addPunkte }) {
               <Card key={i} style={{ marginBottom: 8, display: "flex", gap: 12, alignItems: "center", padding: 13 }}>
                 <span style={{ fontSize: 19 }}>{d.typ === "Angebot" ? "📋" : "🧾"}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{d.typ} {d.nr} · {d.empfaenger}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: d.gesendetAn ? C.sage : C.ink, fontWeight: d.gesendetAn ? 700 : 400 }}>{d.gesendetAn ? `✓ Gesendet an ${d.gesendetAn}` : d.datum}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>{d.typ} {d.nr} · {d.empfaenger}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: d.gesendetAn ? C.sage : C.ink, fontWeight: d.gesendetAn ? 700 : 400 }}>{d.gesendetAn ? `✓ Gesendet an ${d.gesendetAn}` : d.datum}</div>
                 </div>
               </Card>
             ))}
@@ -6170,14 +6173,14 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice, bi
       <H size={25} style={{ marginBottom: 18 }}>Deine Medien & Materialien</H>
 
       <Eyebrow color={C.plum}>🌿 Von deiner Coachin</Eyebrow>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.5, margin: "6px 0 10px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.5, margin: "6px 0 10px" }}>
         Materialien, PDFs und Aufgaben, die {bindung?.coach_name || "deine Coachin"} für dich hinterlegt hat — sicher in der EU, nur für dich.
       </p>
 
       <div style={{ display: "flex", gap: 7, margin: "8px 0 12px", flexWrap: "wrap" }}>
         {kats.map((c) => (
           <button key={c} onClick={() => setKat(c)} style={{
-            fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600,
+            fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600,
             padding: "8px 13px", borderRadius: 18, cursor: "pointer", minHeight: 36,
             border: `1.5px solid ${kat === c ? C.rose : C.line}`,
             background: kat === c ? C.roseSoft : "transparent",
@@ -6187,11 +6190,11 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice, bi
       </div>
 
       <div style={{ marginBottom: 22 }}>
-        {matLaedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>Lade Materialien …</p>}
+        {matLaedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink }}>Lade Materialien …</p>}
 
         {!matLaedt && liste.length === 0 && (
           <Card>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
               {bindung?.coach_id
                 ? "Hier ist noch nichts hinterlegt. Sobald deine Coachin dir etwas schickt, findest du es an dieser Stelle."
                 : "Sobald du mit deiner Coachin verbunden bist, erscheinen ihre Materialien hier."}
@@ -6206,12 +6209,12 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice, bi
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{m.titel}</span>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: C.espresso }}>{m.titel}</span>
                 {Date.now() - new Date(m.sichtbar_ab).getTime() < 7 * 864e5 && (
-                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 9.5, fontWeight: 700, color: "#fff", background: C.rose, borderRadius: 10, padding: "2px 7px" }}>NEU</span>
+                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, color: "#fff", background: C.rose, borderRadius: 10, padding: "2px 7px" }}>NEU</span>
                 )}
               </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>
                 {[m.kategorie, m.beschreibung].filter(Boolean).join(" · ")}
               </div>
             </div>
@@ -6222,17 +6225,17 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice, bi
 
       <div style={{ margin: "0 -20px 8px" }}><Musik /></div>
 
-      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "10px 14px", marginBottom: 12, animation: "fadeUp .3s ease" }}>{hinweis}</div>}
+      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "10px 14px", marginBottom: 12, animation: "fadeUp .3s ease" }}>{hinweis}</div>}
 
       <Eyebrow color={C.plum}>📤 Eigene Medien hochladen</Eyebrow>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.5, margin: "6px 0 8px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5, margin: "6px 0 8px" }}>
         Was passiert mit deinen Uploads? Sie liegen in deinem privaten Bereich in der EU (Supabase Storage, Verschlüsselung im Ruhezustand) — nur du kommst heran, Links sind zeitlich begrenzt. Fotos kannst du zusätzlich als <strong>Briefkopf-Logo</strong> für Angebote & Rechnungen nutzen.
       </p>
       <Card style={{ marginTop: 8, marginBottom: 12, textAlign: "center", border: `2px dashed ${C.goldSoft}`, background: C.goldPale }}>
         <label style={{ cursor: "pointer", display: "block", padding: "10px 0" }}>
           <div style={{ fontSize: 30, marginBottom: 6 }}><Sym e="☁️" size={30} /></div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 700, color: C.espresso }}>Foto, Video oder PDF auswählen</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 4 }}>Tippe hier — deine Dateien bleiben privat (DSGVO)</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, fontWeight: 700, color: C.espresso }}>Foto, Video oder PDF auswählen</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 4 }}>Tippe hier — deine Dateien bleiben privat (DSGVO)</div>
           <input type="file" multiple accept="image/*,video/*,.pdf,audio/*" onChange={onFiles} style={{ display: "none" }} />
         </label>
       </Card>
@@ -6243,22 +6246,22 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice, bi
             <Card key={i} style={{ marginBottom: 8, display: "flex", gap: 12, alignItems: "center", padding: 13 }}>
               {u.dataUrl ? <img src={u.dataUrl} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} /> : <span style={{ fontSize: 20 }}>{typIcon(u.name)}</span>}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: C.espresso, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: u.fehler ? "#A8552F" : C.sage, fontWeight: 600 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 600, color: C.espresso, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: u.fehler ? "#A8552F" : C.sage, fontWeight: 600 }}>
                   {u.fehler ? "⚠ Upload fehlgeschlagen" : u.cloud ? "✓ Sicher gespeichert (EU)" : "✓ Bereit"} · {u.size} KB
                 </div>
                 {u.pfad && (
-                  <button onClick={() => dateiOeffnen(u)} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: "3px 8px 0 0", textDecoration: "underline" }}>
+                  <button onClick={() => dateiOeffnen(u)} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "3px 8px 0 0", textDecoration: "underline" }}>
                     ↗ Öffnen
                   </button>
                 )}
                 {u.dataUrl && (
-                  <button onClick={() => alsLogo(u)} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: "3px 0 0", textDecoration: "underline" }}>
+                  <button onClick={() => alsLogo(u)} style={{ background: "none", border: "none", color: C.plum, fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "3px 0 0", textDecoration: "underline" }}>
                     🏷️ Als Briefkopf-Logo verwenden
                   </button>
                 )}
               </div>
-              <button onClick={() => dateiEntfernen(i)} style={{ background: "none", border: "none", color: C.ink, opacity: 0.5, cursor: "pointer", fontSize: 17, minWidth: 36, minHeight: 36 }}><Sym e="✕" size={16} /></button>
+              <button onClick={() => dateiEntfernen(i)} style={{ background: "none", border: "none", color: C.ink, opacity: 0.5, cursor: "pointer", fontSize: 18, minWidth: 36, minHeight: 36 }}><Sym e="✕" size={16} /></button>
             </Card>
           ))}
         </div>
@@ -6268,16 +6271,16 @@ function Mediathek({ uploads, setUploads, tools, setTools, office, setOffice, bi
       <Card style={{ marginTop: 8, marginBottom: 10, display: "flex", gap: 13, alignItems: "center" }}>
         <div style={{ width: 46, height: 46, borderRadius: 12, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}><Sym e="🌐" size={22} /></div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>Zur smile2go-Plattform</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>Website, Blog & Community</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>Zur smile2go-Plattform</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>Website, Blog & Community</div>
         </div>
         <div style={{ color: C.gold, fontSize: 20 }}>›</div>
       </Card>
       <Card style={{ display: "flex", gap: 13, alignItems: "center", background: "#EAF6EC", border: "1px solid #BBDFC2" }}>
         <div style={{ width: 46, height: 46, borderRadius: 12, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}><Sym e="💬" size={22} /></div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>Hilfe & Support</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>Per WhatsApp oder E-Mail — wir antworten persönlich 🤍</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>Hilfe & Support</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>Per WhatsApp oder E-Mail — wir antworten persönlich 🤍</div>
         </div>
         <div style={{ color: "#3E7A4A", fontSize: 20 }}>›</div>
       </Card>
@@ -6351,14 +6354,14 @@ function Ziele({ ziele, setZiele, addPunkte }) {
   };
 
   const sys = { fontFamily: "system-ui, sans-serif" };
-  const eingabe = { ...sys, width: "100%", padding: "11px 13px", fontSize: 15.5, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginBottom: 10 };
-  const label = { ...sys, fontSize: 13, fontWeight: 700, color: C.plum, display: "block", marginBottom: 4 };
+  const eingabe = { ...sys, width: "100%", padding: "11px 13px", fontSize: 17, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box", marginBottom: 10 };
+  const label = { ...sys, fontSize: 14.5, fontWeight: 700, color: C.plum, display: "block", marginBottom: 4 };
 
   return (
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow>Deine Ziele</Eyebrow>
       <H size={25} style={{ marginBottom: 6 }}>Wohin du wächst</H>
-      <p style={{ ...sys, fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
+      <p style={{ ...sys, fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
         Setz dir Ziele selbst oder gemeinsam mit deiner Coachin. Jeder Haken bringt dich näher — und du kannst ein Ziel jederzeit neu fassen.
       </p>
 
@@ -6391,7 +6394,7 @@ function Ziele({ ziele, setZiele, addPunkte }) {
             <label style={label}>Meilensteine (eine Zeile pro Schritt)</label>
             <textarea rows={4} style={{ ...eingabe, resize: "vertical" }} value={form.meilenText} onChange={(e) => setForm({ ...form, meilenText: e.target.value })} placeholder={"Erste Woche geschafft\nMit Partner über Abendzeit gesprochen"} />
           </div>
-          {check && <div style={{ ...sys, fontSize: 14.5, color: C.espresso, background: C.goldPale, borderRadius: 12, padding: "11px 13px", marginBottom: 10, whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{check}<div style={{ fontSize: 10.5, opacity: 0.65, marginTop: 6 }}>ilho · KI — du entscheidest, was du übernimmst</div></div>}
+          {check && <div style={{ ...sys, fontSize: 16, color: C.espresso, background: C.goldPale, borderRadius: 12, padding: "11px 13px", marginBottom: 10, whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{check}<div style={{ fontSize: 12, opacity: 0.65, marginTop: 6 }}>ilho · KI — du entscheidest, was du übernimmst</div></div>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Btn small disabled={!form.titel.trim()} onClick={speichern}>Speichern</Btn>
             <Btn small ghost disabled={busy || !form.titel.trim()} onClick={smartPruefen}>{busy ? "ilho prüft …" : "✨ ilho prüft SMART"}</Btn>
@@ -6400,31 +6403,31 @@ function Ziele({ ziele, setZiele, addPunkte }) {
         </Card>
       )}
 
-      {ziele.length === 0 && !form && <p style={{ ...sys, fontSize: 15, color: C.ink }}>Noch keine Ziele — leg dein erstes an.</p>}
+      {ziele.length === 0 && !form && <p style={{ ...sys, fontSize: 16.5, color: C.ink }}>Noch keine Ziele — leg dein erstes an.</p>}
 
       {ziele.map((z) => (
         <Card key={z.id} style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
             <div>
-              <div style={{ ...sys, fontWeight: 700, fontSize: 17, color: C.espresso }}>{z.titel}</div>
-              <div style={{ ...sys, fontSize: 11, color: C.gold, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginTop: 3 }}>{z.bereich} · bis {z.faellig}</div>
+              <div style={{ ...sys, fontWeight: 700, fontSize: 18, color: C.espresso }}>{z.titel}</div>
+              <div style={{ ...sys, fontSize: 12.5, color: C.gold, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginTop: 3 }}>{z.bereich} · bis {z.faellig}</div>
             </div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 26, color: C.plum }}>{z.fortschritt}%</div>
           </div>
           <div style={{ height: 8, borderRadius: 6, background: C.beige, margin: "12px 0 14px", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${z.fortschritt}%`, borderRadius: 6, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})`, transition: "width .4s ease" }} />
           </div>
-          {z.fortschritt === 100 && <div style={{ ...sys, fontSize: 15, fontWeight: 700, color: C.sage, marginBottom: 10 }}>🎉 Geschafft! Nimm dir einen Moment, das zu feiern.</div>}
-          {z.warum && <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 8 }}>„{z.warum}“</p>}
-          {z.messbar && <p style={{ ...sys, fontSize: 13.5, color: C.ink, marginBottom: 8 }}>🎯 {z.messbar}</p>}
+          {z.fortschritt === 100 && <div style={{ ...sys, fontSize: 16.5, fontWeight: 700, color: C.sage, marginBottom: 10 }}>🎉 Geschafft! Nimm dir einen Moment, das zu feiern.</div>}
+          {z.warum && <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 8 }}>„{z.warum}“</p>}
+          {z.messbar && <p style={{ ...sys, fontSize: 15, color: C.ink, marginBottom: 8 }}>🎯 {z.messbar}</p>}
           {z.meilen.map((m, i) => (
             <div key={i} onClick={() => toggleMeile(z.id, i)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer" }}>
-              <div style={{ width: 24, height: 24, borderRadius: 8, border: `1.5px solid ${m.done ? C.sage : C.line}`, background: m.done ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15.5, flexShrink: 0 }}>{m.done ? "✓" : ""}</div>
-              <span style={{ ...sys, fontSize: 15.5, color: m.done ? C.ink : C.espresso, textDecoration: m.done ? "line-through" : "none" }}>{m.t}</span>
+              <div style={{ width: 24, height: 24, borderRadius: 8, border: `1.5px solid ${m.done ? C.sage : C.line}`, background: m.done ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{m.done ? "✓" : ""}</div>
+              <span style={{ ...sys, fontSize: 17, color: m.done ? C.ink : C.espresso, textDecoration: m.done ? "line-through" : "none" }}>{m.t}</span>
             </div>
           ))}
           {(z.rueckblicke || []).length > 0 && (
-            <div style={{ ...sys, fontSize: 13, color: C.ink, marginTop: 8, opacity: 0.85 }}>
+            <div style={{ ...sys, fontSize: 14.5, color: C.ink, marginTop: 8, opacity: 0.85 }}>
               Letzter Rückblick ({z.rueckblicke[0].datum}): {z.rueckblicke[0].wert}/10{z.rueckblicke[0].notiz ? ` — ${z.rueckblicke[0].notiz}` : ""}
             </div>
           )}
@@ -6438,7 +6441,7 @@ function Ziele({ ziele, setZiele, addPunkte }) {
           ) : (
             <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
               {[["🪞 Rückblick", () => setRueckblick({ id: z.id, wert: 5, notiz: "" })], ["✎ Neu fassen", () => bearbeiten(z)], ["✕ Entfernen", () => loeschen(z)]].map(([t, fn]) => (
-                <button key={t} onClick={fn} style={{ ...sys, background: "none", border: "none", color: C.plum, fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 }}>{t}</button>
+                <button key={t} onClick={fn} style={{ ...sys, background: "none", border: "none", color: C.plum, fontSize: 14.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>{t}</button>
               ))}
             </div>
           )}
@@ -6466,10 +6469,10 @@ function Aufgaben({ aufgaben, setAufgaben, addPunkte, go, ch369, setCh369, akart
   const erledigt = aufgaben.filter((a) => a.erledigt);
   const Item = ({ a }) => (
     <Card style={{ marginBottom: 10, display: "flex", gap: 12, alignItems: "center" }}>
-      <div onClick={() => toggle(a.id)} style={{ width: 26, height: 26, borderRadius: 9, border: `1.5px solid ${a.erledigt ? C.sage : C.line}`, background: a.erledigt ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16.5, flexShrink: 0, cursor: "pointer" }}>{a.erledigt ? "✓" : ""}</div>
+      <div onClick={() => toggle(a.id)} style={{ width: 26, height: 26, borderRadius: 9, border: `1.5px solid ${a.erledigt ? C.sage : C.line}`, background: a.erledigt ? C.sage : C.card, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, cursor: "pointer" }}>{a.erledigt ? "✓" : ""}</div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: a.erledigt ? C.ink : C.espresso, textDecoration: a.erledigt ? "line-through" : "none" }}>{a.titel}</div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.gold, marginTop: 2 }}>{a.von === "coach" ? "🌿 von Anja" : "✍️ selbst gesetzt"}{a.faellig ? ` · bis ${a.faellig}` : ""}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17.5, color: a.erledigt ? C.ink : C.espresso, textDecoration: a.erledigt ? "line-through" : "none" }}>{a.titel}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.gold, marginTop: 2 }}>{a.von === "coach" ? "🌿 von Anja" : "✍️ selbst gesetzt"}{a.faellig ? ` · bis ${a.faellig}` : ""}</div>
       </div>
     </Card>
   );
@@ -6477,7 +6480,7 @@ function Aufgaben({ aufgaben, setAufgaben, addPunkte, go, ch369, setCh369, akart
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow>Challenges</Eyebrow>
       <H size={25} style={{ marginBottom: 6 }}>Dranbleiben & Punkte sammeln</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
         {offen.length} offen · {erledigt.length} erledigt. Jede erledigte Aufgabe bringt +10 ✨.
       </p>
 
@@ -6488,21 +6491,21 @@ function Aufgaben({ aufgaben, setAufgaben, addPunkte, go, ch369, setCh369, akart
       <Card onClick={() => go && go("ziele")} style={{ marginBottom: 22, display: "flex", gap: 13, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
         <div style={{ width: 46, height: 46, borderRadius: 13, background: C.roseSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}><Sym e="🎯" size={22} /></div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>Ziele & Meilensteine</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>Deine Coaching-Ziele · Schritt für Schritt</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>Ziele & Meilensteine</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>Deine Coaching-Ziele · Schritt für Schritt</div>
         </div>
         <span style={{ color: C.gold, fontSize: 20 }}>›</span>
       </Card>
 
       <Eyebrow color={C.plum}>Aufgaben von deiner Coachin</Eyebrow>
       <div style={{ display: "flex", gap: 8, margin: "10px 0 16px" }}>
-        <input value={neu} onChange={(e) => setNeu(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Eigene Aufgabe hinzufügen…" style={{ flex: 1, padding: "13px 14px", fontSize: 16.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }} />
+        <input value={neu} onChange={(e) => setNeu(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Eigene Aufgabe hinzufügen…" style={{ flex: 1, padding: "13px 14px", fontSize: 18, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }} />
         <Btn small onClick={add}>+ Hinzufügen</Btn>
       </div>
       {offen.map((a) => <Item key={a.id} a={a} />)}
       {erledigt.length > 0 && (
         <>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 700, margin: "18px 0 8px", letterSpacing: 1, textTransform: "uppercase" }}>Erledigt</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, fontWeight: 700, margin: "18px 0 8px", letterSpacing: 1, textTransform: "uppercase" }}>Erledigt</div>
           {erledigt.map((a) => <Item key={a.id} a={a} />)}
         </>
       )}
@@ -6513,8 +6516,8 @@ function Aufgaben({ aufgaben, setAufgaben, addPunkte, go, ch369, setCh369, akart
 /* ── Rechtliches: Impressum & Datenschutzerklärung ── */
 const Absatz = ({ h, children }) => (
   <div style={{ marginBottom: 15 }}>
-    {h && <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso, marginBottom: 4 }}>{h}</div>}
-    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7 }}>{children}</div>
+    {h && <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso, marginBottom: 4 }}>{h}</div>}
+    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7 }}>{children}</div>
   </div>
 );
 function RechtSeite({ title, children }) {
@@ -6522,7 +6525,7 @@ function RechtSeite({ title, children }) {
     <div style={{ padding: "26px 20px 34px" }}>
       <H size={24} style={{ marginBottom: 16 }}>{title}</H>
       {children}
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, opacity: 0.6, marginTop: 20, lineHeight: 1.6 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.6, marginTop: 20, lineHeight: 1.6 }}>
         Platzhalter-Text · vor dem Livegang von einer Datenschutzbeauftragten bzw. Anwält:in prüfen und mit euren echten Daten füllen.
       </p>
     </div>
@@ -6581,19 +6584,19 @@ function Meditation({ addPunkte }) {
       <Card style={{ marginBottom: 18, textAlign: "center", background: `linear-gradient(160deg, ${C.card}, ${C.roseSoft})` }}>
         <Eyebrow color={C.plum}>🌬️ Atemübung · 4-4-4-4</Eyebrow>
         <div style={{ height: 176, display: "flex", alignItems: "center", justifyContent: "center", margin: "6px 0" }}>
-          <div style={{ width: 130, height: 130, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "Georgia, serif", fontSize: 17, animation: atmung ? "breathe 8s ease-in-out infinite" : "none", boxShadow: "0 8px 30px rgba(194,82,110,.35)" }}>
+          <div style={{ width: 130, height: 130, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "Georgia, serif", fontSize: 18, animation: atmung ? "breathe 8s ease-in-out infinite" : "none", boxShadow: "0 8px 30px rgba(194,82,110,.35)" }}>
             {phase}
           </div>
         </div>
         <Btn onClick={() => { if (atmung) { setAtmung(false); abschliessen(2); } else setAtmung(true); }}>{atmung ? "Beenden & +5 ✨" : "Atemübung starten"}</Btn>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 10, lineHeight: 1.5 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 10, lineHeight: 1.5 }}>
           Folge dem Kreis: 4 Sek. ein · 4 halten · 4 aus · 4 halten. Schon 1 Minute beruhigt dein Nervensystem.
         </p>
       </Card>
 
       <Card style={{ marginBottom: 18, display: "flex", justifyContent: "space-around", textAlign: "center" }}>
-        <div><div style={{ fontFamily: "Georgia, serif", fontSize: 26, color: C.plum }}>{sessions}</div><div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>Sessions</div></div>
-        <div><div style={{ fontFamily: "Georgia, serif", fontSize: 26, color: C.plum }}>{minuten}</div><div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>Minuten</div></div>
+        <div><div style={{ fontFamily: "Georgia, serif", fontSize: 26, color: C.plum }}>{sessions}</div><div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Sessions</div></div>
+        <div><div style={{ fontFamily: "Georgia, serif", fontSize: 26, color: C.plum }}>{minuten}</div><div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Minuten</div></div>
       </Card>
 
       <div style={{ margin: "0 -20px" }}><Musik /></div>
@@ -6671,17 +6674,17 @@ function Community({ addPunkte, alias, anon, bindung }) {
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow>Community</Eyebrow>
       <H size={25} style={{ marginBottom: 6 }}>Frauen unterstützen Frauen</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
         Teile einen Gedanken oder feiere jemanden. Ein liebes ♥ tut mehr, als du denkst.
         Du schreibst als <strong>{name}</strong>.
       </p>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        <input value={neu} onChange={(e) => setNeu(e.target.value)} onKeyDown={(e) => e.key === "Enter" && teilen()} placeholder="Etwas Schönes teilen…" style={{ flex: 1, padding: "13px 14px", fontSize: 16.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }} />
+        <input value={neu} onChange={(e) => setNeu(e.target.value)} onKeyDown={(e) => e.key === "Enter" && teilen()} placeholder="Etwas Schönes teilen…" style={{ flex: 1, padding: "13px 14px", fontSize: 18, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }} />
         <Btn small onClick={teilen}>Teilen</Btn>
       </div>
 
-      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "10px 14px", marginBottom: 12 }}>{hinweis}</div>}
+      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 12, padding: "10px 14px", marginBottom: 12 }}>{hinweis}</div>}
 
       {coachPosts.length > 0 && (
         <div style={{ marginBottom: 22 }}>
@@ -6689,14 +6692,14 @@ function Community({ addPunkte, alias, anon, bindung }) {
           <div style={{ marginTop: 8 }}>
             {coachPosts.map((b) => (
               <Card key={b.id} style={{ marginBottom: 10, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
-                {b.titel && <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>{b.titel}</div>}
-                <p style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso, lineHeight: 1.6, margin: "0 0 8px", whiteSpace: "pre-wrap" }}>{b.text}</p>
+                {b.titel && <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 4 }}>{b.titel}</div>}
+                <p style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, lineHeight: 1.6, margin: "0 0 8px", whiteSpace: "pre-wrap" }}>{b.text}</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink }}>
+                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink }}>
                     {new Date(b.veroeffentlicht_am).toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
                   </span>
                   {b.extern_url && (
-                    <a href={b.extern_url} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.plum, textDecoration: "underline" }}>
+                    <a href={b.extern_url} target="_blank" rel="noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.plum, textDecoration: "underline" }}>
                       {b.quelle === "instagram" ? "Auf Instagram ansehen" : b.quelle === "youtube" ? "Auf YouTube ansehen" : "Ansehen"} ↗
                     </a>
                   )}
@@ -6707,12 +6710,12 @@ function Community({ addPunkte, alias, anon, bindung }) {
         </div>
       )}
 
-      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Lade Beiträge …</p>}
+      {laedt && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink }}>Lade Beiträge …</p>}
 
       {!laedt && posts.length === 0 && (
         <Card style={{ textAlign: "center" }}>
           <div style={{ fontSize: 30, marginBottom: 8 }}><Sym e="🌸" size={30} /></div>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.ink, lineHeight: 1.6, margin: 0 }}>
             Hier ist noch still. Magst du den ersten Gedanken teilen?
           </p>
         </Card>
@@ -6721,28 +6724,28 @@ function Community({ addPunkte, alias, anon, bindung }) {
       {posts.map((p) => (
         <Card key={p.id} style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16.5, color: C.plum, fontWeight: 700, flexShrink: 0 }}>{(p.alias || "A").charAt(0)}</div>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: C.plum, fontWeight: 700, flexShrink: 0 }}>{(p.alias || "A").charAt(0)}</div>
             <div style={{ flex: 1 }}>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{p.alias}</span>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 1 }}>{zeit(p.created_at)}</div>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: C.espresso }}>{p.alias}</span>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 1 }}>{zeit(p.created_at)}</div>
             </div>
           </div>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso, lineHeight: 1.6, margin: "0 0 10px", whiteSpace: "pre-wrap" }}>{p.text}</p>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, lineHeight: 1.6, margin: "0 0 10px", whiteSpace: "pre-wrap" }}>{p.text}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <button onClick={() => herz(p.id)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: geherzt[p.id] ? "default" : "pointer", color: geherzt[p.id] ? C.rose : C.ink, fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, padding: 0, minHeight: 36 }}>
-              <span style={{ fontSize: 17 }}>{geherzt[p.id] ? "❤️" : "🤍"}</span> {p.herzen || 0}
+            <button onClick={() => herz(p.id)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: geherzt[p.id] ? "default" : "pointer", color: geherzt[p.id] ? C.rose : C.ink, fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, padding: 0, minHeight: 36 }}>
+              <span style={{ fontSize: 18 }}>{geherzt[p.id] ? "❤️" : "🤍"}</span> {p.herzen || 0}
             </button>
-            <button onClick={() => melden(p.id)} disabled={gemeldet[p.id]} style={{ background: "none", border: "none", cursor: gemeldet[p.id] ? "default" : "pointer", color: C.ink, opacity: 0.6, fontFamily: "system-ui, sans-serif", fontSize: 13, padding: 0, minHeight: 36 }}>
+            <button onClick={() => melden(p.id)} disabled={gemeldet[p.id]} style={{ background: "none", border: "none", cursor: gemeldet[p.id] ? "default" : "pointer", color: C.ink, opacity: 0.6, fontFamily: "system-ui, sans-serif", fontSize: 14.5, padding: 0, minHeight: 36 }}>
               {gemeldet[p.id] ? "gemeldet" : "melden"}
             </button>
-            <button onClick={() => loeschen(p.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.ink, opacity: 0.6, fontFamily: "system-ui, sans-serif", fontSize: 13, padding: 0, minHeight: 36, marginLeft: "auto" }}>
+            <button onClick={() => loeschen(p.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.ink, opacity: 0.6, fontFamily: "system-ui, sans-serif", fontSize: 14.5, padding: 0, minHeight: 36, marginLeft: "auto" }}>
               löschen
             </button>
           </div>
         </Card>
       ))}
 
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 18 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.75, lineHeight: 1.6, marginTop: 18 }}>
         Beiträge, die mehrfach gemeldet werden, verschwinden automatisch aus dem Feed, bis sie geprüft sind.
         Eigene Beiträge kannst du jederzeit selbst löschen.
       </p>
@@ -6769,8 +6772,8 @@ function AppGuide() {
           <button onClick={() => setAb(true)} style={{ display: "flex", alignItems: "center", gap: 13, width: "100%", background: "none", border: "none", cursor: "pointer", padding: 6 }}>
             <span style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 14px rgba(194,82,110,.35)" }}>▶</span>
             <span style={{ textAlign: "left" }}>
-              <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso }}>Begrüßungsvideo ansehen</span>
-              <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>Anja begrüßt dich persönlich · 1 Video</span>
+              <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 18.5, color: C.espresso }}>Begrüßungsvideo ansehen</span>
+              <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>Anja begrüßt dich persönlich · 1 Video</span>
             </span>
           </button>
         ) : (
@@ -6785,8 +6788,8 @@ function AppGuide() {
           <Card key={s.t} style={{ marginBottom: 10, display: "flex", gap: 13, alignItems: "center" }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21, flexShrink: 0 }}><Sym e={s.icon} size={21} /></div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>{s.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 2 }}>{s.s}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>{s.t}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 2 }}>{s.s}</div>
             </div>
           </Card>
         ))}
@@ -6813,7 +6816,7 @@ function Fragebogen({ intake, setIntake, addPunkte }) {
   const toggleThema = (t) => setF((p) => ({ ...p, themen: p.themen.includes(t) ? p.themen.filter((x) => x !== t) : [...p.themen, t] }));
   const senden = () => { setIntake(f); setGesendet(true); setStep(99); if (addPunkte) addPunkte(15, "Fragebogen ausgefüllt"); };
 
-  const cardSel = (aktiv) => ({ width: "100%", textAlign: "left", cursor: "pointer", padding: "16px 18px", borderRadius: 16, marginBottom: 11, border: `1.5px solid ${aktiv ? C.rose : C.line}`, background: aktiv ? C.roseSoft : C.card, fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 600, color: aktiv ? C.plum : C.espresso, display: "flex", alignItems: "center", gap: 12 });
+  const cardSel = (aktiv) => ({ width: "100%", textAlign: "left", cursor: "pointer", padding: "16px 18px", borderRadius: 16, marginBottom: 11, border: `1.5px solid ${aktiv ? C.rose : C.line}`, background: aktiv ? C.roseSoft : C.card, fontFamily: "system-ui, sans-serif", fontSize: 18, fontWeight: 600, color: aktiv ? C.plum : C.espresso, display: "flex", alignItems: "center", gap: 12 });
   const heroGrad = `linear-gradient(160deg, ${C.goldPale}, ${C.roseSoft} 120%)`;
 
   // — Abschluss / Zusammenfassung —
@@ -6823,13 +6826,13 @@ function Fragebogen({ intake, setIntake, addPunkte }) {
         <Card style={{ textAlign: "center", background: heroGrad, border: "none", marginBottom: 16, padding: "26px 20px" }}>
           <div style={{ fontSize: 42, marginBottom: 6 }}><Sym e="🤍" size={42} /></div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: C.espresso }}>Danke — alles angekommen.</div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 8, lineHeight: 1.5 }}>Deine Coachin liest deine Antworten vor eurer ersten Session. So startet ihr direkt beim Wesentlichen.</p>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginTop: 8, lineHeight: 1.5 }}>Deine Coachin liest deine Antworten vor eurer ersten Session. So startet ihr direkt beim Wesentlichen.</p>
         </Card>
         <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
           {[["Fokus", f.fokus], ["Rhythmus", f.rhythmus], ["Themen", (f.themen || []).join(", ") || "—"], ["Energie", `${f.energie}/10`], ["Ziel", f.ziel]].map(([k, v]) => (
             <Card key={k} style={{ display: "flex", gap: 12 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.gold, minWidth: 84 }}>{k}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>{v || "—"}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.gold, minWidth: 84 }}>{k}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso }}>{v || "—"}</div>
             </Card>
           ))}
         </div>
@@ -6844,10 +6847,10 @@ function Fragebogen({ intake, setIntake, addPunkte }) {
         <div style={{ margin: "20px auto 24px", width: 132, height: 132, borderRadius: 34, background: heroGrad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64 }}><Sym e="🌸" size={56} /></div>
         <Eyebrow>Willkommen bei smile2go</Eyebrow>
         <H size={27} style={{ margin: "6px 0 10px" }}>Schön, dass du da bist</H>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.6, marginBottom: 8, maxWidth: 320, marginInline: "auto" }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17.5, color: C.ink, lineHeight: 1.6, marginBottom: 8, maxWidth: 320, marginInline: "auto" }}>
           Ein paar kurze Fragen — damit deine Coachin dich schon kennt, bevor ihr das erste Mal sprecht.
         </p>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.8, marginBottom: 28 }}>Dauert unter 1 Minute · 🇪🇺 DSGVO-konform</p>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, opacity: 0.8, marginBottom: 28 }}>Dauert unter 1 Minute · 🇪🇺 DSGVO-konform</p>
         <Btn full onClick={() => setStep(1)}>Los geht’s</Btn>
       </div>
     );
@@ -6860,27 +6863,27 @@ function Fragebogen({ intake, setIntake, addPunkte }) {
     <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", minHeight: "70vh" }}>
       {/* Kopf: Zurück + Fortschritt */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-        <button onClick={() => setStep(step - 1)} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${C.line}`, background: C.card, cursor: "pointer", fontSize: 17, color: C.ink, flexShrink: 0 }}>‹</button>
+        <button onClick={() => setStep(step - 1)} style={{ width: 36, height: 36, borderRadius: "50%", border: `1.5px solid ${C.line}`, background: C.card, cursor: "pointer", fontSize: 18, color: C.ink, flexShrink: 0 }}>‹</button>
         <div style={{ flex: 1 }}>
           <div style={{ height: 6, borderRadius: 4, background: C.beige, overflow: "hidden" }}>
             <div style={{ width: `${(step / FB_TOTAL) * 100}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})`, transition: "width .3s ease" }} />
           </div>
         </div>
-        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: C.ink, flexShrink: 0 }}>{step}/{FB_TOTAL}</span>
+        <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.ink, flexShrink: 0 }}>{step}/{FB_TOTAL}</span>
       </div>
 
       <div style={{ flex: 1, animation: "fadeUp .35s ease" }}>
         {step === 1 && (
           <>
             <H size={23} style={{ marginBottom: 4 }}>Was möchtest du gerade stärken?</H>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 18 }}>Wähle deinen wichtigsten Fokus.</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 18 }}>Wähle deinen wichtigsten Fokus.</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {FB_FOKUS.map((x) => {
                 const on = f.fokus === x.t;
                 return (
                   <button key={x.t} onClick={() => setF({ ...f, fokus: x.t })} style={{ cursor: "pointer", padding: "18px 10px", borderRadius: 16, border: `1.5px solid ${on ? C.rose : C.line}`, background: on ? C.roseSoft : C.card, textAlign: "center" }}>
                     <div style={{ fontSize: 30 }}><Sym e={x.e} size={30} /></div>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: on ? C.plum : C.espresso, marginTop: 6 }}>{x.t}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: on ? C.plum : C.espresso, marginTop: 6 }}>{x.t}</div>
                   </button>
                 );
               })}
@@ -6891,7 +6894,7 @@ function Fragebogen({ intake, setIntake, addPunkte }) {
         {step === 2 && (
           <>
             <H size={23} style={{ marginBottom: 4 }}>Wie oft möchtest du an dir arbeiten?</H>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 18 }}>Wähle, was sich realistisch anfühlt.</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 18 }}>Wähle, was sich realistisch anfühlt.</p>
             {FB_RHYTHMUS.map((r) => (
               <button key={r} onClick={() => setF({ ...f, rhythmus: r })} style={cardSel(f.rhythmus === r)}>{r}</button>
             ))}
@@ -6901,12 +6904,12 @@ function Fragebogen({ intake, setIntake, addPunkte }) {
         {step === 3 && (
           <>
             <H size={23} style={{ marginBottom: 4 }}>Deine Themen</H>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 18 }}>Wähle eins oder mehrere.</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 18 }}>Wähle eins oder mehrere.</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
               {FB_THEMEN.map((t) => {
                 const on = f.themen.includes(t);
                 return (
-                  <button key={t} onClick={() => toggleThema(t)} style={{ padding: "11px 16px", borderRadius: 22, cursor: "pointer", border: `1.5px solid ${on ? C.rose : C.line}`, background: on ? C.roseSoft : C.card, fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: on ? C.plum : C.ink }}>{t}</button>
+                  <button key={t} onClick={() => toggleThema(t)} style={{ padding: "11px 16px", borderRadius: 22, cursor: "pointer", border: `1.5px solid ${on ? C.rose : C.line}`, background: on ? C.roseSoft : C.card, fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 600, color: on ? C.plum : C.ink }}>{t}</button>
                 );
               })}
             </div>
@@ -6916,31 +6919,31 @@ function Fragebogen({ intake, setIntake, addPunkte }) {
         {step === 4 && (
           <>
             <H size={23} style={{ marginBottom: 4 }}>Wie ist deine Energie heute?</H>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 26 }}>Ganz ehrlich — es gibt kein Richtig.</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 26 }}>Ganz ehrlich — es gibt kein Richtig.</p>
             <div style={{ textAlign: "center", fontFamily: "Georgia, serif", fontSize: 52, color: C.plum, marginBottom: 8 }}>{f.energie}<span style={{ fontSize: 22, color: C.ink }}>/10</span></div>
             <input type="range" min={1} max={10} value={f.energie} onChange={(e) => setF({ ...f, energie: +e.target.value })} style={{ width: "100%", accentColor: C.gold }} />
-            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 6 }}><span>erschöpft</span><span>voller Kraft</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 6 }}><span>erschöpft</span><span>voller Kraft</span></div>
           </>
         )}
 
         {step === 5 && (
           <>
             <H size={23} style={{ marginBottom: 4 }}>Was möchtest du erreichen?</H>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 18 }}>In deinen Worten — optional.</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 18 }}>In deinen Worten — optional.</p>
             <textarea rows={4} value={f.ziel} onChange={(e) => setF({ ...f, ziel: e.target.value })} placeholder="z. B. „Ich möchte abends besser abschalten können.“"
-              style={{ width: "100%", padding: "14px 15px", fontSize: 16.5, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
+              style={{ width: "100%", padding: "14px 15px", fontSize: 18, fontFamily: "Georgia, serif", fontStyle: "italic", border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
           </>
         )}
 
         {step === 6 && (
           <>
             <H size={23} style={{ marginBottom: 4 }}>Passt das so?</H>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 18 }}>Deine Coachin bekommt diese Übersicht.</p>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 18 }}>Deine Coachin bekommt diese Übersicht.</p>
             <div style={{ display: "grid", gap: 10 }}>
               {[["Fokus", f.fokus], ["Rhythmus", f.rhythmus], ["Themen", (f.themen || []).join(", ") || "—"], ["Energie", `${f.energie}/10`], ["Ziel", f.ziel || "—"]].map(([k, v]) => (
                 <Card key={k} style={{ display: "flex", gap: 12 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.gold, minWidth: 84 }}>{k}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>{v || "—"}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.gold, minWidth: 84 }}>{k}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso }}>{v || "—"}</div>
                 </Card>
               ))}
             </div>
@@ -6950,7 +6953,7 @@ function Fragebogen({ intake, setIntake, addPunkte }) {
 
       <div style={{ marginTop: 20 }}>
         <Btn full ghost={!kannWeiter} onClick={() => kannWeiter && weiter()}>{step === 6 ? "An meine Coachin senden" : "Weiter"}</Btn>
-        {step === 6 && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, textAlign: "center", marginTop: 12 }}>🇪🇺 DSGVO-konform · nur für dich & deine Coachin sichtbar</p>}
+        {step === 6 && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, textAlign: "center", marginTop: 12 }}>🇪🇺 DSGVO-konform · nur für dich & deine Coachin sichtbar</p>}
       </div>
     </div>
   );
@@ -6972,7 +6975,7 @@ function Pakete({ addPunkte, go }) {
     <div style={{ padding: "20px 20px" }}>
       <Eyebrow>Coaching-Pakete</Eyebrow>
       <H size={24} style={{ marginBottom: 8 }}>Wähle deine Begleitung</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.55, marginBottom: 18 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.55, marginBottom: 18 }}>
         Sende eine unverbindliche Anfrage — deine Coachin meldet sich mit den nächsten Schritten. Die Bezahlung läuft sicher außerhalb der App.
       </p>
       {PAKETE.map((p) => (
@@ -6981,13 +6984,13 @@ function Pakete({ addPunkte, go }) {
             <div style={{ width: 46, height: 46, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}><Sym e={p.icon} size={22} /></div>
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>{p.t}{p.best && <span style={{ fontSize: 10.5, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 8, padding: "2px 7px", marginLeft: 8 }}>beliebt</span>}</div>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.plum, whiteSpace: "nowrap" }}>{p.preis}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: C.espresso }}>{p.t}{p.best && <span style={{ fontSize: 12, fontWeight: 700, color: C.plum, background: C.roseSoft, borderRadius: 8, padding: "2px 7px", marginLeft: 8 }}>beliebt</span>}</div>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.plum, whiteSpace: "nowrap" }}>{p.preis}</div>
               </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>{p.dauer}</div>
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5, margin: "8px 0 12px" }}>{p.desc}</p>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>{p.dauer}</div>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.5, margin: "8px 0 12px" }}>{p.desc}</p>
               {angefragt === p.t
-                ? <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.sage }}>✓ Anfrage gesendet — deine Coachin meldet sich 🤍</div>
+                ? <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: C.sage }}>✓ Anfrage gesendet — deine Coachin meldet sich 🤍</div>
                 : <Btn small onClick={() => anfragen(p)}>{p.cta}</Btn>}
             </div>
           </div>
@@ -6996,8 +6999,8 @@ function Pakete({ addPunkte, go }) {
       <Card style={{ marginTop: 6, display: "flex", gap: 12, alignItems: "center", background: C.beige }}>
         <span style={{ fontSize: 22 }}><Sym e="📅" size={22} /></span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>Schon Kundin?</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Buche direkt einen freien Termin.</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>Schon Kundin?</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Buche direkt einen freien Termin.</div>
         </div>
         <Btn small ghost onClick={() => go("buchen")}>Termin buchen</Btn>
       </Card>
@@ -7028,18 +7031,18 @@ function Podcast({ addPunkte }) {
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow>Podcast</Eyebrow>
       <H size={25} style={{ marginBottom: 6 }}>Hör deiner Coachin zu</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.55, marginBottom: 18 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.55, marginBottom: 18 }}>
         Kurze Impulse & tiefe Gespräche — mit der Stimme von Anja. Neue Folgen jede Woche.
       </p>
 
       {/* Neueste Folge */}
       <Card style={{ marginBottom: 18, background: `linear-gradient(150deg, ${C.plum}, ${C.rose} 140%)`, border: "none" }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.goldPale, fontWeight: 700 }}>🎧 Neueste Folge</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase", color: C.goldPale, fontWeight: 700 }}>🎧 Neueste Folge</div>
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 10 }}>
           <PlayBtn t={neueste.t} big />
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: "#FFF8F0", lineHeight: 1.3 }}>{neueste.t}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: "#FFF3F0", opacity: 0.9, marginTop: 3 }}>{neueste.serie} · {neueste.dauer}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: "#FFF8F0", lineHeight: 1.3 }}>{neueste.t}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#FFF3F0", opacity: 0.9, marginTop: 3 }}>{neueste.serie} · {neueste.dauer}</div>
           </div>
         </div>
       </Card>
@@ -7047,7 +7050,7 @@ function Podcast({ addPunkte }) {
       {/* Serien-Filter */}
       <div style={{ display: "flex", gap: 7, marginBottom: 16, flexWrap: "wrap" }}>
         {SERIEN.map((s) => (
-          <button key={s} onClick={() => setSerie(s)} style={{ padding: "8px 13px", borderRadius: 20, cursor: "pointer", border: `1.5px solid ${serie === s ? C.rose : C.line}`, background: serie === s ? C.roseSoft : "transparent", fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, color: serie === s ? C.plum : C.ink }}>{s}</button>
+          <button key={s} onClick={() => setSerie(s)} style={{ padding: "8px 13px", borderRadius: 20, cursor: "pointer", border: `1.5px solid ${serie === s ? C.rose : C.line}`, background: serie === s ? C.roseSoft : "transparent", fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: serie === s ? C.plum : C.ink }}>{s}</button>
         ))}
       </div>
 
@@ -7055,14 +7058,14 @@ function Podcast({ addPunkte }) {
         <Card key={p.t} style={{ marginBottom: 10, display: "flex", gap: 13, alignItems: "center" }}>
           <PlayBtn t={p.t} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{p.t}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>{p.serie} · {p.dauer}{p.neu ? " · 🆕" : ""}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>{p.t}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>{p.serie} · {p.dauer}{p.neu ? " · 🆕" : ""}</div>
           </div>
-          {playing === p.t && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, color: C.plum }}>läuft…</span>}
+          {playing === p.t && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: C.plum }}>läuft…</span>}
         </Card>
       ))}
 
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, opacity: 0.8, textAlign: "center", marginTop: 12 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.8, textAlign: "center", marginTop: 12 }}>
         Neue Folgen werden von deiner Coachin hochgeladen 🎙️
       </p>
     </div>
@@ -7148,7 +7151,7 @@ function CoachingHub({ go, bindung, aufBindung }) {
          dunklen Block, der der Seite Tiefe gibt. */
       <div style={{ padding: `${R.mittel}px 20px ${R.weit}px` }}>
         <H size={25} style={{ marginBottom: R.klein }}>Noch bist du hier allein unterwegs</H>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.65, marginBottom: R.mittel, maxWidth: 360 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17.5, color: C.ink, lineHeight: 1.65, marginBottom: R.mittel, maxWidth: 360 }}>
           Alles in dieser App gehört dir — auch ohne Coachin. Mit einem Einladungscode
           wird daraus ein gemeinsamer Raum: geschützt, nur ihr zwei.
         </p>
@@ -7164,13 +7167,13 @@ function CoachingHub({ go, bindung, aufBindung }) {
             <div key={t} style={{ display: "flex", gap: 13, marginTop: n === 0 ? 0 : R.klein }}>
               <Ikon n={i} size={19} style={{ color: DUNKEL_TON.perlmutt.zeichen, marginTop: 2 }} />
               <span>
-                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 15.5, color: DUNKEL_TON.perlmutt.schrift }}>{t}</span>
-                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: DUNKEL_TON.perlmutt.leise, lineHeight: 1.55, marginTop: 3 }}>{s}</span>
+                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 17, color: DUNKEL_TON.perlmutt.schrift }}>{t}</span>
+                <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 16, color: DUNKEL_TON.perlmutt.leise, lineHeight: 1.55, marginTop: 3 }}>{s}</span>
               </span>
             </div>
           ))}
         </Dunkel>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, opacity: 0.75, lineHeight: 1.6 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, opacity: 0.75, lineHeight: 1.6 }}>
           Du hast noch keinen Code? Deine Coachin findet ihn in ihrem Bereich unter „Klientinnen".
         </p>
       </div>
@@ -7207,7 +7210,7 @@ function CoachingHub({ go, bindung, aufBindung }) {
           }}>{initialen || "C"}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso }}>{name}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 3 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 3 }}>
               {pausiert ? "Begleitung pausiert" : "Verbunden"}
               {bindung.verbunden_am ? ` seit ${new Date(bindung.verbunden_am).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}` : ""}
             </div>
@@ -7215,7 +7218,7 @@ function CoachingHub({ go, bindung, aufBindung }) {
         </div>
 
         {profil?.kurzprofil && (
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 16, fontStyle: "italic", color: C.espresso, lineHeight: 1.6, margin: "12px 0 0" }}>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 17.5, fontStyle: "italic", color: C.espresso, lineHeight: 1.6, margin: "12px 0 0" }}>
             {profil.kurzprofil}
           </p>
         )}
@@ -7253,14 +7256,14 @@ function CoachingHub({ go, bindung, aufBindung }) {
               {direkt.length > 0 && (
                 <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: links.length ? 8 : 0 }}>
                   {direkt.map(([ic, t, href]) => (
-                    <a key={t} href={href} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.plum, textDecoration: "none" }}>{ic} {t}</a>
+                    <a key={t} href={href} style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.plum, textDecoration: "none" }}>{ic} {t}</a>
                   ))}
                 </div>
               )}
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {links.map(([t, u]) => (
                   <a key={t} href={u} target="_blank" rel="noreferrer" style={{
-                    fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, textDecoration: "none",
+                    fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, textDecoration: "none",
                     border: `1px solid ${C.goldSoft}`, borderRadius: 16, padding: "5px 11px", background: C.card,
                   }}>{t}</a>
                 ))}
@@ -7277,8 +7280,8 @@ function CoachingHub({ go, bindung, aufBindung }) {
           <Card key={x.t} onClick={() => go(x.tab)} style={{ marginBottom: 9, display: "flex", gap: 13, alignItems: "center" }}>
             <div style={{ width: 42, height: 42, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}><Sym e={x.icon} size={20} /></div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>{x.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 2 }}>{x.s}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>{x.t}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 2 }}>{x.s}</div>
             </div>
             <div style={{ color: C.gold, fontSize: 20 }}>›</div>
           </Card>
@@ -7290,10 +7293,10 @@ function CoachingHub({ go, bindung, aufBindung }) {
       <div style={{ marginTop: 8, marginBottom: 16 }}>
         {letzteVonIhr && (
           <Card onClick={() => go("coach")} style={{ marginBottom: 9, borderLeft: `3px solid ${C.rose}` }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.plum, fontWeight: 600, marginBottom: 5 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, fontWeight: 600, marginBottom: 5 }}>
               Ihre letzte Nachricht · {new Date(letzteVonIhr.created_at).toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
             </div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.55 }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.55 }}>
               {letzteVonIhr.text ? `„${String(letzteVonIhr.text).slice(0, 130)}${letzteVonIhr.text.length > 130 ? " …" : ""}"` : "🎙️ Eine Sprachnachricht wartet auf dich."}
             </div>
           </Card>
@@ -7304,8 +7307,8 @@ function CoachingHub({ go, bindung, aufBindung }) {
               {KAT_ICON[m.kategorie] || "📄"}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{m.titel}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>{m.beschreibung || m.kategorie}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>{m.titel}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>{m.beschreibung || m.kategorie}</div>
             </div>
             <div style={{ color: C.gold, fontSize: 20 }}>›</div>
           </Card>
@@ -7314,23 +7317,23 @@ function CoachingHub({ go, bindung, aufBindung }) {
           <Card onClick={() => go("kurse")} style={{ marginBottom: 9, display: "flex", gap: 13, alignItems: "center" }}>
             <div style={{ width: 42, height: 42, borderRadius: 13, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, flexShrink: 0 }}><Sym e="💎" size={19} /></div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>
                 {angebote.length} {angebote.length === 1 ? "Angebot" : "Angebote"} von {vorname}
               </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>Kurse & Pakete ansehen</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>Kurse & Pakete ansehen</div>
             </div>
             <div style={{ color: C.gold, fontSize: 20 }}>›</div>
           </Card>
         )}
         {beitraege.slice(0, 2).map((b) => (
           <Card key={b.id} style={{ marginBottom: 9 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.plum, fontWeight: 600, marginBottom: 4 }}>Impuls</div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, marginBottom: 4 }}>{b.titel}</div>
-            {b.text && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6 }}>{String(b.text).slice(0, 160)}{b.text.length > 160 ? " …" : ""}</div>}
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, fontWeight: 600, marginBottom: 4 }}>Impuls</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>{b.titel}</div>
+            {b.text && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6 }}>{String(b.text).slice(0, 160)}{b.text.length > 160 ? " …" : ""}</div>}
           </Card>
         ))}
         {!laedt && !letzteVonIhr && material.length === 0 && angebote.length === 0 && beitraege.length === 0 && (
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.6 }}>
             {vorname} hat hier noch nichts eingestellt. Schreib ihr gern zuerst — der Anfang darf auch von dir kommen.
           </p>
         )}
@@ -7341,33 +7344,33 @@ function CoachingHub({ go, bindung, aufBindung }) {
         <div onClick={() => setZeigTransparenz(!zeigTransparenz)} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
           <span style={{ fontSize: 19 }}><Sym e="🔍" size={19} /></span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>Was {vorname} von dir sieht</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>Damit du es weißt — und nicht raten musst</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>Was {vorname} von dir sieht</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>Damit du es weißt — und nicht raten musst</div>
           </div>
-          <span style={{ color: C.gold, fontSize: 18 }}>{zeigTransparenz ? "⌃" : "⌄"}</span>
+          <span style={{ color: C.gold, fontSize: 19 }}>{zeigTransparenz ? "⌃" : "⌄"}</span>
         </div>
         {zeigTransparenz && (
           <div style={{ marginTop: 14, animation: "fadeUp .3s ease" }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.plum, marginBottom: 6 }}>Sie sieht</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.plum, marginBottom: 6 }}>Sie sieht</div>
             {SIEHT.map((z) => (
-              <div key={z} style={{ display: "flex", gap: 8, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 4 }}>
+              <div key={z} style={{ display: "flex", gap: 8, fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 4 }}>
                 <Ikon n="haken" size={15} style={{ color: C.sage, marginTop: 2 }} /><span>{z}</span>
               </div>
             ))}
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.plum, margin: "12px 0 6px" }}>Sie sieht nicht</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.plum, margin: "12px 0 6px" }}>Sie sieht nicht</div>
             {SIEHT_NICHT.map((z) => (
-              <div key={z} style={{ display: "flex", gap: 8, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, marginBottom: 4 }}>
+              <div key={z} style={{ display: "flex", gap: 8, fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 4 }}>
                 <span style={{ opacity: 0.5 }}>—</span><span>{z}</span>
               </div>
             ))}
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.8, lineHeight: 1.6, marginTop: 12 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.8, lineHeight: 1.6, marginTop: 12 }}>
               Du kannst die Begleitung jederzeit selbst beenden. Bisherige Nachrichten und Termine bleiben als Dokumentation erhalten; neue Daten sieht sie danach nicht mehr. Deine Daten kannst du im Profil jederzeit exportieren oder löschen.
             </div>
             <button onClick={async () => {
               if (!window.confirm(`Begleitung mit ${vorname} wirklich beenden?`)) return;
               if (await bindungBeenden()) { logEvent("bindung_beendet"); aufBindung(); }
               else alert("Das hat gerade nicht geklappt — bitte versuch es später noch einmal.");
-            }} style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: "#A8552F", background: "none", border: "1.5px solid #E8C9BC", borderRadius: 18, padding: "8px 14px", cursor: "pointer", marginTop: 12 }}>
+            }} style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: "#A8552F", background: "none", border: "1.5px solid #E8C9BC", borderRadius: 18, padding: "8px 14px", cursor: "pointer", marginTop: 12 }}>
               Begleitung beenden
             </button>
           </div>
@@ -7475,7 +7478,7 @@ function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, me
       <div style={{ padding: "26px 20px" }}>
         <Eyebrow>Wochenbericht</Eyebrow>
         <H size={24} style={{ marginBottom: 8 }}>Dafür braucht es eine Coachin</H>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
           Sobald ihr verbunden seid, kannst du ihr am Ende der Woche zeigen, was du getan hast — in Zahlen, ohne deine Texte.
         </p>
         <CoachVerbinden onVerbunden={aufBindung} />
@@ -7503,14 +7506,14 @@ function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, me
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow>Wochenbericht</Eyebrow>
       <H size={24} style={{ marginBottom: 8 }}>Deine Woche für {vorname}</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
         {bericht.zeitraum} · Sie sieht Zahlen, keine Inhalte. Was du nicht schicken
         magst, tippst du einfach weg.
       </p>
 
       <Card style={{ marginBottom: 14 }}>
         {bericht.leer ? (
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.ink, lineHeight: 1.6, margin: 0 }}>
             Diese Woche ist noch nichts zusammengekommen. Das ist auch eine Antwort —
             du kannst sie trotzdem schicken.
           </p>
@@ -7526,16 +7529,16 @@ function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, me
                 background: an ? C.goldPale : "transparent", border: `1px solid ${an ? C.line : "transparent"}`,
               }}
             >
-              <span style={{ fontSize: 18 }}><Sym e={z.icon} size={18} /></span>
-              <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>{z.text}</span>
-              <span style={{ color: an ? C.gold : C.ink, fontSize: 16.5 }}>{an ? "✓" : "○"}</span>
+              <span style={{ fontSize: 19 }}><Sym e={z.icon} size={18} /></span>
+              <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso }}>{z.text}</span>
+              <span style={{ color: an ? C.gold : C.ink, fontSize: 18 }}>{an ? "✓" : "○"}</span>
             </div>
           );
         })}
       </Card>
 
       <Card style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, color: C.espresso, marginBottom: 8 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: C.espresso, marginBottom: 8 }}>
           Was möchtest du ihr sagen? <span style={{ fontWeight: 400, color: C.ink }}>(freiwillig)</span>
         </div>
         <textarea
@@ -7543,7 +7546,7 @@ function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, me
           onChange={(e) => setNotiz(e.target.value)}
           rows={4}
           placeholder="Diese Woche war …"
-          style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 16.5, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.card, color: C.espresso }}
+          style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.card, color: C.espresso }}
         />
         <div style={{ marginTop: 8 }}>
           <Mikro size={40} onText={(t) => setNotiz((v) => (v ? v + " " : "") + t)} />
@@ -7552,14 +7555,14 @@ function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, me
 
       <Eyebrow color={C.plum}>So kommt es bei ihr an</Eyebrow>
       <Card style={{ margin: "8px 0 14px", background: C.cream }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{text}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{text}</div>
       </Card>
 
       <div style={{ display: "flex", gap: 9, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
         <Btn onClick={senden} disabled={busy}>{busy ? "Wird geschickt …" : schonGesendet ? "Noch einmal schicken" : `An ${vorname} schicken`}</Btn>
-        {schonGesendet && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.sage }}>✓ diese Woche schon geschickt</span>}
+        {schonGesendet && <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.sage }}>✓ diese Woche schon geschickt</span>}
       </div>
-      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, marginBottom: 12 }}>{hinweis}</div>}
+      {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.plum, marginBottom: 12 }}>{hinweis}</div>}
 
       <Card onClick={autoUmschalten} style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{
@@ -7570,8 +7573,8 @@ function Wochenbericht({ bindung, aufBindung, entries, achtsam, dank, qigong, me
           <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#fff" }} />
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 15, color: C.espresso }}>Jeden Montag automatisch schicken</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2, lineHeight: 1.5 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 600, fontSize: 16.5, color: C.espresso }}>Jeden Montag automatisch schicken</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2, lineHeight: 1.5 }}>
             Nur die Zahlen der vergangenen Woche — ohne deine Notiz, die schreibst du selbst.
           </div>
         </div>
@@ -7927,7 +7930,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
     <button onClick={auf} style={{
       display: "block", width: "100%", textAlign: "left", background: "none",
       border: "none", cursor: "pointer", padding: "14px 0", minHeight: 46,
-      fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600,
+      fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 600,
       color: hell ? "#fff" : C.plum,
       textShadow: hell ? "0 1px 8px rgba(0,0,0,.5)" : "none",
     }}>{pfad}</button>
@@ -7960,7 +7963,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
         {oben}
         <div>
           {eyebrow && (
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,.78)", fontWeight: 700, marginBottom: 7 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,.78)", fontWeight: 700, marginBottom: 7 }}>
               {eyebrow}
             </div>
           )}
@@ -8006,16 +8009,16 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
         flex: 1, minWidth: 0, background: "none", border: "none", cursor: "pointer",
         textAlign: "left", color: "#fff", padding: 0,
       }}>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {laeuft.titel}
         </div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: "rgba(255,255,255,.62)" }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "rgba(255,255,255,.62)" }}>
           {laeuft.coach_name}{dauer > 0 ? ` · noch ${gemZeit(dauer - zeit)}` : ""}
         </div>
       </button>
       <button onClick={abspielen} aria-label={spielt ? "Pause" : "Abspielen"} style={{
         width: 34, height: 34, borderRadius: "50%", border: "none", cursor: "pointer", flexShrink: 0,
-        background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 14.5,
+        background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", fontSize: 16,
       }}>{spielt ? "❚❚" : "▶"}</button>
     </div>
   );
@@ -8038,7 +8041,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
         />
 
         {b.einleitung && (
-          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.ink, lineHeight: 1.65, margin: "0 0 18px" }}>
+          <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.ink, lineHeight: 1.65, margin: "0 0 18px" }}>
             {b.einleitung}
           </p>
         )}
@@ -8050,8 +8053,8 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
             borderRadius: 22, padding: "18px 18px 16px", color: "#fff",
             boxShadow: "0 22px 44px -26px rgba(58,42,34,.9)",
           }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 17, lineHeight: 1.3 }}>{b.titel}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: "rgba(255,255,255,.66)", margin: "2px 0 16px" }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 1.3 }}>{b.titel}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "rgba(255,255,255,.66)", margin: "2px 0 16px" }}>
               von {b.coach_name}
             </div>
 
@@ -8064,7 +8067,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
               aria-label="Position"
               style={{ width: "100%", accentColor: C.rose, margin: 0 }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: 11, color: "rgba(255,255,255,.6)", fontVariantNumeric: "tabular-nums", margin: "4px 0 14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "rgba(255,255,255,.6)", fontVariantNumeric: "tabular-nums", margin: "4px 0 14px" }}>
               <span>{gemZeit(zeit)}</span>
               <span>-{gemZeit(Math.max(0, dauer - zeit))}</span>
             </div>
@@ -8073,7 +8076,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
               <button onClick={() => springen(-15)} aria-label="15 Sekunden zurück" style={{
                 width: 42, height: 42, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,.3)",
                 background: "transparent", color: "#fff", fontFamily: "system-ui, sans-serif",
-                fontSize: 11, fontWeight: 700, cursor: "pointer",
+                fontSize: 12.5, fontWeight: 700, cursor: "pointer",
               }}>15</button>
               <button onClick={abspielen} aria-label={spielt ? "Pause" : "Abspielen"} style={{
                 width: 62, height: 62, borderRadius: "50%", border: "none",
@@ -8083,7 +8086,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
               <button onClick={() => springen(15)} aria-label="15 Sekunden vor" style={{
                 width: 42, height: 42, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,.3)",
                 background: "transparent", color: "#fff", fontFamily: "system-ui, sans-serif",
-                fontSize: 11, fontWeight: 700, cursor: "pointer",
+                fontSize: 12.5, fontWeight: 700, cursor: "pointer",
               }}>15</button>
             </div>
           </div>
@@ -8095,13 +8098,13 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
             style={{
               display: "block", padding: "15px 18px", borderRadius: 15, background: C.beige,
               textAlign: "center", textDecoration: "none", minHeight: 48,
-              fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: C.espresso,
+              fontFamily: "system-ui, sans-serif", fontSize: 17.5, fontWeight: 700, color: C.espresso,
             }}>▶︎ Video ansehen</a>
         )}
 
         {(b.typ === "text" || b.typ === "uebung") && b.text && (
           <Card>
-            <p style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.75, whiteSpace: "pre-wrap", margin: 0 }}>
+            <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.75, whiteSpace: "pre-wrap", margin: 0 }}>
               {b.text}
             </p>
           </Card>
@@ -8110,7 +8113,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
         {b.extern_url && b.typ !== "video" && (
           <a href={b.extern_url} target="_blank" rel="noreferrer" style={{
             display: "inline-block", marginTop: 14, minHeight: 44, lineHeight: "44px",
-            fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.plum, fontWeight: 600,
+            fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.plum, fontWeight: 600,
           }}>↗ Weiterlesen</a>
         )}
 
@@ -8128,7 +8131,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
           const schwer = Array.isArray(c.schwerpunkte) ? c.schwerpunkte.filter(Boolean).join(" · ") : (c.schwerpunkte || "");
           const netz = (u) => !u ? null : /^https?:\/\//i.test(u) ? u : `https://${u}`;
           const insta = !c.instagram ? null : /^https?:\/\//i.test(c.instagram) ? c.instagram : `https://instagram.com/${String(c.instagram).replace(/^@/, "")}`;
-          const pille = { display: "inline-flex", alignItems: "center", gap: 6, minHeight: 40, padding: "0 15px", borderRadius: 20, border: `1px solid ${C.line}`, background: C.card, fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, color: C.plum, textDecoration: "none" };
+          const pille = { display: "inline-flex", alignItems: "center", gap: 6, minHeight: 40, padding: "0 15px", borderRadius: 20, border: `1px solid ${C.line}`, background: C.card, fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: C.plum, textDecoration: "none" };
           return (
             <div style={{ marginTop: 32 }}>
               <AbschnittTitel>Deine Expertin</AbschnittTitel>
@@ -8141,11 +8144,11 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
                   boxShadow: "0 0 0 3px rgba(255,255,255,.9), 0 10px 22px -12px rgba(120,60,110,.6)",
                 }}>{b.coach_name.charAt(0)}</div>
                 <div style={{ fontFamily: "Georgia, serif", fontSize: 22, letterSpacing: "-0.015em", lineHeight: 1.2, color: C.espresso }}>{b.coach_name}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 600, color: C.ink, marginTop: 3 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, color: C.ink, marginTop: 3 }}>
                   Expertin in smile2go{schwer ? ` · ${schwer}` : ""}
                 </div>
                 {c.kurzprofil && (
-                  <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.65, margin: "12px 0 0", whiteSpace: "pre-wrap" }}>{c.kurzprofil}</p>
+                  <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.65, margin: "12px 0 0", whiteSpace: "pre-wrap" }}>{c.kurzprofil}</p>
                 )}
                 {(c.website || insta) && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
@@ -8153,7 +8156,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
                     {insta && <a href={insta} target="_blank" rel="noreferrer" style={pille}>Instagram <Ikon n="pfeilRechts" size={14} /></a>}
                   </div>
                 )}
-                <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.6, margin: "16px 0 0" }}>
+                <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: "16px 0 0" }}>
                   Dieser Beitrag ist ihr Geschenk an alle Frauen in smile2go.
                   {!bindung?.coach_id && " Wenn sie dir gut tut, kannst du sie als deine Begleitung wählen — ohne Druck."}
                 </p>
@@ -8185,7 +8188,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
         )}
 
         {liste?.length === 0 && (
-          <Card><p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16.5, color: C.ink, margin: 0, lineHeight: 1.6 }}>
+          <Card><p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.ink, margin: 0, lineHeight: 1.6 }}>
             Hierzu gibt es noch nichts. Schau bald wieder vorbei.
           </p></Card>
         )}
@@ -8197,24 +8200,24 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
                 <div style={{ position: "absolute", inset: 0 }}>
                   <GemBild ton={b.beduerfnis} saat={gemSaat(b.id)} />
                 </div>
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18 }}>
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 19 }}>
                   {GEM_TYP_ICON[b.typ]}
                 </div>
               </div>
               <div style={{ flex: 1, minWidth: 0, padding: "14px 15px 14px 0" }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, lineHeight: 1.3 }}>{b.titel}</div>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 18.5, color: C.espresso, lineHeight: 1.3 }}>{b.titel}</div>
                 {b.einleitung && (
-                  <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.5, margin: "5px 0 0" }}>
+                  <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.5, margin: "5px 0 0" }}>
                     {b.einleitung}
                   </p>
                 )}
-                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8, fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>
                   {b.coach_name && (
                     <span style={{
                       width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
                       background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
                       display: "inline-flex", alignItems: "center", justifyContent: "center",
-                      fontFamily: "Georgia, serif", fontSize: 13,
+                      fontFamily: "Georgia, serif", fontSize: 14.5,
                     }}>{b.coach_name.charAt(0)}</span>
                   )}
                   <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -8234,11 +8237,11 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
           {!wegFrage ? (
             <button onClick={() => setWegFrage(true)} style={{
               width: "100%", background: "none", border: "none", cursor: "pointer", minHeight: 46,
-              fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, textDecoration: "underline",
+              fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, textDecoration: "underline",
             }}>Weniger davon vorschlagen</button>
           ) : (
             <Card>
-              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: "0 0 14px" }}>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: "0 0 14px" }}>
                 Wir merken uns dann nicht mehr, dass dich das beschäftigt hat, und schlagen
                 nichts mehr dazu vor. Du findest den Bereich hier trotzdem weiter.
               </p>
@@ -8279,8 +8282,8 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
         <span style={{ position: "absolute", inset: 0 }}><GemBild ton={APP_TOENE[gemSaat(x.t) % APP_TOENE.length]} saat={gemSaat(x.tab)} /></span>
         <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ width: 58, height: 58, borderRadius: "50%", background: "rgba(255,253,254,.92)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px -10px rgba(40,10,40,.6)" }}><Sym e={x.icon} size={28} /></span></span>
       </span>
-      <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, color: C.espresso, lineHeight: 1.3, marginTop: 9 }}>{x.t}</span>
-      <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3, lineHeight: 1.35 }}>{x.s}</span>
+      <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 600, color: C.espresso, lineHeight: 1.3, marginTop: 9 }}>{x.t}</span>
+      <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, marginTop: 3, lineHeight: 1.35 }}>{x.s}</span>
     </button>
   );
   const AppRegale = () => appRegale.map((g, i) => (
@@ -8297,12 +8300,12 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
   const MehrKarte = () => (
     <Card style={{ marginTop: 6, marginBottom: 26, background: `linear-gradient(135deg, ${C.card}, ${C.roseSoft})` }}>
       <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 7, lineHeight: 1.25 }}>Wenn du mehr möchtest</div>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, margin: "0 0 15px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.6, margin: "0 0 15px" }}>
         In unserer Community schreiben Frauen einander, stellen Fragen und antworten. Du liest mit, so lange du magst, und schreibst erst, wenn du willst.
       </p>
       <button onClick={() => go("community")} style={{
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", minHeight: 48, borderRadius: 999, border: "none", cursor: "pointer",
-        fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: "#FFF8FC", background: C.gold, boxShadow: "0 10px 22px -12px rgba(110,45,100,.7)",
+        fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: "#FFF8FC", background: C.gold, boxShadow: "0 10px 22px -12px rgba(110,45,100,.7)",
       }}>
         <Ikon n="sprechblase" size={16} />Unsere Community
       </button>
@@ -8328,9 +8331,9 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, margin: "0 0 12px" }}>
       <span style={{ fontFamily: "Georgia, serif", fontSize: 21, color: C.espresso, letterSpacing: "-.015em", lineHeight: 1.2, minWidth: 0 }}>{children}</span>
       {zeigeAlle ? (
-        <button onClick={zeigeAlle} style={{ flexShrink: 0, border: "none", background: "none", padding: "6px 0", cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 600, color: C.plum }}>{alleText}</button>
+        <button onClick={zeigeAlle} style={{ flexShrink: 0, border: "none", background: "none", padding: "6px 0", cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: C.plum }}>{alleText}</button>
       ) : rechts ? (
-        <span style={{ flexShrink: 0, fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, fontWeight: 600 }}>{rechts}</span>
+        <span style={{ flexShrink: 0, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, fontWeight: 600 }}>{rechts}</span>
       ) : null}
     </div>
   );
@@ -8348,10 +8351,10 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
     <button onClick={() => oeffnen(b)} aria-hidden={kopie || undefined} tabIndex={kopie ? -1 : undefined} style={{ flex: "0 0 auto", width: 132, padding: 0, border: "none", background: "none", textAlign: "left", cursor: "pointer", scrollSnapAlign: "start" }}>
       <span style={{ position: "relative", display: "block", aspectRatio: "1 / 1", borderRadius: 14, overflow: "hidden", boxShadow: "0 12px 24px -16px rgba(120,60,110,.55)" }}>
         <span style={{ position: "absolute", inset: 0 }}><GemBild ton={b.beduerfnis} saat={gemSaat(b.titel || String(b.id))} /></span>
-        <span style={{ position: "absolute", left: 8, bottom: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(255,253,254,.93)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12.5 }}>{GEM_TYP_ICON[b.typ]}</span>
+        <span style={{ position: "absolute", left: 8, bottom: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(255,253,254,.93)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{GEM_TYP_ICON[b.typ]}</span>
       </span>
-      <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: 600, color: C.espresso, lineHeight: 1.3, marginTop: 9 }}>{b.titel}</span>
-      <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 600, color: C.espresso, lineHeight: 1.3, marginTop: 9 }}>{b.titel}</span>
+      <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {[b.coach_name, b.dauer_min ? `${b.dauer_min} Min` : null].filter(Boolean).join(" · ")}
       </span>
     </button>
@@ -8364,11 +8367,11 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
     }}>
       <span style={{ position: "relative", display: "block", aspectRatio: breit ? "16 / 6" : "16 / 9" }}>
         <span style={{ position: "absolute", inset: 0 }}><GemBild ton={b.beduerfnis} saat={gemSaat(b.titel || b.id)} /></span>
-        <span style={{ position: "absolute", left: 10, bottom: 9, width: 27, height: 27, borderRadius: "50%", background: "rgba(255,253,254,.93)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>{GEM_TYP_ICON[b.typ]}</span>
+        <span style={{ position: "absolute", left: 10, bottom: 9, width: 27, height: 27, borderRadius: "50%", background: "rgba(255,253,254,.93)", color: C.plum, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14.5 }}>{GEM_TYP_ICON[b.typ]}</span>
       </span>
       <span style={{ display: "block", padding: "11px 13px 13px" }}>
-        <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.28 }}>{b.titel}</span>
-        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 6, fontWeight: 600 }}>
+        <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.28 }}>{b.titel}</span>
+        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 6, fontWeight: 600 }}>
           {[b.coach_name, b.dauer_min ? `${b.dauer_min} Min` : null, BED[b.beduerfnis]?.t].filter(Boolean).join(" · ")}
         </span>
       </span>
@@ -8384,8 +8387,8 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
       <span style={{ position: "absolute", inset: 0 }}><GemBild ton={b.id} saat={gemSaat(b.id)} /></span>
       <span style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(26,16,12,.72) 0%, rgba(26,16,12,.28) 45%, rgba(26,16,12,.04) 100%)" }} />
       <span style={{ position: "absolute", inset: "auto 0 0 0", padding: "12px 13px", textAlign: "left" }}>
-        <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 16, color: "#fff", lineHeight: 1.25 }}>{b.t}</span>
-        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: "rgba(255,255,255,.8)", marginTop: 4, fontWeight: 600 }}>
+        <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 17.5, color: "#fff", lineHeight: 1.25 }}>{b.t}</span>
+        <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13, color: "rgba(255,255,255,.8)", marginTop: 4, fontWeight: 600 }}>
           {zahlen[b.id] ? `${zahlen[b.id]} ${zahlen[b.id] === 1 ? "Beitrag" : "Beiträge"}` : "Die ersten Beiträge kommen"}
         </span>
       </span>
@@ -8404,7 +8407,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
           <H size={30} style={{ marginBottom: 0, lineHeight: 1.18 }}>Community</H>
         </div>
       </div>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.62, margin: "0 0 18px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.62, margin: "0 0 18px" }}>
         {gesamt > 0
           ? `${gesamt} Beiträge, geschenkt von Coachinnen. Frei für dich — ganz gleich, ob du eine Begleitung hast oder nicht.`
           : "Hier sammeln sich die Beiträge, die Coachinnen für alle Frauen einbringen."}
@@ -8415,15 +8418,15 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
         <a href={WHATSAPP_COMMUNITY} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", minHeight: 52, borderRadius: 16, background: "#E9F8EF", border: "1.5px solid #BFE8CF", textDecoration: "none", marginBottom: 22 }}>
           <WhatsAppZeichen />
           <span style={{ flex: 1 }}>
-            <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: "#14532D" }}>WhatsApp-Community beitreten</span>
-            <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#3F6B51", marginTop: 2 }}>Neuigkeiten, Live-Kreise und Termine direkt aufs Handy</span>
+            <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 600, color: "#14532D" }}>WhatsApp-Community beitreten</span>
+            <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 14, color: "#3F6B51", marginTop: 2 }}>Neuigkeiten, Live-Kreise und Termine direkt aufs Handy</span>
           </span>
           <span style={{ color: "#1F8A4C", fontSize: 20 }}>›</span>
         </a>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", minHeight: 52, borderRadius: 16, background: "#F2FAF5", border: "1.5px dashed #BFE8CF", marginBottom: 22 }}>
           <WhatsAppZeichen />
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: "#3F6B51" }}>WhatsApp-Community · Link folgt in Kürze</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: "#3F6B51" }}>WhatsApp-Community · Link folgt in Kürze</span>
         </div>
       )}
 
@@ -8435,7 +8438,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
         <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 14px", minHeight: 48, border: `1.5px solid ${C.line}`, borderRadius: 15, background: C.card, marginBottom: 22 }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.4" /><path d="m15.8 15.8 4.2 4.2" /></svg>
           <input type="search" value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Thema, Coachin oder Wort suchen" autoComplete="off" aria-label="Community durchsuchen"
-            style={{ border: "none", background: "none", outline: "none", fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, width: "100%", padding: 0, minWidth: 0 }} />
+            style={{ border: "none", background: "none", outline: "none", fontFamily: "system-ui, sans-serif", fontSize: 17.5, color: C.espresso, width: "100%", padding: 0, minWidth: 0 }} />
         </label>
       )}
 
@@ -8452,7 +8455,7 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
           <Abschnitt rechts={`${treffer.length + appTreffer.length} Treffer`}>Gefunden</Abschnitt>
           {appTreffer.length > 0 && <Regal>{appTreffer.map((x) => <AppKarte key={x.tab} x={x} />)}</Regal>}
           {treffer.length === 0 && appTreffer.length === 0 ? (
-            <Card><p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>Dazu gibt es noch nichts. Versuch ein anderes Wort.</p></Card>
+            <Card><p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>Dazu gibt es noch nichts. Versuch ein anderes Wort.</p></Card>
           ) : treffer.length === 0 ? null : (
             <div style={{ display: "grid", gap: 12 }}>{treffer.map((x) => <NeuKarte key={x.id} b={x} breit />)}</div>
           )}
@@ -8467,13 +8470,13 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
             <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 7, lineHeight: 1.25 }}>
               Kennst du eine Coachin?
             </div>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.65, margin: "0 0 15px" }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.65, margin: "0 0 15px" }}>
               Jede Coachin, die hier etwas einbringt, macht diesen Ort für alle Frauen reicher —
               und wird selbst gefunden. Wenn du eine kennst, lade sie ein.
             </p>
             <Btn small onClick={einladen}>↗ Eine Coachin einladen</Btn>
             {geteilt && (
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.sage, marginTop: 11, fontWeight: 600 }}>{geteilt}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.sage, marginTop: 11, fontWeight: 600 }}>{geteilt}</div>
             )}
           </Card>
         </>
@@ -8740,12 +8743,12 @@ function ThemaUebung({ u, farbe }) {
   const [offen, setOffen] = useState(false);
   return (
     <Card style={{ marginTop: 8, marginBottom: 20, padding: 16 }}>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: farbe }}>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: farbe }}>
         Meditation · {u.dauer} Min.
       </div>
       <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, margin: "6px 0 10px" }}>{u.t}</div>
       {offen && (
-        <ol style={{ margin: "0 0 12px", paddingLeft: 20, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6 }}>
+        <ol style={{ margin: "0 0 12px", paddingLeft: 20, fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, lineHeight: 1.6 }}>
           {u.schritte.map((s) => <li key={s} style={{ marginBottom: 6 }}>{s}</li>)}
         </ol>
       )}
@@ -8775,34 +8778,34 @@ function ThemaCoachinnen({ bed, go }) {
     <div style={{ marginTop: 8, marginBottom: 20 }}>
       {beitraege.length === 0 && (
         <Card style={{ background: C.beige }}>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.55, margin: 0 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.55, margin: 0 }}>
             Zu diesem Thema haben Coachinnen noch nichts eingestellt. Neue Beiträge erscheinen hier automatisch.
           </p>
         </Card>
       )}
       {beitraege.map((b) => (
         <Card key={b.id} style={{ marginBottom: 9, padding: 14 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: C.gold, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.gold, textTransform: "uppercase", letterSpacing: "0.05em" }}>
             {typName[b.typ] || "Beitrag"}{b.dauer_min ? ` · ${b.dauer_min} Min.` : ""}
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso, marginTop: 3 }}>{b.titel}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso, marginTop: 3 }}>{b.titel}</div>
           {b.coach_name && (
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>von {b.coach_name}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>von {b.coach_name}</div>
           )}
           <div style={{ display: "flex", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
             {b.extern_url && (
-              <a href={b.extern_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum }}>
+              <a href={b.extern_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.plum }}>
                 {b.typ === "video" ? "▶︎ Video ansehen ↗" : "Öffnen ↗"}
               </a>
             )}
-            <button type="button" onClick={() => go("gemeinschaft")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, textDecoration: "underline" }}>
+            <button type="button" onClick={() => go("gemeinschaft")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, textDecoration: "underline" }}>
               In der Gemeinschaft
             </button>
           </div>
         </Card>
       ))}
       {beitraege.some((b) => b.typ === "video") && (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, lineHeight: 1.5, margin: "4px 0 0" }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, margin: "4px 0 0" }}>
           Videos öffnen sich auf der Plattform der Coachin (z. B. YouTube). Dort gelten deren Datenschutzregeln.
         </p>
       )}
@@ -8820,10 +8823,10 @@ function ThemaScreen({ id, go, bindung }) {
         <div style={{ fontSize: 34 }}><Sym e={th.icon} size={34} /></div>
         <div>
           <H size={24} style={{ color: th.farbe }}>{th.t}</H>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>{th.was}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>{th.was}</div>
         </div>
       </div>
-      <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.65, margin: "0 0 20px" }}>
+      <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.65, margin: "0 0 20px" }}>
         {th.text}
       </p>
 
@@ -8831,10 +8834,10 @@ function ThemaScreen({ id, go, bindung }) {
         <>
           <Eyebrow color={C.plum}>Was die Forschung sagt</Eyebrow>
           <Card style={{ marginTop: 8, marginBottom: 20, background: C.beige }}>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, lineHeight: 1.6, margin: 0 }}>
               {wissen.forschung}
             </p>
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, lineHeight: 1.5, margin: "10px 0 0" }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.5, margin: "10px 0 0" }}>
               Angelehnt an: {wissen.ansatz}. Hier als Selbsthilfe aufbereitet, keine Therapie.
             </p>
           </Card>
@@ -8852,10 +8855,10 @@ function ThemaScreen({ id, go, bindung }) {
         {th.tabs.map((x) => (
           <Card key={x.t} onClick={() => go(x.tab)} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center", padding: 14 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{x.t}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>{x.s}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>{x.t}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>{x.s}</div>
             </div>
-            <div style={{ color: th.farbe, fontSize: 18 }}>›</div>
+            <div style={{ color: th.farbe, fontSize: 19 }}>›</div>
           </Card>
         ))}
       </div>
@@ -8870,13 +8873,13 @@ function ThemaScreen({ id, go, bindung }) {
                 borderBottom: `1px solid ${C.line}`, textDecoration: "none",
               }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.espresso }}>{h.t}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>{h.s}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 700, color: C.espresso }}>{h.t}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>{h.s}</div>
                 </div>
-                <span style={{ color: C.gold, fontSize: 17 }}><Sym e="↗" size={16} /></span>
+                <span style={{ color: C.gold, fontSize: 18 }}><Sym e="↗" size={16} /></span>
               </a>
             ))}
-            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, lineHeight: 1.5, marginTop: 10, marginBottom: 0 }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, lineHeight: 1.5, marginTop: 10, marginBottom: 0 }}>
               {th.rechtshinweis}
             </p>
           </Card>
@@ -8886,7 +8889,7 @@ function ThemaScreen({ id, go, bindung }) {
       {/* Was die eigene Coachin zu diesem Thema anbietet — kommt aus ihrem Profil. */}
       <Eyebrow color={C.plum}>Von deiner Coachin</Eyebrow>
       <Card style={{ marginTop: 8, marginBottom: 16, background: C.goldPale, border: `1px solid ${C.goldSoft}` }}>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: 0 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: 0 }}>
           {bindung?.coach_name
             ? `${bindung.coach_name} hat zu „${th.t}“ noch nichts hinterlegt. Sobald sie etwas einstellt, findest du es hier.`
             : "Sobald du mit einer Coachin verbunden bist, findest du hier ihre Impulse und Angebote zu diesem Thema."}
@@ -8899,7 +8902,7 @@ function ThemaScreen({ id, go, bindung }) {
       </Card>
 
       {th.krise && (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, lineHeight: 1.6, opacity: 0.85 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6, opacity: 0.85 }}>
           Wenn es dir gerade sehr schlecht geht: Die TelefonSeelsorge ist rund um die Uhr erreichbar,
           kostenfrei unter <b>0800 111 0 111</b> und <b>0800 111 0 222</b>. Im Notfall: <b>112</b>. Diese App ersetzt keine
           Therapie und keine ärztliche Behandlung.
@@ -9085,10 +9088,10 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
       <Card onClick={() => go("kurse")} style={{ marginBottom: 24, display: "flex", gap: 13, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})`, border: `1px solid ${C.goldSoft}` }}>
         <div style={{ width: 46, height: 46, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}><Sym e="🎓" size={22} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>
             {bindung?.coach_name || "Kurse, Pakete & Retreats"}
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>
             {bindung?.coach_name
               ? "Kurse, Pakete und Retreats deiner Coachin"
               : "Verbinde dich mit einer Coachin, dann steht hier ihr Angebot"}
@@ -9120,20 +9123,20 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
               padding: "13px 2px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left",
             }}
           >
-            <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: C.espresso }}>{gr.g}</span>
+            <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 17.5, fontWeight: 700, color: C.espresso }}>{gr.g}</span>
             {rhythmus && auf !== gr.g && wochenPool[offenIdx] && (
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.gold, textAlign: "right", lineHeight: 1.3 }}>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.gold, textAlign: "right", lineHeight: 1.3 }}>
                 {wochenPool[offenIdx].t}
                 <br />
                 <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontVariantNumeric: "tabular-nums" }}>{countdown}</span>
               </span>
             )}
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.mut }}>{gr.items.length}</span>
-            <span style={{ color: C.mut, fontSize: 13, transform: auf === gr.g ? "rotate(180deg)" : "none", transition: "transform .2s" }}>⌄</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.mut }}>{gr.items.length}</span>
+            <span style={{ color: C.mut, fontSize: 14.5, transform: auf === gr.g ? "rotate(180deg)" : "none", transition: "transform .2s" }}>⌄</span>
           </button>
           {auf === gr.g && (<>
           {rhythmus && !ersterBlock && (
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, margin: "8px 0 2px" }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.75, margin: "8px 0 2px" }}>
               Gehört zum selben Wochen-Rhythmus.
             </div>
           )}
@@ -9143,10 +9146,10 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
               margin: "8px 0 10px", padding: "9px 12px", borderRadius: 12,
               background: C.goldPale, border: `1px solid ${C.line}`,
             }}>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.5 }}>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5 }}>
                 Jede Woche öffnet sich <b>eine</b> Tür. Diese Woche: <b style={{ color: C.plum }}>{wochenPool[offenIdx]?.t}</b>
               </span>
-              <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 13, color: C.gold, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+              <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 14.5, color: C.gold, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                 {countdown}
               </span>
             </div>
@@ -9173,13 +9176,13 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
                     filter: gesperrt ? "grayscale(.75)" : "none",
                   }}><Sym e={x.icon} size={23} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: C.espresso }}>{x.t}</div>
-                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 2 }}>{x.s}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: C.espresso }}>{x.t}</div>
+                    <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 2 }}>{x.s}</div>
                     {offen && (
                       <div style={{
                         display: "inline-block", marginTop: 7, padding: "3px 9px", borderRadius: 20,
                         background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
-                        fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700,
+                        fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700,
                       }}>
                         {schonBelohnt ? `✓ +${WOCHEN_BONUS} geholt` : `Jetzt offen · +${WOCHEN_BONUS} ✨`}
                       </div>
@@ -9187,13 +9190,13 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
                   </div>
                   {offen ? (
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, color: C.ink, opacity: 0.75 }}>noch offen</div>
-                      <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 13.5, color: C.gold, fontVariantNumeric: "tabular-nums" }}>{countdown}</div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75 }}>noch offen</div>
+                      <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 15, color: C.gold, fontVariantNumeric: "tabular-nums" }}>{countdown}</div>
                     </div>
                   ) : gesperrt ? (
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 16.5 }}><Sym e="🔒" size={15} /></div>
-                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: 18 }}><Sym e="🔒" size={15} /></div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, whiteSpace: "nowrap" }}>
                         {wartetWochen(x.tab) === 1 ? "nächste Woche" : `in ${wartetWochen(x.tab)} Wochen`}
                       </div>
                     </div>
@@ -9202,7 +9205,7 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
                   )}
                 </Card>
                 {hinweis?.tab === x.tab && (
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, margin: "0 0 10px 6px", animation: "fadeUp .3s ease" }}>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, margin: "0 0 10px 6px", animation: "fadeUp .3s ease" }}>
                     {hinweis.text}
                   </div>
                 )}
@@ -9306,8 +9309,8 @@ function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
       <div style={{ fontSize: 24, filter: a.fertig ? "none" : "grayscale(1)", opacity: a.fertig ? 1 : 0.4 }}>
         {a.fertig ? a.icon : "🔒"}
       </div>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: C.espresso, marginTop: 5, lineHeight: 1.3 }}>{a.t}</div>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.mut, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, fontWeight: 700, color: C.espresso, marginTop: 5, lineHeight: 1.3 }}>{a.t}</div>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.mut, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
         {a.fertig ? "✓ geschafft" : `${a.wert}/${a.ziel}`}
       </div>
     </div>
@@ -9322,8 +9325,8 @@ function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
             display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12,
             padding: "11px 0", borderBottom: i === zeilen.length - 1 ? "none" : `1px solid ${C.line}`,
           }}>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>{n}</span>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 700, color: C.espresso, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{w}</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink }}>{n}</span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, fontWeight: 700, color: C.espresso, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{w}</span>
           </div>
         ))}
       </Card>
@@ -9345,14 +9348,14 @@ function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
             {[["abzeichen", "Abzeichen"], ["statistik", "Statistiken"]].map(([k, n]) => (
               <button key={k} onClick={() => setReiter(k)} style={{
                 flex: 1, padding: "9px 0", borderRadius: 19, border: "none", cursor: "pointer", minHeight: 40,
-                fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700,
+                fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 700,
                 background: reiter === k ? C.card : "transparent", color: reiter === k ? C.plum : C.ink,
               }}>{n}</button>
             ))}
           </div>
           <button onClick={onClose} aria-label="Schließen" style={{
             background: C.card, border: `1px solid ${C.line}`, borderRadius: "50%",
-            width: 38, height: 38, fontSize: 17, cursor: "pointer", color: C.ink, flexShrink: 0,
+            width: 38, height: 38, fontSize: 18, cursor: "pointer", color: C.ink, flexShrink: 0,
           }}>✕</button>
         </div>
 
@@ -9360,10 +9363,10 @@ function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
           <>
             <Card style={{ textAlign: "center", marginBottom: 16, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, border: "none" }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: 42, color: C.plum, lineHeight: 1.1 }}>{geschafft.length}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: C.ink }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", color: C.ink }}>
                 von {ABZEICHEN.length} Abzeichen
               </div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 8 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 8 }}>
                 {punkte} Lichtpunkte · noch {Math.max(0, naechsterMs - punkte)} bis {naechsterMs}
               </div>
             </Card>
@@ -9376,13 +9379,13 @@ function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
                     <Card key={a.id} style={{ marginBottom: 8, display: "flex", gap: 12, alignItems: "center", padding: 13 }}>
                       <div style={{ fontSize: 22, opacity: 0.45 }}><Sym e={a.icon} size={22} /></div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{a.t}</div>
-                        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 1 }}>{a.s}</div>
+                        <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: C.espresso }}>{a.t}</div>
+                        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 1 }}>{a.s}</div>
                         <div style={{ height: 4, borderRadius: 3, background: C.beige, marginTop: 7, overflow: "hidden" }}>
                           <div style={{ height: "100%", width: `${Math.round(a.anteil * 100)}%`, background: `linear-gradient(90deg, ${C.gold}, ${C.rose})` }} />
                         </div>
                       </div>
-                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 700, color: C.plum, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 700, color: C.plum, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                         {a.wert}/{a.ziel}
                       </div>
                     </Card>
@@ -9393,7 +9396,7 @@ function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
 
             <button onClick={() => setAlle(!alle)} style={{
               width: "100%", background: "none", border: "none", cursor: "pointer", minHeight: 40,
-              fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700, color: C.plum,
+              fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.plum,
               textDecoration: "underline", marginBottom: 14,
             }}>
               {alle ? "Nur die nächsten zeigen" : "Alle Abzeichen anzeigen"}
@@ -9416,8 +9419,8 @@ function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
                   <Card key={b.t} style={{ marginBottom: 9, display: "flex", gap: 12, alignItems: "center", opacity: kann ? 1 : 0.55 }}>
                     <span style={{ fontSize: 24 }}><Sym e={b.icon} size={24} /></span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso }}>{b.t}</div>
-                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>{b.s} · {b.p} Punkte</div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: C.espresso }}>{b.t}</div>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>{b.s} · {b.p} Punkte</div>
                     </div>
                     <Btn small ghost={!kann} onClick={() => kann && onEinloesen(b.p, b.t)}>{kann ? "Einlösen" : `${b.p} P`}</Btn>
                   </Card>
@@ -9431,7 +9434,7 @@ function PunkteModal({ punkte, onClose, onEinloesen, ...daten }) {
               {[["Lichtpunkte", z.punkte], ["Tage Serie", z.serie], ["Einträge", z.eintraege], ["Abzeichen", geschafft.length]].map(([n, w]) => (
                 <Card key={n} style={{ textAlign: "center", padding: "14px 8px" }}>
                   <div style={{ fontFamily: "Georgia, serif", fontSize: 26, color: C.plum, fontVariantNumeric: "tabular-nums" }}>{w}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, marginTop: 2 }}>{n}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 2 }}>{n}</div>
                 </Card>
               ))}
             </div>
@@ -9504,13 +9507,13 @@ function Schattenspiegel({ addPunkte }) {
       `}</style>
       <Eyebrow color={C.plum}>Schattenspiegel</Eyebrow>
       <H size={25}>Schreib es. Lass es gehen.</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
         Hier darfst du alles aussprechen, was du nie jemandem zeigen würdest — Wut, Angst, dunkle Gedanken.
         Danach wird dein Text zeremoniell verbrannt.
       </p>
       <Card style={{ background: "#2E2320", border: "1px solid #4A3A30", position: "relative", overflow: "hidden" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: "#C9A98C", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: "#C9A98C", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>
             🖤 Nichts wird gespeichert · keine KI liest mit · kein Backup
           </div>
           <button
@@ -9518,7 +9521,7 @@ function Schattenspiegel({ addPunkte }) {
             title={soundOn ? "Ton aus" : "Ton an"}
             style={{
               flexShrink: 0, marginLeft: 10, width: 30, height: 30, borderRadius: 9, border: "1px solid #4A3A30",
-              background: "rgba(255,255,255,.06)", color: "#F0E4D6", fontSize: 15.5, cursor: "pointer",
+              background: "rgba(255,255,255,.06)", color: "#F0E4D6", fontSize: 17, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >
@@ -9548,7 +9551,7 @@ function Schattenspiegel({ addPunkte }) {
             disabled={burning}
             style={{
               width: "100%", boxSizing: "border-box", background: "transparent", border: "none", outline: "none",
-              color: "#F0E4D6", fontFamily: "Georgia, serif", fontSize: 17, lineHeight: 1.7, resize: "vertical",
+              color: "#F0E4D6", fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 1.7, resize: "vertical",
               animation: burning ? "burnAway 2.4s ease forwards" : "none", position: "relative",
             }}
           />
@@ -9568,11 +9571,11 @@ function Schattenspiegel({ addPunkte }) {
       </div>
       {done && (
         <Card style={{ marginTop: 14, textAlign: "center", background: C.goldPale }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>Es ist gegangen. 🕊️</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 4 }}>Atme einmal tief. Dieser Raum gehört wieder dir.</div>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>Es ist gegangen. 🕊️</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginTop: 4 }}>Atme einmal tief. Dieser Raum gehört wieder dir.</div>
         </Card>
       )}
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.7, marginTop: 16, lineHeight: 1.6 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.7, marginTop: 16, lineHeight: 1.6 }}>
         Technisches Versprechen: Dein Text existiert nur in diesem Moment auf deinem Gerät. Er wird nicht gespeichert,
         nicht gesendet und nicht analysiert.
       </p>
@@ -9610,15 +9613,15 @@ Regeln: Erfinde keine konkreten Fakten über ihr Leben, die oben nicht stehen. S
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow color={C.plum}>Zukunfts-Ich</Eyebrow>
       <H size={25}>Sprich mit dir in 10 Jahren</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
         Dein Zukunfts-Ich kennt deine Journal-Gedanken und Ziele — und antwortet dir mit der Ruhe von jemandem, der weiß, wie es weitergeht.
       </p>
       {msgs.length === 0 && (
         <Card style={{ marginBottom: 12, background: C.goldPale }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.6 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.6 }}>
             „Hallo du. Ich bin du — nur ein Stück weiter auf dem Weg. Frag mich, was du wissen willst.“
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 8 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 8 }}>
             Zum Beispiel: „Hat sich der Mut gelohnt?“ · „Was soll ich heute nicht mehr mit mir herumtragen?“
           </div>
         </Card>
@@ -9632,11 +9635,11 @@ Regeln: Erfinde keine konkreten Fakten über ihr Leben, die oben nicht stehen. S
             background: m.role === "user" ? `linear-gradient(135deg, ${C.gold}, ${C.rose})` : C.card,
             border: m.role === "user" ? "none" : `1px solid ${C.line}`,
             color: m.role === "user" ? "#fff" : C.espresso,
-            fontFamily: "system-ui, sans-serif", fontSize: 16, lineHeight: 1.6, whiteSpace: "pre-wrap",
+            fontFamily: "system-ui, sans-serif", fontSize: 17.5, lineHeight: 1.6, whiteSpace: "pre-wrap",
           }}>{m.role === "assistant" ? "🕰️ " : ""}{m.content}</div>
         </div>
       ))}
-      {busy && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 10 }}>🕰️ Dein Zukunfts-Ich denkt zurück …</div>}
+      {busy && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 10 }}>🕰️ Dein Zukunfts-Ich denkt zurück …</div>}
       <div ref={endRef} />
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <input
@@ -9644,7 +9647,7 @@ Regeln: Erfinde keine konkreten Fakten über ihr Leben, die oben nicht stehen. S
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && senden()}
           placeholder="Frag dein Zukunfts-Ich …"
-          style={{ flex: 1, padding: "13px 15px", borderRadius: 14, border: `1.5px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 16, outline: "none", background: C.card, color: C.espresso }}
+          style={{ flex: 1, padding: "13px 15px", borderRadius: 14, border: `1.5px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 17.5, outline: "none", background: C.card, color: C.espresso }}
         />
         <Mikro size={44} onText={(t) => setInput((prev) => (prev ? prev + " " : "") + t)} />
         <Btn onClick={senden} disabled={busy || !input.trim()}>➤</Btn>
@@ -9769,7 +9772,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
   const erdung = weg ? SOS_ERDUNG[weg] : null;
   const dunkel = weg === "dunkel";
   const Hilfe = ({ voll }) => (
-    <div style={{ marginTop: 14, padding: "12px 14px", background: voll ? C.roseSoft : C.beige, borderRadius: 12, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.espresso, lineHeight: 1.7 }}>
+    <div style={{ marginTop: 14, padding: "12px 14px", background: voll ? C.roseSoft : C.beige, borderRadius: 12, fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, lineHeight: 1.7 }}>
       <b>Wenn es zu viel wird — kostenlos & rund um die Uhr:</b><br />
       📞 TelefonSeelsorge <b>0800 111 0 111</b> oder <b>0800 111 0 222</b><br />
       {voll && <>💬 Chat & Mail: telefonseelsorge.de<br />🚑 Bei akuter Gefahr: <b>112</b></>}
@@ -9788,7 +9791,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
               position: "absolute", top: 12, right: 16, zIndex: 2,
               background: "rgba(251,246,238,.1)", border: "1.5px solid #5A473C", borderRadius: 20,
               color: "#D8C4AE", padding: "7px 13px", cursor: "pointer",
-              fontFamily: "system-ui, sans-serif", fontSize: 13,
+              fontFamily: "system-ui, sans-serif", fontSize: 14.5,
             }}
           >
             {stimme ? "🔊 Stimme an" : "🔇 Stimme aus"}
@@ -9799,11 +9802,11 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
           <div>
             <div style={{ textAlign: "center", marginBottom: 18 }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: "#ECE2D1" }}>Ich bin bei dir.</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: "#D8C4AE", marginTop: 6, lineHeight: 1.6 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: "#D8C4AE", marginTop: 6, lineHeight: 1.6 }}>
                 Was ist gerade los? Ich such den passenden Weg für dich.
               </div>
               {stimme && spracheMoeglich() && (
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: "#A8927C", marginTop: 8, lineHeight: 1.55 }}>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#A8927C", marginTop: 8, lineHeight: 1.55 }}>
                   Du musst nichts tippen — ich lese vor und gehe von allein mit dir weiter.
                 </div>
               )}
@@ -9817,13 +9820,13 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
               }}>
                 <span style={{ fontSize: 25 }}><Sym e={w.icon} size={25} /></span>
                 <span style={{ flex: 1 }}>
-                  <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: "#ECE2D1" }}>{w.t}</span>
-                  <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#C0AC98", marginTop: 2 }}>{w.s}</span>
+                  <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: "#ECE2D1" }}>{w.t}</span>
+                  <span style={{ display: "block", fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#C0AC98", marginTop: 2 }}>{w.s}</span>
                 </span>
                 <span style={{ color: "#C0AC98", fontSize: 19 }}>›</span>
               </button>
             ))}
-            <button onClick={schliessen} style={{ display: "block", width: "100%", marginTop: 12, background: "none", border: "1.5px solid #5A473C", borderRadius: 14, color: "#C0AC98", padding: "12px 0", fontFamily: "system-ui, sans-serif", fontSize: 15, cursor: "pointer" }}>
+            <button onClick={schliessen} style={{ display: "block", width: "100%", marginTop: 12, background: "none", border: "1.5px solid #5A473C", borderRadius: 14, color: "#C0AC98", padding: "12px 0", fontFamily: "system-ui, sans-serif", fontSize: 16.5, cursor: "pointer" }}>
               Doch nicht — schließen
             </button>
           </div>
@@ -9832,7 +9835,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
         {phase === "atmen" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 21, color: "#ECE2D1", marginBottom: 6 }}>Atme mit mir</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#C0AC98", marginBottom: 26 }}>4 Sekunden ein · 7 halten · 8 aus</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: "#C0AC98", marginBottom: 26 }}>4 Sekunden ein · 7 halten · 8 aus</div>
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200, marginBottom: 22 }}>
               <div style={{
                 width: 190, height: 190, borderRadius: "50%",
@@ -9841,7 +9844,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
                 transition: atemPhase === "ein" ? "transform 4s ease-in-out" : atemPhase === "aus" ? "transform 8s ease-in-out" : "none",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 18, fontWeight: 700, color: "#fff" }}>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 19, fontWeight: 700, color: "#fff" }}>
                   {atemPhase === "ein" ? "einatmen" : atemPhase === "halten" ? "halten" : "ausatmen"}
                 </span>
               </div>
@@ -9851,7 +9854,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
                 <div key={i} style={{ width: 9, height: 9, borderRadius: "50%", background: i < atemZyklus ? C.gold : "#5A473C" }} />
               ))}
             </div>
-            <button onClick={() => setPhase("erdung")} style={{ background: "none", border: "1.5px solid #D8C4AE", borderRadius: 14, color: "#D8C4AE", padding: "11px 22px", fontFamily: "system-ui, sans-serif", fontSize: 15, cursor: "pointer" }}>
+            <button onClick={() => setPhase("erdung")} style={{ background: "none", border: "1.5px solid #D8C4AE", borderRadius: 14, color: "#D8C4AE", padding: "11px 22px", fontFamily: "system-ui, sans-serif", fontSize: 16.5, cursor: "pointer" }}>
               Weiter →
             </button>
           </div>
@@ -9887,11 +9890,11 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
               „{erdung?.hinweis || "Was du gerade fühlst, darf da sein. Du musst es nicht sofort lösen — du musst es nur nicht allein tragen."}“
             </div>
             {archetyp && (
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.7, marginBottom: 14, padding: "10px 12px", background: C.goldPale, borderRadius: 12 }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.7, marginBottom: 14, padding: "10px 12px", background: C.goldPale, borderRadius: 12 }}>
                 {ARCHETYPEN[archetyp.key]?.icon} Auch {ARCHETYPEN[archetyp.key]?.name} darf schwach sein. Deine Kraft verschwindet nicht, nur weil du sie gerade nicht spürst.
               </div>
             )}
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7, marginBottom: 16 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, marginBottom: 16 }}>
               Magst du aufschreiben, was gerade am lautesten in dir ist? Du entscheidest, ob es bleibt oder geht.
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -9910,7 +9913,7 @@ function SOSOverlay({ onClose, entries, setEntries, addPunkte, archetyp }) {
               onChange={(e) => setText(e.target.value)}
               rows={6}
               placeholder="Es darf unsortiert sein …"
-              style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 16.5, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.card, color: C.espresso }}
+              style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.card, color: C.espresso }}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <Btn full onClick={speichern} disabled={!text.trim()}>Ins Journal legen</Btn>
@@ -10005,11 +10008,11 @@ function ArchetypTest({ archetyp, setArchetyp, addPunkte }) {
         <Card style={{ textAlign: "center", border: `2px solid ${a.farbe}`, background: C.card }}>
           <div style={{ fontSize: 54, marginBottom: 6 }}><Sym e={a.icon} size={54} /></div>
           <H size={26} style={{ color: a.farbe }}>{a.name}</H>
-          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, margin: "12px 0" }}>„{a.satz}“</div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.7 }}>{a.text}</p>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.7, marginTop: 10 }}>Entdeckt am {archetyp.datum}</div>
+          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.espresso, margin: "12px 0" }}>„{a.satz}“</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.ink, lineHeight: 1.7 }}>{a.text}</p>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.7, marginTop: 10 }}>Entdeckt am {archetyp.datum}</div>
         </Card>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.7, margin: "14px 0" }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.7, margin: "14px 0" }}>
           Dein Archetyp begleitet dich ab jetzt: Dein Zukunfts-Ich kennt ihn, und deine Reflexionen dürfen in seiner Sprache zu dir sprechen.
         </p>
         <Btn full ghost onClick={neustart}>Test neu machen</Btn>
@@ -10025,24 +10028,24 @@ function ArchetypTest({ archetyp, setArchetyp, addPunkte }) {
       <div style={{ height: 5, borderRadius: 3, background: C.line, margin: "14px 0 6px", overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${((schritt + 1) / ARCHETYP_FRAGEN.length) * 100}%`, background: C.gold, borderRadius: 3, transition: "width .2s" }} />
       </div>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, marginBottom: 18 }}>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.75, marginBottom: 18 }}>
         Frage {schritt + 1}/{ARCHETYP_FRAGEN.length} · Block {blockIdx + 1}: {ARCHETYP_BLOCKS[blockIdx]}
       </div>
       <Card>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 18, lineHeight: 1.5 }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 18, lineHeight: 1.5 }}>
           {frage.f}
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "space-between" }}>
           {LIKERT.map(([num]) => (
             <button key={num} onClick={() => antworte(Number(num))} style={{
               flex: 1, padding: "12px 0", borderRadius: 12, border: `1.5px solid ${C.line}`, background: C.cream, cursor: "pointer",
-              fontFamily: "system-ui, sans-serif", fontSize: 17, fontWeight: 700, color: C.espresso,
+              fontFamily: "system-ui, sans-serif", fontSize: 18, fontWeight: 700, color: C.espresso,
             }}>{num}</button>
           ))}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>trifft nicht zu</span>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, color: C.ink, opacity: 0.7 }}>trifft völlig zu</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.7 }}>trifft nicht zu</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, opacity: 0.7 }}>trifft völlig zu</span>
         </div>
       </Card>
     </div>
@@ -10064,13 +10067,13 @@ function Flamme({ flamme, setFlamme, addPunkte }) {
       <style>{`@keyframes flicker { 0%,100% { transform: scale(1) rotate(-1deg); opacity: 1; } 30% { transform: scale(1.08) rotate(1.5deg); opacity: .92; } 60% { transform: scale(.96) rotate(-.5deg); opacity: .97; } }`}</style>
       <Eyebrow color={C.plum}>Gemeinsame Flamme</Eyebrow>
       <H size={25}>Ein Licht, das uns allen gehört</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7, margin: "10px 0 18px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, margin: "10px 0 18px" }}>
         Die Flamme brennt, solange jeden Tag genug von uns ihr Ritual vollenden. Dein Beitrag zählt — für alle.
       </p>
       <Card style={{ textAlign: "center", background: "#2E2320", border: "1px solid #4A3A30" }}>
         <div style={{ fontSize: 74, animation: "flicker 2.2s ease-in-out infinite", display: "inline-block", filter: "drop-shadow(0 0 18px rgba(230,190,108,.65))" }}><Sym e="🕯️" size={56} /></div>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: "#F0E4D6", marginTop: 10 }}>Die Flamme brennt</div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#C9A98C", marginTop: 6 }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: "#F0E4D6", marginTop: 10 }}>Die Flamme brennt</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: "#C9A98C", marginTop: 6 }}>
           {beigetragen ? "Dein Licht brennt heute mit. 🤍" : "Gib heute dein Licht dazu."}
         </div>
       </Card>
@@ -10081,7 +10084,7 @@ function Flamme({ flamme, setFlamme, addPunkte }) {
       </div>
       <Card style={{ marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Deine Beiträge zur Flamme</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Deine Beiträge zur Flamme</div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: C.espresso }}>{tage} Tage</div>
         </div>
         <div style={{ fontSize: 30 }}>{tage >= 21 ? "🌟" : tage >= 7 ? "✨" : "🕯️"}</div>
@@ -10119,36 +10122,36 @@ function FreundinnenKreis({ kreis, setKreis, streak, addPunkte }) {
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow color={C.plum}>Freundinnen-Kreis</Eyebrow>
       <H size={25}>Gemeinsam wächst es sich leichter</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
         Lade bis zu 5 Freundinnen in deinen privaten Kreis. Ihr journalt 21 Tage zum selben Thema — jede für sich, und doch zusammen.
       </p>
       <Card style={{ marginBottom: 14 }}>
         <Eyebrow color={C.espresso}>Dein Kreis ({mitglieder.length + 1}/6)</Eyebrow>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.line}` }}>
-          <div style={{ width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18 }}><Sym e="✨" size={17} /></div>
+          <div style={{ width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 19 }}><Sym e="✨" size={17} /></div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>Du</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, display: "flex", alignItems: "center", gap: 6 }}><Ikon n="flamme" size={14} style={{ color: C.gold }} />{streak} Tage Serie</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>Du</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, display: "flex", alignItems: "center", gap: 6 }}><Ikon n="flamme" size={14} style={{ color: C.gold }} />{streak} Tage Serie</div>
           </div>
         </div>
         {mitglieder.map((m, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.line}` }}>
-            <div style={{ width: 38, height: 38, borderRadius: "50%", background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, color: C.plum, fontWeight: 700 }}>{m.name.charAt(0).toUpperCase()}</div>
+            <div style={{ width: 38, height: 38, borderRadius: "50%", background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: C.plum, fontWeight: 700 }}>{m.name.charAt(0).toUpperCase()}</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{m.name}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>Einladung offen · {m.eingeladen}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>{m.name}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>Einladung offen · {m.eingeladen}</div>
             </div>
-            <button onClick={() => entfernen(i)} style={{ background: "none", border: "none", cursor: "pointer", color: C.ink, fontSize: 17 }}><Sym e="✕" size={16} /></button>
+            <button onClick={() => entfernen(i)} style={{ background: "none", border: "none", cursor: "pointer", color: C.ink, fontSize: 18 }}><Sym e="✕" size={16} /></button>
           </div>
         ))}
         {mitglieder.length < 5 && (
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && einladen()} placeholder="Name deiner Freundin"
-              style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 15.5, outline: "none", background: C.cream, color: C.espresso }} />
+              style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 17, outline: "none", background: C.cream, color: C.espresso }} />
             <Btn small onClick={einladen} disabled={!name.trim()}>Einladen</Btn>
           </div>
         )}
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink, opacity: 0.7, marginTop: 10 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.7, marginTop: 10 }}>
           Vorschau: Der Einladungs-Versand startet mit dem Server-Update — bis dahin planst du deinen Kreis hier.
         </div>
       </Card>
@@ -10158,7 +10161,7 @@ function FreundinnenKreis({ kreis, setKreis, streak, addPunkte }) {
           <>
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
               <input value={thema} onChange={(e) => setThema(e.target.value)} placeholder="z. B. Grenzen setzen"
-                style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 15.5, outline: "none", background: C.cream, color: C.espresso }} />
+                style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 17, outline: "none", background: C.cream, color: C.espresso }} />
               <Btn small onClick={themaSetzen} disabled={!thema.trim()}>Start</Btn>
             </div>
           </>
@@ -10167,10 +10170,10 @@ function FreundinnenKreis({ kreis, setKreis, streak, addPunkte }) {
             <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, margin: "6px 0 10px" }}>{kreis.thema}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 12 }}>
               {Array.from({ length: 21 }).map((_, i) => (
-                <div key={i} style={{ width: 22, height: 22, borderRadius: 7, background: i < (kreis.themaTag || 0) ? C.gold : C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff", fontWeight: 700 }}>{i < (kreis.themaTag || 0) ? "✓" : ""}</div>
+                <div key={i} style={{ width: 22, height: 22, borderRadius: 7, background: i < (kreis.themaTag || 0) ? C.gold : C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11.5, color: "#fff", fontWeight: 700 }}>{i < (kreis.themaTag || 0) ? "✓" : ""}</div>
               ))}
             </div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginBottom: 12 }}>Tag {Math.min(kreis.themaTag || 0, 21)} von 21</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginBottom: 12 }}>Tag {Math.min(kreis.themaTag || 0, 21)} von 21</div>
             <Btn full onClick={tagZaehlen} disabled={heuteGemacht}>{heuteGemacht ? "Heute schon dabei 🤍" : "Heutigen Tag abschließen"}</Btn>
           </>
         )}
@@ -10208,27 +10211,27 @@ function Mondrituale({ mondrit, setMondrit, addPunkte }) {
       <Card style={{ margin: "16px 0 14px", textAlign: "center", background: C.goldPale }}>
         <div style={{ fontSize: 54 }}><Sym e={m.e} size={54} /></div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso, marginTop: 6 }}>{m.n}</div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginTop: 8 }}>{m.imp}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginTop: 8 }}>{m.imp}</div>
       </Card>
       {faellige.length > 0 && (
         <Card style={{ marginBottom: 14, border: `2px solid ${C.gold}` }}>
           <Eyebrow color={C.espresso}>Erinnerst du dich?</Eyebrow>
           {faellige.map((i, x) => (
-            <div key={x} style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.6, marginBottom: 6 }}>
-              „{i.text}“ <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>— gesetzt am {i.gesetzt}</span>
+            <div key={x} style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.6, marginBottom: 6 }}>
+              „{i.text}“ <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>— gesetzt am {i.gesetzt}</span>
             </div>
           ))}
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 6 }}>Was ist seitdem daraus geworden?</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 6 }}>Was ist seitdem daraus geworden?</div>
         </Card>
       )}
       <Card>
         <Eyebrow color={C.espresso}>{istVoll ? "🌕 Loslass-Ritual" : istNeu ? "🌑 Manifestations-Ritual" : "Dein Mond-Impuls"}</Eyebrow>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7, margin: "6px 0 12px" }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, margin: "6px 0 12px" }}>
           {istVoll ? "Schreib auf, was du zurücklassen willst — und lass es verbrennen." : istNeu ? "Setze eine Intention. In 14 Tagen hole ich sie für dich hervor." : "Auch zwischen den Phasen darfst du säen oder loslassen — wähle unten."}
         </div>
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4}
           placeholder={istVoll ? "Ich lasse los …" : "Ich setze die Intention …"}
-          style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 16.5, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso, animation: burning ? "moonBurn 2s ease forwards" : "none" }} />
+          style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso, animation: burning ? "moonBurn 2s ease forwards" : "none" }} />
         <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
           <Btn full onClick={losRitual} disabled={!text.trim() || burning}>🔥 Loslassen</Btn>
           <Btn full ghost onClick={intentionSetzen} disabled={!text.trim() || burning}>🌱 Intention setzen</Btn>
@@ -10239,8 +10242,8 @@ function Mondrituale({ mondrit, setMondrit, addPunkte }) {
           <Eyebrow color={C.espresso}>Deine Intentionen</Eyebrow>
           {intentionen.map((i, x) => (
             <div key={x} style={{ padding: "8px 0", borderBottom: x < intentionen.length - 1 ? `1px solid ${C.line}` : "none" }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso }}>{i.text}</div>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink }}>gesetzt {i.gesetzt} · Rückblick {i.erinnerung}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso }}>{i.text}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>gesetzt {i.gesetzt} · Rückblick {i.erinnerung}</div>
             </div>
           ))}
         </Card>
@@ -10276,13 +10279,13 @@ function Intuition({ intu, setIntu, addPunkte }) {
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow color={C.plum}>Intuitions-Training</Eyebrow>
       <H size={25}>Welche Karte liegt verdeckt?</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
         Atme einmal durch, spür kurz nach — und wähle. Über viele Runden siehst du, ob dein Gefühl den Zufall schlägt.
       </p>
       <Card style={{ textAlign: "center", marginBottom: 14 }}>
         <div style={{ fontSize: 60, marginBottom: 12 }}>{wahl === null ? "🂠" : INTU_KARTEN[ziel].s}</div>
         {wahl !== null && (
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: wahl === ziel ? C.sage : C.ink, marginBottom: 12 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: wahl === ziel ? C.sage : C.ink, marginBottom: 12 }}>
             {wahl === ziel ? "Treffer! Dein Gefühl lag richtig. ✨" : `Diesmal war es ${INTU_KARTEN[ziel].n}.`}
           </div>
         )}
@@ -10301,17 +10304,17 @@ function Intuition({ intu, setIntu, addPunkte }) {
         <Eyebrow color={C.espresso}>Deine Trefferquote</Eyebrow>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 34, color: quote > zufall ? C.sage : C.espresso }}>{quote}%</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>bei {stats.versuche} Runden · Zufall wäre {zufall}%</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink }}>bei {stats.versuche} Runden · Zufall wäre {zufall}%</div>
         </div>
         {letzte10.length > 0 && (
           <div style={{ display: "flex", gap: 4, marginTop: 12 }}>
             {letzte10.map((v, i) => (
-              <div key={i} style={{ width: 20, height: 20, borderRadius: 6, background: v ? C.sage : C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff" }}>{v ? "✓" : ""}</div>
+              <div key={i} style={{ width: 20, height: 20, borderRadius: 6, background: v ? C.sage : C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12.5, color: "#fff" }}>{v ? "✓" : ""}</div>
             ))}
           </div>
         )}
         {stats.versuche >= 20 && (
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 10, lineHeight: 1.6 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 10, lineHeight: 1.6 }}>
             {quote > zufall + 8 ? "Du liegst deutlich über dem Zufall — schön, wie du dir vertraust." : quote < zufall - 8 ? "Gerade liegst du unter dem Zufall. Auch das ist eine Information: Vielleicht denkst du zu viel und fühlst zu wenig." : "Du bewegst dich im Bereich des Zufalls — genau darum geht es: üben, nicht beweisen."}
           </div>
         )}
@@ -10353,7 +10356,7 @@ function Reisen({ reisen, setReisen, addPunkte }) {
             <div style={{ fontSize: 34 }}><Sym e={def.icon} size={34} /></div>
             <div>
               <H size={21} style={{ color: def.farbe }}>{def.t}</H>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>Tag {aktiv.tag} von {def.tage} · seit {aktiv.start}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Tag {aktiv.tag} von {def.tage} · seit {aktiv.start}</div>
             </div>
           </div>
           <div style={{ height: 8, borderRadius: 5, background: C.beige, overflow: "hidden", marginBottom: 14 }}>
@@ -10361,7 +10364,7 @@ function Reisen({ reisen, setReisen, addPunkte }) {
           </div>
           <div style={{ background: C.goldPale, borderRadius: 14, padding: 16, marginBottom: 14 }}>
             <Eyebrow color={C.espresso}>Impuls für heute</Eyebrow>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.6 }}>{impuls}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, lineHeight: 1.6 }}>{impuls}</div>
           </div>
           <Btn full onClick={tagMachen} disabled={heuteGemacht}>{heuteGemacht ? "Heute geschafft 🤍" : "Tag abschließen"}</Btn>
         </Card>
@@ -10373,15 +10376,15 @@ function Reisen({ reisen, setReisen, addPunkte }) {
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow color={C.plum}>Transformations-Reisen</Eyebrow>
       <H size={25}>Wähle deinen Weg</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
         Eine Reise nach der anderen — jeden Tag ein Impuls, bis das Thema in dir wirklich angekommen ist.
       </p>
       {REISEN.map((r) => (
         <Card key={r.id} style={{ marginBottom: 12, display: "flex", gap: 14, alignItems: "center" }}>
           <div style={{ width: 52, height: 52, borderRadius: 16, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}><Sym e={r.icon} size={26} /></div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>{r.t}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>{r.was}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 18, color: C.espresso }}>{r.t}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>{r.was}</div>
           </div>
           <Btn small onClick={() => starten(r)}>Start</Btn>
         </Card>
@@ -10391,7 +10394,7 @@ function Reisen({ reisen, setReisen, addPunkte }) {
           <Eyebrow color={C.espresso}>Abgeschlossen</Eyebrow>
           {fertige.map((f, i) => {
             const d = REISEN.find((x) => x.id === f.id);
-            return <div key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, padding: "4px 0" }}>{d?.icon} {d?.t} · seit {f.start} 🏆</div>;
+            return <div key={i} style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso, padding: "4px 0" }}>{d?.icon} {d?.t} · seit {f.start} 🏆</div>;
           })}
         </Card>
       )}
@@ -10432,10 +10435,10 @@ function Jahreskreis({ feste, setFeste, addPunkte }) {
       <Card style={{ margin: "16px 0 14px", background: C.goldPale, textAlign: "center" }}>
         <div style={{ fontSize: 46 }}><Sym e={naechstes.icon} size={46} /></div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso, marginTop: 6 }}>{naechstes.n}</div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 4 }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, marginTop: 4 }}>
           {naechstes.tage === 0 ? "Heute ist es soweit! 🤍" : `in ${naechstes.tage} Tagen · ${naechstes.d}`}
         </div>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.6, marginTop: 12 }}>{naechstes.ritual}</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.6, marginTop: 12 }}>{naechstes.ritual}</div>
         {naechstes.tage <= 2 && (
           <div style={{ marginTop: 14 }}>
             <Btn full onClick={() => feiern(naechstes.n)} disabled={gefeiert.includes(naechstes.n)}>
@@ -10448,10 +10451,10 @@ function Jahreskreis({ feste, setFeste, addPunkte }) {
         <Card key={f.n} style={{ marginBottom: 10, display: "flex", gap: 14, alignItems: "center" }}>
           <div style={{ width: 46, height: 46, borderRadius: 14, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}><Sym e={f.icon} size={22} /></div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>{f.n} {gefeiert.includes(f.n) ? "🤍" : ""}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink }}>{f.d} · {f.was}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>{f.n} {gefeiert.includes(f.n) ? "🤍" : ""}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>{f.d} · {f.was}</div>
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.gold, fontWeight: 700 }}>{f.tage} T</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.gold, fontWeight: 700 }}>{f.tage} T</div>
         </Card>
       ))}
     </div>
@@ -10475,14 +10478,14 @@ function RitualDerLeere({ leere, setLeere, addPunkte }) {
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow color={C.plum}>Ritual der Leere</Eyebrow>
       <H size={25}>24 Stunden ohne mich</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, margin: "10px 0 16px" }}>
         Diese App will nicht deine Bildschirmzeit — sie will dein Wachstum. Nimm dir einen Tag ganz ohne sie.
       </p>
       {aktiv && (
         <Card style={{ textAlign: "center", background: "#2E2320", border: "1px solid #4A3A30" }}>
           <div style={{ fontSize: 44 }}><Sym e="🤍" size={44} /></div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: "#F0E4D6", marginTop: 8 }}>Deine Stille läuft</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#C9A98C", marginTop: 6, lineHeight: 1.6 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: "#C9A98C", marginTop: 6, lineHeight: 1.6 }}>
             Noch etwa {stunden} Stunden. Leg das Handy weg — ich bin danach noch da.
           </div>
         </Card>
@@ -10490,11 +10493,11 @@ function RitualDerLeere({ leere, setLeere, addPunkte }) {
       {offen && (
         <Card>
           <Eyebrow color={C.espresso}>Willkommen zurück 🤍</Eyebrow>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.6, marginBottom: 12 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, lineHeight: 1.6, marginBottom: 12 }}>
             Du hast es durchgehalten. Was hat die Stille mit dir gemacht?
           </div>
           <textarea value={reflexion} onChange={(e) => setReflexion(e.target.value)} rows={4} placeholder="Was war anders an diesem Tag?"
-            style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 16.5, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso }} />
+            style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso }} />
           <div style={{ marginTop: 10 }}><Btn full onClick={abschliessen}>Stille-Meilenstein einlösen</Btn></div>
         </Card>
       )}
@@ -10502,17 +10505,17 @@ function RitualDerLeere({ leere, setLeere, addPunkte }) {
         <>
           <Card style={{ textAlign: "center" }}>
             <div style={{ fontSize: 44, marginBottom: 8 }}><Sym e="🕊️" size={44} /></div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.6, marginBottom: 14 }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, lineHeight: 1.6, marginBottom: 14 }}>
               24 Stunden ohne smile2go. Kein Streak geht verloren — im Gegenteil.
             </div>
             <Btn full onClick={starten}>Stille beginnen</Btn>
           </Card>
           {(leere?.meilensteine || 0) > 0 && (
             <Card style={{ marginTop: 14, background: C.goldPale }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso }}>
                 🏆 {leere.meilensteine}× Stille-Meilenstein erreicht
               </div>
-              {leere.reflexion && <div style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.ink, marginTop: 8, lineHeight: 1.6 }}>„{leere.reflexion}“</div>}
+              {leere.reflexion && <div style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.ink, marginTop: 8, lineHeight: 1.6 }}>„{leere.reflexion}“</div>}
             </Card>
           )}
         </>
@@ -10542,23 +10545,23 @@ function WochenOrakel({ wo, setWo, addPunkte }) {
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow color={C.plum}>Wochen-Orakel</Eyebrow>
       <H size={25}>Die Karte deiner Coachin</H>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 6 }}>Kalenderwoche {kw}</div>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 6 }}>Kalenderwoche {kw}</div>
       <Card style={{ margin: "16px 0 14px", textAlign: "center", background: C.goldPale }}>
         <div style={{ fontSize: 50 }}><Sym e={karte.icon} size={50} /></div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: C.espresso, marginTop: 8 }}>{karte.karte}</div>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.7, marginTop: 12 }}>{karte.text}</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.7, marginTop: 12 }}>{karte.text}</div>
       </Card>
       <Card style={{ marginBottom: 14, display: "flex", gap: 12 }}>
         <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}><Sym e="🌸" size={20} /></div>
         <div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>Deine Coachin</div>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.6, marginTop: 4 }}>„{karte.coach}“</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, fontWeight: 700 }}>Deine Coachin</div>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.6, marginTop: 4 }}>„{karte.coach}“</div>
         </div>
       </Card>
       <Card>
         <Eyebrow color={C.espresso}>Was nimmst du mit?</Eyebrow>
         <textarea value={notiz} onChange={(e) => setNotiz(e.target.value)} rows={3} placeholder="Diese Woche achte ich auf …"
-          style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 16.5, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso }} />
+          style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 1.6, outline: "none", resize: "vertical", background: C.cream, color: C.espresso }} />
         <div style={{ marginTop: 10 }}><Btn full onClick={merken} disabled={!notiz.trim()}>Für diese Woche merken</Btn></div>
       </Card>
     </div>
@@ -10615,7 +10618,7 @@ function Qigong({ qigong, setQigong, addPunkte }) {
     <div style={{ padding: "22px 20px" }}>
       <Eyebrow color={C.plum}>Qigong</Eyebrow>
       <H size={25} style={{ marginBottom: 8 }}>Die Acht Brokate</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
         Acht ruhige Bewegungen, zusammen etwa zehn Minuten. Du brauchst nichts außer
         einem Platz zum Stehen. Bewege dich nur so weit, wie es sich gut anfühlt — bei
         Schmerzen hör auf und frag jemanden vom Fach.
@@ -10624,10 +10627,10 @@ function Qigong({ qigong, setQigong, addPunkte }) {
       <Card style={{ marginBottom: 16, display: "flex", gap: 14, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
         <div style={{ width: 52, height: 52, borderRadius: "50%", background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}><Sym e="🌿" size={24} /></div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: C.espresso }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>
             {heuteGemacht ? `Heute geübt · ${heuteGemacht.minuten} Min` : laufend ? `Läuft · ${Math.floor(sek / 60)}:${String(sek % 60).padStart(2, "0")}` : "Noch nicht geübt heute"}
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>
             {gesamt > 0 ? `${gesamt} ${gesamt === 1 ? "Übungstag" : "Übungstage"} insgesamt` : "Deine erste Runde wartet"}
           </div>
         </div>
@@ -10641,17 +10644,17 @@ function Qigong({ qigong, setQigong, addPunkte }) {
         return (
           <Card key={b.nr} style={{ marginBottom: 10, borderColor: auf ? C.gold : C.line }}>
             <div onClick={() => setAktiv(auf ? null : b.nr)} style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
-              <div style={{ width: 38, height: 38, borderRadius: "50%", background: auf ? C.goldPale : C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", fontSize: 18, color: C.plum, flexShrink: 0 }}>{b.nr}</div>
+              <div style={{ width: 38, height: 38, borderRadius: "50%", background: auf ? C.goldPale : C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", fontSize: 19, color: C.plum, flexShrink: 0 }}>{b.nr}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{b.t}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginTop: 2 }}>{b.s} · {b.wdh}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>{b.t}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginTop: 2 }}>{b.s} · {b.wdh}</div>
               </div>
-              <span style={{ color: C.gold, fontSize: 18 }}>{auf ? "▾" : "›"}</span>
+              <span style={{ color: C.gold, fontSize: 19 }}>{auf ? "▾" : "›"}</span>
             </div>
             {auf && (
               <div style={{ marginTop: 10, animation: "fadeUp .3s ease" }}>
-                <p style={{ fontFamily: "Georgia, serif", fontSize: 16, color: C.espresso, lineHeight: 1.7, margin: "0 0 8px" }}>{b.text}</p>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, fontWeight: 600 }}>🌬️ {b.atem}</div>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, lineHeight: 1.7, margin: "0 0 8px" }}>{b.text}</p>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 600 }}>🌬️ {b.atem}</div>
               </div>
             )}
           </Card>
@@ -10663,7 +10666,7 @@ function Qigong({ qigong, setQigong, addPunkte }) {
           <Eyebrow color={C.plum}>Deine letzten Runden</Eyebrow>
           <div style={{ marginTop: 8 }}>
             {(qigong || []).slice(0, 7).map((e) => (
-              <div key={e.datum} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>
+              <div key={e.datum} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink }}>
                 <span>{e.datum}</span><span style={{ color: C.sage, fontWeight: 700 }}>{e.minuten} Min</span>
               </div>
             ))}
@@ -10739,16 +10742,16 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = 
     <div style={{ padding: "22px 20px" }}>
       <Eyebrow color={C.plum}>Achtsamkeit</Eyebrow>
       <H size={25} style={{ marginBottom: 8 }}>Ankommen, wo du bist</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
         Kleine Übungen für zwischendurch. Die meisten brauchen nur ein paar Minuten — und keine
         verlangt, dass du dabei etwas fühlst oder erreichst.
       </p>
 
       {/* Achtsamkeit mit der Mandarine – geführte Übung mit den fünf Sinnen */}
       <Card style={{ marginBottom: 12, background: "linear-gradient(160deg, #FFF3E5, #FFFDF9 65%)", border: "1px solid #F1D4B2" }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 2 }}>🍊 Achtsamkeit mit der Mandarine</div>
-        <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 15.5, color: C.plum, marginBottom: 6 }}>Wahrnehmen, ohne zu bewerten.</div>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 2 }}>🍊 Achtsamkeit mit der Mandarine</div>
+        <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.plum, marginBottom: 6 }}>Wahrnehmen, ohne zu bewerten.</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
           {name ? `${name}, eine` : "Eine"} kleine Mandarine, fünf Sinne, sechs ruhige Stationen. Etwa 10–15 Minuten
           nur für dich. Halte eine Mandarine bereit.
         </p>
@@ -10761,10 +10764,10 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = 
           paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px max(14px, env(safe-area-inset-right, 0px)) 8px max(14px, env(safe-area-inset-left, 0px))", borderBottom: `1px solid ${C.line}` }}>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso }}>🍊 Achtsamkeit mit der Mandarine</span>
+            <span style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>🍊 Achtsamkeit mit der Mandarine</span>
             <button type="button" onClick={() => setReiseOffen(false)} style={{
               minHeight: 40, padding: "0 16px", borderRadius: 999, border: `1px solid ${C.line}`, background: C.card,
-              color: C.espresso, fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 600, cursor: "pointer",
+              color: C.espresso, fontFamily: "system-ui, sans-serif", fontSize: 17, fontWeight: 600, cursor: "pointer",
             }}>Schließen ✕</button>
           </div>
           <iframe
@@ -10779,8 +10782,8 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = 
 
       {/* 4-7-8 Atem */}
       <Card style={{ marginBottom: 12 }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>🌬️ Der 4-7-8-Atem</div>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 4 }}>🌬️ Der 4-7-8-Atem</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
           Vier zählen beim Einatmen, sieben halten, acht ausatmen. Vier Runden reichen.
         </p>
         {modus === "atem" ? (
@@ -10794,7 +10797,7 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = 
               <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>{ATEM_TAKT[phase][0]}</div>
               <div style={{ fontFamily: "Georgia, serif", fontSize: 30, color: C.plum }}>{rest}</div>
             </div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginBottom: 12 }}>Runde {runde + 1}</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginBottom: 12 }}>Runde {runde + 1}</div>
             <Btn small ghost onClick={() => { setModus(null); if (runde > 0) merken("Atem 4-7-8"); setRunde(0); setPhase(0); setRest(4); }}>Beenden</Btn>
           </div>
         ) : (
@@ -10804,19 +10807,19 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = 
 
       {/* 5-4-3-2-1 */}
       <Card style={{ marginBottom: 12 }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>🖐️ 5 · 4 · 3 · 2 · 1</div>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 4 }}>🖐️ 5 · 4 · 3 · 2 · 1</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "0 0 12px" }}>
           Wenn die Gedanken rasen: hol dich über deine Sinne zurück in den Raum.
         </p>
         {modus === "sinne" ? (
           <div style={{ animation: "fadeUp .3s ease" }}>
             {SINN_FRAGEN.map((f, i) => (
               <div key={f} style={{ marginBottom: 9 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, fontWeight: 600, marginBottom: 4 }}>{f}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 600, marginBottom: 4 }}>{f}</div>
                 <input
                   value={sinne[i]}
                   onChange={(e) => setSinne(sinne.map((x, j) => (j === i ? e.target.value : x)))}
-                  style={{ width: "100%", padding: "10px 12px", fontSize: 15.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "10px 12px", fontSize: 17, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 11, background: C.card, color: C.espresso, outline: "none", boxSizing: "border-box" }}
                 />
               </div>
             ))}
@@ -10832,8 +10835,8 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = 
 
       {/* Körperreise */}
       <Card style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginBottom: 4 }}>🫀 Kleine Körperreise</div>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "0 0 10px" }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 4 }}>🫀 Kleine Körperreise</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "0 0 10px" }}>
           Wandere langsam durch deinen Körper — Füße, Beine, Becken, Bauch, Brust,
           Schultern, Arme, Hals, Gesicht. Bei jeder Station ein Atemzug. Nichts
           verändern, nur bemerken.
@@ -10843,14 +10846,14 @@ function Achtsamkeit({ achtsam, setAchtsam, addPunkte, name = "", reiseDirekt = 
           titel="Körperreise anhören · ca. 3 Min"
           beiEnde={() => merken("Körperreise")}
         />
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, opacity: 0.75, margin: "8px 0 12px" }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.75, margin: "8px 0 12px" }}>
           Kopfhörer sind schön, aber nicht nötig. Am Ende wird die Übung von allein eingetragen.
         </div>
         <Btn small ghost onClick={() => merken("Körperreise")}>Gemacht ✓</Btn>
       </Card>
 
       {(achtsam || []).length > 0 && (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, opacity: 0.8, textAlign: "center" }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, opacity: 0.8, textAlign: "center" }}>
           Du hast dir {(achtsam || []).length} × bewusst diesen Moment genommen. 🤍
         </p>
       )}
@@ -10896,7 +10899,7 @@ function Dankbarkeit({ dank, setDank, addPunkte }) {
     <div style={{ padding: "22px 20px" }}>
       <Eyebrow color={C.plum}>Dankbarkeit</Eyebrow>
       <H size={25} style={{ marginBottom: 8 }}>Drei Dinge von heute</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
         Nicht die großen Dinge — die kleinen zählen genauso. Ein Satz reicht.
       </p>
 
@@ -10911,8 +10914,8 @@ function Dankbarkeit({ dank, setDank, addPunkte }) {
         />
         <div style={{ padding: "12px 14px" }}>
           <Eyebrow color={C.plum}>Geführte Übung · 9 Min.</Eyebrow>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, marginTop: 4 }}>mit Anja Kretschmer</div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, margin: "4px 0 0" }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, marginTop: 4 }}>mit Anja Kretschmer</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "4px 0 0" }}>
             Nimm dir einen ruhigen Moment, schau das Video und schreib danach deine drei Dinge auf.
           </p>
         </div>
@@ -10920,18 +10923,18 @@ function Dankbarkeit({ dank, setDank, addPunkte }) {
 
       <Card style={{ marginBottom: 14, background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
         <Eyebrow color={C.plum}>Impuls für heute</Eyebrow>
-        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, lineHeight: 1.6, margin: "6px 0 0" }}>{impuls}</p>
+        <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.espresso, lineHeight: 1.6, margin: "6px 0 0" }}>{impuls}</p>
       </Card>
 
       {[0, 1, 2].map((i) => (
         <div key={i} style={{ marginBottom: 10 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.plum, fontWeight: 600, marginBottom: 4 }}>{i + 1}.</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 600, marginBottom: 4 }}>{i + 1}.</div>
           <textarea
             value={drei[i]}
             onChange={(e) => setDrei(drei.map((x, j) => (j === i ? e.target.value : x)))}
             rows={2}
             placeholder="Ich bin dankbar für …"
-            style={{ width: "100%", padding: "11px 13px", fontSize: 16, fontFamily: "Georgia, serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }}
+            style={{ width: "100%", padding: "11px 13px", fontSize: 17.5, fontFamily: "Georgia, serif", border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso, outline: "none", resize: "vertical", boxSizing: "border-box" }}
           />
         </div>
       ))}
@@ -10939,7 +10942,7 @@ function Dankbarkeit({ dank, setDank, addPunkte }) {
       <Btn full onClick={speichern}>{heutiger ? "Aktualisieren" : "Für heute festhalten"}</Btn>
 
       {serie > 0 && (
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.sage, fontWeight: 700, textAlign: "center", marginTop: 14 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.sage, fontWeight: 700, textAlign: "center", marginTop: 14 }}>
           🔥 {serie} {serie === 1 ? "Tag" : "Tage"} am Stück
         </p>
       )}
@@ -10950,9 +10953,9 @@ function Dankbarkeit({ dank, setDank, addPunkte }) {
           <div style={{ marginTop: 8 }}>
             {(dank || []).slice(0, 14).map((d) => (
               <Card key={d.datum} style={{ marginBottom: 9 }}>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginBottom: 6 }}>{d.datum}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 6 }}>{d.datum}</div>
                 {d.drei.filter(Boolean).map((x, i) => (
-                  <div key={i} style={{ fontFamily: "Georgia, serif", fontSize: 15.5, color: C.espresso, lineHeight: 1.6 }}>· {x}</div>
+                  <div key={i} style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.6 }}>· {x}</div>
                 ))}
               </Card>
             ))}
@@ -11000,7 +11003,7 @@ function Loslassen({ losgelassen, setLosgelassen, addPunkte }) {
     <div style={{ padding: "22px 20px" }}>
       <Eyebrow color={C.plum}>Loslassen</Eyebrow>
       <H size={25} style={{ marginBottom: 8 }}>Was darf gehen?</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
         Schreib auf, was du gerade mitträgst — ein Gedanke, ein Anspruch, ein Satz von
         früher. Es bleibt hier stehen, bis du bereit bist. Nichts davon verlässt dein Gerät,
         solange du nicht synchronisierst.
@@ -11012,7 +11015,7 @@ function Loslassen({ losgelassen, setLosgelassen, addPunkte }) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && hinzufuegen()}
           placeholder="z. B. Ich muss es allen recht machen"
-          style={{ flex: 1, padding: "13px 14px", fontSize: 16.5, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }}
+          style={{ flex: 1, padding: "13px 14px", fontSize: 18, fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.espresso, outline: "none" }}
         />
         <Btn small onClick={hinzufuegen}>Ablegen</Btn>
       </div>
@@ -11020,7 +11023,7 @@ function Loslassen({ losgelassen, setLosgelassen, addPunkte }) {
       {offene.length === 0 && gegangen.length === 0 && (
         <Card style={{ textAlign: "center" }}>
           <div style={{ fontSize: 30, marginBottom: 8 }}><Sym e="🕊️" size={30} /></div>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.ink, lineHeight: 1.6, margin: 0 }}>
             Noch nichts abgelegt. Manchmal ist der erste Satz der schwerste.
           </p>
         </Card>
@@ -11037,8 +11040,8 @@ function Loslassen({ losgelassen, setLosgelassen, addPunkte }) {
                 transform: gehend === x.id ? "translateY(-24px)" : "none",
                 transition: "opacity .9s ease, transform .9s ease",
               }}>
-                <p style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, lineHeight: 1.6, margin: "0 0 4px" }}>{x.text}</p>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.ink, marginBottom: 10 }}>abgelegt am {x.seit}</div>
+                <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso, lineHeight: 1.6, margin: "0 0 4px" }}>{x.text}</p>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, marginBottom: 10 }}>abgelegt am {x.seit}</div>
                 <Btn small ghost onClick={() => loslassen(x.id)}>🕊️ Jetzt loslassen</Btn>
               </Card>
             ))}
@@ -11052,12 +11055,12 @@ function Loslassen({ losgelassen, setLosgelassen, addPunkte }) {
           <div style={{ marginTop: 8 }}>
             {gegangen.slice(0, 20).map((x) => (
               <div key={x.id} style={{ padding: "11px 0", borderBottom: `1px solid ${C.line}` }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 15.5, color: C.ink, textDecoration: "line-through", opacity: 0.75 }}>{x.text}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.sage, fontWeight: 600, marginTop: 2 }}>losgelassen am {x.los_am}</div>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.ink, textDecoration: "line-through", opacity: 0.75 }}>{x.text}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.sage, fontWeight: 600, marginTop: 2 }}>losgelassen am {x.los_am}</div>
               </div>
             ))}
           </div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, opacity: 0.8, lineHeight: 1.6, marginTop: 14 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, opacity: 0.8, lineHeight: 1.6, marginTop: 14 }}>
             {gegangen.length} {gegangen.length === 1 ? "Sache" : "Dinge"} tragen sich nicht mehr mit dir.
           </p>
         </>
@@ -11145,7 +11148,7 @@ function MeTime({ metime, setMetime, addPunkte }) {
   };
 
   const feld = {
-    width: "100%", padding: "12px 13px", fontSize: 16.5, fontFamily: "system-ui, sans-serif",
+    width: "100%", padding: "12px 13px", fontSize: 18, fontFamily: "system-ui, sans-serif",
     border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.card, color: C.espresso,
     outline: "none", boxSizing: "border-box",
   };
@@ -11154,7 +11157,7 @@ function MeTime({ metime, setMetime, addPunkte }) {
     <div style={{ padding: "22px 20px" }}>
       <Eyebrow color={C.plum}>Me-Time</Eyebrow>
       <H size={25} style={{ marginBottom: 8 }}>Zeit, die dir gehört</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 18 }}>
         Termine mit anderen hältst du. Diese hier auch: trag sie ein wie jeden
         anderen Termin — mit Datum, damit sie wirklich stattfindet.
       </p>
@@ -11166,7 +11169,7 @@ function MeTime({ metime, setMetime, addPunkte }) {
       )}
 
       {hinweis && (
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.sage, fontWeight: 700, marginBottom: 14 }}>{hinweis}</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.sage, fontWeight: 700, marginBottom: 14 }}>{hinweis}</div>
       )}
 
       {offen && (
@@ -11175,15 +11178,15 @@ function MeTime({ metime, setMetime, addPunkte }) {
           <Eyebrow color={C.plum}>1 · Wann?</Eyebrow>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "8px 0 16px" }}>
             <div style={{ flex: "2 1 160px" }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Datum</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Datum</div>
               <input type="date" value={datum} min={heuteIso} onChange={(e) => setDatum(e.target.value)} style={feld} />
             </div>
             <div style={{ flex: "1 1 100px" }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Uhrzeit</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Uhrzeit</div>
               <input type="time" value={uhrzeit} onChange={(e) => setUhrzeit(e.target.value)} style={feld} />
             </div>
             <div style={{ flex: "1 1 90px" }}>
-              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Minuten</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, fontWeight: 600, marginBottom: 4 }}>Minuten</div>
               <input type="number" step={15} min={15} value={dauer} onChange={(e) => setDauer(e.target.value)} style={feld} />
             </div>
           </div>
@@ -11201,7 +11204,7 @@ function MeTime({ metime, setMetime, addPunkte }) {
                   background: aktiv ? C.roseSoft : C.card,
                 }}>
                   <span style={{ fontSize: 20 }}><Sym e={a.icon} size={20} /></span>
-                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 700, color: aktiv ? C.plum : C.espresso }}>{a.t}</span>
+                  <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, fontWeight: 700, color: aktiv ? C.plum : C.espresso }}>{a.t}</span>
                 </button>
               );
             })}
@@ -11238,10 +11241,10 @@ function MeTime({ metime, setMetime, addPunkte }) {
                   <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                     <div style={{ width: 44, height: 44, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21, flexShrink: 0 }}><Sym e={a.icon} size={21} /></div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>
+                      <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>
                         {istHeute ? "Heute" : zeigDatum(t)} · {t.uhrzeit}
                       </div>
-                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 2 }}>
+                      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 2 }}>
                         {a.t}{t.text ? ` · ${t.text}` : ""} · {t.dauer} Min
                       </div>
                     </div>
@@ -11249,7 +11252,7 @@ function MeTime({ metime, setMetime, addPunkte }) {
                   <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
                     <Btn small onClick={() => erledigen(t.id)}>Gehalten · +30 ✨</Btn>
                     <Btn small ghost onClick={() => kalenderMitnehmen(t)}>📅 Kalender</Btn>
-                    <button onClick={() => loeschen(t.id)} style={{ background: "none", border: "none", color: C.ink, opacity: 0.55, fontFamily: "system-ui, sans-serif", fontSize: 13.5, cursor: "pointer", minHeight: 40 }}>entfernen</button>
+                    <button onClick={() => loeschen(t.id)} style={{ background: "none", border: "none", color: C.ink, opacity: 0.55, fontFamily: "system-ui, sans-serif", fontSize: 15, cursor: "pointer", minHeight: 40 }}>entfernen</button>
                   </div>
                 </Card>
               );
@@ -11261,7 +11264,7 @@ function MeTime({ metime, setMetime, addPunkte }) {
       {kommende.length === 0 && !offen && (
         <Card style={{ textAlign: "center", marginBottom: 18 }}>
           <div style={{ fontSize: 30, marginBottom: 8 }}><Sym e="🤍" size={30} /></div>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.ink, lineHeight: 1.6, margin: 0 }}>
             Noch nichts eingetragen. Was hättest du diese Woche gern für dich —
             eine Stunde Sauna, ein Essen in Ruhe, ein Tag weg?
           </p>
@@ -11276,16 +11279,16 @@ function MeTime({ metime, setMetime, addPunkte }) {
               const a = METIME_ARTEN.find((x) => x.k === t.art) || METIME_ARTEN[3];
               return (
                 <div key={t.id} style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.line}` }}>
-                  <span style={{ fontSize: 18 }}><Sym e={a.icon} size={17} /></span>
-                  <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>
+                  <span style={{ fontSize: 19 }}><Sym e={a.icon} size={17} /></span>
+                  <span style={{ flex: 1, fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink }}>
                     {zeigDatum(t)} · {a.t}{t.text ? ` · ${t.text}` : ""}
                   </span>
-                  {t.erledigt && <span style={{ color: C.sage, fontWeight: 700, fontSize: 14.5 }}><Sym e="✓" size={14} /></span>}
+                  {t.erledigt && <span style={{ color: C.sage, fontWeight: 700, fontSize: 16 }}><Sym e="✓" size={14} /></span>}
                 </div>
               );
             })}
           </div>
-          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.sage, fontWeight: 700, marginTop: 12 }}>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.sage, fontWeight: 700, marginTop: 12 }}>
             🤍 {vergangene.filter((t) => t.erledigt).length}× hast du dir diese Zeit wirklich genommen
           </p>
         </>
@@ -11330,10 +11333,10 @@ function Jahresrueckblick({ entries, qigong, dank, losgelassen, punkte, streak, 
     <div style={{ padding: "26px 20px" }}>
       <Eyebrow color={C.plum}>Rückblick</Eyebrow>
       <H size={25}>Dein Jahr in Karten & Worten</H>
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, marginTop: 6, marginBottom: 16 }}>{jahr} · aus deinen echten Einträgen</div>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, marginTop: 6, marginBottom: 16 }}>{jahr} · aus deinen echten Einträgen</div>
       {leer ? (
         <Card>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.7 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7 }}>
             Dein Rückblick entsteht aus dem, was du schreibst. Schreib deinen ersten Journal-Eintrag oder halte drei Dinge fest, für die du dankbar bist — dann füllt sich diese Seite ganz von selbst.
           </div>
         </Card>
@@ -11341,13 +11344,13 @@ function Jahresrueckblick({ entries, qigong, dank, losgelassen, punkte, streak, 
         <>
           <Card style={{ marginBottom: 12, background: `linear-gradient(135deg, ${C.goldPale}, ${C.roseSoft})`, textAlign: "center" }}>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 44, color: C.espresso }}>{(entries || []).length}</div>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>Journal-Einträge</div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink }}>Journal-Einträge</div>
             <div style={{ display: "flex", justifyContent: "space-around", marginTop: 16 }}>
               {[["🌿", (qigong || []).length, "Qigong"], ["🤍", (dank || []).length, "Dank-Tage"], ["🏆", fertigeReisen, "Reisen"], ["🔥", streak, "Tage"]].map(([i, n, l]) => (
                 <div key={l}>
                   <div style={{ fontSize: 20 }}>{i}</div>
                   <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>{n}</div>
-                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, color: C.ink }}>{l}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink }}>{l}</div>
                 </div>
               ))}
             </div>
@@ -11364,7 +11367,7 @@ function Jahresrueckblick({ entries, qigong, dank, losgelassen, punkte, streak, 
           )}
           <Card style={{ marginBottom: 12 }}>
             <Eyebrow color={C.espresso}>Zahlen & Zeichen</Eyebrow>
-            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, lineHeight: 1.9 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.9 }}>
               {punkte} Lichtpunkte gesammelt<br />
               {qigongMin > 0 && <>🌿 {qigongMin} Minuten Qigong an {(qigong || []).length} Tagen<br /></>}
               {dankSaetze > 0 && <>🤍 {dankSaetze} Dinge, für die du dankbar warst<br /></>}
@@ -11373,7 +11376,7 @@ function Jahresrueckblick({ entries, qigong, dank, losgelassen, punkte, streak, 
               {(feste || []).length > 0 && <>🕯️ {feste.length} Jahreskreis-Feste gefeiert</>}
             </div>
           </Card>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.75, lineHeight: 1.6 }}>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, opacity: 0.75, lineHeight: 1.6 }}>
             Alle Zahlen stammen ausschließlich aus deinen eigenen Einträgen — nichts ist geschätzt.
           </div>
         </>
@@ -11393,7 +11396,7 @@ function PasswortNeu({ onFertig }) {
   const [fertig, setFertig] = useState(false);
 
   const input = {
-    width: "100%", padding: "15px 16px", fontSize: 17, fontFamily: "system-ui, sans-serif",
+    width: "100%", padding: "15px 16px", fontSize: 18, fontFamily: "system-ui, sans-serif",
     border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso,
     marginBottom: 12, outline: "none",
   };
@@ -11417,7 +11420,7 @@ function PasswortNeu({ onFertig }) {
       <div style={{ padding: "60px 24px", textAlign: "center" }}>
         <div style={{ fontSize: 52, marginBottom: 18 }}><Sym e="🤍" size={52} /></div>
         <H size={26} style={{ marginBottom: 12 }}>Passwort geändert</H>
-        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 28 }}>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 18, color: C.ink, lineHeight: 1.6, marginBottom: 28 }}>
           Du kannst dich ab sofort mit deinem neuen Passwort anmelden.
         </p>
         <Btn full onClick={onFertig}>Weiter zur App</Btn>
@@ -11428,12 +11431,12 @@ function PasswortNeu({ onFertig }) {
     <div style={{ padding: "56px 24px 40px" }}>
       <Eyebrow>smile2go</Eyebrow>
       <H size={26} style={{ marginBottom: 8 }}>Neues Passwort</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.6, marginBottom: 20 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.ink, lineHeight: 1.6, marginBottom: 20 }}>
         Wähle ein neues Passwort für dein Konto — mindestens 8 Zeichen.
       </p>
       <input style={input} type="password" placeholder="Neues Passwort" value={pw} onChange={(e) => setPw(e.target.value)} />
       <input style={input} type="password" placeholder="Neues Passwort wiederholen" value={pw2} onChange={(e) => setPw2(e.target.value)} />
-      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>}
+      {err && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: "#A8552F", background: "#F9EBE2", borderRadius: 12, padding: "11px 14px", marginBottom: 14 }}>{err}</div>}
       <Btn full onClick={speichern} disabled={busy}>{busy ? "Speichere …" : "Passwort speichern"}</Btn>
     </div>
   );
@@ -11753,7 +11756,7 @@ export default function IlhoApp() {
   ];
 
   return (
-    <div className="s2g-stage" style={{ minHeight: "100vh", background: C.beige, display: "flex", justifyContent: "center", fontSize: 17 }}>
+    <div className="s2g-stage" style={{ minHeight: "100vh", background: C.beige, display: "flex", justifyContent: "center", fontSize: 18 }}>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
@@ -11773,7 +11776,7 @@ export default function IlhoApp() {
             position: "sticky", top: 0, zIndex: 40,
             background: "#F9EBE2", borderBottom: "1px solid #E5CDBE",
             padding: "10px 14px", fontFamily: "system-ui, sans-serif",
-            fontSize: 13.5, color: "#A8552F", lineHeight: 1.5,
+            fontSize: 15, color: "#A8552F", lineHeight: 1.5,
           }}>
             ☁️ Keine Verbindung zur Cloud — Anmeldung, Nachrichten und Termine pausieren.
             Alles, was du hier eingibst, bleibt auf deinem Gerät und wird später synchronisiert.
@@ -11803,11 +11806,11 @@ export default function IlhoApp() {
                 <button onClick={back} style={{
                   display: "flex", alignItems: "center", gap: 6, background: C.card, border: `1.5px solid ${C.line}`,
                   borderRadius: 20, cursor: "pointer", color: C.plum, fontFamily: "system-ui, sans-serif",
-                  fontSize: 16, fontWeight: 700, padding: "9px 16px", minHeight: 44,
+                  fontSize: 17.5, fontWeight: 700, padding: "9px 16px", minHeight: 44,
                 }}>
                   ← Zurück
                 </button>
-                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, fontWeight: 600 }}>{TITLES[tab]}</span>
+                <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, fontWeight: 600 }}>{TITLES[tab]}</span>
               </div>
             )}
 
@@ -11836,7 +11839,7 @@ export default function IlhoApp() {
               <div style={{
                 position: "fixed", top: 14, left: 0, right: 0, margin: "0 auto", width: "fit-content",
                 zIndex: 30, background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff",
-                fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 700,
+                fontFamily: "system-ui, sans-serif", fontSize: 17, fontWeight: 700,
                 padding: "11px 20px", borderRadius: 24, boxShadow: "0 8px 24px rgba(194,82,110,.45)",
                 animation: "fadeUp .35s ease",
               }}>{toast}</div>
@@ -11849,9 +11852,9 @@ export default function IlhoApp() {
                   display: "inline-flex", alignItems: "center", gap: 7, minHeight: 40,
                   padding: "8px 14px 8px 11px", cursor: "pointer",
                   background: C.card, border: `1px solid ${C.line}`, borderRadius: 20,
-                  fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, color: C.plum,
+                  fontFamily: "system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: C.plum,
                 }}>
-                  <span style={{ fontSize: 16.5 }}>‹</span> Zurück
+                  <span style={{ fontSize: 18 }}>‹</span> Zurück
                 </button>
               </div>
             )}
@@ -11895,7 +11898,7 @@ export default function IlhoApp() {
               {tab === "wissen" && <WissensSuche addPunkte={addPunkte} />}
               {tab === "recherche" && <Recherche addPunkte={addPunkte} />}
               {tab === "werkstatt" && <CoachWerkstatt addPunkte={addPunkte} />}
-              {tab === "zweifaktor" && <div style={{ padding: "12px 0" }}><Eyebrow>Sicherheit</Eyebrow><H size={24} style={{ marginBottom: 10 }}>Zwei-Faktor-Anmeldung</H><Card>{supabase ? <ZweiFaktorEinstellung C={C} /> : <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5 }}>Im Prototyp-Modus ohne Cloud nicht verfügbar.</p>}</Card></div>}
+              {tab === "zweifaktor" && <div style={{ padding: "12px 0" }}><Eyebrow>Sicherheit</Eyebrow><H size={24} style={{ marginBottom: 10 }}>Zwei-Faktor-Anmeldung</H><Card>{supabase ? <ZweiFaktorEinstellung C={C} /> : <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16 }}>Im Prototyp-Modus ohne Cloud nicht verfügbar.</p>}</Card></div>}
               {tab === "schatten" && <Schattenspiegel addPunkte={addPunkte} />}
               {tab === "zukunftsich" && <ZukunftsIch name={anzeigeName} entries={entries} ziele={ziele} archetyp={archetyp} msgs={zkMsgs} setMsgs={setZkMsgs} />}
               {tab === "archetyp" && <ArchetypTest archetyp={archetyp} setArchetyp={setArchetyp} addPunkte={addPunkte} />}
@@ -11947,7 +11950,7 @@ export default function IlhoApp() {
                     color: active ? C.plum : C.ink, opacity: active ? 1 : 0.7,
                   }}>
                     <NavIcon art={n.art} aktiv={active} />
-                    <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10.5, fontWeight: active ? 700 : 500, letterSpacing: 0.3 }}>{n.t}</span>
+                    <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, fontWeight: active ? 700 : 500, letterSpacing: 0.3 }}>{n.t}</span>
                     {active && <span style={{ width: 16, height: 2.5, borderRadius: 2, background: C.rose }} />}
                   </button>
                 );
@@ -11961,7 +11964,7 @@ export default function IlhoApp() {
                   position: "absolute", left: 16, bottom: 96, pointerEvents: "auto",
                   borderRadius: 22, cursor: "pointer", padding: "10px 14px",
                   background: C.card, border: `2px solid ${C.rose}`, color: C.plum,
-                  fontFamily: "system-ui, sans-serif", fontSize: 13.5, fontWeight: 700,
+                  fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700,
                   boxShadow: "0 6px 18px rgba(58,42,34,.18)",
                 }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Ikon n="herz" size={15} />Halt</span></button>
               </div>
@@ -11980,7 +11983,7 @@ export default function IlhoApp() {
                     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                   }}>
                     <span style={{ fontSize: 21 }}><Sym e="✨" size={21} /></span>
-                    <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 8.5, fontWeight: 700 }}>ilho</span>
+                    <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 10, fontWeight: 700 }}>ilho</span>
                   </button>
                 )}
                 {ilhoOpen && (
@@ -11988,8 +11991,8 @@ export default function IlhoApp() {
                     <div onClick={() => setIlhoOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(58,42,34,.35)", backdropFilter: "blur(2px)", pointerEvents: "auto" }} />
                     <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, pointerEvents: "auto", background: C.cream, borderRadius: "22px 22px 0 0", maxHeight: "82vh", overflowY: "auto", boxShadow: "0 -8px 30px rgba(58,42,34,.22)", animation: "fadeUp .3s ease" }}>
                       <div style={{ position: "sticky", top: 0, zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", background: C.cream, borderBottom: `1px solid ${C.line}` }}>
-                        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.espresso }}>✨ ilho · dein Begleiter</div>
-                        <button onClick={() => setIlhoOpen(false)} style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "50%", width: 34, height: 34, fontSize: 16.5, cursor: "pointer", color: C.ink }}><Sym e="✕" size={15} /></button>
+                        <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso }}>✨ ilho · dein Begleiter</div>
+                        <button onClick={() => setIlhoOpen(false)} style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: "50%", width: 34, height: 34, fontSize: 18, cursor: "pointer", color: C.ink }}><Sym e="✕" size={15} /></button>
                       </div>
                       <Luma name={anzeigeName} energie={energie} msgs={lumaMsgs} setMsgs={setLumaMsgs} twin={twin} twinTon={twinTon} entries={entries} prefs={prefs} setPrefs={setPrefs} go={(k) => { setIlhoOpen(false); go(k); }} />
                     </div>
