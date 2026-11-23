@@ -85,10 +85,14 @@ export default function AdminDashboard() {
     setK(kz); setWachstum(w.map((z) => ({ m: new Date(z.monat).toLocaleDateString("de-DE", { month: "short" }), neu: Number(z.neu) })));
   };
 
+  // Schlüssel: „lädt“ / „aus“ / User-ID — sonst bemerkt der Effekt den
+  // Wechsel von „lädt“ zu „abgemeldet“ nicht und die Seite bleibt leer.
+  const sitzungsSchluessel = session === undefined ? "laedt" : session?.user?.id || "aus";
   useEffect(() => {
-    if (!session) { setAdmin(session === null ? false : null); return; }
+    if (session === undefined) return;
+    if (!session) { setAdmin(false); return; }
     setAdmin(null); laden();
-  }, [session?.user?.id]);
+  }, [sitzungsSchluessel]);
 
   // Nachrichten-Zähler im Hintergrund aktuell halten
   useEffect(() => {
