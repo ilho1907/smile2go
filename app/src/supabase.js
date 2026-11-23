@@ -730,6 +730,46 @@ export async function adminTeamSenden(userId, text) {
 }
 export const adminTeamRundnachricht = (text) => adminRpc("admin_team_rundnachricht", { p_text: text });
 
+// ── Mitglied-Verwaltung (s2g.admin → Profil) ─────────────────────────────────
+export const adminMitgliedDetail = (userId) => adminRpc("admin_mitglied_detail", { p_user: userId });
+export const adminMitgliedFreischalten = (userId, an) => adminRpc("admin_mitglied_freischalten", { p_user: userId, p_an: an });
+export const adminMitgliedNotiz = (userId, text) => adminRpc("admin_mitglied_notiz", { p_user: userId, p_text: text });
+export const adminCoachRolle = (userId, an) => adminRpc("admin_coach_rolle", { p_user: userId, p_an: an });
+export const adminWartendeAnzahl = () => adminRpc("admin_wartende_anzahl").then((n) => Number(n || 0)).catch(() => 0);
+
+// Sperren braucht den Service-Key → Edge Function „admin-sperren“ (prüft selbst, ob Admin).
+export async function adminMitgliedSperren(userId, sperren, grund = "") {
+  const basis = import.meta.env?.VITE_AI_FUNCTION_URL;
+  if (!supabase || !basis) throw new Error("Keine Verbindung");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Nicht angemeldet");
+  const res = await fetch(basis.replace(/\/ai\/?$/, "/admin-sperren"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: import.meta.env?.VITE_SUPABASE_ANON_KEY || "",
+    },
+    body: JSON.stringify({ user_id: userId, sperren, grund }),
+  });
+  let d = {};
+  try { d = await res.json(); } catch { /* leer */ }
+  if (!res.ok) throw new Error(d?.error || "Sperren fehlgeschlagen");
+  return d;
+}
+
+// Für die Mitglieder-App: freigeschaltet? gesperrt?
+// Fehlt die Funktion (Migration noch nicht eingespielt) oder ist das Netz weg,
+// lieber durchlassen als alle aussperren → null = „keine Einschränkung bekannt“.
+export async function meinKontoStatus() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc("mein_konto_status");
+    if (error || !data) return null;
+    return data;
+  } catch { return null; }
+}
+
 export async function ladeTeamNachrichten() {
   const user = await nutzerin();
   if (!user) return null;

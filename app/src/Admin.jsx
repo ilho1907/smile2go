@@ -1,10 +1,12 @@
 import { useState, useEffect, Fragment } from "react";
+import { createPortal } from "react-dom";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import {
   supabase, istAdmin, ladeKiQualitaet, ladeFairnessChecks, starteFairnessCheck,
   adminKennzahlen, adminWachstum, adminMitglieder, adminSessions, adminMeldungen, adminMeldungErledigen, adminSystem, cloudErreichbar,
   adminCoachCodes, adminCoachCodeErzeugen, adminCoachCodeUmschalten,
   adminTeamPostfach, adminTeamVerlauf, adminTeamSenden, adminTeamRundnachricht,
+  adminMitgliedDetail, adminMitgliedFreischalten, adminMitgliedNotiz, adminCoachRolle, adminMitgliedSperren, adminWartendeAnzahl,
 } from "./supabase";
 import { brauchtZweitenFaktor, zweiFaktorStatus, passwortZuruecksetzen, neuesPasswortSetzen } from "./supabase";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
@@ -65,6 +67,7 @@ export default function AdminDashboard() {
   const [teamZiel, setTeamZiel] = useState(null);   // { user_id, email } aus „Mitglieder“
   const [teamOffen, setTeamOffen] = useState(0);
   const [zweiFaktorAktiv, setZweiFaktorAktiv] = useState(true);
+  const [wartend, setWartend] = useState(0);
   // Link aus der „Passwort vergessen“-Mail: erst neues Passwort, dann Dashboard
   const [pwNeu, setPwNeu] = useState(() => new URLSearchParams(window.location.search).get("pw") === "neu");
 
@@ -77,13 +80,15 @@ export default function AdminDashboard() {
     return () => sub?.subscription?.unsubscribe();
   }, []);
 
-  const laden = async () => {
-    const faktor = await brauchtZweitenFaktor();
+  const laden = () => ladenInnen().catch((e) => { console.warn("Admin laden:", e?.message || e); setAdmin(false); });
+  const ladenInnen = async () => {
+    const faktor = await brauchtZweitenFaktor().catch(() => null);
     if (faktor) { setMfaFaktor(faktor); return; }
     const ok = await istAdmin();
     setAdmin(ok);
     if (!ok) return;
     zweiFaktorStatus().then((z) => setZweiFaktorAktiv(!!z.aktiv)).catch(() => {});
+    adminWartendeAnzahl().then(setWartend);
     const [kz, w] = await Promise.all([adminKennzahlen(), adminWachstum()]);
     adminTeamPostfach().then((p) => setTeamOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0)));
     setK(kz); setWachstum(w.map((z) => ({ m: new Date(z.monat).toLocaleDateString("de-DE", { month: "short" }), neu: Number(z.neu) })));
@@ -106,7 +111,7 @@ export default function AdminDashboard() {
   }, [admin]);
 
   // Fenstertitel + Zahl am Dock-Icon: ungelesene Team-Nachrichten + offene Meldungen
-  const offenGesamt = teamOffen + Number(k?.meldungen_offen || 0);
+  const offenGesamt = teamOffen + Number(k?.meldungen_offen || 0) + wartend;
   useEffect(() => {
     document.title = offenGesamt ? `(${offenGesamt}) s2g.admin` : "s2g.admin";
     try {
@@ -146,7 +151,7 @@ export default function AdminDashboard() {
     );
 
   const TABS = [
-    ["uebersicht", "📊 Übersicht"], ["mitglieder", "👥 Mitglieder"],
+    ["uebersicht", "📊 Übersicht"], ["mitglieder", `👥 Mitglieder${wartend ? ` (${wartend} warten)` : ""}`],
     ["nachrichten", `💬 Nachrichten${teamOffen ? ` (${teamOffen})` : ""}`], ["coachcodes", "🔑 Coach-Codes"], ["sessions", "📅 Sessions"],
     ["moderation", `🛡️ Moderation${k?.meldungen_offen ? ` (${k.meldungen_offen})` : ""}`],
     ["fairness", "⚖️ KI & Fairness"], ["system", "🛠️ System"],
@@ -180,8 +185,14 @@ export default function AdminDashboard() {
             <button onClick={() => setTab("system")} style={{ ...sys, fontSize: 13.5, fontWeight: 700, padding: "8px 14px", borderRadius: 18, border: "none", background: C.plum, color: "#fff", cursor: "pointer" }}>Jetzt einrichten</button>
           </div>
         )}
+        {tab === "uebersicht" && wartend > 0 && (
+          <div style={{ ...sys, background: C.goldPale, border: `1.5px solid ${C.gold}`, borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 14.5, color: C.espresso, flex: 1 }}>⏳ {wartend} {wartend === 1 ? "neue Frau wartet" : "neue Frauen warten"} auf Freischaltung.</span>
+            <button onClick={() => setTab("mitglieder")} style={{ ...sys, fontSize: 13.5, fontWeight: 700, padding: "8px 14px", borderRadius: 18, border: "none", background: C.plum, color: "#fff", cursor: "pointer" }}>Ansehen</button>
+          </div>
+        )}
         {tab === "uebersicht" && <Uebersicht k={k} wachstum={wachstum} />}
-        {tab === "mitglieder" && <Mitglieder onNachricht={(m) => { setTeamZiel({ user_id: m.id, email: m.email }); setTab("nachrichten"); }} />}
+        {tab === "mitglieder" && <Mitglieder startFilter={wartend ? "Warten" : "Alle"} onGeaendert={() => adminWartendeAnzahl().then(setWartend)} onNachricht={(m) => { setTeamZiel({ user_id: m.id, email: m.email }); setTab("nachrichten"); }} />}
         {tab === "nachrichten" && <TeamNachrichten ziel={teamZiel} setZiel={setTeamZiel} setOffen={setTeamOffen} />}
         {tab === "coachcodes" && <CoachCodes />}
         {tab === "sessions" && <Sessions />}
@@ -312,49 +323,195 @@ function Uebersicht({ k, wachstum }) {
   );
 }
 
-function Mitglieder({ onNachricht }) {
+function Mitglieder({ onNachricht, startFilter = "Alle", onGeaendert }) {
   const [suche, setSuche] = useState("");
   const [liste, setListe] = useState(null);
-  const [filter, setFilter] = useState("Alle");
+  const [filter, setFilter] = useState(startFilter);
+  const [offen, setOffen] = useState(null);   // Profil, das gerade offen ist
+  const [neu, setNeu] = useState(0);
   useEffect(() => {
     const t = setTimeout(() => adminMitglieder(suche.trim(), 200).then(setListe), 250);
     return () => clearTimeout(t);
-  }, [suche]);
+  }, [suche, neu]);
+  // Ältere Datenbank ohne Statusspalten: dann gibt es auch kein „Warten“
+  const mitStatus = (liste || []).some((m) => m.freigeschaltet !== undefined);
 
   const gefiltert = (liste || []).filter((m) =>
     filter === "Alle" || (filter === "Coachinnen" && m.ist_coach) || (filter === "Mit Coachin" && m.hat_coach) ||
-    (filter === "Inaktiv 30 T." && (!m.letzter_login || Date.now() - new Date(m.letzter_login) > 30 * 864e5)));
+    (filter === "Inaktiv 30 T." && (!m.letzter_login || Date.now() - new Date(m.letzter_login) > 30 * 864e5)) ||
+    (filter === "Warten" && mitStatus && !m.freigeschaltet && !m.gesperrt) || (filter === "Gesperrt" && m.gesperrt));
 
   const csv = () => alsCsv(`mitglieder-${new Date().toISOString().slice(0, 10)}.csv`, [
-    ["E-Mail", "Mitglied seit", "Letzter Login", "Coachin", "Hat Coachin", "Lichtpunkte"],
-    ...gefiltert.map((m) => [m.email, datum(m.seit), datum(m.letzter_login), m.ist_coach ? "ja" : "", m.hat_coach ? "ja" : "", m.punkte ?? ""]),
+    ["Name", "E-Mail", "Mitglied seit", "Letzter Login", "Coachin", "Hat Coachin", "Lichtpunkte", "Status"],
+    ...gefiltert.map((m) => [m.name || "", m.email, datum(m.seit), datum(m.letzter_login), m.ist_coach ? "ja" : "", m.hat_coach ? "ja" : "", m.punkte ?? "",
+      m.gesperrt ? "gesperrt" : m.freigeschaltet === false ? "wartet" : "freigeschaltet"]),
   ]);
 
   return (
     <Card>
       <div style={{ display: "flex", gap: 9, marginBottom: 14, flexWrap: "wrap" }}>
-        <input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Suche nach E-Mail …"
+        <input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Suche nach Name oder E-Mail …"
           style={{ flex: 1, minWidth: 180, padding: "11px 14px", fontSize: 15.5, ...sys, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.cream, color: C.espresso, outline: "none" }} />
-        {["Alle", "Coachinnen", "Mit Coachin", "Inaktiv 30 T."].map((p) => (
+        {["Alle", ...(mitStatus ? ["Warten", "Gesperrt"] : []), "Coachinnen", "Mit Coachin", "Inaktiv 30 T."].map((p) => (
           <button key={p} onClick={() => setFilter(p)} style={{ ...sys, fontSize: 13, fontWeight: 700, padding: "9px 13px", borderRadius: 18, cursor: "pointer", border: `1.5px solid ${filter === p ? C.gold : C.line}`, background: filter === p ? C.goldPale : C.card, color: C.espresso }}>{p}</button>
         ))}
         <button onClick={csv} style={{ ...sys, fontSize: 13, fontWeight: 700, padding: "9px 13px", borderRadius: 18, cursor: "pointer", border: "none", background: C.espresso, color: C.cream }}>CSV</button>
       </div>
       {liste === null ? <Leer>Lade …</Leer> : gefiltert.length === 0 ? <Leer>Keine Treffer.</Leer> : gefiltert.map((m) => (
-        <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap" }}>
-          <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...sys, fontWeight: 700, fontSize: 15.5, flexShrink: 0 }}>{(m.email || "?").charAt(0).toUpperCase()}</div>
+        <div key={m.id} onClick={() => setOffen(m.id)} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setOffen(m.id)}
+          title="Profil öffnen" style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 4px", borderBottom: `1px solid ${C.line}`, flexWrap: "wrap", cursor: "pointer", opacity: m.gesperrt ? 0.6 : 1 }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...sys, fontWeight: 700, fontSize: 15.5, flexShrink: 0 }}>{(m.name || m.email || "?").charAt(0).toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 160 }}>
-            <div style={{ ...sys, fontWeight: 700, fontSize: 15, color: C.espresso, wordBreak: "break-all" }}>{m.email}</div>
-            <div style={{ ...sys, fontSize: 11.5, color: C.ink }}>seit {datum(m.seit)} · letzter Login {datum(m.letzter_login)}</div>
+            <div style={{ ...sys, fontWeight: 700, fontSize: 15, color: C.espresso, wordBreak: "break-all" }}>{m.name || m.email}</div>
+            <div style={{ ...sys, fontSize: 11.5, color: C.ink }}>{m.name ? `${m.email} · ` : ""}seit {datum(m.seit)} · letzter Login {datum(m.letzter_login)}</div>
           </div>
+          {m.gesperrt && <Badge tone="rot">gesperrt</Badge>}
+          {mitStatus && !m.gesperrt && m.freigeschaltet === false && <Badge tone="warn">wartet</Badge>}
           {m.ist_coach && <Badge tone="rose">Coachin</Badge>}
           {m.hat_coach && <Badge tone="ok">begleitet</Badge>}
           <span style={{ ...sys, fontSize: 13, color: C.ink, minWidth: 64, textAlign: "right" }}>✨ {m.punkte == null ? "–" : zahl(m.punkte)}</span>
-          <button onClick={() => onNachricht(m)} title="Nachricht schreiben" style={{ ...sys, fontSize: 12.5, fontWeight: 700, padding: "7px 11px", borderRadius: 14, cursor: "pointer", border: `1.5px solid ${C.line}`, background: C.card, color: C.plum }}>💬 Nachricht</button>
+          <button onClick={(e) => { e.stopPropagation(); onNachricht(m); }} title="Nachricht schreiben" style={{ ...sys, fontSize: 12.5, fontWeight: 700, padding: "7px 11px", borderRadius: 14, cursor: "pointer", border: `1.5px solid ${C.line}`, background: C.card, color: C.plum }}>💬 Nachricht</button>
         </div>
       ))}
-      <Hinweis>Angezeigt werden bis zu 200 Konten. Löschen einer Nutzerin bitte über ihren eigenen „Konto löschen“-Weg oder das Supabase-Dashboard (DSGVO-Protokoll).</Hinweis>
+      <Hinweis>Auf einen Namen tippen öffnet das Profil. Angezeigt werden bis zu 200 Konten. Löschen einer Nutzerin bitte über ihren eigenen „Konto löschen“-Weg oder das Supabase-Dashboard (DSGVO-Protokoll).</Hinweis>
+      {offen && <MitgliedProfil userId={offen} onZu={() => setOffen(null)} onNachricht={(m) => { setOffen(null); onNachricht(m); }}
+        onGeaendert={() => { setNeu((n) => n + 1); onGeaendert && onGeaendert(); }} />}
     </Card>
+  );
+}
+
+const AKTION_LABEL = {
+  freigeschaltet: "Freigeschaltet", freischaltung_zurueck: "Freischaltung zurückgenommen", gesperrt: "Gesperrt", entsperrt: "Sperre aufgehoben",
+  notiz: "Notiz geändert", coach_rolle_an: "Coach-Rolle vergeben", coach_rolle_aus: "Coach-Rolle entzogen",
+};
+
+function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
+  const [p, setP] = useState(undefined);   // undefined = lädt, null = Fehler
+  const [notiz, setNotiz] = useState("");
+  const [grund, setGrund] = useState("");
+  const [busy, setBusy] = useState("");
+  const [info, setInfo] = useState("");
+  const [fehler, setFehler] = useState("");
+
+  const laden = () => adminMitgliedDetail(userId)
+    .then((d) => { setP(d || null); setNotiz(d?.admin_notiz || ""); })
+    .catch((e) => { setP(null); setFehler(String(e.message || e)); });
+  useEffect(() => { laden(); }, [userId]);
+  useEffect(() => { const esc = (e) => e.key === "Escape" && onZu(); window.addEventListener("keydown", esc); return () => window.removeEventListener("keydown", esc); }, []);
+
+  const tun = async (name, fn, okText) => {
+    setBusy(name); setFehler(""); setInfo("");
+    try { await fn(); setInfo(okText); await laden(); onGeaendert(); }
+    catch (e) { setFehler(String(e.message || e)); }
+    setBusy("");
+  };
+
+  const btn = (farbe, rand) => ({ ...sys, fontSize: 13.5, fontWeight: 700, padding: "9px 14px", borderRadius: 18, cursor: "pointer", minHeight: 38,
+    border: rand ? `1.5px solid ${rand}` : "none", background: farbe, color: rand ? C.espresso : "#fff" });
+  const Zeile = ({ l, children }) => (
+    <div style={{ display: "flex", gap: 12, padding: "7px 0", borderBottom: `1px solid ${C.line}`, ...sys, fontSize: 14 }}>
+      <span style={{ width: 150, flexShrink: 0, color: C.ink }}>{l}</span><span style={{ color: C.espresso, wordBreak: "break-word" }}>{children}</span>
+    </div>
+  );
+
+  // Portal: die Karte darum herum würde ein position:fixed sonst einsperren
+  return createPortal(
+    <div onClick={onZu} style={{ position: "fixed", inset: 0, background: "rgba(46,36,48,.35)", zIndex: 50, display: "flex", justifyContent: "flex-end" }}>
+      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Profil"
+        style={{ width: "min(560px, 100%)", height: "100%", overflowY: "auto", background: C.cream, boxShadow: "-8px 0 30px rgba(0,0,0,.15)", padding: "18px 20px 40px", boxSizing: "border-box" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <Eyebrow>Profil</Eyebrow><div style={{ flex: 1 }} />
+          <button onClick={onZu} aria-label="Schließen" style={{ ...sys, fontSize: 22, background: "none", border: "none", cursor: "pointer", color: C.ink }}>×</button>
+        </div>
+
+        {p === undefined ? <Leer>Lade …</Leer> : p === null ? (
+          <Card><Leer>Profil konnte nicht geladen werden.</Leer>
+            <Hinweis>{/function|does not exist|schema cache/i.test(fehler) ? "Die Datenbank-Erweiterung (Migration 20261124_mitglied_verwaltung) ist noch nicht eingespielt." : fehler}</Hinweis></Card>
+        ) : (
+          <>
+            <Card>
+              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                <div style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...sys, fontWeight: 700, fontSize: 22, flexShrink: 0 }}>{(p.name || p.email || "?").charAt(0).toUpperCase()}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: 21, color: C.espresso }}>{p.name || "(kein Name)"}</div>
+                  <div style={{ ...sys, fontSize: 13.5, color: C.ink, wordBreak: "break-all" }}>{p.email}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
+                {p.gesperrt ? <Badge tone="rot">gesperrt</Badge> : (p.freigeschaltet || p.ist_coach || p.ist_admin) ? <Badge tone="ok">freigeschaltet</Badge> : <Badge tone="warn">wartet auf Freischaltung</Badge>}
+                {p.ist_admin && <Badge>Admin</Badge>}
+                {p.ist_coach && <Badge tone="rose">Coachin</Badge>}
+                {p.zwei_faktor && <Badge tone="ok">2FA</Badge>}
+              </div>
+            </Card>
+
+            <Card style={{ marginTop: 14 }}>
+              <Eyebrow>Konto</Eyebrow>
+              <Zeile l="Mitglied seit">{datum(p.seit)}</Zeile>
+              <Zeile l="Letzter Login">{p.letzter_login ? datumZeit(p.letzter_login) : "–"}</Zeile>
+              <Zeile l="Anmeldung mit">{p.anmeldung_mit === "google" ? "Google" : p.anmeldung_mit === "email" ? "E-Mail & Passwort" : p.anmeldung_mit}</Zeile>
+              <Zeile l="E-Mail bestätigt">{p.email_bestaetigt ? "ja" : "nein"}</Zeile>
+              {p.freigeschaltet_am && <Zeile l="Freigeschaltet am">{datum(p.freigeschaltet_am)}</Zeile>}
+              {p.gesperrt && <Zeile l="Gesperrt am">{datum(p.gesperrt_am)}{p.gesperrt_grund ? ` · ${p.gesperrt_grund}` : ""}</Zeile>}
+              <Zeile l="Begleitet von">{p.begleitet_von || "–"}</Zeile>
+              {p.ist_coach && <Zeile l="Aktive Klientinnen">{zahl(p.klientinnen)}{p.coach_code ? ` · Code ${p.coach_code}` : ""}</Zeile>}
+              <Zeile l="Lichtpunkte">{p.punkte == null ? "–" : zahl(p.punkte)}</Zeile>
+              <Zeile l="Kommende Termine">{zahl(p.termine_kommend)}</Zeile>
+              <Zeile l="Nachrichten ans Team">{zahl(p.team_nachrichten)}</Zeile>
+              <Zeile l="Community-Beiträge">{zahl(p.community_beitraege)}{p.meldungen_gegen ? ` · ${p.meldungen_gegen} Meldung(en)` : ""}</Zeile>
+              <Hinweis>Journal, Gespräche mit ilho und mit der Coachin bleiben privat und erscheinen hier nicht.</Hinweis>
+            </Card>
+
+            <Card style={{ marginTop: 14 }}>
+              <Eyebrow>Aktionen</Eyebrow>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {!p.ist_admin && !p.ist_coach && (p.freigeschaltet
+                  ? <button disabled={!!busy} onClick={() => window.confirm("Freischaltung zurücknehmen? Sie sieht dann wieder die Warteseite.") && tun("frei", () => adminMitgliedFreischalten(p.id, false), "Freischaltung zurückgenommen.")} style={btn(C.card, C.line)}>Freischaltung zurücknehmen</button>
+                  : <button disabled={!!busy} onClick={() => tun("frei", () => adminMitgliedFreischalten(p.id, true), "Freigeschaltet — sie bekommt eine Willkommensnachricht.")} style={btn(C.sage)}>{busy === "frei" ? "…" : "✓ Freischalten"}</button>)}
+                {!p.ist_admin && (p.ist_coach
+                  ? <button disabled={!!busy} onClick={() => window.confirm("Coach-Rolle entziehen? Ihre Klientinnen und Inhalte bleiben erhalten.") && tun("coach", () => adminCoachRolle(p.id, false), "Coach-Rolle entzogen.")} style={btn(C.card, C.line)}>Coach-Rolle entziehen</button>
+                  : <button disabled={!!busy} onClick={() => window.confirm("Coach-Rolle ohne Code vergeben?") && tun("coach", () => adminCoachRolle(p.id, true), "Coach-Rolle vergeben.")} style={btn(C.card, C.line)}>Coach-Rolle vergeben</button>)}
+                <button onClick={() => onNachricht({ id: p.id, email: p.email })} style={btn(C.card, C.line)}>💬 Nachricht</button>
+              </div>
+
+              {!p.ist_admin && (
+                <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
+                  {p.gesperrt ? (
+                    <button disabled={!!busy} onClick={() => tun("sperre", () => adminMitgliedSperren(p.id, false), "Sperre aufgehoben — sie kann sich wieder anmelden.")} style={btn(C.plum)}>{busy === "sperre" ? "…" : "🔓 Sperre aufheben"}</button>
+                  ) : (
+                    <>
+                      <input value={grund} onChange={(e) => setGrund(e.target.value)} placeholder="Grund (nur intern sichtbar)" maxLength={500}
+                        style={{ ...sys, width: "100%", boxSizing: "border-box", fontSize: 14.5, padding: "10px 12px", borderRadius: 10, border: `1.5px solid ${C.line}`, background: "#fff", color: C.espresso, marginBottom: 8 }} />
+                      <button disabled={!!busy} onClick={() => window.confirm(`${p.name || p.email} jetzt sperren? Sie kann sich nicht mehr anmelden und wird aus der App abgemeldet.`) && tun("sperre", () => adminMitgliedSperren(p.id, true, grund), "Gesperrt.")} style={btn(C.rot)}>{busy === "sperre" ? "…" : "⛔ Konto sperren"}</button>
+                    </>
+                  )}
+                </div>
+              )}
+              {info && <p style={{ ...sys, fontSize: 14, color: C.sage, margin: "12px 0 0" }}>{info}</p>}
+              {fehler && <p style={{ ...sys, fontSize: 14, color: C.rot, margin: "12px 0 0" }}>{/admin-sperren|Failed to fetch|NetworkError/i.test(fehler) ? "Die Sperr-Funktion auf dem Server ist noch nicht eingerichtet (Edge Function „admin-sperren“)." : fehler}</p>}
+            </Card>
+
+            <Card style={{ marginTop: 14 }}>
+              <Eyebrow>Admin-Notiz (nur intern)</Eyebrow>
+              <textarea value={notiz} onChange={(e) => setNotiz(e.target.value)} rows={3} placeholder="z. B. Kennenlerngespräch am …, Thema …"
+                style={{ ...sys, width: "100%", boxSizing: "border-box", fontSize: 14.5, padding: "10px 12px", borderRadius: 10, border: `1.5px solid ${C.line}`, background: "#fff", color: C.espresso, resize: "vertical" }} />
+              <button disabled={!!busy || notiz === (p.admin_notiz || "")} onClick={() => tun("notiz", () => adminMitgliedNotiz(p.id, notiz), "Notiz gespeichert.")} style={{ ...btn(C.espresso), marginTop: 8, opacity: notiz === (p.admin_notiz || "") ? 0.5 : 1 }}>Notiz speichern</button>
+            </Card>
+
+            <Card style={{ marginTop: 14 }}>
+              <Eyebrow>Verlauf</Eyebrow>
+              {(p.protokoll || []).length === 0 ? <Leer>Noch keine Admin-Aktionen.</Leer> : p.protokoll.map((e, i) => (
+                <div key={i} style={{ ...sys, fontSize: 13.5, padding: "6px 0", borderBottom: `1px solid ${C.line}`, color: C.espresso }}>
+                  <b>{AKTION_LABEL[e.aktion] || e.aktion}</b>{e.details?.grund ? ` · ${e.details.grund}` : ""}
+                  <div style={{ fontSize: 11.5, color: C.ink }}>{datumZeit(e.zeit)} · {e.admin || "–"}</div>
+                </div>
+              ))}
+            </Card>
+          </>
+        )}
+      </div>
+    </div>,
+    document.body,
   );
 }
 
