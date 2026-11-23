@@ -30,6 +30,9 @@
       document.querySelector('link[rel="icon"]').href = "/admin-icon-192.png";
       document.querySelector('meta[name="apple-mobile-web-app-title"]').content = "s2g.admin";
       document.title = "s2g.admin";
+      // Interne Zentrale: nie in Suchmaschinen (zusätzlich X-Robots-Tag in vercel.json)
+      var r = document.createElement("meta"); r.name = "robots"; r.content = "noindex, nofollow, noarchive";
+      document.head.appendChild(r);
     }
   </script>
 

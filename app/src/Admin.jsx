@@ -6,8 +6,8 @@ import {
   adminCoachCodes, adminCoachCodeErzeugen, adminCoachCodeUmschalten,
   adminTeamPostfach, adminTeamVerlauf, adminTeamSenden, adminTeamRundnachricht,
 } from "./supabase";
-import { brauchtZweitenFaktor } from "./supabase";
-import { ZweiFaktorAbfrage } from "./ZweiFaktor";
+import { brauchtZweitenFaktor, zweiFaktorStatus, passwortZuruecksetzen, neuesPasswortSetzen } from "./supabase";
+import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import { ILHO_SYSTEM } from "./ilho";
 import { alsCsv } from "./export";
 
@@ -64,13 +64,16 @@ export default function AdminDashboard() {
   const [wachstum, setWachstum] = useState([]);
   const [teamZiel, setTeamZiel] = useState(null);   // { user_id, email } aus „Mitglieder“
   const [teamOffen, setTeamOffen] = useState(0);
+  const [zweiFaktorAktiv, setZweiFaktorAktiv] = useState(true);
+  // Link aus der „Passwort vergessen“-Mail: erst neues Passwort, dann Dashboard
+  const [pwNeu, setPwNeu] = useState(() => new URLSearchParams(window.location.search).get("pw") === "neu");
 
   // Die Dock-App (s2g.admin) hat ihren eigenen Speicher — darum meldet sich
   // ilho hier direkt an, statt erst über die Mitglieder-App zu gehen.
   useEffect(() => {
     if (!supabase) { setSession(null); setAdmin(false); return; }
     supabase.auth.getSession().then(({ data }) => setSession(data.session || null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s || null));
+    const { data: sub } = supabase.auth.onAuthStateChange((e, s) => { if (e === "PASSWORD_RECOVERY") setPwNeu(true); setSession(s || null); });
     return () => sub?.subscription?.unsubscribe();
   }, []);
 
@@ -80,6 +83,7 @@ export default function AdminDashboard() {
     const ok = await istAdmin();
     setAdmin(ok);
     if (!ok) return;
+    zweiFaktorStatus().then((z) => setZweiFaktorAktiv(!!z.aktiv)).catch(() => {});
     const [kz, w] = await Promise.all([adminKennzahlen(), adminWachstum()]);
     adminTeamPostfach().then((p) => setTeamOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0)));
     setK(kz); setWachstum(w.map((z) => ({ m: new Date(z.monat).toLocaleDateString("de-DE", { month: "short" }), neu: Number(z.neu) })));
@@ -101,12 +105,24 @@ export default function AdminDashboard() {
     return () => clearInterval(t);
   }, [admin]);
 
-  useEffect(() => { document.title = teamOffen ? `(${teamOffen}) s2g.admin` : "s2g.admin"; }, [teamOffen]);
+  // Fenstertitel + Zahl am Dock-Icon: ungelesene Team-Nachrichten + offene Meldungen
+  const offenGesamt = teamOffen + Number(k?.meldungen_offen || 0);
+  useEffect(() => {
+    document.title = offenGesamt ? `(${offenGesamt}) s2g.admin` : "s2g.admin";
+    try {
+      if (offenGesamt && navigator.setAppBadge) navigator.setAppBadge(offenGesamt).catch(() => {});
+      else if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+    } catch { /* Badge ist Kür, kein Muss */ }
+  }, [offenGesamt]);
+
+  // Nach Einrichtung im System-Tab den Hinweis beim Tabwechsel neu prüfen
+  useEffect(() => { if (admin) zweiFaktorStatus().then((z) => setZweiFaktorAktiv(!!z.aktiv)).catch(() => {}); }, [tab]);
 
   const abmelden = () => supabase.auth.signOut().then(() => { setAdmin(false); setK(null); });
 
   if (session === undefined) return <div style={{ minHeight: "100vh", background: C.cream }} />;
   if (supabase && !session) return <AdminAnmeldung />;
+  if (pwNeu) return <NeuesPasswort onFertig={() => { setPwNeu(false); try { window.history.replaceState({}, "", "/admin"); } catch {} }} />;
   if (mfaFaktor)
     return (
       <Mitte><Card style={{ maxWidth: 400, width: "100%" }}>
@@ -158,6 +174,12 @@ export default function AdminDashboard() {
       </div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 20px 60px" }}>
+        {!zweiFaktorAktiv && tab !== "system" && (
+          <div style={{ ...sys, background: "#FFF4E5", border: "1.5px solid #F0C987", borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 14.5, color: C.espresso, flex: 1, minWidth: 220 }}>🔐 Dein Admin-Konto sieht alle Plattformdaten, ist aber nur per Passwort geschützt. Richte die Zwei-Faktor-Anmeldung ein.</span>
+            <button onClick={() => setTab("system")} style={{ ...sys, fontSize: 13.5, fontWeight: 700, padding: "8px 14px", borderRadius: 18, border: "none", background: C.plum, color: "#fff", cursor: "pointer" }}>Jetzt einrichten</button>
+          </div>
+        )}
         {tab === "uebersicht" && <Uebersicht k={k} wachstum={wachstum} />}
         {tab === "mitglieder" && <Mitglieder onNachricht={(m) => { setTeamZiel({ user_id: m.id, email: m.email }); setTab("nachrichten"); }} />}
         {tab === "nachrichten" && <TeamNachrichten ziel={teamZiel} setZiel={setTeamZiel} setOffen={setTeamOffen} />}
@@ -182,9 +204,17 @@ function AdminAnmeldung() {
   const [busy, setBusy] = useState(false);
   const feld = { ...sys, width: "100%", boxSizing: "border-box", fontSize: 16, padding: "11px 12px", borderRadius: 10, border: `1.5px solid ${C.line}`, background: "#fff", color: C.espresso, marginBottom: 12 };
 
+  const [info, setInfo] = useState("");
+  const vergessen = async () => {
+    setErr(""); setInfo("");
+    if (!mail.trim()) { setErr("Bitte zuerst deine E-Mail eintragen."); return; }
+    try { await passwortZuruecksetzen(mail); setInfo("Wir haben dir einen Link zum Zurücksetzen geschickt. Öffne ihn auf diesem Mac."); }
+    catch { setErr("Senden gerade nicht möglich — bitte später erneut."); }
+  };
+
   const anmelden = async () => {
     if (busy) return;
-    setErr(""); setBusy(true);
+    setErr(""); setInfo(""); setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({ email: mail.trim(), password: pw });
     setBusy(false);
     if (error) setErr("Anmeldung fehlgeschlagen — E-Mail oder Passwort stimmt nicht.");
@@ -203,12 +233,44 @@ function AdminAnmeldung() {
           <input style={feld} type="email" autoComplete="username" placeholder="E-Mail" value={mail} onChange={(e) => setMail(e.target.value)} />
           <input style={feld} type="password" autoComplete="current-password" placeholder="Passwort" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && anmelden()} />
           {err && <div style={{ ...sys, fontSize: 14, color: C.rot, marginBottom: 10 }}>{err}</div>}
+          {info && <div style={{ ...sys, fontSize: 14, color: C.sage, marginBottom: 10 }}>{info}</div>}
           <button onClick={anmelden} disabled={busy} style={{ ...sys, width: "100%", fontSize: 15.5, fontWeight: 700, padding: "12px", borderRadius: 22, border: "none", background: C.plum, color: "#fff", cursor: "pointer" }}>
             {busy ? "Einen Moment …" : "Anmelden"}
           </button>
+          <button onClick={vergessen} style={{ ...sys, display: "block", margin: "12px auto 0", fontSize: 13.5, color: C.plum, background: "none", border: "none", cursor: "pointer" }}>Passwort vergessen?</button>
           <Hinweis>Dasselbe Konto wie in der App. Zugang nur für Konten in der Admin-Liste.</Hinweis>
         </Card>
       </div>
+    </Mitte>
+  );
+}
+
+function NeuesPasswort({ onFertig }) {
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const feld = { ...sys, width: "100%", boxSizing: "border-box", fontSize: 16, padding: "11px 12px", borderRadius: 10, border: `1.5px solid ${C.line}`, background: "#fff", color: C.espresso, marginBottom: 12 };
+  const speichern = async () => {
+    setErr("");
+    if (pw.length < 10) { setErr("Bitte mindestens 10 Zeichen — dieses Konto sieht alle Plattformdaten."); return; }
+    if (pw !== pw2) { setErr("Die beiden Passwörter sind nicht gleich."); return; }
+    setBusy(true);
+    try { await neuesPasswortSetzen(pw); onFertig(); }
+    catch (e) { setErr("Speichern fehlgeschlagen: " + e.message); }
+    setBusy(false);
+  };
+  return (
+    <Mitte>
+      <Card style={{ maxWidth: 380, width: "100%" }}>
+        <Eyebrow>s2g.admin · neues Passwort</Eyebrow>
+        <input style={feld} type="password" autoComplete="new-password" placeholder="Neues Passwort" value={pw} onChange={(e) => setPw(e.target.value)} />
+        <input style={feld} type="password" autoComplete="new-password" placeholder="Wiederholen" value={pw2} onChange={(e) => setPw2(e.target.value)} onKeyDown={(e) => e.key === "Enter" && speichern()} />
+        {err && <div style={{ ...sys, fontSize: 14, color: C.rot, marginBottom: 10 }}>{err}</div>}
+        <button onClick={speichern} disabled={busy} style={{ ...sys, width: "100%", fontSize: 15.5, fontWeight: 700, padding: "12px", borderRadius: 22, border: "none", background: C.plum, color: "#fff", cursor: "pointer" }}>
+          {busy ? "Einen Moment …" : "Passwort speichern"}
+        </button>
+      </Card>
     </Mitte>
   );
 }
@@ -560,6 +622,7 @@ function SystemTab({ k }) {
     { k: "Fairness-Test", ok: fairTage != null && fairTage <= 30, info: fairTage == null ? "noch nie — im Tab „KI & Fairness“ starten" : `vor ${fairTage} Tagen` },
   ];
   return (
+    <>
     <Card>
       <Eyebrow>🛠️ Dienste-Status (live)</Eyebrow>
       {zeilen.map((z) => (
@@ -572,6 +635,12 @@ function SystemTab({ k }) {
       {cron && cron.status !== "succeeded" && cron.meldung && <Hinweis>Letzte Cron-Meldung: {cron.meldung}</Hinweis>}
       <Hinweis>Kosten der KI siehst du exakt in der Anthropic-Konsole; hier nur die Anzahl der ilho-Nachrichten (Übersicht).</Hinweis>
     </Card>
+    <Card style={{ marginTop: 16 }}>
+      <Eyebrow>🔐 Zwei-Faktor-Anmeldung (dein Admin-Konto)</Eyebrow>
+      <ZweiFaktorEinstellung C={C} />
+      <Hinweis>Wirkt in der App, im Coach-Panel und hier — es ist dasselbe Konto. Nach dem Passwort fragt s2g.admin dann den 6-stelligen Code aus deiner Authenticator-App ab.</Hinweis>
+    </Card>
+    </>
   );
 }
 
