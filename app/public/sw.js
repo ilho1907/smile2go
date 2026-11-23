@@ -5,7 +5,7 @@
 
 // Die Version steht im Namen: beim Aktivieren wird jeder andere Cache
 // geloescht. Bei einer Aenderung an dieser Datei hier hochzaehlen.
-const CACHE = "s2g-v18";
+const CACHE = "s2g-v19";
 const HUELLE = ["/", "/index.html", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -26,6 +26,8 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/rest/") || url.pathname.startsWith("/auth/")) return;
+  // Video/Audio direkt vom Netz: Safari laedt sie in Teilstuecken (Range), die der Cache nicht speichern kann.
+  if (e.request.headers.has("range") || /\.(mp4|webm|mp3|m4a)$/i.test(url.pathname)) return;
 
   e.respondWith(
     fetch(e.request)

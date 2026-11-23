@@ -2991,6 +2991,24 @@ function SeiteInhalt({ e, nr, n, linien }) {
 /* — Rituelles Energie-Update — */
 const RITUAL_BILDER = { raeu: ENTDECKEN_BILDER.kerze, natur: ENTDECKEN_BILDER.natur, mond: ENTDECKEN_BILDER.mond, "körper": ENTDECKEN_BILDER.wasser };
 
+// Gefuehrtes Ritual-Video: zeigt zuerst das Titelbild (Kapak) mit Play-Knopf.
+// Das <video> wird erst beim Tippen geladen — so steht nie ein schwarzes Bild da.
+function RitualVideo({ video, poster, titel }) {
+  const [an, setAn] = useState(false);
+  const box = { display: "block", width: "100%", maxHeight: "72dvh", aspectRatio: "9 / 16", objectFit: "contain", background: "#1c1024" };
+  if (an) return <video src={video} poster={poster} controls autoPlay playsInline preload="auto" style={box} />;
+  return (
+    <button type="button" onClick={() => setAn(true)} aria-label={titel ? `Video abspielen: ${titel}` : "Video abspielen"}
+      style={{ position: "relative", display: "block", width: "100%", padding: 0, border: 0, background: "#1c1024", cursor: "pointer" }}>
+      <img src={poster} alt="" style={{ ...box, objectFit: "cover" }} />
+      <span style={{ position: "absolute", left: "50%", top: "62%", transform: "translate(-50%, -50%)", width: 74, height: 74, borderRadius: "50%",
+        background: "rgba(28,16,36,.55)", border: "1.5px solid rgba(255,255,255,.75)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="#fff" /></svg>
+      </span>
+    </button>
+  );
+}
+
 function Rituale({ ritual, setRitual, addPunkte }) {
   const RITUALE = [
     {
@@ -3081,10 +3099,7 @@ function Rituale({ ritual, setRitual, addPunkte }) {
             {RITUAL_VIDEOS[r.k] ? (
               // Jedes Ritual hat ein eigenes gefuehrtes Video (Titel steht im Video).
               <div style={{ background: "#1c1024", display: "flex", justifyContent: "center" }}>
-                <video
-                  key={r.k} src={RITUAL_VIDEOS[r.k].video} poster={RITUAL_VIDEOS[r.k].poster} controls playsInline preload="metadata"
-                  style={{ display: "block", width: "100%", maxHeight: "72dvh", aspectRatio: "9 / 16", objectFit: "contain", background: "#1c1024" }}
-                />
+                <RitualVideo key={r.k} video={RITUAL_VIDEOS[r.k].video} poster={RITUAL_VIDEOS[r.k].poster} titel={r.t.replace(/^\S+\s/, "")} />
               </div>
             ) : (
             <div style={{ position: "relative", height: 150 }}>
@@ -3431,10 +3446,7 @@ function Brief({ briefe, setBriefe, briefPost, setBriefPost, addPunkte }) {
         <>
           {/* Gefuehrtes Video: so funktioniert der Zukunftsbrief (Schritte stehen im Video) */}
           <Card style={{ marginBottom: 14, padding: 0, overflow: "hidden", background: "#1c1024" }}>
-            <video
-              src={BRIEF_VIDEO.video} poster={BRIEF_VIDEO.poster} controls playsInline preload="metadata"
-              style={{ display: "block", width: "100%", maxHeight: "72dvh", aspectRatio: "9 / 16", objectFit: "contain", background: "#1c1024" }}
-            />
+            <RitualVideo video={BRIEF_VIDEO.video} poster={BRIEF_VIDEO.poster} titel="Zukunftsbrief" />
           </Card>
           <Card style={{ marginBottom: 14, background: `linear-gradient(170deg, #FFFFFF, ${C.goldPale})` }}>
             <BriefUmschlag onOffen={() => setPhase("schreiben")} />
