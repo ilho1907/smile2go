@@ -1,0 +1,15 @@
+{
+  "id": "/admin",
+  "name": "s2g.admin",
+  "short_name": "s2g.admin",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#FBF6FA",
+  "theme_color": "#2E2430",
+  "description": "smile2go Plattform-Zentrale: Übersicht, Mitglieder, Nachrichten, Coach-Codes, Moderation.",
+  "icons": [
+    { "src": "/admin-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/admin-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -10,6 +10,8 @@ import Coach from "./Coach.jsx";
 //   #admin → Plattform-Dashboard (Prototyp mit Demo-Zahlen)
 const Root = () => {
   const h = window.location.hash;
+  // /admin = eigene Dock-App „s2g.admin“ (eigenes Manifest, siehe index.html)
+  if (window.location.pathname.replace(/\/+$/, "") === "/admin") return <Admin />;
   if (h === "#coach") return <Coach />;
   if (h === "#admin") return <Admin />;
   return <App />;
