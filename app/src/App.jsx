@@ -4,6 +4,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import Entdecken, { Karussell } from "./Entdecken";
 import MantraRaum from "./MantraRaum";
+import { THEMEN as FARBTHEMEN, wendeThemaAn as wendeThemaAnRoh, gespeichertesThema } from "./themen";
 import Tarot from "./Tarot";
 import KarteVollbild from "./KarteVollbild";
 import TeamNachrichten from "./TeamNachrichten";
@@ -74,7 +75,10 @@ const C = {
   rose: "#E8A8D4",       // Betonung
   roseSoft: "#FCF1F8",   // leiseste getoente Flaeche
   plum: "#6E3568",       // tiefste Markenfarbe
+  aufGold: "#FFFCF5",    // Schrift auf der Hauptfarbe
 };
+// Gewaehltes Farbthema (Profil › Design) sofort anwenden, bevor etwas gezeichnet wird.
+wendeThemaAnRoh(C, gespeichertesThema());
 
 const MOTIVATION = [
   // Selbstliebe
@@ -617,7 +621,7 @@ const Card = ({ children, style, onClick, flach }) => (
     className="s2g-card"
     data-klickbar={onClick ? "1" : undefined}
     style={{
-      background: flach ? "transparent" : `linear-gradient(165deg, #FFFFFF 0%, ${C.card} 55%, #FFFCF7 100%)`,
+      background: flach ? "transparent" : `linear-gradient(165deg, ${C.card} 0%, ${C.card} 55%, ${C.roseSoft} 100%)`,
       border: `1px solid ${flach ? "rgba(227,214,194,.7)" : C.line}`,
       // Mehr Luft im Kasten und eine weichere Ecke: achtzehn Pixel Rand sind
       // die eines Web-Kastens, zweiundzwanzig die einer Anwendung. Bei 206
@@ -705,6 +709,19 @@ const DUNKEL_TON = {
      die Seite irgendwo schwer wird. */
   perlmutt: { flaeche: "linear-gradient(140deg, #FDF4FA 0%, #F7E6F2 58%, #F0D8EA 100%)", schrift: "#2E2430", leise: "rgba(38,34,51,.66)", zeichen: "#8E4C85", schatten: "rgba(80,60,150,.28)" },
 };
+
+// Thema anwenden und die beiden Flaechen, die die App am haeufigsten nutzt
+// (Pflaume = dunkle Hervorhebung, Perlmutt = getoente Karte), mitfaerben.
+function wendeThemaAn(Cz, id) {
+  const t = wendeThemaAnRoh(Cz, id);
+  if (typeof DUNKEL_TON !== "undefined") {
+    const hell = t.art === "hell";
+    DUNKEL_TON.pflaume = { flaeche: t.panel, schrift: "#FFFBF7", leise: "rgba(255,251,247,.76)", zeichen: t.panelZeichen, schatten: "rgba(20,10,20,.55)" };
+    DUNKEL_TON.perlmutt = { flaeche: `linear-gradient(140deg, ${Cz.card} 0%, ${Cz.goldPale} 70%, ${Cz.roseSoft} 100%)`, schrift: Cz.espresso, leise: hell ? "rgba(38,34,51,.66)" : "rgba(255,255,255,.72)", zeichen: Cz.gold, schatten: hell ? "rgba(80,60,100,.22)" : "rgba(0,0,0,.45)" };
+  }
+  return t;
+}
+wendeThemaAn(C, gespeichertesThema());
 
 const Dunkel = ({ children, style, ton = "perlmutt" }) => {
   const t = DUNKEL_TON[ton] || DUNKEL_TON.perlmutt;
@@ -918,11 +935,11 @@ const Btn = ({ children, onClick, ghost, full, small, disabled }) => (
       /* Ein Verlauf von Gold nach Rose war der Knopf des Jahres 2019. Eine
          teure Anwendung nimmt heute eine Farbe und eine ruhige Schattierung
          — der Knopf soll fest aussehen, nicht leuchten. */
-      background: ghost ? "rgba(255,255,255,.72)" : C.gold,
+      background: ghost ? C.card : C.gold,
       boxShadow: ghost
         ? "0 1px 2px rgba(70,55,130,.05)"
         : "0 10px 22px -12px rgba(120,85,25,.55)",
-      color: ghost ? C.espresso : "#FFFCF5",
+      color: ghost ? C.espresso : C.aufGold,
       width: full ? "100%" : "auto",
       cursor: disabled ? "wait" : "pointer",
       opacity: disabled ? 0.6 : 1,
@@ -5078,6 +5095,32 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
               <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 2 }}>{x.s}</div>
             </Card>
           ))}
+        </div>
+
+        {/* Design — Farbthema waehlen, wie hell/dunkel */}
+        <Eyebrow color={C.plum}>Design</Eyebrow>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, margin: "8px 0 20px" }}>
+          {FARBTHEMEN.map((t) => {
+            const gewaehlt = (prefs.thema || gespeichertesThema()) === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setPrefs && setPrefs({ ...prefs, thema: t.id })}
+                aria-pressed={gewaehlt}
+                style={{
+                  textAlign: "left", cursor: "pointer", padding: 12, borderRadius: 18,
+                  background: C.card, border: gewaehlt ? `2px solid ${C.gold}` : `1.5px solid ${C.line}`,
+                  boxShadow: gewaehlt ? `0 8px 22px -10px ${C.gold}` : "none",
+                }}
+              >
+                <div style={{ height: 46, borderRadius: 12, background: t.grund, display: "flex", alignItems: "flex-end", gap: 4, padding: 6, border: `1px solid ${C.line}` }}>
+                  {t.vorschau.slice(1).map((f) => <span key={f} style={{ width: 14, height: 14, borderRadius: "50%", background: f, boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />)}
+                </div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: C.espresso, marginTop: 8 }}>{t.name}</div>
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, marginTop: 1 }}>{gewaehlt ? "✓ aktiv" : t.art === "hell" ? "Hell" : "Dunkel"}</div>
+              </button>
+            );
+          })}
         </div>
 
         {/* Account */}
@@ -11977,6 +12020,9 @@ export default function IlhoApp() {
     { k: "mehr", art: "mehr", t: "Mehr" },
   ];
 
+  // Farbthema der Nutzerin (Profil › Design) — vor dem Zeichnen in C schreiben.
+  const aktThema = wendeThemaAn(C, prefs?.thema || gespeichertesThema());
+
   return (
     <div className="s2g-stage" style={{ minHeight: "100vh", background: C.beige, display: "flex", justifyContent: "center", fontSize: 18 }}>
       <style>{`
@@ -11992,7 +12038,7 @@ export default function IlhoApp() {
           dass man ihn bemerkt. Oben etwas heller, unten etwas waermer:
           genug, damit die Seite nicht wie ein gleichmaessiges Blatt wirkt,
           zu wenig, um als Farbe aufzufallen. */}
-      <div className="s2g-shell" style={{ width: "100%", maxWidth: 430, background: `linear-gradient(176deg, #FFFDFE 0%, ${C.cream} 46%, #F4E4F0 100%)`, backgroundAttachment: "fixed", minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
+      <div className="s2g-shell" style={{ width: "100%", maxWidth: 430, background: aktThema.grund, backgroundAttachment: "fixed", minHeight: "100vh", position: "relative", boxShadow: "0 0 40px rgba(58,42,34,.10)" }}>
         {cloudAus && (
           <div style={{
             position: "sticky", top: 0, zIndex: 40,
@@ -12022,7 +12068,7 @@ export default function IlhoApp() {
               <div style={{
                 position: "sticky", top: 0, zIndex: 15,
                 display: "flex", alignItems: "center", gap: 6,
-                padding: "10px 12px", background: "rgba(251,246,238,.95)",
+                padding: "10px 12px", background: "var(--s2g-nav, rgba(251,246,238,.95))",
                 backdropFilter: "blur(8px)", borderBottom: `1px solid ${C.line}`,
               }}>
                 <button onClick={back} style={{
