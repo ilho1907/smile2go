@@ -82,12 +82,12 @@ const S = {
     justifyContent: "space-between", alignItems: "center",
     top: "calc(14px + env(safe-area-inset-top, 0px))",
   },
-  marke: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 17, letterSpacing: .3, textShadow: "0 1px 9px rgba(0,0,0,.5)" },
+  marke: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 18, letterSpacing: .3, textShadow: "0 1px 9px rgba(0,0,0,.5)" },
   rechts: { display: "inline-flex", alignItems: "center", gap: 9 },
   lp: {
     display: "inline-flex", alignItems: "center", gap: 6,
     background: "rgba(255,253,254,.93)", color: P.gold, fontFamily: "system-ui, sans-serif",
-    fontSize: 12, fontWeight: 600, padding: "7px 13px", borderRadius: 20,
+    fontSize: 13.5, fontWeight: 600, padding: "7px 13px", borderRadius: 20,
     boxShadow: "0 4px 14px -5px rgba(60,16,50,.45)",
   },
   // 44px: die kleinste Flaeche, die ein Daumen sicher trifft.
@@ -100,14 +100,14 @@ const S = {
 
   unten: { position: "absolute", bottom: 20, left: 20, right: 20 },
   titel: {
-    fontFamily: "Georgia, serif", fontWeight: 400,
-    fontSize: "clamp(27px, 7.6vw, 34px)", lineHeight: 1.06, letterSpacing: "-0.028em",
+    fontFamily: "Georgia, serif", fontWeight: 300,
+    fontSize: "clamp(31px, 8.6vw, 40px)", lineHeight: 1.06, letterSpacing: "-0.028em",
     color: "#FFFBFD", margin: 0, textShadow: "0 2px 18px rgba(0,0,0,.55)",
   },
   titelZwei: { color: "rgba(255,251,253,.78)" },
   knopf: {
     marginTop: 17, width: "100%", minHeight: 52, border: "none", borderRadius: 26,
-    cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 600,
+    cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 17, fontWeight: 600,
     color: "#FFF8FC", background: P.gold,
     boxShadow: "0 12px 26px -13px rgba(50,12,42,.9)",
   },

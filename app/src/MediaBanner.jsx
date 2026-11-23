@@ -43,7 +43,7 @@ export default function MediaBanner({ video, poster, title, subtitle, height = 2
         }}>{title}</h1>
         {subtitle && (
           <p style={{
-            fontFamily: "system-ui, sans-serif", fontSize: 13.5, lineHeight: 1.45,
+            fontFamily: "system-ui, sans-serif", fontSize: 15, lineHeight: 1.45,
             color: "rgba(255,248,238,.78)", margin: "8px 0 0", maxWidth: 290,
             textShadow: "0 1px 8px rgba(0,0,0,.5)",
           }}>{subtitle}</p>

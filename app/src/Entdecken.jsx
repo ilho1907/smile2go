@@ -64,7 +64,7 @@ export function Karussell({ titel, unter, karten, filter: FILTER, onOeffnen, sti
   return (
     <div style={{ margin: "0 -20px 32px", ...stil }}>
       {titel && <div style={{ padding: "0 20px", marginBottom: unter ? 4 : 12, fontFamily: "Georgia, serif", fontSize: 23, letterSpacing: "-0.018em", color: "#2E2430" }}>{titel}</div>}
-      {unter && <div style={{ padding: "0 20px", marginBottom: 12, fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: "#7A6B7A" }}>{unter}</div>}
+      {unter && <div style={{ padding: "0 20px", marginBottom: 12, fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#7A6B7A" }}>{unter}</div>}
 
       {FILTER && <div className="s2g-entdecken-chips" style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 20px 14px", scrollbarWidth: "none" }}>
         {FILTER.map((f) => {
@@ -75,7 +75,7 @@ export function Karussell({ titel, unter, karten, filter: FILTER, onOeffnen, sti
               border: an ? "none" : "1px solid #EFDFEC",
               background: an ? MAGENTA : "#FFFDFE",
               color: an ? "#fff" : "#2E2430",
-              fontFamily: "system-ui, sans-serif", fontSize: 14, fontWeight: an ? 600 : 400,
+              fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: an ? 600 : 400,
               boxShadow: an ? "0 6px 16px rgba(194,65,143,.32)" : "none",
             }}>{f}</button>
           );
@@ -108,11 +108,11 @@ export function Karussell({ titel, unter, karten, filter: FILTER, onOeffnen, sti
               <img src={k.bild} alt={nurBild ? k.titel : ""} loading="lazy" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
               {!nurBild && <>
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(42,23,48,0) 45%, rgba(42,23,48,.82) 100%)" }} />
-              {k.art && <span style={{ position: "absolute", top: 14, left: 14, padding: "5px 11px", borderRadius: 12, background: "rgba(255,255,255,.18)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: "#fff", fontFamily: "system-ui, sans-serif", fontSize: 11.5, letterSpacing: ".04em" }}>{k.art}</span>}
+              {k.art && <span style={{ position: "absolute", top: 14, left: 14, padding: "5px 11px", borderRadius: 12, background: "rgba(255,255,255,.18)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: "#fff", fontFamily: "system-ui, sans-serif", fontSize: 13, letterSpacing: ".04em" }}>{k.art}</span>}
               <div style={{ position: "absolute", left: 16, right: 60, bottom: 16, color: "#fff" }}>
                 <div style={{ fontFamily: "Georgia, serif", fontSize: 22, lineHeight: 1.15 }}>{k.titel}</div>
-                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, opacity: .9, marginTop: 5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{k.unter}</div>
-                {k.dauer && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, opacity: .75, marginTop: 2 }}>{k.dauer}</div>}
+                <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, opacity: .9, marginTop: 5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{k.unter}</div>
+                {k.dauer && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, opacity: .75, marginTop: 2 }}>{k.dauer}</div>}
               </div>
               <span aria-hidden="true" style={{ position: "absolute", right: 14, bottom: 16, width: 38, height: 38, borderRadius: "50%", background: "rgba(255,255,255,.2)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M7 17L17 7M9 7h8v8" /></svg>

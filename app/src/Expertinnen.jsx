@@ -48,23 +48,23 @@ const webUrl = (w) => !w ? "" : w.startsWith("http") ? w : `https://${w}`;
 
 export function ExpertinProfil({ e, go }) {
   if (!e) return <div style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>Profil nicht gefunden.</div>;
-  const knopf = { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 50, borderRadius: 25, fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, textDecoration: "none", cursor: "pointer" };
+  const knopf = { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 50, borderRadius: 25, fontFamily: "system-ui, sans-serif", fontSize: 16.5, fontWeight: 600, textDecoration: "none", cursor: "pointer" };
   return (
     <div style={{ paddingBottom: 28 }}>
       <div style={{ position: "relative", height: 300, overflow: "hidden", background: "#2A1730" }}>
         <img src={e.bild} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(42,23,48,0) 40%, rgba(42,23,48,.85) 100%)" }} />
         <div style={{ position: "absolute", left: 22, right: 22, bottom: 18, color: "#fff" }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11, letterSpacing: 2.2, textTransform: "uppercase", opacity: .85 }}>Expertin</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, letterSpacing: 2.2, textTransform: "uppercase", opacity: .85 }}>Expertin</div>
           <h1 style={{ fontFamily: "Georgia, serif", fontWeight: 400, fontSize: 34, margin: "4px 0 2px" }}>{e.name}</h1>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, opacity: .9 }}>{e.schwerpunkt}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, opacity: .9 }}>{e.schwerpunkt}</div>
         </div>
       </div>
       <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
-        {e.text && <p style={{ fontFamily: "Georgia, serif", fontSize: 17, lineHeight: 1.6, color: "#2E2430", margin: 0 }}>{e.text}</p>}
+        {e.text && <p style={{ fontFamily: "Georgia, serif", fontSize: 18, lineHeight: 1.6, color: "#2E2430", margin: 0 }}>{e.text}</p>}
         {e.schwerpunkte?.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {e.schwerpunkte.map((s) => <span key={s} style={{ padding: "6px 12px", borderRadius: 14, background: "#F9EAF4", color: "#6E3568", fontFamily: "system-ui, sans-serif", fontSize: 13 }}>{s}</span>)}
+            {e.schwerpunkte.map((s) => <span key={s} style={{ padding: "6px 12px", borderRadius: 14, background: "#F9EAF4", color: "#6E3568", fontFamily: "system-ui, sans-serif", fontSize: 14.5 }}>{s}</span>)}
           </div>
         )}
         {e.buchungslink

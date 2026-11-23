@@ -108,11 +108,11 @@ export function IlhoKennenlernen({ C, name, beduerfnisse, profil, onFertig, onSp
       <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso, marginBottom: 6 }}>
         Schön, dass du da bist{name ? `, ${name}` : ""}.
       </div>
-      <p style={{ ...sys, fontSize: 15, color: C.ink, lineHeight: 1.55, margin: "0 0 16px" }}>
+      <p style={{ ...sys, fontSize: 16.5, color: C.ink, lineHeight: 1.55, margin: "0 0 16px" }}>
         Ich bin ilho, dein persönlicher Begleiter hier. Zwei kurze Fragen, damit ich wirklich für dich da sein kann.
       </p>
 
-      <div style={{ ...sys, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", fontWeight: 700, color: C.gold, marginBottom: 8 }}>
+      <div style={{ ...sys, fontSize: 13.5, letterSpacing: 1.2, textTransform: "uppercase", fontWeight: 700, color: C.gold, marginBottom: 8 }}>
         Was bewegt dich gerade? <span style={{ opacity: 0.7, textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>(bis zu drei)</span>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 18 }}>
@@ -120,7 +120,7 @@ export function IlhoKennenlernen({ C, name, beduerfnisse, profil, onFertig, onSp
           const an = themen.includes(b.id);
           return (
             <button key={b.id} onClick={() => tippen(b.id)} aria-pressed={an} style={{
-              ...sys, fontSize: 13.5, padding: "9px 13px", borderRadius: 18, cursor: "pointer",
+              ...sys, fontSize: 15, padding: "9px 13px", borderRadius: 18, cursor: "pointer",
               border: `1.5px solid ${an ? C.gold : C.line}`, background: an ? C.goldPale : C.card,
               color: an ? C.plum : C.ink, fontWeight: an ? 600 : 500, textAlign: "left",
             }}>{b.t}</button>
@@ -128,14 +128,14 @@ export function IlhoKennenlernen({ C, name, beduerfnisse, profil, onFertig, onSp
         })}
       </div>
 
-      <div style={{ ...sys, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", fontWeight: 700, color: C.gold, marginBottom: 8 }}>
+      <div style={{ ...sys, fontSize: 13.5, letterSpacing: 1.2, textTransform: "uppercase", fontWeight: 700, color: C.gold, marginBottom: 8 }}>
         Was wünschst du dir für die nächsten Wochen?
       </div>
       <textarea value={ziel} onChange={(e) => setZiel(e.target.value.slice(0, 300))} rows={3}
         placeholder="Zum Beispiel: wieder durchschlafen · mehr Ruhe im Kopf · mich selbst ernster nehmen"
-        style={{ ...sys, width: "100%", boxSizing: "border-box", fontSize: 15.5, lineHeight: 1.5, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${C.line}`, background: C.card, color: C.espresso, outline: "none", resize: "vertical", marginBottom: 14 }} />
+        style={{ ...sys, width: "100%", boxSizing: "border-box", fontSize: 17, lineHeight: 1.5, padding: "12px 14px", borderRadius: 14, border: `1.5px solid ${C.line}`, background: C.card, color: C.espresso, outline: "none", resize: "vertical", marginBottom: 14 }} />
 
-      <label style={{ ...sys, display: "flex", gap: 9, alignItems: "flex-start", fontSize: 13.5, color: C.ink, lineHeight: 1.45, cursor: "pointer", marginBottom: 16 }}>
+      <label style={{ ...sys, display: "flex", gap: 9, alignItems: "flex-start", fontSize: 15, color: C.ink, lineHeight: 1.45, cursor: "pointer", marginBottom: 16 }}>
         <input type="checkbox" checked={merken} onChange={(e) => setMerken(e.target.checked)} style={{ marginTop: 2 }} />
         <span>ilho darf sich einzelne Sätze aus unseren Gesprächen merken. Du siehst jeden davon und kannst ihn jederzeit löschen.</span>
       </label>
@@ -143,12 +143,12 @@ export function IlhoKennenlernen({ C, name, beduerfnisse, profil, onFertig, onSp
       <button onClick={() => onFertig({ ...(profil || leeresProfil()), fertig: true, themen, ziel: ziel.trim(), merken })}
         disabled={!themen.length && !ziel.trim()}
         style={{
-          ...sys, width: "100%", minHeight: 50, border: "none", borderRadius: 25, fontSize: 15.5, fontWeight: 600,
+          ...sys, width: "100%", minHeight: 50, border: "none", borderRadius: 25, fontSize: 17, fontWeight: 600,
           cursor: !themen.length && !ziel.trim() ? "default" : "pointer", color: "#fff",
           background: `linear-gradient(135deg, ${C.gold}, ${C.plum})`, opacity: !themen.length && !ziel.trim() ? 0.45 : 1,
         }}>So kennst du mich</button>
       {onSpaeter && (
-        <button onClick={onSpaeter} style={{ ...sys, display: "block", margin: "10px auto 0", background: "none", border: "none", color: C.ink, fontSize: 13.5, cursor: "pointer", textDecoration: "underline" }}>
+        <button onClick={onSpaeter} style={{ ...sys, display: "block", margin: "10px auto 0", background: "none", border: "none", color: C.ink, fontSize: 15, cursor: "pointer", textDecoration: "underline" }}>
           Später
         </button>
       )}
@@ -163,7 +163,7 @@ export function IlhoWissen({ C, beduerfnisse, profil, setProfil, onBearbeiten })
   const themen = (profil.themen || []).map((id) => BED[id]).filter(Boolean);
   const notizen = profil.notizen || [];
   return (
-    <div style={{ ...sys, fontSize: 13.5, color: C.ink, lineHeight: 1.5, textAlign: "left", background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px" }}>
+    <div style={{ ...sys, fontSize: 15, color: C.ink, lineHeight: 1.5, textAlign: "left", background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: "12px 14px" }}>
       <div style={{ fontWeight: 700, color: C.espresso, marginBottom: 6 }}>Was ilho über dich weiß</div>
       {themen.length > 0 && <div style={{ marginBottom: 4 }}><b style={{ color: C.espresso, fontWeight: 600 }}>Bewegt dich:</b> {themen.join(" · ")}</div>}
       {profil.ziel && <div style={{ marginBottom: 4 }}><b style={{ color: C.espresso, fontWeight: 600 }}>Dein Wunsch:</b> {profil.ziel}</div>}
@@ -174,7 +174,7 @@ export function IlhoWissen({ C, beduerfnisse, profil, setProfil, onBearbeiten })
             <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 4 }}>
               <span style={{ flex: 1 }}>{n.t}</span>
               <button onClick={() => setProfil({ ...profil, notizen: notizen.filter((_, j) => j !== i) })}
-                aria-label={`Löschen: ${n.t}`} style={{ border: "none", background: "none", color: C.ink, cursor: "pointer", fontSize: 14, padding: "0 4px", flexShrink: 0 }}>✕</button>
+                aria-label={`Löschen: ${n.t}`} style={{ border: "none", background: "none", color: C.ink, cursor: "pointer", fontSize: 15.5, padding: "0 4px", flexShrink: 0 }}>✕</button>
             </div>
           ))}
         </div>
@@ -185,8 +185,8 @@ export function IlhoWissen({ C, beduerfnisse, profil, setProfil, onBearbeiten })
         <span>ilho darf sich Neues merken</span>
       </label>
       <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
-        <button onClick={onBearbeiten} style={{ border: "none", background: "none", color: C.plum, fontWeight: 600, fontSize: 13, cursor: "pointer", padding: 0 }}>Antworten ändern</button>
-        <button onClick={() => setProfil(leeresProfil())} style={{ border: "none", background: "none", color: C.ink, fontSize: 13, cursor: "pointer", padding: 0, textDecoration: "underline" }}>Alles vergessen</button>
+        <button onClick={onBearbeiten} style={{ border: "none", background: "none", color: C.plum, fontWeight: 600, fontSize: 14.5, cursor: "pointer", padding: 0 }}>Antworten ändern</button>
+        <button onClick={() => setProfil(leeresProfil())} style={{ border: "none", background: "none", color: C.ink, fontSize: 14.5, cursor: "pointer", padding: 0, textDecoration: "underline" }}>Alles vergessen</button>
       </div>
     </div>
   );
