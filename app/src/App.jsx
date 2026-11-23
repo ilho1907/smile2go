@@ -1068,8 +1068,22 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
   };
 
   const googleLogin = async () => {
-    if (!echterBackend) { onLogin("google.nutzerin@gmail.com"); return; }
     setErr("");
+    // Registrierung mit Google: dieselben Pflichten wie mit E-Mail
+    // (Datenschutz-Zustimmung, bei Coachinnen ein gültiger Code). Die Rolle
+    // wird gemerkt und nach der Rückkehr von Google in rolleAbgleichen() eingelöst.
+    if (mode === "register") {
+      if (!dsgvo) return setErr("Bitte stimme zuerst der Datenschutzerklärung zu.");
+      if (rolle === "coach") {
+        if (!coachCode.trim()) return setErr("Bitte gib deinen Coach-Code ein. Du hast ihn von smile2go bekommen.");
+        setBusy(true);
+        const gueltig = await coachCodePruefen(coachCode);
+        setBusy(false);
+        if (!gueltig) return setErr("Dieser Coach-Code ist nicht gültig. Bitte prüf ihn noch einmal oder melde dich beim smile2go-Team.");
+      }
+      rolleWunschMerken(rolle, coachCode);
+    }
+    if (!echterBackend) { onLogin("google.nutzerin@gmail.com"); return; }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: window.location.origin },
@@ -1101,6 +1115,28 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
       </div>
     );
 
+  const googleAn = import.meta.env.VITE_GOOGLE_LOGIN === "1";
+  const googleKnopf = (
+      <button
+      onClick={googleLogin}
+      style={{
+        width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+        padding: "14px 20px", borderRadius: 14, border: `1.5px solid ${C.line}`,
+        background: "#fff", cursor: "pointer", minHeight: 48,
+        fontFamily: "system-ui, sans-serif", fontSize: 18, fontWeight: 600, color: C.espresso,
+        marginBottom: 18,
+      }}
+    >
+      <svg width="19" height="19" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.5 0 6.3 1.5 7.8 2.8l5.7-5.7C34 3.3 29.5 1.5 24 1.5 14.9 1.5 7.2 6.9 3.7 14.6l6.9 5.4C12.2 13.7 17.6 9.5 24 9.5z" />
+        <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4H24v8.1h12.7c-.3 2.1-1.7 5.2-4.8 7.3l7.3 5.7c4.6-4.3 7.3-10.5 7.3-17.1z" />
+        <path fill="#FBBC05" d="M10.6 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-6.9-5.4C2.3 16.8 1.5 20.3 1.5 24s.8 7.2 2.2 10.1l6.9-5.4z" />
+        <path fill="#34A853" d="M24 46.5c5.5 0 10-1.8 13.2-4.9l-7.3-5.7c-1.9 1.3-4.4 2.2-5.9 2.2-6.4 0-11.8-4.2-13.4-10.1l-6.9 5.4C7.2 41.1 14.9 46.5 24 46.5z" />
+      </svg>
+      {mode === "register" ? "Mit Google registrieren" : "Mit Google anmelden"}
+    </button>
+  );
+
   return (
     <div className="s2g-auth" style={{ padding: "28px 24px 40px", position: "relative" }}>
       <div style={{ textAlign: "center", marginBottom: 30 }}>
@@ -1114,26 +1150,9 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
         </p>
       </div>
 
-      {/* Google-Login */}
-      {import.meta.env.VITE_GOOGLE_LOGIN === "1" && (<>
-      <button
-        onClick={googleLogin}
-        style={{
-          width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          padding: "14px 20px", borderRadius: 14, border: `1.5px solid ${C.line}`,
-          background: "#fff", cursor: "pointer", minHeight: 48,
-          fontFamily: "system-ui, sans-serif", fontSize: 18, fontWeight: 600, color: C.espresso,
-          marginBottom: 18,
-        }}
-      >
-        <svg width="19" height="19" viewBox="0 0 48 48">
-          <path fill="#EA4335" d="M24 9.5c3.5 0 6.3 1.5 7.8 2.8l5.7-5.7C34 3.3 29.5 1.5 24 1.5 14.9 1.5 7.2 6.9 3.7 14.6l6.9 5.4C12.2 13.7 17.6 9.5 24 9.5z" />
-          <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-2.8-.4-4H24v8.1h12.7c-.3 2.1-1.7 5.2-4.8 7.3l7.3 5.7c4.6-4.3 7.3-10.5 7.3-17.1z" />
-          <path fill="#FBBC05" d="M10.6 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-6.9-5.4C2.3 16.8 1.5 20.3 1.5 24s.8 7.2 2.2 10.1l6.9-5.4z" />
-          <path fill="#34A853" d="M24 46.5c5.5 0 10-1.8 13.2-4.9l-7.3-5.7c-1.9 1.3-4.4 2.2-5.9 2.2-6.4 0-11.8-4.2-13.4-10.1l-6.9 5.4C7.2 41.1 14.9 46.5 24 46.5z" />
-        </svg>
-        Mit Google anmelden
-      </button>
+      {/* Google-Login: beim Anmelden oben, beim Registrieren unten (nach Rolle und Datenschutz) */}
+      {googleAn && mode === "login" && (<>
+      {googleKnopf}
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 18px" }}>
         <div style={{ flex: 1, height: 1, background: C.line }} />
@@ -1226,6 +1245,15 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
       )}
 
       <Btn full onClick={submit} disabled={busy}>{busy ? "Einen Moment …" : mode === "login" ? "Anmelden" : "Konto erstellen"}</Btn>
+
+      {googleAn && mode === "register" && (<>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "18px 0" }}>
+          <div style={{ flex: 1, height: 1, background: C.line }} />
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>oder ohne Passwort</span>
+          <div style={{ flex: 1, height: 1, background: C.line }} />
+        </div>
+        {googleKnopf}
+      </>)}
 
       {mode === "login" && (
         <button onClick={passwortVergessen} disabled={busy} style={{
