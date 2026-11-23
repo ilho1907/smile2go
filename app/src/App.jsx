@@ -3069,10 +3069,10 @@ function Rituale({ ritual, setRitual, addPunkte }) {
           <div id="ritual-anleitung" style={{ borderRadius: 22, overflow: "hidden", background: C.card, border: `1px solid ${C.line}`, boxShadow: "0 10px 26px rgba(110,53,104,.08)", scrollMarginTop: 80 }}>
             {RITUAL_VIDEOS[r.k] ? (
               // Jedes Ritual hat ein eigenes gefuehrtes Video (Titel steht im Video).
-              <div style={{ background: "#1c1024", display: "flex", justifyContent: "center" }}>
+              <div style={{ background: RITUAL_VIDEOS[r.k].grund || "#1c1024", display: "flex", justifyContent: "center" }}>
                 <video
                   key={r.k} src={RITUAL_VIDEOS[r.k].video} poster={RITUAL_VIDEOS[r.k].poster} controls playsInline preload="metadata"
-                  style={{ display: "block", width: "100%", maxHeight: "72dvh", aspectRatio: "9 / 16", objectFit: "contain", background: "#1c1024" }}
+                  style={{ display: "block", width: "100%", maxHeight: "72dvh", aspectRatio: "9 / 16", objectFit: "contain", background: RITUAL_VIDEOS[r.k].grund || "#1c1024" }}
                 />
               </div>
             ) : (
