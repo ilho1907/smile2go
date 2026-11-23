@@ -238,3 +238,6 @@ video { object-fit: cover; background: #EBD8C6; }
 
 /* Entdecken-Karussell: Scrollbalken ausblenden */
 .s2g-entdecken-leiste::-webkit-scrollbar, .s2g-entdecken-chips::-webkit-scrollbar { display: none; }
+
+/* Tagebuch: Platzhalter auf der Buchseite lesbar */
+.s2g-tagebuch-zeile::placeholder { color: #8A7560; opacity: 1; }

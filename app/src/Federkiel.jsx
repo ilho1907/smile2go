@@ -3,7 +3,8 @@
 // Schreibseiten (children) und folgt der Schreibmarke im gerade aktiven
 // Eingabefeld: Bei jedem Tastendruck wandert die Spitze an die Stelle, an der
 // der Buchstabe entsteht, und wackelt wie beim Schreiben. Nach einer kurzen
-// Pause hebt sie sich und verblasst.
+// Pause hebt sie sich und schwebt bereit; erst wenn das Feld verlassen wird,
+// verblasst sie. Schon beim Antippen eines Feldes kommt sie an die Stelle.
 //
 // Die Position der Schreibmarke wird geschätzt (Textbreite der aktuellen
 // Zeile, gemessen mit derselben Schrift wie das Feld). Für eine Feder reicht
@@ -56,42 +57,72 @@ export default function Federkiel({ children }) {
   const rahmen = useRef(null);
   const pause = useRef(null);
   const [pos, setPos] = useState(null);
-  const [schreibt, setSchreibt] = useState(false);
+  const [zustand, setZustand] = useState("aus"); // aus | bereit | schreibt
   const [tick, setTick] = useState(0);
 
-  const folgen = (e) => {
-    const feld = e.target;
-    if (!rahmen.current || !/^(TEXTAREA|INPUT)$/.test(feld.tagName)) return;
-    if (feld.tagName === "INPUT" && !/^(text|search|)$/.test(feld.type || "")) return;
-    setPos(schreibmarke(feld, rahmen.current));
-    setSchreibt(true);
-    setTick((t) => t + 1);
-    clearTimeout(pause.current);
-    pause.current = setTimeout(() => setSchreibt(false), 1100);
+  const istFeld = (feld) => {
+    if (!rahmen.current || !feld || !/^(TEXTAREA|INPUT)$/.test(feld.tagName)) return false;
+    if (feld.tagName === "INPUT" && !/^(text|search|)$/.test(feld.type || "")) return false;
+    return true;
   };
 
+  // Antippen / Schreibmarke versetzen: die Feder kommt und schwebt bereit über der Stelle.
+  const bereit = (e) => {
+    const feld = e.target;
+    if (!istFeld(feld)) return;
+    // Nach dem Fokus steht die Schreibmarke erst einen Augenblick später fest.
+    requestAnimationFrame(() => {
+      if (!rahmen.current) return;
+      setPos(schreibmarke(feld, rahmen.current));
+      setZustand((z) => (z === "schreibt" ? z : "bereit"));
+    });
+  };
+
+  // Tippen: die Spitze geht an den Buchstaben und kritzelt.
+  const folgen = (e) => {
+    const feld = e.target;
+    if (!istFeld(feld)) return;
+    setPos(schreibmarke(feld, rahmen.current));
+    setZustand("schreibt");
+    setTick((t) => t + 1);
+    clearTimeout(pause.current);
+    pause.current = setTimeout(() => setZustand("bereit"), 900);
+  };
+
+  const weg = (e) => {
+    if (!istFeld(e.target)) return;
+    clearTimeout(pause.current);
+    setZustand("aus");
+  };
+
+  const schreibt = zustand === "schreibt";
+  const sichtbar = zustand !== "aus";
+
   return (
-    <div ref={rahmen} onInput={folgen} style={{ position: "relative" }}>
+    <div ref={rahmen} onInput={folgen} onFocus={bereit} onClick={bereit} onKeyUp={(e) => /^Arrow|Home|End/.test(e.key) && bereit(e)} onBlur={weg} style={{ position: "relative" }}>
       {children}
       {pos && (
         <div aria-hidden="true" style={{
           position: "absolute", left: pos.x, top: pos.y, width: 0, height: 0,
           pointerEvents: "none", zIndex: 20,
-          transition: "left .12s ease-out, top .18s ease-out",
+          transition: "left .16s ease-out, top .22s ease-out",
         }}>
           {/* Tintenfunke an der Spitze */}
-          <span key={tick} style={{
-            position: "absolute", left: -2, top: -2, width: 4, height: 4, borderRadius: "50%",
+          {schreibt && <span key={tick} style={{
+            position: "absolute", left: -2, top: -2, width: 5, height: 5, borderRadius: "50%",
             background: "#3E1A3B", animation: "s2gTinte .7s ease-out forwards",
-          }} />
+          }} />}
           <div style={{
             position: "absolute", left: 0, bottom: 0, transformOrigin: "0% 100%",
-            opacity: schreibt ? 1 : 0,
-            transform: schreibt ? "translate(-3px, 3px)" : "translate(6px, -14px) rotate(8deg)",
-            transition: "opacity .45s ease, transform .45s ease",
+            opacity: sichtbar ? 1 : 0,
+            transform: schreibt ? "translate(-3px, 3px)" : sichtbar ? "translate(4px, -12px) rotate(-4deg)" : "translate(14px, -30px) rotate(10deg)",
+            transition: "opacity .4s ease, transform .35s ease",
           }}>
-            <div key={tick} style={{ transformOrigin: "0% 100%", animation: schreibt ? "s2gKritzeln .24s ease-in-out" : "none" }}>
-              <Feder />
+            {/* bereit: schwebt sanft auf und ab · schreibt: kritzelt bei jedem Buchstaben */}
+            <div style={{ transformOrigin: "0% 100%", animation: !schreibt && sichtbar ? "s2gSchweben 2.4s ease-in-out infinite" : "none" }}>
+              <div key={tick} style={{ transformOrigin: "0% 100%", animation: schreibt ? "s2gKritzeln .24s ease-in-out" : "none" }}>
+                <Feder />
+              </div>
             </div>
           </div>
         </div>
@@ -99,12 +130,16 @@ export default function Federkiel({ children }) {
       <style>{`
         @keyframes s2gKritzeln {
           0% { transform: rotate(0deg) translate(0,0) }
-          35% { transform: rotate(-5deg) translate(2px,-2px) }
-          70% { transform: rotate(3deg) translate(-1px,1px) }
+          35% { transform: rotate(-6deg) translate(3px,-2px) }
+          70% { transform: rotate(4deg) translate(-1px,1px) }
           100% { transform: rotate(0deg) translate(0,0) }
         }
-        @keyframes s2gTinte { from { opacity: .85; transform: scale(1) } to { opacity: 0; transform: scale(2.2) } }
-        @media (prefers-reduced-motion: reduce) { [style*="s2gKritzeln"] { animation: none !important } }
+        @keyframes s2gSchweben {
+          0%, 100% { transform: translate(0,0) rotate(0deg) }
+          50% { transform: translate(2px,-7px) rotate(-5deg) }
+        }
+        @keyframes s2gTinte { from { opacity: .85; transform: scale(1) } to { opacity: 0; transform: scale(2.4) } }
+        @media (prefers-reduced-motion: reduce) { [style*="s2gKritzeln"], [style*="s2gSchweben"] { animation: none !important } }
       `}</style>
     </div>
   );
