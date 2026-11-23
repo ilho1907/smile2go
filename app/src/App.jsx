@@ -17,7 +17,7 @@ import MediaBanner from "./MediaBanner";
 import BookOpen from "./BookOpen";
 import Federkiel from "./Federkiel";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, KERZE_VIDEO, KERZE_POSTER } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -2863,11 +2863,11 @@ function Rituale({ ritual, setRitual, addPunkte }) {
         const fertig = !!ritual[r.k];
         return (
           <div id="ritual-anleitung" style={{ borderRadius: 22, overflow: "hidden", background: C.card, border: `1px solid ${C.line}`, boxShadow: "0 10px 26px rgba(110,53,104,.08)", scrollMarginTop: 80 }}>
-            {r.k === "raeu" ? (
-              // Kerze & Räuchern hat ein eigenes gefuehrtes Video (Titel steht im Video).
+            {RITUAL_VIDEOS[r.k] ? (
+              // Jedes Ritual hat ein eigenes gefuehrtes Video (Titel steht im Video).
               <div style={{ background: "#1c1024", display: "flex", justifyContent: "center" }}>
                 <video
-                  key="kerze" src={KERZE_VIDEO} poster={KERZE_POSTER} controls playsInline preload="metadata"
+                  key={r.k} src={RITUAL_VIDEOS[r.k].video} poster={RITUAL_VIDEOS[r.k].poster} controls playsInline preload="metadata"
                   style={{ display: "block", width: "100%", maxHeight: "72dvh", aspectRatio: "9 / 16", objectFit: "contain", background: "#1c1024" }}
                 />
               </div>
