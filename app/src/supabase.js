@@ -1756,3 +1756,137 @@ Keine Rechtsberatung; bei Verträgen nur Struktur und Platzhalter. Gib nur den D
   if (!res.ok) throw new Error(d?.error || "ilho ist gerade nicht erreichbar");
   return (d?.content?.[0]?.text || d?.text || "").trim();
 }
+
+// ── ilho-technik · Hilfe & Support (Tickets) ───────────────────────────────
+// Ticket anlegen läuft über die Edge Function "ilho-technik" (KI-Einstufung,
+// Routing, API-Schlüssel nur auf dem Server). Ist die Function nicht erreichbar
+// oder nicht deployt, wird das Ticket direkt per RPC gespeichert — es landet
+// dann ohne KI in der manuellen Prüfung. Lesen und Antworten laufen über RPCs,
+// die Rechte in der Datenbank prüfen (Migration 20261124_ilho_technik.sql).
+
+export const SUPPORT_ANHANG_TYPEN = ["image/png", "image/jpeg", "image/webp"];
+export const SUPPORT_ANHANG_MAX = 5 * 1024 * 1024;
+
+export function neuerSchluessel() {
+  try { return crypto.randomUUID(); } catch { return `s-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`; }
+}
+
+const supportFehler = (e, standard) => {
+  const m = String(e?.message || e || "");
+  if (/Zu viele Anfragen/.test(m)) return "Du hast heute schon viele Anfragen gestellt. Bitte versuche es morgen wieder.";
+  if (/betreff_check/.test(m)) return "Der Betreff braucht 3 bis 150 Zeichen.";
+  if (/beschreibung_check/.test(m)) return "Bitte beschreibe dein Anliegen mit mindestens 10 Zeichen.";
+  if (/nicht angemeldet|JWT|401/.test(m)) return "Bitte melde dich an.";
+  return standard;
+};
+
+// Liefert { id, nummer, neu } oder { fehler }.
+export async function supportTicketErstellen({ betreff, beschreibung, kategorie, schluessel }) {
+  if (!supabase) return { fehler: "Support braucht die Cloud-Verbindung." };
+  const body = { aktion: "erstellen", betreff, beschreibung, kategorie, schluessel };
+  try {
+    const { data, error } = await supabase.functions.invoke("ilho-technik", { body });
+    if (!error && data?.id) return data;
+    const status = error?.context?.status;
+    // 4xx von der Function = Eingabe abgelehnt → nicht still umgehen.
+    if (status && status >= 400 && status < 500 && status !== 404) {
+      let text = null;
+      try { text = (await error.context.json())?.error; } catch {}
+      return { fehler: text || supportFehler(error, "Das hat nicht geklappt.") };
+    }
+  } catch { /* Netz/Function weg → Ausweichweg */ }
+  // Ausweichweg: direkt speichern, KI-Einstufung entfällt (manuelle Prüfung).
+  const { data, error } = await supabase.rpc("support_ticket_anlegen", {
+    p_betreff: betreff, p_beschreibung: beschreibung, p_kategorie: kategorie, p_schluessel: schluessel,
+  });
+  if (error) return { fehler: supportFehler(error, "Deine Anfrage konnte gerade nicht gespeichert werden. Bitte versuche es gleich noch einmal.") };
+  return data;
+}
+
+// Screenshot hochladen + registrieren. Liefert true oder { fehler }.
+export async function supportAnhangHochladen(ticketId, datei, nachrichtId = null) {
+  if (!supabase || !datei) return { fehler: "Kein Anhang." };
+  if (!SUPPORT_ANHANG_TYPEN.includes(datei.type)) return { fehler: "Bitte nur PNG, JPG oder WebP." };
+  if (datei.size > SUPPORT_ANHANG_MAX) return { fehler: "Der Screenshot ist größer als 5 MB." };
+  const user = await nutzerin();
+  if (!user) return { fehler: "Bitte melde dich an." };
+  const endung = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[datei.type];
+  const pfad = `${user.id}/${ticketId}/${neuerSchluessel()}.${endung}`;
+  const { error: upErr } = await supabase.storage.from("support-anhaenge").upload(pfad, datei, { contentType: datei.type, upsert: false });
+  if (upErr) return { fehler: "Der Screenshot konnte nicht hochgeladen werden." };
+  const { data, error } = await supabase.rpc("support_anhang_registrieren", {
+    p_ticket: ticketId, p_pfad: pfad, p_dateiname: String(datei.name || "Screenshot").slice(0, 120), p_nachricht: nachrichtId,
+  });
+  if (error || !data) return { fehler: "Der Screenshot wurde abgelehnt (nur PNG, JPG oder WebP bis 5 MB)." };
+  return true;
+}
+
+// Kurzlebiger Link; ob er entsteht, entscheidet die Storage-Regel in der Datenbank.
+export async function supportAnhangLink(pfad, sekunden = 300) {
+  if (!supabase) return null;
+  const { data, error } = await supabase.storage.from("support-anhaenge").createSignedUrl(pfad, sekunden);
+  return error ? null : data?.signedUrl || null;
+}
+
+export async function meineSupportTickets() {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("meine_support_tickets");
+  if (error) { console.warn("meineSupportTickets:", error.message); return null; }
+  return data || [];
+}
+
+export async function meinSupportTicket(id) {
+  const { data, error } = await supabase.rpc("mein_support_ticket", { p_id: id });
+  if (error) { console.warn("meinSupportTicket:", error.message); return null; }
+  return data;
+}
+
+export async function supportAntworten(ticketId, text, schluessel) {
+  const { data, error } = await supabase.rpc("support_antworten", { p_ticket: ticketId, p_text: text, p_schluessel: schluessel });
+  if (error) return { fehler: supportFehler(error, "Deine Antwort konnte nicht gesendet werden.") };
+  return { id: data };
+}
+
+export async function supportUngelesen() {
+  if (!supabase) return 0;
+  const { data, error } = await supabase.rpc("support_ungelesen");
+  return error ? 0 : Number(data) || 0;
+}
+
+// ── ilho-technik · Support-Team (Admin-Dashboard) ──────────────────────────
+export async function istSupport() {
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc("ist_support");
+  return !error && data === true;
+}
+export const supportAdminListe = (f = {}) => adminRpc("support_admin_liste", {
+  p_status: f.status || null, p_kategorie: f.kategorie || null, p_prioritaet: f.prioritaet || null,
+  p_zustaendig: f.zustaendig || null, p_von: f.von || null, p_bis: f.bis || null, p_suche: f.suche || null,
+  p_nur_manuell: !!f.manuell, p_limit: 300,
+});
+export const supportAdminTicket = (id) => adminRpc("support_admin_ticket", { p_id: id });
+export const supportAdminZaehler = () => adminRpc("support_admin_zaehler");
+export const supportTeamListe = () => adminRpc("support_team_liste").then((d) => d || []);
+export const supportRegelnListe = () => adminRpc("support_regeln_liste").then((d) => d || []);
+
+async function supportRpc(name, args) {
+  const { data, error } = await supabase.rpc(name, args);
+  if (error) return { fehler: error.message };
+  return { ok: true, data };
+}
+export async function supportAdminAntworten({ ticketId, userId, nummer, text, intern, schluessel, status = null }) {
+  const r = await supportRpc("support_admin_antworten", { p_ticket: ticketId, p_text: text, p_intern: !!intern, p_schluessel: schluessel, p_status: status });
+  if (r.ok && !intern && userId) sendePush({ userId, titel: "Antwort vom smile2go-Support", text: `${nummer}: ${text}`, url: "/?support=" + ticketId, tag: "support" });
+  return r;
+}
+export async function supportAdminStatus({ ticketId, userId, nummer, status, label }) {
+  const r = await supportRpc("support_admin_status", { p_ticket: ticketId, p_status: status });
+  if (r.ok && userId) sendePush({ userId, titel: "Dein Support-Ticket", text: `${nummer}: ${label}`, url: "/?support=" + ticketId, tag: "support" });
+  return r;
+}
+export const supportAdminZuweisen = (ticketId, userId) => supportRpc("support_admin_zuweisen", { p_ticket: ticketId, p_user: userId || null });
+export const supportAdminEinstufen = (ticketId, kategorie, prioritaet) => supportRpc("support_admin_einstufen", { p_ticket: ticketId, p_kategorie: kategorie, p_prioritaet: prioritaet });
+export const supportTeamSetzen = (email, name, aktiv = true) => supportRpc("support_team_setzen", { p_email: email, p_name: name, p_aktiv: aktiv });
+export const supportRegelSetzen = ({ id = null, kategorie, prioritaet, zustaendig, rang = 100, aktiv = true }) =>
+  supportRpc("support_regel_setzen", { p_id: id, p_kategorie: kategorie || null, p_prioritaet: prioritaet || null, p_zustaendig: zustaendig, p_rang: rang, p_aktiv: aktiv });
+export const supportRegelLoeschen = (id) => supportRpc("support_regel_loeschen", { p_id: id });

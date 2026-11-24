@@ -13,6 +13,8 @@ import {
 } from "./supabase";
 import { brauchtZweitenFaktor, zweiFaktorStatus, passwortZuruecksetzen, neuesPasswortSetzen } from "./supabase";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
+import AdminSupport from "./AdminSupport";
+import { istSupport, supportAdminZaehler } from "./supabase";
 import { ILHO_SYSTEM } from "./ilho";
 import { alsCsv } from "./export";
 
@@ -69,6 +71,9 @@ export default function AdminDashboard() {
   const [wachstum, setWachstum] = useState([]);
   const [teamZiel, setTeamZiel] = useState(null);   // { user_id, email } aus „Mitglieder“
   const [teamOffen, setTeamOffen] = useState(0);
+  // Support-Team ohne Admin-Rechte sieht nur den Tab „Support-Tickets“.
+  const [nurSupport, setNurSupport] = useState(false);
+  const [supportZ, setSupportZ] = useState(null);
   const [zweiFaktorAktiv, setZweiFaktorAktiv] = useState(true);
   const [wartend, setWartend] = useState(0);
   const [dokNeu, setDokNeu] = useState(0);   // neue Unterlagen von Mitgliedern
@@ -89,8 +94,14 @@ export default function AdminDashboard() {
     const faktor = await brauchtZweitenFaktor().catch(() => null);
     if (faktor) { setMfaFaktor(faktor); return; }
     const ok = await istAdmin();
-    setAdmin(ok);
-    if (!ok) return;
+    if (!ok) {
+      const sup = await istSupport();
+      setNurSupport(sup); setAdmin(sup);
+      if (sup) { setTab("support"); supportAdminZaehler().then(setSupportZ); }
+      return;
+    }
+    setNurSupport(false); setAdmin(true);
+    supportAdminZaehler().then(setSupportZ);
     zweiFaktorStatus().then((z) => setZweiFaktorAktiv(!!z.aktiv)).catch(() => {});
     adminWartendeAnzahl().then(setWartend);
     adminDokumenteNeu().then(setDokNeu).catch(() => {});
@@ -111,12 +122,16 @@ export default function AdminDashboard() {
   // Nachrichten-Zähler im Hintergrund aktuell halten
   useEffect(() => {
     if (!admin) return;
-    const t = setInterval(() => adminTeamPostfach().then((p) => setTeamOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0))).catch(() => {}), 60000);
+    const t = setInterval(() => {
+      supportAdminZaehler().then((z) => z && setSupportZ(z)).catch(() => {});
+      if (!nurSupport) adminTeamPostfach().then((p) => setTeamOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0))).catch(() => {});
+    }, 60000);
     return () => clearInterval(t);
-  }, [admin]);
+  }, [admin, nurSupport]);
 
   // Fenstertitel + Zahl am Dock-Icon: ungelesene Team-Nachrichten + offene Meldungen
-  const offenGesamt = teamOffen + Number(k?.meldungen_offen || 0) + wartend + dokNeu;
+  const supportNeu = Number(supportZ?.neu || 0) + Number(supportZ?.hinweise || 0);
+  const offenGesamt = teamOffen + Number(k?.meldungen_offen || 0) + wartend + dokNeu + supportNeu;
   useEffect(() => {
     document.title = offenGesamt ? `(${offenGesamt}) s2g.admin` : "s2g.admin";
     try {
@@ -147,7 +162,7 @@ export default function AdminDashboard() {
           <Eyebrow>Admin · kein Zugriff</Eyebrow>
           <p style={{ ...sys, fontSize: 15.5, color: C.espresso, lineHeight: 1.6, margin: 0 }}>
             {supabase
-              ? <>Dieses Konto ({session?.user?.email}) ist nicht als Admin eingetragen. Melde dich mit deinem Admin-Konto an.</>
+              ? <>Dieses Konto ({session?.user?.email}) ist weder als Admin noch im Support-Team eingetragen. Melde dich mit deinem Admin-Konto an.</>
               : <>Keine Cloud konfiguriert — das Dashboard zeigt nur echte Daten.</>}
           </p>
           {supabase && <button onClick={abmelden} style={{ ...sys, marginTop: 14, fontSize: 14.5, fontWeight: 700, color: C.plum, background: "none", border: "none", padding: 0, cursor: "pointer" }}>Mit anderem Konto anmelden</button>}
@@ -155,9 +170,10 @@ export default function AdminDashboard() {
       </Mitte>
     );
 
-  const TABS = [
+  const supportTab = ["support", `🛟 Support-Tickets${supportNeu ? ` (${supportNeu})` : ""}`];
+  const TABS = nurSupport ? [supportTab] : [
     ["uebersicht", "📊 Übersicht"], ["mitglieder", `👥 Mitglieder${wartend ? ` (${wartend} warten)` : ""}`],
-    ["nachrichten", `💬 Nachrichten${teamOffen ? ` (${teamOffen})` : ""}`], ["office", `🗂️ Office${dokNeu ? ` (${dokNeu} neu)` : ""}`], ["coachcodes", "🔑 Coach-Codes"], ["sessions", "📅 Sessions"],
+    ["nachrichten", `💬 Nachrichten${teamOffen ? ` (${teamOffen})` : ""}`], supportTab, ["office", `🗂️ Office${dokNeu ? ` (${dokNeu} neu)` : ""}`], ["coachcodes", "🔑 Coach-Codes"], ["sessions", "📅 Sessions"],
     ["moderation", `🛡️ Moderation${k?.meldungen_offen ? ` (${k.meldungen_offen})` : ""}`],
     ["fairness", "⚖️ KI & Fairness"], ["system", "🛠️ System"],
   ];
@@ -200,6 +216,7 @@ export default function AdminDashboard() {
         {tab === "mitglieder" && <Mitglieder startFilter={wartend ? "Warten" : "Alle"} onGeaendert={() => adminWartendeAnzahl().then(setWartend)} onNachricht={(m) => { setTeamZiel({ user_id: m.id, email: m.email }); setTab("nachrichten"); }} />}
         {tab === "nachrichten" && <TeamNachrichten ziel={teamZiel} setZiel={setTeamZiel} setOffen={setTeamOffen} />}
         {tab === "office" && <Office onNeu={setDokNeu} />}
+        {tab === "support" && <AdminSupport C={C} Card={Card} Eyebrow={Eyebrow} istAdmin={!nurSupport} onZaehler={setSupportZ} />}
         {tab === "coachcodes" && <CoachCodes />}
         {tab === "sessions" && <Sessions />}
         {tab === "moderation" && <Moderation />}

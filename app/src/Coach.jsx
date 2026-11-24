@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import { brauchtZweitenFaktor, terminStatus, ladeKursFortschritt, istCoachin, meinKontoStatus } from "./supabase";
 import { alsPdf, alsCsv } from "./export";
+import HilfeSupport from "./HilfeSupport";
 import {
   supabase,
   ladeCoachProfilSelbst, coachProfilSpeichern, coachProfilSichern,
@@ -1198,6 +1199,7 @@ export default function CoachPanel() {
     ["angebote", "Angebote"],
     ["beitraege", "Beiträge"],
     ["profil", "Profil"],
+    ["support", "Hilfe & Support"],
   ];
 
   return (
@@ -1248,6 +1250,7 @@ export default function CoachPanel() {
         {tab === "angebote" && <Angebote coachId={session.user.id} />}
         {tab === "beitraege" && <Beitraege coachId={session.user.id} />}
         {tab === "profil" && <Profil profil={profil} neuLaden={alles} />}
+        {tab === "support" && <div style={{ background: C.cream, borderRadius: 20, border: `1px solid ${C.line}` }}><HilfeSupport C={C} /></div>}
       </div>
     </div>
   );

@@ -53,7 +53,19 @@ Deno.serve(async (req) => {
           .from("admins")
           .select("user_id", { count: "exact", head: true })
           .eq("user_id", aufruferin);
-        if (!count && !istAdmin) return json({ error: "keine Verbindung zu dieser Person" }, 403);
+        // Support-Team (ilho-technik) darf Frauen benachrichtigen, die ein Ticket haben.
+        let istSupport = 0;
+        if (!count && !istAdmin) {
+          const { count: team } = await admin
+            .from("support_team").select("user_id", { count: "exact", head: true })
+            .eq("user_id", aufruferin).eq("aktiv", true);
+          if (team) {
+            const { count: ticket } = await admin
+              .from("support_tickets").select("id", { count: "exact", head: true }).eq("user_id", user_id);
+            istSupport = ticket || 0;
+          }
+        }
+        if (!count && !istAdmin && !istSupport) return json({ error: "keine Verbindung zu dieser Person" }, 403);
       }
     }
 

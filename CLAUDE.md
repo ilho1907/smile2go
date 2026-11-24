@@ -35,7 +35,8 @@ geçer, uygulama çalışırken patlar. Riskli değişiklikten sonra tarayıcıd
 | `app/src/` | React kaynak (aşağıya bak) |
 | `app/public/media/` | Video/ses/görsel — **açma, 39 MB** |
 | `backend/supabase/migrations/` | 23 SQL migration, tarih öneki ile sıralı |
-| `backend/supabase/functions/` | Edge Functions: `ai`, `tts`, `push`, `erinnerungen`, `fairness`, `konto-loeschen` |
+| `backend/supabase/functions/` | Edge Functions: `ai`, `tts`, `push`, `erinnerungen`, `fairness`, `konto-loeschen`, `ilho-technik` (Support-Tickets + KI-Routing) |
+| `backend/tests/ilho-technik/` | Tests für Hilfe & Support: SQL-Rechte, Edge Function, Browser — Anleitung in `README.md` |
 | `datenbank/` | Şema anlık görüntüsü (referans) |
 | `automation/` | n8n workflow JSON'ları |
 | `konfiguration/ilho.env.example` | Tüm ENV anahtarlarının şablonu |
@@ -53,6 +54,7 @@ geçer, uygulama çalışırken patlar. Riskli değişiklikten sonra tarayıcıd
 | `Admin.jsx` | 450 | Admin dashboard |
 | `OrakelReveal.jsx` `Ikon.jsx` `sprache.js` `media.js` `HeuteHero.jsx` `ZweiFaktor.jsx` `BookOpen.jsx` `MediaScreens.jsx` `MediaBanner.jsx` | <260 | Ayrık bileşen/yardımcılar |
 | `ilho.js` | 9 | `ILHO_SYSTEM` — ilho'nun sistem promptu, **tek kaynak** |
+| `HilfeSupport.jsx` `AdminSupport.jsx` `supportTexte.js` | ~300/~330/~45 | ilho-technik: Hilfe & Support (üye + coach) ve Admin › Support-Tickets |
 | `export.js` | 26 | PDF (yazdırma penceresi) ve CSV indirme |
 | `lib/energy.js` | 49 | Enerji hesabı |
 
