@@ -23,6 +23,14 @@ export const RITUAL_VIDEOS = {
   "körper": { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/3b95841c-f3b6-4e2c-be4e-e6d93ac1e838.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/f5099337-a0f8-4096-b976-77fe330135ae.jpg", grund: "#FBF4EF" },
 };
 
+// Qigong · Die Acht Brokate: kurze stumme Bewegungs-Loops je Uebung (Higgsfield Bild + Kling 3.0, 24.11.2026).
+// Schluessel = Nummer der Uebung in BROKATE (App.jsx). 540x540, ohne Ton, Ende per Ueberblendung an den Anfang gefuegt (nahtlose Schleife).
+export const QIGONG_VIDEOS = {
+  1: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/f268390a-d61c-4c31-8b45-655f149e6c2d.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/5d686207-1188-4264-bc54-644450e10274.jpg" },
+  2: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/3a758e28-0a22-4a46-b264-e37481962266.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/d80be38c-887f-4adc-8327-1a3a9e9cb026.jpg" },
+  3: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/4706a7fc-88f0-4a7a-9bb7-de9579077af0.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/e9883e60-066a-4c27-a435-d57cfcb8f96d.jpg" },
+};
+
 // Zukunftsbrief: gefuehrtes Schritt-Video (Higgsfield-Bilder, 23.11.2026)
 export const BRIEF_VIDEO = { video: "/media/video/brief_ritual.mp4", poster: "/media/video/brief_ritual_poster.jpg" };
 
