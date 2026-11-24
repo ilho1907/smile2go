@@ -4,7 +4,7 @@ import { Meditation as MeditationCine, Podcast as PodcastCine } from "./MediaScr
 import HeuteHero from "./HeuteHero";
 import Entdecken, { Karussell } from "./Entdecken";
 import MantraRaum from "./MantraRaum";
-import { THEMEN as FARBTHEMEN, wendeThemaAn as wendeThemaAnRoh, gespeichertesThema } from "./themen";
+import { THEMEN as FARBTHEMEN, wendeThemaAn as wendeThemaAnRoh, gespeichertesThema, merkeThema } from "./themen";
 import Tarot from "./Tarot";
 import KarteVollbild from "./KarteVollbild";
 import TeamNachrichten from "./TeamNachrichten";
@@ -76,6 +76,9 @@ const C = {
   roseSoft: "#FCF1F8",   // leiseste getoente Flaeche
   plum: "#6E3568",       // tiefste Markenfarbe
   aufGold: "#FFFCF5",    // Schrift auf der Hauptfarbe
+  flaecheA1: "#FBEFF7", flaecheA2: "#F4DDEC", flaecheARand: "#EACBDF", // „Für dich vorbereitet“
+  flaecheB1: "#FFF6E8", flaecheB2: "#FBE7CF", flaecheBRand: "#F0D3AE", // „Dein einziger Schritt“
+  chip: "#FDF4FA",       // kleine Kapseln (Serie, Sonnenstrahlen)
 };
 // Gewaehltes Farbthema (Profil › Design) sofort anwenden, bevor etwas gezeichnet wird.
 wendeThemaAnRoh(C, gespeichertesThema());
@@ -716,6 +719,7 @@ function wendeThemaAn(Cz, id) {
   const t = wendeThemaAnRoh(Cz, id);
   if (typeof DUNKEL_TON !== "undefined") {
     const hell = t.art === "hell";
+    if (t.pflaume) { DUNKEL_TON.pflaume = t.pflaume; DUNKEL_TON.perlmutt = t.perlmutt; return t; }
     DUNKEL_TON.pflaume = { flaeche: t.panel, schrift: "#FFFBF7", leise: "rgba(255,251,247,.76)", zeichen: t.panelZeichen, schatten: "rgba(20,10,20,.55)" };
     DUNKEL_TON.perlmutt = { flaeche: `linear-gradient(140deg, ${Cz.card} 0%, ${Cz.goldPale} 70%, ${Cz.roseSoft} 100%)`, schrift: Cz.espresso, leise: hell ? "rgba(38,34,51,.66)" : "rgba(255,255,255,.72)", zeichen: Cz.gold, schatten: hell ? "rgba(80,60,100,.22)" : "rgba(0,0,0,.45)" };
   }
@@ -1034,7 +1038,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
     width: "100%", minHeight: 54, padding: "14px 16px 14px 48px", fontSize: 18,
     fontFamily: "system-ui, sans-serif",
     border: `1px solid ${C.line}`, borderRadius: 18,
-    background: "#fff", color: C.espresso, marginBottom: 0, outline: "none",
+    background: C.card, color: C.espresso, marginBottom: 0, outline: "none",
     boxShadow: "0 8px 20px -16px rgba(120,90,50,.4), inset 0 1px 0 #fff",
   };
 
@@ -1139,7 +1143,7 @@ function Auth({ onLogin, startMode = "login", startRolle = "klientin" }) {
       style={{
         width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
         padding: "14px 20px", borderRadius: 14, border: `1.5px solid ${C.line}`,
-        background: "#fff", cursor: "pointer", minHeight: 48,
+        background: C.card, cursor: "pointer", minHeight: 48,
         fontFamily: "system-ui, sans-serif", fontSize: 18, fontWeight: 600, color: C.espresso,
         marginBottom: 18,
       }}
@@ -1468,7 +1472,7 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
       <Entdecken go={go} setJournalSec={setJournalSec} />
 
       <AbschnittTitel>Für dich vorbereitet</AbschnittTitel>
-      <Card style={{ marginBottom: 32, background: "linear-gradient(150deg, #FBEFF7 0%, #F4DDEC 100%)", border: "1px solid #EACBDF" }}>
+      <Card style={{ marginBottom: 32, background: `linear-gradient(150deg, ${C.flaecheA1} 0%, ${C.flaecheA2} 100%)`, border: `1px solid ${C.flaecheARand}` }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <WochenChallenge go={go} />
           <MeTimeZeile metime={metime} go={go} />
@@ -1494,14 +1498,14 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
             if (uniqueFocus.sec && setJournalSec) setJournalSec(uniqueFocus.sec);
             go(uniqueFocus.nav);
           }}
-          style={{ background: "linear-gradient(135deg, #FFF6E8 0%, #FBE7CF 100%)", border: "1px solid #F0D3AE", borderLeft: `5px solid ${C.gold}`, borderRadius: 24, padding: 22, boxShadow: "0 14px 30px -22px rgba(150,95,40,.45)" }}
+          style={{ background: `linear-gradient(135deg, ${C.flaecheB1} 0%, ${C.flaecheB2} 100%)`, border: `1px solid ${C.flaecheBRand}`, borderLeft: `5px solid ${C.gold}`, borderRadius: 24, padding: 22, boxShadow: "0 14px 30px -22px rgba(150,95,40,.45)" }}
         />
       ) : (
         <HeuteZeile
           ikon="haken"
           titel="Alles erledigt"
           unter="Du hast heute alles geschafft. Ruh dich aus — du hast es verdient."
-          style={{ background: "linear-gradient(135deg, #FFF6E8 0%, #FBE7CF 100%)", border: "1px solid #F0D3AE", borderLeft: `5px solid ${C.gold}`, borderRadius: 24, padding: 22, boxShadow: "0 14px 30px -22px rgba(150,95,40,.45)" }}
+          style={{ background: `linear-gradient(135deg, ${C.flaecheB1} 0%, ${C.flaecheB2} 100%)`, border: `1px solid ${C.flaecheBRand}`, borderLeft: `5px solid ${C.gold}`, borderRadius: 24, padding: 22, boxShadow: "0 14px 30px -22px rgba(150,95,40,.45)" }}
         />
       )}
       <div style={{ display: "flex", gap: 9, flexWrap: "wrap", alignItems: "center", marginTop: 14 }}>
@@ -1509,7 +1513,7 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
           { k: "serie", inhalt: <><Ikon n="flamme" size={14} />{streak} Tage Serie</> },
           { k: "punkte", inhalt: <>{punkte} Sonnenstrahlen</>, auf: openPunkte },
         ].map((c) => {
-          const stil = { display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, color: C.plum, background: "#FDF4FA", border: `1px solid ${C.line}`, borderRadius: 22, padding: "9px 14px" };
+          const stil = { display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "system-ui, sans-serif", fontSize: 14.5, fontWeight: 600, color: C.plum, background: C.chip, border: `1px solid ${C.line}`, borderRadius: 22, padding: "9px 14px" };
           return c.auf
             ? <button key={c.k} onClick={c.auf} style={{ ...stil, cursor: "pointer" }}>{c.inhalt}</button>
             : <span key={c.k} style={stil}>{c.inhalt}</span>;
@@ -2722,7 +2726,7 @@ function JournalHeute({ entries, setEntries, addPunkte }) {
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center" }}>
               <input
-                style={{ ...input, margin: 0, background: "#fff", flex: 1 }}
+                style={{ ...input, margin: 0, background: C.card, flex: 1 }}
                 placeholder="Deine eigene Intention für heute (optional) …"
                 value={intention}
                 onChange={(e) => setIntention(e.target.value)}
@@ -5154,7 +5158,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
             return (
               <button
                 key={t.id}
-                onClick={() => setPrefs && setPrefs({ ...prefs, thema: t.id })}
+                onClick={() => { merkeThema(t.id); setPrefs && setPrefs({ ...prefs, thema: t.id }); }}
                 aria-pressed={gewaehlt}
                 style={{
                   textAlign: "left", cursor: "pointer", padding: 12, borderRadius: 18,
@@ -5392,7 +5396,7 @@ function CoachCodeFreischalten({ alias, onFrei }) {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <input id="s2g-coach-code-profil" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="COACH-XXXX-XXXX" autoCapitalize="characters" autoComplete="off" spellCheck={false}
-          style={{ flex: "1 1 180px", minHeight: 46, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, background: "#fff", color: C.espresso, fontSize: 17, letterSpacing: 1.5, fontFamily: "ui-monospace, Menlo, monospace", outline: "none" }} />
+          style={{ flex: "1 1 180px", minHeight: 46, padding: "10px 14px", borderRadius: 14, border: `1px solid ${C.line}`, background: C.card, color: C.espresso, fontSize: 17, letterSpacing: 1.5, fontFamily: "ui-monospace, Menlo, monospace", outline: "none" }} />
         <Btn small ghost onClick={einloesen}>{busy ? "Prüfe …" : "Freischalten"}</Btn>
       </div>
       {fehler && <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, lineHeight: 1.5, margin: "8px 0 0" }}>{fehler}</p>}
@@ -5455,7 +5459,7 @@ function CoachVerbinden({ onVerbunden, kompakt = false }) {
           width: "100%", boxSizing: "border-box", minHeight: 52,
           padding: "14px 16px", fontSize: 18, letterSpacing: 1.5, fontWeight: 600,
           fontFamily: "system-ui, sans-serif", border: `1.5px solid ${C.gold}55`,
-          borderRadius: 14, background: "#FFFDF9", color: C.espresso, outline: "none",
+          borderRadius: 14, background: C.card, color: C.espresso, outline: "none",
         }}
       />
       <div style={{ marginTop: R.klein }}>
@@ -5898,7 +5902,7 @@ function MarkeVorschau({ setup, logoImg }) {
   const f2 = setup.farbe2 || f1;
   const pale = setup.farbePale || mischen(f1, "#FFFFFF", 0.9);
   return (
-    <div style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 14, padding: "16px 16px 14px", margin: "10px 0 16px" }}>
+    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: "16px 16px 14px", margin: "10px 0 16px" }}>
       <div style={{ borderBottom: `${st.linie}px solid ${f1}`, paddingBottom: 11, display: "flex", alignItems: "center", gap: 9 }}>
         {logoImg
           ? <img src={logoImg} alt="" style={{ height: 34, borderRadius: st.radius }} />

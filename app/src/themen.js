@@ -4,10 +4,29 @@
 // bevor die App neu gezeichnet wird. Neue Komponenten lesen ihre Farben aus C,
 // dann folgen sie dem Thema automatisch.
 
-export const STANDARD_THEMA = "champagner";
-const SPEICHER = "s2g_thema";
+export const STANDARD_THEMA = "klassik";
+// Neuer Schluessel: Der alte wurde bei jedem Start beschrieben, auch ohne Wahl.
+// Jetzt wird nur gespeichert, was die Nutzerin im Profil selbst waehlt.
+const SPEICHER = "s2g_thema_wahl";
 
 export const THEMEN = [
+  {
+    id: "klassik", name: "smile2go Original", art: "hell",
+    vorschau: ["#FBF6FA", "#8E4C85", "#E8A8D4", "#D472BE"],
+    grund: "radial-gradient(120% 60% at 50% -10%, rgba(240,180,220,.32) 0%, rgba(240,180,220,0) 55%), radial-gradient(90% 55% at 90% 110%, rgba(232,168,212,.14) 0%, rgba(232,168,212,0) 60%), radial-gradient(80% 50% at 5% 100%, rgba(142,76,133,.12) 0%, rgba(142,76,133,0) 60%), #FFFDFE",
+    buehne: "#F5EBF3", nav: "rgba(255,254,255,.82)", punkt: "rgba(170,110,160,.16)",
+    panel: "linear-gradient(168deg, #3B2135 0%, #2A1626 100%)", panelZeichen: "#E3A9C6",
+    pflaume: { flaeche: "linear-gradient(168deg, #3B2135 0%, #2A1626 100%)", schrift: "#F0E2EB", leise: "rgba(240,226,235,.70)", zeichen: "#E3A9C6", schatten: "rgba(28,10,24,.75)" },
+    perlmutt: { flaeche: "linear-gradient(140deg, #FDF4FA 0%, #F7E6F2 58%, #F0D8EA 100%)", schrift: "#2E2430", leise: "rgba(38,34,51,.66)", zeichen: "#8E4C85", schatten: "rgba(80,60,150,.28)" },
+    farben: {
+      cream: "#FBF6FA", card: "#FFFDFE", beige: "#F5EBF3", line: "#EFDFEC",
+      gold: "#8E4C85", goldSoft: "#D472BE", goldPale: "#F9EAF4",
+      espresso: "#2E2430", ink: "#7A6B7A", sage: "#6FA89C",
+      rose: "#E8A8D4", roseSoft: "#FCF1F8", plum: "#6E3568", aufGold: "#FFFCF5",
+      flaecheA1: "#FBEFF7", flaecheA2: "#F4DDEC", flaecheARand: "#EACBDF",
+      flaecheB1: "#FFF6E8", flaecheB2: "#FBE7CF", flaecheBRand: "#F0D3AE", chip: "#FDF4FA",
+    },
+  },
   {
     id: "champagner", panel: "linear-gradient(160deg, #9E1F52 0%, #5E1233 100%)", panelZeichen: "#F7D9A0", punkt: "rgba(194,24,91,.10)", nav: "rgba(255,253,251,.88)", name: "Champagner Rosé", art: "hell",
     vorschau: ["#FBF4EF", "#E8C383", "#F3B4C4", "#C2185B"],
@@ -68,7 +87,12 @@ export const THEMEN = [
 export const thema = (id) => THEMEN.find((t) => t.id === id) || THEMEN.find((t) => t.id === STANDARD_THEMA);
 
 export function gespeichertesThema() {
-  try { return localStorage.getItem(SPEICHER) || STANDARD_THEMA; } catch { return STANDARD_THEMA; }
+  try { const w = localStorage.getItem(SPEICHER); return THEMEN.some((t) => t.id === w) ? w : STANDARD_THEMA; } catch { return STANDARD_THEMA; }
+}
+
+// Nur bei bewusster Wahl im Profil aufrufen.
+export function merkeThema(id) {
+  try { localStorage.setItem(SPEICHER, id); } catch {}
 }
 
 let aktiv = null;
@@ -79,10 +103,14 @@ export const aktivesThema = () => thema(aktiv || gespeichertesThema());
 export function wendeThemaAn(C, id) {
   const t = thema(id);
   if (aktiv === t.id && C.cream === t.farben.cream) return t;
-  Object.assign(C, t.farben);
-  Object.assign(FARBEN, t.farben);
+  // Flaechen, die frueher fest hell waren, aus dem Thema ableiten (klassik ueberschreibt mit den Originalen)
+  const f = t.farben;
+  const abgeleitet = t.art === "hell"
+    ? { flaecheA1: f.roseSoft, flaecheA2: f.goldPale, flaecheARand: f.line, flaecheB1: f.card, flaecheB2: f.goldPale, flaecheBRand: f.line, chip: f.roseSoft }
+    : { flaecheA1: f.card, flaecheA2: f.beige, flaecheARand: f.line, flaecheB1: f.card, flaecheB2: f.goldPale, flaecheBRand: f.line, chip: f.card };
+  Object.assign(C, abgeleitet, f);
+  Object.assign(FARBEN, abgeleitet, f);
   aktiv = t.id;
-  try { localStorage.setItem(SPEICHER, t.id); } catch {}
   if (typeof document !== "undefined") {
     document.documentElement.style.background = t.farben.cream;
     document.body.style.background = t.grund;
@@ -90,7 +118,7 @@ export function wendeThemaAn(C, id) {
     document.documentElement.dataset.thema = t.art;
     const st = document.documentElement.style;
     st.setProperty("--s2g-grund", t.grund);
-    st.setProperty("--s2g-buehne", t.farben.beige);
+    st.setProperty("--s2g-buehne", t.buehne || t.farben.beige);
     st.setProperty("--s2g-nav", t.nav);
     st.setProperty("--s2g-punkt", t.punkt);
     st.setProperty("--s2g-gold", t.farben.gold);
