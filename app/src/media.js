@@ -24,11 +24,17 @@ export const RITUAL_VIDEOS = {
 };
 
 // Qigong · Die Acht Brokate: kurze stumme Bewegungs-Loops je Uebung (Higgsfield Bild + Kling 3.0, 24.11.2026).
-// Schluessel = Nummer der Uebung in BROKATE (App.jsx). 540x540, ohne Ton, Ende per Ueberblendung an den Anfang gefuegt (nahtlose Schleife).
+// Schluessel = Nummer der Uebung in BROKATE (App.jsx). 540x540, ohne Ton, Ende per Ueberblendung an den Anfang gefuegt
+// (nahtlose Schleife); Nr. 6 laeuft vor und zurueck (Abrollen und Aufrollen).
 export const QIGONG_VIDEOS = {
   1: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/f268390a-d61c-4c31-8b45-655f149e6c2d.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/5d686207-1188-4264-bc54-644450e10274.jpg" },
   2: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/3a758e28-0a22-4a46-b264-e37481962266.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/d80be38c-887f-4adc-8327-1a3a9e9cb026.jpg" },
   3: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/4706a7fc-88f0-4a7a-9bb7-de9579077af0.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/e9883e60-066a-4c27-a435-d57cfcb8f96d.jpg" },
+  4: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/57de5e38-4da2-4c4c-9c38-549dc533c41a.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/5609350e-f454-4dda-a9be-e0897277d363.jpg" },
+  5: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/e8a05459-654e-4ed4-8df1-55ba85d1f07d.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/d371f754-4931-4b68-a202-cf616353110b.jpg" },
+  6: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/89a9ea48-2ff5-4763-b1e4-9fc107cc8df5.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/5cc6b1e4-6183-44d3-8fe2-800b2a1594f8.jpg" },
+  7: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/e2de31ef-bf29-4a1a-b3c6-9cbb5c936eb8.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/75f25a14-0ac3-43b2-88ba-962fd07368f9.jpg" },
+  8: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/b9d8541e-dc30-43cb-aae0-cd2892b43b3e.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/42c8f816-c6f3-4166-a590-59f159b4f6fe.jpg" },
 };
 
 // Zukunftsbrief: gefuehrtes Schritt-Video (Higgsfield-Bilder, 23.11.2026)
