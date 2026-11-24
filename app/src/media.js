@@ -13,6 +13,11 @@ export const FEUER_VIDEO_ERSATZ = "/media/video/orakel_klein.mp4";
 // Dankbarkeit — geführte Dankbarkeitsübung (eigenes Video, 9 Min., 9:16, mit Ton) — Hauptvideo des Bereichs
 export const DANKBARKEIT_VIDEO = "/media/video/dankbarkeit.mp4";
 export const DANKBARKEIT_POSTER = "/media/video/dankbarkeit_poster.jpg";
+// Orakel › Karte ziehen: Higgsfield-Film (Kling 3.0 Turbo, 5 s, 9:16) — der App-Kartenruecken
+// dreht sich im Goldlicht; danach waechst die gezogene Karte auf. Laedt er nicht, dreht die
+// gezeichnete Karte wie bisher.
+export const ORAKEL_INTRO = "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/fc1796a3-2136-48d4-b0f7-6008313519aa.mp4";
+
 // Rituale: gefuehrte Hochformat-Videos (9:16), Schluessel wie in Rituale (App.jsx).
 export const RITUAL_VIDEOS = {
   raeu:     { video: "/media/video/kerze_ritual.mp4",   poster: "/media/video/kerze_ritual_poster.jpg" },

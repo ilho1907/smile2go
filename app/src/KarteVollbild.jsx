@@ -27,7 +27,7 @@ const wenigBewegung = () =>
 
 const summe = (dauer) => { try { navigator.vibrate?.(dauer); } catch { /* egal */ } };
 
-export default function KarteVollbild({ karte, bild, fallback, quelle, modus = "zeigen", onTeilen, onClose }) {
+export default function KarteVollbild({ karte, bild, fallback, quelle, modus = "zeigen", introVideo, onTeilen, onClose }) {
   const karteRef = useRef(null);
   const buehneRef = useRef(null);
   const glanzRef = useRef(null);
@@ -37,6 +37,10 @@ export default function KarteVollbild({ karte, bild, fallback, quelle, modus = "
   const uhrRef = useRef({ verbraucht: 0, letzte: 0, pause: false, aus: false });
   const [phase, setPhase] = useState(modus === "zieh" ? "dreh" : "auf"); // dreh → auf → offen → zu
   const [teilt, setTeilt] = useState(false);
+  // Beim Ziehen: kurzer Higgsfield-Film (Kartenruecken, Goldlicht, Aufblitzen).
+  // Laedt er nicht, uebernimmt die gezeichnete Drehung.
+  const [film, setFilm] = useState(() => modus === "zieh" && !!introVideo && !wenigBewegung());
+  const filmFertig = useRef(false);
 
   // Morph zwischen einem Rechteck (kleine/drehende Karte) und dem Vollbild
   const morph = (vonEl, rueckwaerts) => {
@@ -61,9 +65,42 @@ export default function KarteVollbild({ karte, bild, fallback, quelle, modus = "
   };
 
   // Start: entweder drehen oder direkt aufziehen
+  const drehen = () => {
+    const d = drehRef.current;
+    if (!d?.animate || wenigBewegung()) { aufziehen(d); return null; }
+    const a = d.animate([
+      { transform: "translateY(40px) scale(.72) rotateY(0deg)", opacity: 0, filter: "brightness(1)" },
+      { transform: "translateY(0) scale(.9) rotateY(240deg)", opacity: 1, offset: .18 },
+      { transform: "translateY(-10px) scale(1.02) rotateY(720deg)", filter: "brightness(1.35)", offset: .72 },
+      { transform: "translateY(0) scale(1) rotateY(900deg)", opacity: 1, filter: "brightness(1)" },
+    ], { duration: DREH_MS, easing: "cubic-bezier(.3,.05,.2,1)", fill: "forwards" });
+    a.onfinish = () => { summe([10, 40, 18]); setTimeout(() => aufziehen(d), 380); };
+    return a;
+  };
+
+  // Film zu Ende (oder haengt) → Karte waechst aus der Mitte auf
+  const filmEnde = () => {
+    if (filmFertig.current) return;
+    filmFertig.current = true;
+    summe([10, 40, 18]);
+    aufziehen(drehRef.current);
+  };
+  const filmFehler = () => {
+    if (filmFertig.current) return;
+    filmFertig.current = true;
+    setFilm(false);
+    drehen();
+  };
+  useEffect(() => {
+    if (!film) return;
+    const notbremse = setTimeout(filmEnde, 7500); // falls "ended" nie kommt
+    return () => clearTimeout(notbremse);
+  }, [film]);
+
   useLayoutEffect(() => {
     summe(8);
     if (phase !== "dreh") { aufziehen(quelle?.current); return; }
+    if (film) return; // der Film steuert den Ablauf
     const d = drehRef.current;
     if (!d?.animate || wenigBewegung()) { aufziehen(d); return; }
     const a = d.animate([
@@ -214,7 +251,16 @@ export default function KarteVollbild({ karte, bild, fallback, quelle, modus = "
       {/* Drehende Karte beim Ziehen */}
       {(dreht || phase === "auf") && modus === "zieh" && (
         <div className="s2gVb-drehbuehne" aria-hidden="true" style={{ opacity: dreht ? 1 : 0 }}>
-          <div className="s2gVb-burst" />
+          {film && (
+            <video
+              className="s2gVb-film"
+              src={introVideo}
+              autoPlay muted playsInline preload="auto"
+              onEnded={filmEnde}
+              onError={filmFehler}
+            />
+          )}
+          {!film && <div className="s2gVb-burst" />}
           <div ref={drehRef} className="s2gVb-dreh">
             <div className="s2gVb-seite s2gVb-ruecken">
               <div className="s2gVb-rahmen" />
@@ -314,6 +360,7 @@ const CSS = `
   background: repeating-conic-gradient(from 0deg, rgba(243,223,166,.16) 0deg 3deg, transparent 3deg 12deg);
   mask-image: radial-gradient(circle, #000 0%, transparent 42%); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 42%);
   animation: s2gVbDreh 14s linear infinite, s2gVbBurst ${DREH_MS}ms ease-out both; }
+.s2gVb-film { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; background: ${NACHT}; }
 .s2gVb-dreh { position: relative; width: min(268px, 66vw); aspect-ratio: 268 / 418; transform-style: preserve-3d; opacity: 0; }
 .s2gVb-seite { position: absolute; inset: 0; border-radius: 18px; backface-visibility: hidden; -webkit-backface-visibility: hidden;
   overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.6), 0 0 60px rgba(217,181,106,.35); }
