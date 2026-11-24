@@ -18,7 +18,7 @@ import MediaBanner from "./MediaBanner";
 import BookOpen from "./BookOpen";
 import Federkiel from "./Federkiel";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, QIGONG_VIDEOS } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -10967,6 +10967,11 @@ function Qigong({ qigong, setQigong, addPunkte }) {
             </div>
             {auf && (
               <div style={{ marginTop: 10, animation: "fadeUp .3s ease" }}>
+                {QIGONG_VIDEOS[b.nr] && (
+                  <video key={b.nr} src={QIGONG_VIDEOS[b.nr].video} poster={QIGONG_VIDEOS[b.nr].poster}
+                    autoPlay muted loop playsInline preload="metadata" aria-label={`Bewegung: ${b.t}`}
+                    style={{ display: "block", width: "100%", aspectRatio: "1 / 1", objectFit: "cover", borderRadius: 14, background: C.beige, marginBottom: 12 }} />
+                )}
                 <p style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, lineHeight: 1.7, margin: "0 0 8px" }}>{b.text}</p>
                 <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 600 }}>🌬️ {b.atem}</div>
               </div>
