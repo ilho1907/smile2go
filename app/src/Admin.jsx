@@ -472,6 +472,11 @@ function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
                   ? <button disabled={!!busy} onClick={() => window.confirm("Coach-Rolle entziehen? Ihre Klientinnen und Inhalte bleiben erhalten.") && tun("coach", () => adminCoachRolle(p.id, false), "Coach-Rolle entzogen.")} style={btn(C.card, C.line)}>Coach-Rolle entziehen</button>
                   : <button disabled={!!busy} onClick={() => window.confirm("Coach-Rolle ohne Code vergeben?") && tun("coach", () => adminCoachRolle(p.id, true), "Coach-Rolle vergeben.")} style={btn(C.card, C.line)}>Coach-Rolle vergeben</button>)}
                 <button onClick={() => onNachricht({ id: p.id, email: p.email })} style={btn(C.card, C.line)}>💬 Nachricht</button>
+                {p.anmeldung_mit === "email" && (
+                  <button disabled={!!busy} onClick={() => window.confirm(`Link zum Passwort-Zurücksetzen an ${p.email} senden?`) &&
+                    tun("pw", () => passwortZuruecksetzen(p.email, "/"), `Link zum Zurücksetzen an ${p.email} gesendet. Sie vergibt das neue Passwort selbst.`)}
+                    style={btn(C.card, C.line)}>{busy === "pw" ? "…" : "🔑 Passwort-Link senden"}</button>
+                )}
               </div>
 
               {!p.ist_admin && (

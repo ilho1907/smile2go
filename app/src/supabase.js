@@ -532,13 +532,13 @@ export async function loescheKonto(bestaetigung) {
 
 // ── Passwort ───────────────────────────────────────────────────────────────
 
-export async function passwortZuruecksetzen(email) {
+export async function passwortZuruecksetzen(email, pfad = window.location.pathname) {
   if (!supabase) throw new Error("Keine Verbindung");
   // Kein Hash im redirectTo: Supabase haengt seine eigenen Token als Fragment an
   // (#access_token=...&type=recovery) und ueberschreibt dabei ein vorhandenes Fragment.
   // Deshalb steht die Markierung in der Query - die ueberlebt.
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${window.location.origin}${window.location.pathname}?pw=neu`,
+    redirectTo: `${window.location.origin}${pfad}?pw=neu`,
   });
   if (error) throw new Error(error.message);
 }
