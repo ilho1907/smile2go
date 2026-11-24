@@ -85,7 +85,7 @@ export const IMG = {
   journal:     "/media/img/welcome.jpg",
   rituale:     "/media/img/lichtpunkte.jpg",
   brief:       "/media/img/welcome.jpg",
-  fuelle:      "/media/img/lichtpunkte.jpg",
+  fuelle:      "/media/img/fuelle.jpg",
   mediathek:   "/media/img/podcast.jpg",
   heute:       "/media/img/welcome.jpg",
   mehr:        "/media/img/lichtpunkte.jpg",
@@ -110,7 +110,8 @@ export const VIDEO = {
   journal:     "/media/video/welcome_klein.mp4",
   rituale:     "/media/video/lichtpunkte_klein.mp4",
   brief:       "/media/video/welcome_klein.mp4",
-  fuelle:      "/media/video/lichtpunkte_klein.mp4",
+  // Fülle-Kopf: Higgsfield (gpt_image_2_6 + Kling 3.0), nahtlose 3,8-s-Schleife, ohne Ton
+  fuelle:      "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/032cd247-5366-467e-8ebd-edd49040f9d0.mp4",
   mediathek:   "/media/video/podcast_klein.mp4",
   heute:       "/media/video/welcome_klein.mp4",
   mehr:        "/media/video/lichtpunkte_klein.mp4",
