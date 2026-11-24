@@ -1522,3 +1522,37 @@ export async function ladeExpertinnen(limit = 30) {
   if (error) { console.warn("ladeExpertinnen:", error.message); return []; }
   return (data || []).filter((c) => (c.name || "").trim());
 }
+
+// ── Lichtpunkte (Server) ────────────────────────────────────────────────────
+// Ab Migration 20261124_lichtpunkte.sql zaehlt der Server: Regeln, Tageslimit
+// und Einloesungen werden dort geprueft. Alle drei Funktionen geben null zurueck,
+// wenn es kein Backend, keine Sitzung oder die Migration noch nicht gibt —
+// dann rechnet die App wie bisher lokal weiter.
+async function punkteRpc(name, args) {
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase.rpc(name, args);
+  if (error) {
+    if (!funktionFehlt(error)) console.warn(`${name}:`, error.message);
+    return null;
+  }
+  return data;
+}
+
+// → { vergeben, gesamt, heute, limit } | null
+export async function punkteVergeben(aktion, punkte) {
+  return punkteRpc("punkte_vergeben", { p_aktion: aktion, p_punkte: punkte });
+}
+
+// → { ok, gesamt } | null
+export async function punkteEinloesen(punkte, titel) {
+  return punkteRpc("punkte_einloesen", { p_punkte: punkte, p_titel: titel });
+}
+
+// Einmalig den bisherigen lokalen Stand uebernehmen; danach nur noch den
+// Serverstand lesen. → gesamt (Zahl) | null
+export async function punkteUebernehmen(bisherigerStand) {
+  const n = await punkteRpc("punkte_uebernehmen", { p_stand: Math.max(0, Math.round(bisherigerStand || 0)) });
+  return typeof n === "number" ? n : null;
+}

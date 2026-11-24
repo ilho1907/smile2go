@@ -21,7 +21,7 @@ import { Ikon, Sym } from "./Ikon";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
-import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
+import { supabase, ladeAppState, speichereAppState, punkteVergeben, punkteEinloesen, punkteUebernehmen, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
   ladeMeineBindung, mitCoachVerbinden, ladeNachrichten, sendeNachricht, abonniereNachrichten, markiereGelesen,
   ladeFreieSlots, ladeMeineTermine, terminBuchen, terminStornieren,
   ladeFeed, schreibeBeitrag, herzSetzen, meldeBeitrag, loescheBeitrag,
@@ -11854,13 +11854,46 @@ export default function IlhoApp() {
   const [wo, setWo] = useState(null);
   const streak = 7;
 
+  // Lichtpunkte: mit Backend zaehlt der Server (Regeln + Tageslimit, siehe
+  // Migration 20261124_lichtpunkte.sql). Ohne Backend oder ohne Migration
+  // rechnet die App wie bisher lokal. Kein Zufallsbonus mehr — Belohnungen
+  // sollen nachvollziehbar sein, nicht wie ein Spielautomat wirken.
+  const zeigePunkte = (vorher, nachher, n, label, limit) => {
+    const ms = MEILENSTEINE.find((m) => vorher < m && nachher >= m);
+    setToast(ms ? `🎉 ${ms} Lichtpunkte — Meilenstein erreicht!`
+      : n > 0 ? `+${n} ✨ ${label}`
+      : limit ? "🌙 Für heute hast du alle Lichtpunkte gesammelt — morgen geht's weiter."
+      : null);
+    setTimeout(() => setToast(null), ms ? 3400 : 2400);
+  };
+  const punkteRef = useRef(punkte);
+  punkteRef.current = punkte;
   const addPunkte = (n, label) => {
-    const bonus = Math.random() < 0.18 ? [3, 5, 8][Math.floor(Math.random() * 3)] : 0;
-    const neu = punkte + n + bonus;
-    const ms = [120, 300, 500, 1000, 5000].find((m) => punkte < m && neu >= m);
-    setPunkte(neu);
-    setToast(ms ? `🎉 ${ms} Lichtpunkte — Meilenstein erreicht!` : bonus ? `+${n} ✨ ${label} · 🎁 +${bonus} Überraschung!` : `+${n} ✨ ${label}`);
-    setTimeout(() => setToast(null), ms ? 3400 : bonus ? 2800 : 2200);
+    const lokal = () => {
+      const vorher = punkteRef.current;
+      punkteRef.current = vorher + n;
+      setPunkte((p) => p + n);
+      zeigePunkte(vorher, vorher + n, n, label, false);
+    };
+    punkteVergeben(label, n).then((r) => {
+      if (!r) { lokal(); return; }
+      const vorher = punkteRef.current;
+      punkteRef.current = r.gesamt;
+      setPunkte(r.gesamt);
+      zeigePunkte(vorher, r.gesamt, r.vergeben, label, r.limit);
+    }).catch(lokal);
+  };
+  const punkteEinloesenUI = (p, t) => {
+    const fertig = (ok, gesamt) => {
+      if (ok) setPunkte(gesamt);
+      setToast(ok ? `🎁 ${t} — eingelöst!` : "Dafür reichen deine Lichtpunkte noch nicht.");
+      setTimeout(() => setToast(null), 2600);
+      if (ok) setPkModal(false);
+    };
+    punkteEinloesen(p, t).then((r) => {
+      if (r) fertig(r.ok, r.gesamt);
+      else fertig(punkte >= p, punkte - p);
+    }).catch(() => fertig(punkte >= p, punkte - p));
   };
 
   const name = useMemo(() => {
@@ -11960,8 +11993,12 @@ export default function IlhoApp() {
   useEffect(() => {
     if (!supabase || !user || mfaFaktor) return;
     let aktiv = true;
-    ladeAppState().then((s) => {
+    ladeAppState().then(async (s) => {
       if (aktiv && s) anwendenState(s);
+      // Lichtpunkte: einmalig den bisherigen Stand auf den Server uebernehmen,
+      // danach gilt immer der Serverstand.
+      const gesamt = await punkteUebernehmen(typeof s?.punkte === "number" ? s.punkte : punkte);
+      if (aktiv && gesamt !== null) setPunkte(gesamt);
       if (aktiv) setCloudBereit(true);
     });
     return () => { aktiv = false; };
@@ -12148,7 +12185,7 @@ export default function IlhoApp() {
                 ch369={ch369}
                 checkins={checkins}
                 onClose={() => setPkModal(false)}
-                onEinloesen={(p, t) => { setPunkte((x) => x - p); setToast(`🎁 ${t} — eingelöst!`); setTimeout(() => setToast(null), 2600); setPkModal(false); }}
+                onEinloesen={punkteEinloesenUI}
               />
             )}
 
