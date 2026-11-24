@@ -9,6 +9,33 @@ Kullanıcıyla iletişim Türkçe, kod ve arayüz Almanca (bkz. `CLAUDE.md`).
 
 ---
 
+## ★ Lichtpunkte & Challenges  ·  24.11.2026  ·  DEVAM EDİYOR
+
+**Konsept:** Claude Docs → "smile2go Puan & Challenge Sistemi — Konsept"
+(https://claude.ai/artifact/G1eMpH4nrjvEbWbxiWd6MV). Ad "Lichtpunkte" kalır,
+konseptteki sistem uygulanır (ilho, 24.11.2026).
+
+**Adım 1 — Datenschicht (dal `claude/lichtpunkte-datenschicht`, PR açık):**
+- `backend/supabase/migrations/20261124_lichtpunkte.sql`: `punkte_log`
+  (FK artık `auth.users`, yalnız okuma politikası — eski politika kendine puan
+  yazmaya izin veriyordu), `punkte_regeln` (`_tageslimit` 100, `_standard_max` 20,
+  `_uebernahme_max` 1000), RPC'ler `punkte_vergeben`, `punkte_einloesen`,
+  `punkte_uebernehmen`, `punkte_stand`. Lokal Postgres 16'da test edildi.
+- `supabase.js`: `punkteVergeben`, `punkteEinloesen`, `punkteUebernehmen`
+  (backend/migration yoksa `null` → uygulama lokal hesaplar).
+- `App.jsx`: `addPunkte` sunucuya yazar; rastgele bonus kaldırıldı; ilk
+  girişte eski stand bir kez sunucuya aktarılır; Einlösen sunucuda kontrol edilir.
+- **Migration Supabase'de henüz çalıştırılmadı** — ilho onayıyla çalıştır.
+
+**Sıradaki adımlar (konsept, bölüm "Uygulamaya kurulum"):**
+2. Gerçek seri hesabı + Pause-Tag, seviyeler (Samen → Wald), başlangıç 120 puan
+   kararı (ilho'ya sor), aksiyon başına `punkte_regeln` değerleri.
+3. `challenges` + `challenge_teilnahmen`, üye ekranı, Admin'den smile2go challenge'ı.
+4. Koç paneli: Gold koç challenge'ı, Admin onayı.
+5. Mağaza: kupon kodu, `angebote.punkte_akzeptiert` / `max_rabatt_prozent`.
+
+---
+
 ## ★ Coach-Codes & Coach-Menü  ·  12.11.2026  ·  DEVAM EDİYOR  ·  öncelik: ilk
 
 **Karar (ilho):** Koçlar ayrı uygulama değil, aynı uygulamayı kullanır. Kayıtta
