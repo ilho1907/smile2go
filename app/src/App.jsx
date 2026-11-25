@@ -1450,7 +1450,10 @@ function ErinnerungAngebot({ go }) {
     setBusy(true); setHinweis("");
     try {
       await pushAktivieren();
-      await speichereTageserinnerung({ aktiv: true, uhrzeit: "19:00", morgenAktiv: true, morgenUhrzeit: "08:00", challengeAktiv: true });
+      // Schon gespeicherte Wünsche (z. B. von einem anderen Gerät) bleiben erhalten.
+      const bisher = await ladeTageserinnerung().catch(() => null);
+      const ok = await speichereTageserinnerung(bisher || { aktiv: true, uhrzeit: "19:00", morgenAktiv: true, morgenUhrzeit: "08:00", challengeAktiv: true });
+      if (!ok) throw new Error("Push ist an, aber deine Erinnerungszeiten konnten nicht gespeichert werden. Bitte im Profil unter Benachrichtigungen noch einmal versuchen.");
       setZustand("fertig");
     } catch (e) {
       setHinweis(e?.message || "Das hat nicht geklappt.");
@@ -1461,7 +1464,7 @@ function ErinnerungAngebot({ go }) {
     <Card style={{ marginBottom: 28, background: "linear-gradient(150deg, #FBF6FA 0%, #F1E2EE 100%)", border: "1px solid #E6CDE0" }}>
       {zustand === "fertig" ? (
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, lineHeight: 1.5 }}>
-          ✓ Eingeschaltet. Morgens um 8 kommt dein Impuls, montags dein neues Wochenritual.{" "}
+          ✓ Eingeschaltet. Ab jetzt kommen deine Erinnerungen aufs Handy.{" "}
           <span onClick={() => go("profil")} style={{ color: C.plum, fontWeight: 700, cursor: "pointer" }}>Zeiten ändern ›</span>
         </div>
       ) : (
