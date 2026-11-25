@@ -37,8 +37,11 @@ export const QIGONG_VIDEOS = {
   8: { video: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/b9d8541e-dc30-43cb-aae0-cd2892b43b3e.mp4", poster: "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/42c8f816-c6f3-4166-a590-59f159b4f6fe.jpg" },
 };
 
-// Zukunftsbrief: gefuehrtes Schritt-Video (Higgsfield-Bilder, 23.11.2026)
-export const BRIEF_VIDEO = { video: "/media/video/brief_ritual.mp4", poster: "/media/video/brief_ritual_poster.jpg" };
+// Zukunftsbrief & Fülle: gefuehrte Schritt-Videos mit Kling-Bewegungsclips (Higgsfield, 25.11.2026).
+// Die Schritte stehen als Text im Video; Musik ist im Code erzeugt.
+const HFC = "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7";
+export const BRIEF_VIDEO = { video: `${HFC}/34adafa4-1006-4c86-8afd-7779f415891a.mp4`, poster: `${HFC}/04c6503a-a146-43e7-9010-07a464ca5b9c.jpg` };
+export const FUELLE_VIDEO = { video: `${HFC}/89740c91-2613-4ff5-b440-1191e52eac28.mp4`, poster: `${HFC}/aea88864-8f64-4079-8e44-86a4eb5f5c74.jpg` };
 
 // Orakel-Kartenbilder (Higgsfield · nano_banana_pro, 4K, 3:4) — 44-Karten-Göttinnen-Deck, einheitlicher 8K-3D-HD-Kartenstil
 export const KARTEN = {

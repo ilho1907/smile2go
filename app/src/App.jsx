@@ -18,7 +18,7 @@ import MediaBanner from "./MediaBanner";
 import BookOpen from "./BookOpen";
 import Federkiel from "./Federkiel";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, QIGONG_VIDEOS } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, FUELLE_VIDEO, QIGONG_VIDEOS } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -3634,6 +3634,10 @@ function MoneyMind({ mm, setMm, addPunkte }) {
 
   return (
     <div>
+      {/* Gefuehrtes Video: so funktioniert Fülle (Schritte stehen im Video) */}
+      <Card style={{ marginBottom: 14, padding: 0, overflow: "hidden", background: "#1c1024" }}>
+        <RitualVideo video={FUELLE_VIDEO.video} poster={FUELLE_VIDEO.poster} titel="Fülle" />
+      </Card>
       <Card style={{ marginBottom: 14, background: `linear-gradient(150deg, #3E5C46, ${C.sage} 160%)`, border: "none" }}>
         <Eyebrow color={C.goldPale}>💰 Fülle-Affirmation des Tages</Eyebrow>
         <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 19, color: "#F5FAF2", lineHeight: 1.5 }}>
