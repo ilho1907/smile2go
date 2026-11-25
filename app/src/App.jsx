@@ -18,7 +18,7 @@ import MediaBanner from "./MediaBanner";
 import BookOpen from "./BookOpen";
 import Federkiel from "./Federkiel";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, FUELLE_VIDEO, QIGONG_VIDEOS } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, FUELLE_VIDEO, QIGONG_VIDEOS, GEFUEHRTE_MEDITATIONEN } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
@@ -6873,6 +6873,26 @@ function Datenschutz() {
   );
 }
 
+/* ── Geführte Meditationen · eigene Audios unter dem Meditations-Video ── */
+function GefuehrteMeditationen({ addPunkte }) {
+  return (
+    <div style={{ padding: "22px 20px 0", maxWidth: 440, margin: "0 auto" }}>
+      <Eyebrow>Geführte Meditationen</Eyebrow>
+      <H size={23} style={{ marginBottom: 12 }}>Nimm dir Zeit für dich</H>
+      {GEFUEHRTE_MEDITATIONEN.map((m) => (
+        <Card key={m.id} style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 4 }}>{m.icon} {m.t}</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.55, margin: "0 0 10px" }}>{m.s}</p>
+          <Hoerspur src={m.src} titel={`Anhören · ca. ${m.dauer} Min`} beiEnde={() => addPunkte?.(5, `${m.t} abgeschlossen`)} />
+        </Card>
+      ))}
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.75, margin: "0 0 8px", textAlign: "center" }}>
+        Am besten mit Kopfhörern, an einem ruhigen Ort.
+      </p>
+    </div>
+  );
+}
+
 /* ── Meditation & Achtsamkeit (Atemübung · geführte Meditationen · Report) ── */
 function Meditation({ addPunkte }) {
   const [atmung, setAtmung] = useState(false);
@@ -12210,7 +12230,7 @@ export default function IlhoApp() {
               {tab === "team" && <TeamNachrichten />}
               {tab === "tarot" && <div style={{ margin: "0 0 -20px" }}><Tarot go={go} /></div>}
               {tab === "mantra" && <div style={{ margin: "0 0 -20px" }}><MantraRaum mantras={MOTIVATION} startIndex={dayIndex()} addPunkte={addPunkte} /></div>}
-              {tab === "meditation" && <MeditationCine addPunkte={(n, l) => { tagesAktivitaet("meditation"); addPunkte(n, l || "Meditation abgeschlossen"); }} />}
+              {tab === "meditation" && <><MeditationCine addPunkte={(n, l) => { tagesAktivitaet("meditation"); addPunkte(n, l || "Meditation abgeschlossen"); }} /><GefuehrteMeditationen addPunkte={(n, l) => { tagesAktivitaet("meditation"); addPunkte(n, l); }} /></>}
               {tab === "podcast" && <PodcastCine addPunkte={addPunkte} />}
               {tab === "community" && <><MediaBanner video={S2GVID.community} poster={S2GIMG.community} title="Community" subtitle="Gemeinsam leuchten" height={190} /><Community addPunkte={addPunkte} alias={alias} anon={anon} bindung={bindung} /></>}
               {tab === "fortschritt" && <><MediaBanner video={S2GVID.fortschritt} poster={S2GIMG.fortschritt} title="Mein Fortschritt" subtitle="Du wächst" height={190} /><Fortschritt streak={streak} entries={entries} punkte={punkte} energie={energie} aufgaben={aufgaben} ch369={ch369} checkins={checkins} setCheckins={setCheckins} addPunkte={addPunkte} prefs={prefs} setPrefs={setPrefs} twinTon={twinTon} go={go} /></>}

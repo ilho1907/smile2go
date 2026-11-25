@@ -159,6 +159,12 @@ export const AUDIO = {
   koerperreise: "/media/audio/koerperreise.mp3",
 };
 
+// Geführte Meditationen (eigene Aufnahmen, lokal in /public/media/audio/)
+export const GEFUEHRTE_MEDITATIONEN = [
+  { id: "mond", icon: "🌙", t: "Mond-Meditation", s: "Komm im sanften Licht des Mondes ganz bei dir an.", dauer: 29, src: "/media/audio/mond_meditation.mp3" },
+  { id: "solarplexus", icon: "☀️", t: "Solarplexus-Chakra", s: "Stärke deine innere Kraft, deinen Mut und dein Vertrauen.", dauer: 22, src: "/media/audio/solarplexus_meditation.mp3" },
+];
+
 // Sprach-Prompts (Voiceover-Texte, passend zu den Audios)
 export const VOICE = {
   meditation:  "Willkommen. Atme tief ein … und langsam wieder aus.",
