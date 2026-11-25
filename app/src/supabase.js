@@ -532,13 +532,13 @@ export async function loescheKonto(bestaetigung) {
 
 // ── Passwort ───────────────────────────────────────────────────────────────
 
-export async function passwortZuruecksetzen(email) {
+export async function passwortZuruecksetzen(email, pfad = window.location.pathname) {
   if (!supabase) throw new Error("Keine Verbindung");
   // Kein Hash im redirectTo: Supabase haengt seine eigenen Token als Fragment an
   // (#access_token=...&type=recovery) und ueberschreibt dabei ein vorhandenes Fragment.
   // Deshalb steht die Markierung in der Query - die ueberlebt.
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${window.location.origin}${window.location.pathname}?pw=neu`,
+    redirectTo: `${window.location.origin}${pfad}?pw=neu`,
   });
   if (error) throw new Error(error.message);
 }
@@ -708,7 +708,11 @@ async function adminRpc(name, args) {
 }
 export const adminKennzahlen = () => adminRpc("admin_kennzahlen");
 export const adminWachstum = () => adminRpc("admin_wachstum").then((d) => d || []);
-export const adminMitglieder = (suche = "", limit = 100) => adminRpc("admin_mitglieder", { p_suche: suche, p_limit: limit }).then((d) => d || []);
+// v2 liefert Name + Freischaltung/Sperre; ältere Datenbank ohne v2 → alte Liste
+export const adminMitglieder = (suche = "", limit = 100) =>
+  adminRpc("admin_mitglieder_v2", { p_suche: suche, p_limit: limit })
+    .catch(() => adminRpc("admin_mitglieder", { p_suche: suche, p_limit: limit }))
+    .then((d) => d || []);
 export const adminSessions = () => adminRpc("admin_sessions").then((d) => d || []);
 export const adminMeldungen = () => adminRpc("admin_meldungen").then((d) => d || []);
 export const adminMeldungErledigen = (postId, ausblenden) => adminRpc("admin_meldung_erledigen", { p_post: postId, p_ausblenden: ausblenden });
@@ -729,6 +733,63 @@ export async function adminTeamSenden(userId, text) {
   return id;
 }
 export const adminTeamRundnachricht = (text) => adminRpc("admin_team_rundnachricht", { p_text: text });
+
+// ── Mitglied-Verwaltung (s2g.admin → Profil) ─────────────────────────────────
+export const adminMitgliedDetail = (userId) => adminRpc("admin_mitglied_detail", { p_user: userId });
+export const adminMitgliedFreischalten = (userId, an) => adminRpc("admin_mitglied_freischalten", { p_user: userId, p_an: an });
+export const adminMitgliedNotiz = (userId, text) => adminRpc("admin_mitglied_notiz", { p_user: userId, p_text: text });
+export const adminCoachRolle = (userId, an) => adminRpc("admin_coach_rolle", { p_user: userId, p_an: an });
+export const adminWartendeAnzahl = () => adminRpc("admin_wartende_anzahl").then((n) => Number(n || 0)).catch(() => 0);
+
+// Aktionen mit Service-Key → Edge Function „admin-konto“ (prüft selbst, ob Admin).
+// aktion: "sperren" | "entsperren" | "zwei_faktor_reset" | "loeschen"
+export async function adminKonto(userId, aktion, extra = {}) {
+  const basis = import.meta.env?.VITE_AI_FUNCTION_URL;
+  if (!supabase || !basis) throw new Error("Keine Verbindung");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Nicht angemeldet");
+  const res = await fetch(basis.replace(/\/ai\/?$/, "/admin-konto"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: import.meta.env?.VITE_SUPABASE_ANON_KEY || "",
+    },
+    body: JSON.stringify({ user_id: userId, aktion, ...extra }),
+  });
+  let d = {};
+  try { d = await res.json(); } catch { /* leer */ }
+  if (!res.ok) throw new Error(d?.error || "Aktion fehlgeschlagen");
+  return d;
+}
+export const adminMitgliedSperren = (userId, sperren, grund = "") => adminKonto(userId, sperren ? "sperren" : "entsperren", { grund });
+
+// Bestätigungsmail erneut senden (E-Mail noch nicht bestätigt)
+export async function adminBestaetigungErneut(email) {
+  if (!supabase) throw new Error("Keine Verbindung");
+  const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${window.location.origin}/` } });
+  if (error) throw new Error(error.message);
+}
+
+// Persönlichen Coach-Code erzeugen und ihr als Team-Nachricht (mit Push) schicken
+export async function adminCoachCodeSenden(userId, email) {
+  const code = await adminRpc("admin_coach_code_erzeugen", { p_notiz: `für ${email}`, p_tage: 30 });
+  if (!code) throw new Error("Code konnte nicht erzeugt werden");
+  await adminTeamSenden(userId, `Dein persönlicher Coach-Code für smile2go: ${code}\nGib ihn unter Profil → „Ich bin Coachin“ ein. Er gilt 30 Tage und nur einmal.`);
+  return code;
+}
+
+// Für die Mitglieder-App: freigeschaltet? gesperrt?
+// Fehlt die Funktion (Migration noch nicht eingespielt) oder ist das Netz weg,
+// lieber durchlassen als alle aussperren → null = „keine Einschränkung bekannt“.
+export async function meinKontoStatus() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc("mein_konto_status");
+    if (error || !data) return null;
+    return data;
+  } catch { return null; }
+}
 
 export async function ladeTeamNachrichten() {
   const user = await nutzerin();

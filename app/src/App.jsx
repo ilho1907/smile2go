@@ -21,6 +21,7 @@ import { Ikon, Sym } from "./Ikon";
 import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, FUELLE_VIDEO, QIGONG_VIDEOS, GEFUEHRTE_MEDITATIONEN } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
+import { meinKontoStatus } from "./supabase";
 import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gibDossierFrei, ladeEigenesDossier, logEvent, speichereSessionNotiz, gibSessionNotizFrei, ladeSessionNotizen, merkeInhalt, sucheInhalte, recherchiere, brauchtZweitenFaktor, bindungBeenden, tagesAktivitaet, ladeTageserinnerung, speichereTageserinnerung, ladeInhaltsUebersicht, holeAudio, ladeStimmProfil, speichereStimmProfil, widerrufeStimme, STIMME_EINWILLIGUNG_TEXT,
   ladeMeineBindung, mitCoachVerbinden, ladeNachrichten, sendeNachricht, abonniereNachrichten, markiereGelesen,
   ladeFreieSlots, ladeMeineTermine, terminBuchen, terminStornieren,
@@ -11981,6 +11982,26 @@ export default function IlhoApp() {
     return () => sub?.subscription?.unsubscribe();
   }, []);
 
+  // Freischaltung & Sperre (s2g.admin): neue Konten warten auf die Freischaltung
+  // nach dem Kennenlerngespräch; gesperrte Konten fallen heraus. Unbekannt = durchlassen.
+  const [kontoStatus, setKontoStatus] = useState(null);   // null | { freigeschaltet, gesperrt }
+  useEffect(() => {
+    if (!supabase || !user || mfaFaktor) { setKontoStatus(null); return; }
+    let aktiv = true;
+    const pruefen = () => meinKontoStatus().then((st) => {
+      if (!aktiv) return;
+      setKontoStatus(st);
+      if (st?.gesperrt) supabase.auth.signOut().catch(() => {});
+    });
+    pruefen();
+    const t = setInterval(pruefen, 5 * 60 * 1000);
+    const sicht = () => { if (document.visibilityState === "visible") pruefen(); };
+    document.addEventListener("visibilitychange", sicht);
+    return () => { aktiv = false; clearInterval(t); document.removeEventListener("visibilitychange", sicht); };
+  }, [user, mfaFaktor]);
+  const kontoGesperrt = !!kontoStatus?.gesperrt;
+  const kontoWartet = !!kontoStatus && !kontoStatus.gesperrt && kontoStatus.freigeschaltet === false;
+
   // Echte Cloud-Persistenz: sobald eine echte Supabase-Nutzerin eingeloggt ist, wird ihr
   // gesamter App-Zustand (Journal, Mood, Challenge, Streak, ...) geräteübergreifend geladen
   // und gespeichert — nicht mehr nur im Browser-localStorage. Fällt Supabase aus (kein .env,
@@ -12136,6 +12157,33 @@ export default function IlhoApp() {
         ) : user && mfaFaktor ? (
           <div style={{ padding: "60px 24px", animation: "fadeUp .5s ease" }}>
             <Card><ZweiFaktorAbfrage C={C} faktorId={mfaFaktor} onOk={() => setMfaFaktor(null)} onAbbruch={() => { supabase.auth.signOut(); setUser(null); setMfaFaktor(null); }} /></Card>
+          </div>
+        ) : kontoGesperrt ? (
+          <div style={{ padding: "60px 24px", animation: "fadeUp .5s ease" }}>
+            <Card>
+              <Eyebrow>Konto gesperrt</Eyebrow>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.ink, lineHeight: 1.6, margin: "6px 0 14px" }}>
+                Dein Zugang zu smile2go ist im Moment gesperrt. Wenn du glaubst, dass das ein Irrtum ist, melde dich bitte beim smile2go-Team.
+              </p>
+              <Btn ghost onClick={() => { supabase?.auth.signOut(); setUser(null); setKontoStatus(null); }}>Zur Anmeldung</Btn>
+            </Card>
+          </div>
+        ) : user && kontoWartet ? (
+          <div style={{ padding: "48px 20px", animation: "fadeUp .5s ease" }}>
+            <Card>
+              <Eyebrow>Fast geschafft</Eyebrow>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: 18, color: C.ink, lineHeight: 1.6, margin: "6px 0 10px" }}>
+                Schön, dass du da bist 🤍 Dein Konto ist angelegt. Freigeschaltet wird es nach eurem kostenlosen Kennenlerngespräch — so stellen wir sicher, dass smile2go ein geschützter Raum bleibt.
+              </p>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.6, margin: "0 0 14px" }}>
+                Hast du eine Frage oder möchtest du einen Termin? Schreib uns hier — wir antworten dir in diesem Verlauf.
+              </p>
+              <TeamNachrichten />
+              <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+                <Btn small onClick={() => meinKontoStatus().then(setKontoStatus)}>Neu prüfen</Btn>
+                <Btn small ghost onClick={() => { supabase?.auth.signOut(); setUser(null); setKontoStatus(null); }}>Abmelden</Btn>
+              </div>
+            </Card>
           </div>
         ) : !user ? (
           <div style={{ animation: "fadeUp .5s ease" }}><Auth startMode={startWunsch ? "register" : "login"} startRolle={startWunsch || "klientin"} onLogin={(mail, zeichen, ilho) => { setUser(mail); if (zeichen) setMeinZeichen(zeichen); if (typeof ilho === "boolean") setIlhoAktiv(ilho); }} /></div>

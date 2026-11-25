@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
-import { brauchtZweitenFaktor, terminStatus, ladeKursFortschritt, istCoachin } from "./supabase";
+import { brauchtZweitenFaktor, terminStatus, ladeKursFortschritt, istCoachin, meinKontoStatus } from "./supabase";
 import { alsPdf, alsCsv } from "./export";
 import {
   supabase,
@@ -1096,6 +1096,17 @@ export default function CoachPanel() {
   // 0 Beitraege = sie ist fuer niemanden sichtbar. Das muss auffallen.
   const [gemAnzahl, setGemAnzahl] = useState(null);
   const [chat, setChat] = useState(null);
+  // Sperre aus s2g.admin: ein laufendes Coach-Panel soll nicht offen bleiben
+  const [gesperrt, setGesperrt] = useState(false);
+  useEffect(() => {
+    if (!session) return;
+    const pruefen = () => meinKontoStatus().then((st) => {
+      if (st?.gesperrt) { setGesperrt(true); supabase.auth.signOut().catch(() => {}); }
+    });
+    pruefen();
+    const t = setInterval(pruefen, 5 * 60 * 1000);
+    return () => clearInterval(t);
+  }, [session?.user?.id]);
 
   const alles = async () => {
     const [p, k, u, g] = await Promise.all([
@@ -1142,6 +1153,17 @@ export default function CoachPanel() {
     );
 
   if (!bereit) return <div style={{ minHeight: "100vh", background: C.cream }} />;
+  if (gesperrt)
+    return (
+      <div style={{ minHeight: "100vh", background: C.cream, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <Card style={{ maxWidth: 420 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso, marginBottom: 8 }}>Konto gesperrt</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            Dein Zugang zu smile2go ist im Moment gesperrt. Wenn du glaubst, dass das ein Irrtum ist, melde dich bitte beim smile2go-Team.
+          </p>
+        </Card>
+      </div>
+    );
   if (!session) return <Anmeldung onFertig={() => {}} />;
   if (mfaFaktor)
     return (
