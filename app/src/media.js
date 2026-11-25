@@ -255,3 +255,7 @@ export const TAROT_MEDIEN = {
     termin: "",  // Buchungslink
   },
 };
+
+// Kartenrücken des Orakels: Pflaume, Lotus und Mondphasen in Gold (Higgsfield, 2× hochskaliert).
+// Wird in der Orakel-Bühne (App.jsx) und beim Ziehen (KarteVollbild.jsx) gezeigt.
+export const KARTEN_RUECKSEITE = "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7/0b690392-c90f-4072-abe4-9710daa7b725.jpg";
