@@ -10911,28 +10911,30 @@ function WochenOrakel({ wo, setWo, addPunkte }) {
    die App führt durch die Bewegungen und zählt mit, mehr nicht.             */
 
 const BROKATE = [
-  { nr: 1, t: "Den Himmel stützen", s: "Beide Hände heben sich über den Kopf", atem: "Einatmen beim Heben, ausatmen beim Senken", wdh: "6 ×",
+  { nr: 1, hinweis: "Schultern sinken lassen, auch wenn die Arme oben sind.", t: "Den Himmel stützen", s: "Beide Hände heben sich über den Kopf", atem: "Einatmen beim Heben, ausatmen beim Senken", wdh: "6 ×",
     text: "Steh locker, Füße hüftbreit. Verschränke die Finger vor dem Bauch, drehe die Handflächen nach oben und schiebe sie über den Kopf, als würdest du den Himmel stützen. Streck dich sanft, schau den Händen nach. Dann öffne die Arme und senke sie in einem großen Bogen." },
-  { nr: 2, t: "Den Bogen spannen", s: "Blick über die Fingerspitzen in die Weite", atem: "Ausatmen beim Spannen", wdh: "je Seite 5 ×",
+  { nr: 2, hinweis: "Die Knie bleiben über den Füßen, nicht über die Zehen hinaus.", t: "Den Bogen spannen", s: "Blick über die Fingerspitzen in die Weite", atem: "Ausatmen beim Spannen", wdh: "je Seite 5 ×",
     text: "Geh in einen leichten Reitsitz. Kreuze die Arme vor der Brust, ziehe die eine Hand wie eine Bogensehne zur Seite, die andere zeigt mit ausgestrecktem Zeigefinger in die Ferne. Der Blick folgt dem Finger." },
-  { nr: 3, t: "Milz und Magen weiten", s: "Eine Hand hebt, eine sinkt", atem: "Ruhig und gleichmäßig", wdh: "je Seite 6 ×",
+  { nr: 3, t: "Milz und Magen weiten", s: "Eine Hand hebt, eine sinkt", atem: "Einatmen beim Heben, ausatmen beim Senken", wdh: "je Seite 6 ×",
     text: "Eine Handfläche schiebt nach oben zum Himmel, die andere drückt nach unten zur Erde. Beide Handgelenke bleiben weich. Dann die Seite wechseln — wie eine langsame Welle durch den Rumpf." },
-  { nr: 4, t: "Nach hinten schauen", s: "Kopf dreht sich, Schultern bleiben weich", atem: "Einatmen beim Drehen", wdh: "je Seite 5 ×",
+  { nr: 4, hinweis: "Nur so weit drehen, wie es angenehm ist — der Nacken bleibt weich.", t: "Nach hinten schauen", s: "Kopf dreht sich, Schultern bleiben weich", atem: "Einatmen beim Drehen", wdh: "je Seite 5 ×",
     text: "Stell dich aufrecht, Arme locker. Drehe den Kopf langsam nach links, als wolltest du über die Schulter etwas hinter dir sehen. Halte drei Atemzüge, komm zurück, wechsle die Seite." },
-  { nr: 5, t: "Kopf und Rumpf wiegen", s: "Löst Hitze und Unruhe", atem: "Lang ausatmen", wdh: "je Seite 5 ×",
+  { nr: 5, hinweis: "Bei Bluthochdruck oder Schwindel den Kopf nicht tief senken.", t: "Kopf und Rumpf wiegen", s: "Löst Hitze und Unruhe", atem: "Lang ausatmen", wdh: "je Seite 5 ×",
     text: "Breiter Stand, Hände auf den Oberschenkeln. Neige den Oberkörper zur Seite und wiege ihn in einem weichen Bogen nach vorn zur anderen Seite. Nichts erzwingen — es darf ganz klein sein." },
-  { nr: 6, t: "Mit den Händen die Füße greifen", s: "Dehnt den Rücken", atem: "Ausatmen beim Beugen", wdh: "6 ×",
+  { nr: 6, hinweis: "Bei Rückenproblemen die Bewegung kleiner machen, Knie dürfen weich sein.", t: "Mit den Händen die Füße greifen", s: "Dehnt den Rücken", atem: "Ausatmen beim Beugen", wdh: "6 ×",
     text: "Streck die Arme über den Kopf, roll dann Wirbel für Wirbel nach vorn und lass die Hände Richtung Füße wandern. Nur so weit, wie es angenehm ist. Roll genauso langsam wieder auf." },
   { nr: 7, t: "Mit Blick und Faust zuschlagen", s: "Weckt die Kraft", atem: "Kräftig ausatmen beim Stoß", wdh: "je Seite 6 ×",
     text: "Reitsitz, Fäuste an der Hüfte, Handrücken nach unten. Stoß eine Faust langsam nach vorn, die Augen weit, und zieh sie ebenso langsam zurück. Der Boden trägt dich." },
-  { nr: 8, t: "Auf den Zehen wippen", s: "Der Abschluss — sieben Mal", atem: "Einatmen beim Heben", wdh: "7 ×",
-    text: "Füße parallel, Arme locker. Heb die Fersen, halte kurz oben, und lass sie sanft fallen, sodass eine kleine Erschütterung durch den Körper geht. Zum Schluss still stehen und nachspüren." },
+  { nr: 8, hinweis: "Setz die Fersen langsam auf — sanft, nicht hart.", t: "Auf den Zehen wippen", s: "Der Abschluss — sieben Mal", atem: "Einatmen beim Heben", wdh: "7 ×",
+    text: "Füße parallel, Arme locker. Heb die Fersen, halte kurz oben, und setz sie langsam wieder auf, sodass eine leichte Welle durch den Körper geht. Zum Schluss still stehen und nachspüren." },
 ];
 
 function Qigong({ qigong, setQigong, addPunkte }) {
   const [aktiv, setAktiv] = useState(null);
   const [laufend, setLaufend] = useState(false);
   const [sek, setSek] = useState(0);
+  const [abend, setAbend] = useState(false); // Abendritual: nur Brokat 5 + 8
+  const liste = abend ? BROKATE.filter((b) => b.nr === 5 || b.nr === 8) : BROKATE;
 
   useEffect(() => {
     if (!laufend) return;
@@ -10946,20 +10948,24 @@ function Qigong({ qigong, setQigong, addPunkte }) {
 
   const beenden = () => {
     const minuten = Math.max(1, Math.round(sek / 60));
-    setQigong([{ datum: heute, minuten, uebungen: BROKATE.length }, ...(qigong || []).filter((e) => e.datum !== heute)]);
+    setQigong([{ datum: heute, minuten, uebungen: liste.length }, ...(qigong || []).filter((e) => e.datum !== heute)]);
     tagesAktivitaet("qigong");
     addPunkte?.(10, "Qigong geübt");
-    setLaufend(false); setSek(0); setAktiv(null);
+    setLaufend(false); setSek(0); setAktiv(null); setAbend(false);
   };
 
   return (
     <div style={{ padding: "22px 20px" }}>
       <Eyebrow color={C.plum}>Qigong</Eyebrow>
       <H size={25} style={{ marginBottom: 8 }}>Die Acht Brokate</H>
-      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 16 }}>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginBottom: 10 }}>
         Acht ruhige Bewegungen, zusammen etwa zehn Minuten. Du brauchst nichts außer
-        einem Platz zum Stehen. Bewege dich nur so weit, wie es sich gut anfühlt — bei
-        Schmerzen hör auf und frag jemanden vom Fach.
+        einem Platz zum Stehen. Die Bewegung folgt dem Atem, nicht umgekehrt. Nach jedem
+        Brokat bleib etwa 30 Sekunden stehen, die Hände vor dem Unterbauch, und spür nach.
+      </p>
+      <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.55, marginBottom: 16 }}>
+        Bewege dich nur so weit, wie es sich gut anfühlt. Bei Schmerzen hör auf und frag
+        jemanden vom Fach. Qigong ersetzt keine ärztliche Behandlung.
       </p>
 
       <Card style={{ marginBottom: 16, display: "flex", gap: 14, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
@@ -10977,7 +10983,18 @@ function Qigong({ qigong, setQigong, addPunkte }) {
           : <Btn small onClick={() => { setLaufend(true); setSek(0); setAktiv(1); }}>Starten</Btn>}
       </Card>
 
-      {BROKATE.map((b) => {
+      <Card style={{ marginBottom: 16, background: abend ? C.goldPale : C.card, borderColor: abend ? C.gold : C.line }}>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17, color: C.espresso }}>🌙 Abendritual · 3 Minuten</div>
+        <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, lineHeight: 1.55, margin: "6px 0 10px" }}>
+          Nur zwei Brokate für den Abend: „Kopf und Rumpf wiegen“ gibt die Unruhe nach unten ab,
+          „Auf den Zehen wippen“ erdet dich. Danach still stehen und nachspüren.
+        </p>
+        {abend
+          ? <Btn small ghost onClick={() => { setAbend(false); setAktiv(null); }}>Alle acht zeigen</Btn>
+          : <Btn small onClick={() => { setAbend(true); setLaufend(true); setSek(0); setAktiv(5); }}>Abendritual starten</Btn>}
+      </Card>
+
+      {liste.map((b) => {
         const auf = aktiv === b.nr;
         return (
           <Card key={b.nr} style={{ marginBottom: 10, borderColor: auf ? C.gold : C.line }}>
@@ -10998,6 +11015,7 @@ function Qigong({ qigong, setQigong, addPunkte }) {
                 )}
                 <p style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, lineHeight: 1.7, margin: "0 0 8px" }}>{b.text}</p>
                 <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.plum, fontWeight: 600 }}>🌬️ {b.atem}</div>
+                {b.hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 6, lineHeight: 1.5 }}>Achte darauf: {b.hinweis}</div>}
               </div>
             )}
           </Card>
