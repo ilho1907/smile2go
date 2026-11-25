@@ -694,3 +694,184 @@ CREATE POLICY "Support-Anhang lesen" ON storage.objects
     )
   );
 -- Kein UPDATE/DELETE für Nutzerinnen: ein Anhang bleibt, wie er eingereicht wurde.
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Wissensbasis (lernt aus sich selbst, nimmt Ar-Ge- und Web-Wissen auf)
+--
+-- Null KI-Tokens im Alltag: Suche läuft über deutsche Volltextsuche in Postgres.
+--   • aus sich selbst: Ticket auf „Gelöst“ → Entwurf (Betreff + letzte Team-Antwort)
+--   • Ar-Ge-Agent / n8n / Web: support_wissen_einreichen (Service-Key oder Team) → Entwurf
+--   • Team prüft, bearbeitet, gibt frei; „für Nutzerinnen“ = Selbsthilfe-Vorschlag
+--     im Formular „Neue Anfrage“, bevor ein Ticket entsteht
+-- Entwürfe sind nie öffentlich (können persönliche Angaben enthalten).
+-- ═══════════════════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS support_wissen (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titel            TEXT NOT NULL CHECK (length(btrim(titel)) BETWEEN 3 AND 160),
+  inhalt           TEXT NOT NULL CHECK (length(btrim(inhalt)) BETWEEN 10 AND 3000),
+  kategorie        TEXT CHECK (kategorie IN ('technik','konto','zahlung','inhalte','sonstiges')),
+  quelle           TEXT NOT NULL CHECK (quelle IN ('ticket','arge','web','manuell')),
+  quelle_url       TEXT CHECK (quelle_url IS NULL OR quelle_url ~* '^https?://'),
+  ticket_id        UUID UNIQUE REFERENCES support_tickets(id) ON DELETE SET NULL,
+  freigegeben      BOOLEAN NOT NULL DEFAULT false,
+  fuer_nutzerinnen BOOLEAN NOT NULL DEFAULT false,
+  fingerabdruck    TEXT NOT NULL,
+  erstellt_von     UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  aktualisiert_am  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  suchtext         tsvector GENERATED ALWAYS AS (
+                     setweight(to_tsvector('german', coalesce(titel, '')), 'A') ||
+                     setweight(to_tsvector('german', coalesce(inhalt, '')), 'B')) STORED,
+  CHECK (NOT fuer_nutzerinnen OR freigegeben),
+  UNIQUE (fingerabdruck)
+);
+CREATE INDEX IF NOT EXISTS idx_support_wissen_suche ON support_wissen USING gin (suchtext);
+
+ALTER TABLE support_wissen ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Support-Team liest" ON support_wissen;
+CREATE POLICY "Support-Team liest" ON support_wissen FOR SELECT TO authenticated USING (ist_support());
+REVOKE ALL ON support_wissen FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON support_wissen TO authenticated;
+GRANT ALL ON support_wissen TO service_role;
+
+CREATE OR REPLACE FUNCTION support_wissen_fingerabdruck(p_titel TEXT, p_inhalt TEXT) RETURNS TEXT
+LANGUAGE sql IMMUTABLE AS $$
+  SELECT md5(regexp_replace(lower(coalesce(p_titel, '') || '|' || coalesce(p_inhalt, '')), '\s+', ' ', 'g'));
+$$;
+
+-- Suchanfrage aus freiem Text: Wörter mit ODER verknüpfen, damit kurze Fragen trotzdem treffen.
+CREATE OR REPLACE FUNCTION support_wissen_query(p_text TEXT) RETURNS tsquery
+LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE WHEN q::text = '' THEN NULL ELSE to_tsquery('german', replace(q::text, ' & ', ' | ')) END
+    FROM (SELECT plainto_tsquery('german', left(coalesce(p_text, ''), 600)) AS q) x;
+$$;
+
+-- Eingang für Ar-Ge-Agent, n8n, Web-Fundstücke und das Team. Immer als Entwurf; Dubletten → bestehende ID.
+CREATE OR REPLACE FUNCTION support_wissen_einreichen(p_titel TEXT, p_inhalt TEXT, p_kategorie TEXT DEFAULT NULL,
+                                                     p_quelle TEXT DEFAULT 'arge', p_url TEXT DEFAULT NULL)
+RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE fp TEXT := support_wissen_fingerabdruck(btrim(p_titel), btrim(p_inhalt)); neu UUID;
+BEGIN
+  -- Service-Key (auth.uid() leer, Rolle service_role) oder Support-Team
+  IF NOT (coalesce(current_setting('request.jwt.claims', true)::json->>'role', '') = 'service_role'
+          OR current_setting('role', true) = 'service_role' OR ist_support()) THEN
+    RAISE EXCEPTION 'nur Server oder Support-Team' USING ERRCODE = '42501';
+  END IF;
+  IF p_quelle NOT IN ('arge','web','manuell') THEN RAISE EXCEPTION 'ungültige Quelle' USING ERRCODE = '22023'; END IF;
+  SELECT id INTO neu FROM support_wissen WHERE fingerabdruck = fp;
+  IF FOUND THEN RETURN neu; END IF;
+  INSERT INTO support_wissen (titel, inhalt, kategorie, quelle, quelle_url, fingerabdruck, erstellt_von)
+    VALUES (btrim(p_titel), btrim(p_inhalt), nullif(p_kategorie, ''), p_quelle, nullif(btrim(coalesce(p_url, '')), ''), fp, auth.uid())
+    ON CONFLICT (fingerabdruck) DO NOTHING RETURNING id INTO neu;
+  IF neu IS NULL THEN SELECT id INTO neu FROM support_wissen WHERE fingerabdruck = fp; END IF;
+  RETURN neu;
+END $$;
+
+-- Selbstlernend: gelöstes Ticket mit öffentlicher Team-Antwort → Entwurf (einmal pro Ticket).
+CREATE OR REPLACE FUNCTION support_wissen_aus_ticket(p_ticket UUID) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE t support_tickets; antwort TEXT; inhalt TEXT;
+BEGIN
+  SELECT * INTO t FROM support_tickets WHERE id = p_ticket;
+  IF NOT FOUND OR EXISTS (SELECT 1 FROM support_wissen WHERE ticket_id = p_ticket) THEN RETURN; END IF;
+  SELECT text INTO antwort FROM support_nachrichten
+   WHERE ticket_id = p_ticket AND von = 'team' AND NOT intern ORDER BY created_at DESC LIMIT 1;
+  IF antwort IS NULL THEN RETURN; END IF;
+  inhalt := left('Problem: ' || left(t.beschreibung, 900) || E'\n\nLösung: ' || antwort, 3000);
+  INSERT INTO support_wissen (titel, inhalt, kategorie, quelle, ticket_id, fingerabdruck)
+    VALUES (left(t.betreff, 160), inhalt, t.kategorie, 'ticket', p_ticket, support_wissen_fingerabdruck(t.betreff, inhalt))
+    ON CONFLICT DO NOTHING;
+END $$;
+REVOKE ALL ON FUNCTION support_wissen_aus_ticket(UUID) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION support_wissen_lernen() RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.status = 'geloest' AND OLD.status IS DISTINCT FROM 'geloest' THEN
+    PERFORM support_wissen_aus_ticket(NEW.id);
+  END IF;
+  RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION support_wissen_lernen() FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS trg_support_wissen_lernen ON support_tickets;
+CREATE TRIGGER trg_support_wissen_lernen AFTER UPDATE OF status ON support_tickets
+  FOR EACH ROW EXECUTE FUNCTION support_wissen_lernen();
+
+-- Team: Treffer zu einem Ticket-Text (Entwürfe inklusive, gekennzeichnet).
+CREATE OR REPLACE FUNCTION support_wissen_suche(p_text TEXT, p_limit INTEGER DEFAULT 5)
+RETURNS TABLE (id UUID, titel TEXT, inhalt TEXT, kategorie TEXT, quelle TEXT, quelle_url TEXT, freigegeben BOOLEAN, rang REAL)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE q tsquery := support_wissen_query(p_text);
+BEGIN
+  IF NOT ist_support() THEN RAISE EXCEPTION 'nur für das Support-Team' USING ERRCODE = '42501'; END IF;
+  IF q IS NULL THEN RETURN; END IF;
+  RETURN QUERY SELECT w.id, w.titel, w.inhalt, w.kategorie, w.quelle, w.quelle_url, w.freigegeben, ts_rank(w.suchtext, q)
+                 FROM support_wissen w WHERE w.suchtext @@ q
+                ORDER BY w.freigegeben DESC, ts_rank(w.suchtext, q) DESC LIMIT least(greatest(p_limit, 1), 10);
+END $$;
+
+-- Nutzerinnen: nur freigegebene Selbsthilfe-Einträge, höchstens 3.
+CREATE OR REPLACE FUNCTION support_hilfe_vorschlaege(p_text TEXT)
+RETURNS TABLE (id UUID, titel TEXT, inhalt TEXT)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE q tsquery := support_wissen_query(p_text);
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'nicht angemeldet' USING ERRCODE = '42501'; END IF;
+  IF q IS NULL OR length(btrim(coalesce(p_text, ''))) < 4 THEN RETURN; END IF;
+  RETURN QUERY SELECT w.id, w.titel, w.inhalt FROM support_wissen w
+                WHERE w.freigegeben AND w.fuer_nutzerinnen AND w.suchtext @@ q
+                ORDER BY ts_rank(w.suchtext, q) DESC LIMIT 3;
+END $$;
+
+CREATE OR REPLACE FUNCTION support_wissen_liste(p_nur_entwuerfe BOOLEAN DEFAULT false)
+RETURNS TABLE (id UUID, titel TEXT, inhalt TEXT, kategorie TEXT, quelle TEXT, quelle_url TEXT, ticket_nummer TEXT,
+               freigegeben BOOLEAN, fuer_nutzerinnen BOOLEAN, aktualisiert_am TIMESTAMPTZ)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NOT ist_support() THEN RAISE EXCEPTION 'nur für das Support-Team' USING ERRCODE = '42501'; END IF;
+  RETURN QUERY SELECT w.id, w.titel, w.inhalt, w.kategorie, w.quelle, w.quelle_url, t.nummer, w.freigegeben, w.fuer_nutzerinnen, w.aktualisiert_am
+                 FROM support_wissen w LEFT JOIN support_tickets t ON t.id = w.ticket_id
+                WHERE NOT p_nur_entwuerfe OR NOT w.freigegeben
+                ORDER BY w.freigegeben, w.aktualisiert_am DESC LIMIT 300;
+END $$;
+
+-- Bearbeiten / freigeben (Team). p_id NULL = neuer manueller Eintrag.
+CREATE OR REPLACE FUNCTION support_wissen_speichern(p_id UUID, p_titel TEXT, p_inhalt TEXT, p_kategorie TEXT,
+                                                    p_freigegeben BOOLEAN, p_fuer_nutzerinnen BOOLEAN)
+RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE r UUID; fp TEXT := support_wissen_fingerabdruck(btrim(p_titel), btrim(p_inhalt));
+BEGIN
+  IF NOT ist_support() THEN RAISE EXCEPTION 'nur für das Support-Team' USING ERRCODE = '42501'; END IF;
+  IF p_id IS NULL THEN
+    INSERT INTO support_wissen (titel, inhalt, kategorie, quelle, fingerabdruck, erstellt_von, freigegeben, fuer_nutzerinnen)
+      VALUES (btrim(p_titel), btrim(p_inhalt), nullif(p_kategorie, ''), 'manuell', fp, auth.uid(),
+              coalesce(p_freigegeben, false), coalesce(p_freigegeben, false) AND coalesce(p_fuer_nutzerinnen, false))
+      RETURNING id INTO r;
+  ELSE
+    UPDATE support_wissen SET titel = btrim(p_titel), inhalt = btrim(p_inhalt), kategorie = nullif(p_kategorie, ''),
+           freigegeben = coalesce(p_freigegeben, false),
+           fuer_nutzerinnen = coalesce(p_freigegeben, false) AND coalesce(p_fuer_nutzerinnen, false),
+           fingerabdruck = fp, aktualisiert_am = now()
+     WHERE id = p_id RETURNING id INTO r;
+  END IF;
+  RETURN r;
+END $$;
+
+CREATE OR REPLACE FUNCTION support_wissen_loeschen(p_id UUID) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NOT ist_support() THEN RAISE EXCEPTION 'nur für das Support-Team' USING ERRCODE = '42501'; END IF;
+  DELETE FROM support_wissen WHERE id = p_id;
+END $$;
+
+DO $$
+DECLARE f TEXT;
+BEGIN
+  FOREACH f IN ARRAY ARRAY['support_wissen_suche(TEXT, INTEGER)', 'support_hilfe_vorschlaege(TEXT)',
+    'support_wissen_liste(BOOLEAN)', 'support_wissen_speichern(UUID, TEXT, TEXT, TEXT, BOOLEAN, BOOLEAN)',
+    'support_wissen_loeschen(UUID)', 'support_wissen_einreichen(TEXT, TEXT, TEXT, TEXT, TEXT)'] LOOP
+    EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon', f);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated, service_role', f);
+  END LOOP;
+END $$;

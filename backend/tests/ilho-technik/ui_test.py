@@ -196,6 +196,27 @@ with sync_playwright() as p:
         ok(sql("SELECT rolle FROM support_tickets WHERE betreff = 'Landingpage-Bild fehlt'") == "coachin", "Ticket der Coachin mit Rolle coachin")
         co.screenshot(path=f"{AUS}/40_coach_support.png", full_page=True)
 
+    # ── 11 · Wissensbasis: Team legt Eintrag an, gibt frei → Selbsthilfe im Formular ──
+    adm.goto(APP + "/admin"); adm.wait_for_timeout(2000)
+    adm.get_by_role("button", name="Support-Tickets").first.click(); adm.wait_for_timeout(1200)
+    adm.get_by_text("📚 Wissensbasis", exact=False).click(); adm.wait_for_timeout(800)
+    adm.get_by_placeholder("Titel (z. B. „Push kommt auf dem iPhone nicht an“)").fill("Push kommt auf dem iPhone nicht an")
+    adm.get_by_placeholder("Lösung in einfachen Worten").fill("Öffne smile2go in Safari, tippe auf Teilen › Zum Home-Bildschirm und erlaube danach Mitteilungen.")
+    adm.get_by_role("button", name="Als Entwurf speichern").click(); adm.wait_for_timeout(1200)
+    adm.get_by_role("button", name="prüfen / bearbeiten").first.click(); adm.wait_for_timeout(500)
+    adm.get_by_label("freigegeben").check(); adm.get_by_label("für Nutzerinnen (Selbsthilfe)").check()
+    adm.get_by_role("button", name="Speichern", exact=True).click(); adm.wait_for_timeout(1200)
+    ok(sql("SELECT freigegeben AND fuer_nutzerinnen FROM support_wissen WHERE titel = 'Push kommt auf dem iPhone nicht an'") == "t", "Eintrag über die Oberfläche angelegt und freigegeben")
+    zu_support(anna)
+    anna.get_by_text("+ Neue Anfrage").click()
+    anna.fill("#sup-betreff", "Ich bekomme keine Push-Nachrichten")
+    anna.fill("#sup-text", "Auf meinem iPhone kommen keine Benachrichtigungen an.")
+    anna.wait_for_timeout(1800)
+    ok(anna.get_by_text("Vielleicht hilft dir das schon:").is_visible(), "Selbsthilfe-Vorschlag erscheint beim Schreiben")
+    anna.get_by_text("Push kommt auf dem iPhone nicht an").click(); anna.wait_for_timeout(300)
+    ok(anna.get_by_text("Zum Home-Bildschirm", exact=False).is_visible(), "Lösung lässt sich aufklappen")
+    anna.screenshot(path=f"{AUS}/16_anna_selbsthilfe.png", full_page=True)
+
     # ── 10 · Support-Mitarbeiterin ohne Admin-Rechte: nur der Support-Tab ──
     sara = kontext(b, "support@example.org", mobil=False).new_page()
     sara.goto(APP + "/admin"); sara.wait_for_timeout(2500)

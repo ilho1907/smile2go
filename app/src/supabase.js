@@ -1890,3 +1890,19 @@ export const supportTeamSetzen = (email, name, aktiv = true) => supportRpc("supp
 export const supportRegelSetzen = ({ id = null, kategorie, prioritaet, zustaendig, rang = 100, aktiv = true }) =>
   supportRpc("support_regel_setzen", { p_id: id, p_kategorie: kategorie || null, p_prioritaet: prioritaet || null, p_zustaendig: zustaendig, p_rang: rang, p_aktiv: aktiv });
 export const supportRegelLoeschen = (id) => supportRpc("support_regel_loeschen", { p_id: id });
+
+// ── ilho-technik · Wissensbasis (Volltextsuche in Postgres, keine KI-Tokens) ──
+export async function supportHilfeVorschlaege(text) {
+  if (!supabase || !text || text.trim().length < 4) return [];
+  const { data, error } = await supabase.rpc("support_hilfe_vorschlaege", { p_text: text.slice(0, 600) });
+  return error ? [] : data || [];
+}
+export const supportWissenSuche = (text, limit = 4) =>
+  supabase.rpc("support_wissen_suche", { p_text: String(text || "").slice(0, 600), p_limit: limit }).then(({ data, error }) => (error ? [] : data || []));
+export const supportWissenListe = (nurEntwuerfe = false) =>
+  supabase.rpc("support_wissen_liste", { p_nur_entwuerfe: nurEntwuerfe }).then(({ data, error }) => (error ? null : data || []));
+export const supportWissenSpeichern = ({ id = null, titel, inhalt, kategorie, freigegeben, fuerNutzerinnen }) =>
+  supportRpc("support_wissen_speichern", { p_id: id, p_titel: titel, p_inhalt: inhalt, p_kategorie: kategorie || null, p_freigegeben: !!freigegeben, p_fuer_nutzerinnen: !!fuerNutzerinnen });
+export const supportWissenEinreichen = ({ titel, inhalt, kategorie, quelle = "web", url = null }) =>
+  supportRpc("support_wissen_einreichen", { p_titel: titel, p_inhalt: inhalt, p_kategorie: kategorie || null, p_quelle: quelle, p_url: url });
+export const supportWissenLoeschen = (id) => supportRpc("support_wissen_loeschen", { p_id: id });

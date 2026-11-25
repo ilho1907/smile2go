@@ -3,6 +3,7 @@ import {
   supportAdminListe, supportAdminTicket, supportAdminZaehler, supportTeamListe, supportRegelnListe,
   supportAdminAntworten, supportAdminStatus, supportAdminZuweisen, supportAdminEinstufen,
   supportTeamSetzen, supportRegelSetzen, supportRegelLoeschen, supportAnhangLink, neuerSchluessel,
+  supportWissenSuche, supportWissenListe, supportWissenSpeichern, supportWissenEinreichen, supportWissenLoeschen,
 } from "./supabase";
 import {
   SUPPORT_KATEGORIEN, SUPPORT_PRIORITAETEN, SUPPORT_STATUS, KATEGORIE_LABEL, PRIORITAET_LABEL, STATUS_LABEL,
@@ -31,6 +32,7 @@ export default function AdminSupport({ C, Card, Eyebrow, istAdmin, onZaehler }) 
   const [team, setTeam] = useState([]);
   const [offen, setOffen] = useState(null);
   const [verwaltung, setVerwaltung] = useState(false);
+  const [wissenAuf, setWissenAuf] = useState(false);
 
   const laden = async () => {
     const [l, z] = await Promise.all([supportAdminListe(filter), supportAdminZaehler()]);
@@ -105,6 +107,13 @@ export default function AdminSupport({ C, Card, Eyebrow, istAdmin, onZaehler }) 
         <div>{offen ? <Detail key={offen} id={offen} C={C} Card={Card} Eyebrow={Eyebrow} team={team} onGeaendert={laden} /> : <Card><p style={{ ...sys, color: C.ink }}>Wähle links ein Ticket.</p></Card>}</div>
       </div>
 
+      <Card>
+        <button onClick={() => setWissenAuf((v) => !v)} style={{ ...sys, border: "none", background: "none", color: C.plum, fontWeight: 700, fontSize: 14.5, padding: 0, cursor: "pointer" }}>
+          {wissenAuf ? "▾" : "▸"} 📚 Wissensbasis (lernt aus gelösten Tickets · Ar-Ge · Web)
+        </button>
+        {wissenAuf && <Wissensbasis C={C} sel={sel} />}
+      </Card>
+
       {istAdmin && (
         <Card>
           <button onClick={() => setVerwaltung((v) => !v)} style={{ ...sys, border: "none", background: "none", color: C.plum, fontWeight: 700, fontSize: 14.5, padding: 0, cursor: "pointer" }}>
@@ -126,10 +135,14 @@ function Detail({ id, C, Card, Eyebrow, team, onGeaendert }) {
   const [meldung, setMeldung] = useState("");
   const [arbeitet, setArbeitet] = useState(false);
   const [einst, setEinst] = useState(null);
+  const [treffer, setTreffer] = useState([]);
   const schluessel = useRef(neuerSchluessel());
 
   const laden = () => supportAdminTicket(id).then((x) => { setD(x); if (x) setEinst({ kategorie: x.ticket.kategorie, prioritaet: x.ticket.prioritaet }); });
   useEffect(() => { laden(); }, [id]);
+  useEffect(() => {
+    if (d?.ticket) supportWissenSuche(`${d.ticket.betreff} ${d.ticket.beschreibung}`, 3).then((w) => setTreffer((w || []).filter((x) => x.freigegeben)));
+  }, [d?.ticket?.id]);
   useEffect(() => {
     (d?.anhaenge || []).forEach((a) => { if (!links[a.pfad]) supportAnhangLink(a.pfad).then((u) => u && setLinks((l) => ({ ...l, [a.pfad]: u }))); });
   }, [d?.anhaenge?.length]);
@@ -207,6 +220,19 @@ function Detail({ id, C, Card, Eyebrow, team, onGeaendert }) {
           {d.anhaenge.map((a) => links[a.pfad]
             ? <a key={a.id} href={links[a.pfad]} target="_blank" rel="noreferrer"><img src={links[a.pfad]} alt={a.dateiname} style={{ width: 84, height: 84, objectFit: "cover", borderRadius: 10, border: `1px solid ${C.line}` }} /></a>
             : <div key={a.id} style={{ width: 84, height: 84, borderRadius: 10, background: C.beige }} />)}
+        </div>
+      )}
+
+      {treffer.length > 0 && (
+        <div style={{ marginTop: 12, border: `1px dashed ${C.line}`, borderRadius: 12, padding: "8px 10px" }}>
+          <div style={{ ...sys, fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: C.ink }}>📚 Passend aus der Wissensbasis</div>
+          {treffer.map((w) => (
+            <div key={w.id} style={{ ...sys, fontSize: 13.5, color: C.espresso, padding: "6px 0", display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+              <span style={{ flex: 1, minWidth: 180 }}>{w.titel}</span>
+              <button onClick={() => { setIntern(false); setText((x) => (x ? x + "\n\n" : "") + w.inhalt); }}
+                style={{ ...sys, fontSize: 12.5, border: `1px solid ${C.line}`, background: C.card, borderRadius: 10, padding: "4px 9px", cursor: "pointer", color: C.plum }}>in Antwort übernehmen</button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -307,6 +333,85 @@ function Verwaltung({ C, team, setTeam, sel }) {
           <select value={regel.zustaendig} onChange={(e) => setRegel({ ...regel, zustaendig: e.target.value })} style={sel}><option value="">zuständig …</option>{team.filter((m) => m.aktiv).map((m) => <option key={m.user_id} value={m.user_id}>{m.anzeigename}</option>)}</select>
           <input type="number" min={1} max={999} value={regel.rang} onChange={(e) => setRegel({ ...regel, rang: Number(e.target.value) || 100 })} style={{ ...sel, width: 80 }} aria-label="Rang" />
           <button style={knopf} disabled={!regel.zustaendig} onClick={async () => fertig(await supportRegelSetzen(regel), "Regel gespeichert.")}>Regel anlegen</button>
+        </div>
+      </div>
+      {meldung && <p role="status" style={{ ...sys, fontSize: 13, color: C.ink, margin: 0 }}>{meldung}</p>}
+    </div>
+  );
+}
+
+const QUELLE = { ticket: "aus Ticket", arge: "Ar-Ge", web: "Web", manuell: "manuell" };
+
+function Wissensbasis({ C, sel }) {
+  const [liste, setListe] = useState(undefined);
+  const [nurEntwuerfe, setNurEntwuerfe] = useState(true);
+  const [bearbeiten, setBearbeiten] = useState(null);
+  const [neu, setNeu] = useState({ titel: "", inhalt: "", kategorie: "", quelle: "manuell", url: "" });
+  const [meldung, setMeldung] = useState("");
+  const laden = () => supportWissenListe(nurEntwuerfe).then(setListe);
+  useEffect(() => { laden(); }, [nurEntwuerfe]);
+  const knopf = { ...sys, fontSize: 13.5, fontWeight: 700, padding: "9px 14px", borderRadius: 14, cursor: "pointer", border: "none", background: C.gold, color: "#fff", minHeight: 38 };
+  const klein = { ...sys, fontSize: 12.5, border: `1px solid ${C.line}`, background: C.card, borderRadius: 10, padding: "4px 9px", cursor: "pointer", color: C.plum };
+  const fertig = (r, ok) => { setMeldung(r?.fehler ? "Fehler: " + r.fehler : ok); if (!r?.fehler) { setBearbeiten(null); laden(); } };
+  const feld = { ...sel, width: "100%", boxSizing: "border-box" };
+
+  if (liste === null) return <p style={{ ...sys, fontSize: 13.5, color: C.ink }}>Wissensbasis noch nicht eingerichtet (Migration ausführen).</p>;
+  return (
+    <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+      <p style={{ ...sys, fontSize: 13, color: C.ink, margin: 0, lineHeight: 1.5 }}>
+        Gelöste Tickets werden automatisch zu Entwürfen; der Ar-Ge-Agent oder n8n liefert per <code>support_wissen_einreichen</code> zu.
+        Erst nach Freigabe nutzt das Team den Eintrag; mit „für Nutzerinnen“ erscheint er als Selbsthilfe im Formular. Bitte persönliche Angaben vor der Freigabe entfernen.
+      </p>
+      <label style={{ ...sys, fontSize: 13.5, color: C.espresso, display: "flex", gap: 6, alignItems: "center" }}>
+        <input type="checkbox" checked={nurEntwuerfe} onChange={(e) => setNurEntwuerfe(e.target.checked)} /> nur Entwürfe (zu prüfen)
+      </label>
+      {liste === undefined ? <p style={{ ...sys, color: C.ink }}>Lade …</p> : liste.length === 0 ? <p style={{ ...sys, fontSize: 13.5, color: C.ink }}>Keine Einträge.</p> :
+        liste.map((w) => bearbeiten?.id === w.id ? (
+          <div key={w.id} style={{ border: `1px solid ${C.gold}`, borderRadius: 12, padding: 10, display: "grid", gap: 8 }}>
+            <input aria-label="Titel" value={bearbeiten.titel} onChange={(e) => setBearbeiten({ ...bearbeiten, titel: e.target.value })} maxLength={160} style={feld} />
+            <textarea aria-label="Inhalt" rows={6} value={bearbeiten.inhalt} onChange={(e) => setBearbeiten({ ...bearbeiten, inhalt: e.target.value })} maxLength={3000} style={{ ...feld, resize: "vertical" }} />
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <select value={bearbeiten.kategorie || ""} onChange={(e) => setBearbeiten({ ...bearbeiten, kategorie: e.target.value })} style={sel}><option value="">ohne Kategorie</option>{SUPPORT_KATEGORIEN.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+              <label style={{ ...sys, fontSize: 13.5 }}><input type="checkbox" checked={bearbeiten.freigegeben} onChange={(e) => setBearbeiten({ ...bearbeiten, freigegeben: e.target.checked, fuer_nutzerinnen: e.target.checked && bearbeiten.fuer_nutzerinnen })} /> freigegeben</label>
+              <label style={{ ...sys, fontSize: 13.5, opacity: bearbeiten.freigegeben ? 1 : 0.5 }}><input type="checkbox" disabled={!bearbeiten.freigegeben} checked={bearbeiten.fuer_nutzerinnen} onChange={(e) => setBearbeiten({ ...bearbeiten, fuer_nutzerinnen: e.target.checked })} /> für Nutzerinnen (Selbsthilfe)</label>
+              <button style={knopf} onClick={async () => fertig(await supportWissenSpeichern({ ...bearbeiten, fuerNutzerinnen: bearbeiten.fuer_nutzerinnen }), "Gespeichert.")}>Speichern</button>
+              <button style={klein} onClick={() => setBearbeiten(null)}>abbrechen</button>
+            </div>
+          </div>
+        ) : (
+          <div key={w.id} style={{ borderBottom: `1px solid ${C.line}`, padding: "8px 0" }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <Chip ton={w.freigegeben ? ["#E7F5EC", "#2F7A4B"] : ["#FFF3DD", "#8A5A12"]}>{w.freigegeben ? "freigegeben" : "Entwurf"}</Chip>
+              {w.fuer_nutzerinnen && <Chip ton={["#EEF1FB", "#3A4C8C"]}>Selbsthilfe</Chip>}
+              <span style={{ ...sys, fontSize: 12, color: C.ink }}>{QUELLE[w.quelle]}{w.ticket_nummer ? ` ${w.ticket_nummer}` : ""}{w.kategorie ? ` · ${KATEGORIE_LABEL[w.kategorie]}` : ""}</span>
+              {w.quelle_url && <a href={w.quelle_url} target="_blank" rel="noreferrer" style={{ ...sys, fontSize: 12, color: C.plum }}>Quelle ↗</a>}
+            </div>
+            <div style={{ ...sys, fontSize: 14.5, fontWeight: 700, color: C.espresso, marginTop: 3 }}>{w.titel}</div>
+            <div style={{ ...sys, fontSize: 13, color: C.ink, marginTop: 2, whiteSpace: "pre-wrap", maxHeight: 60, overflow: "hidden" }}>{w.inhalt}</div>
+            <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+              <button style={klein} onClick={() => setBearbeiten({ ...w })}>prüfen / bearbeiten</button>
+              <button style={{ ...klein, color: "#A3321F" }} onClick={async () => fertig(await supportWissenLoeschen(w.id), "Gelöscht.")}>löschen</button>
+            </div>
+          </div>
+        ))}
+
+      <div style={{ display: "grid", gap: 8, borderTop: `1px solid ${C.line}`, paddingTop: 10 }}>
+        <div style={{ ...sys, fontSize: 13, fontWeight: 700, color: C.espresso }}>Neuer Eintrag</div>
+        <input placeholder="Titel (z. B. „Push kommt auf dem iPhone nicht an“)" value={neu.titel} onChange={(e) => setNeu({ ...neu, titel: e.target.value })} maxLength={160} style={feld} />
+        <textarea rows={4} placeholder="Lösung in einfachen Worten" value={neu.inhalt} onChange={(e) => setNeu({ ...neu, inhalt: e.target.value })} maxLength={3000} style={{ ...feld, resize: "vertical" }} />
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <select aria-label="Quelle" value={neu.quelle} onChange={(e) => setNeu({ ...neu, quelle: e.target.value })} style={sel}>
+            <option value="manuell">Quelle: eigenes Wissen</option><option value="web">Quelle: Web</option><option value="arge">Quelle: Ar-Ge</option>
+          </select>
+          {neu.quelle !== "manuell" && <input placeholder="https://… (Quelle)" value={neu.url} onChange={(e) => setNeu({ ...neu, url: e.target.value })} style={{ ...sel, flex: 1, minWidth: 180 }} />}
+          <select value={neu.kategorie} onChange={(e) => setNeu({ ...neu, kategorie: e.target.value })} style={sel}><option value="">ohne Kategorie</option>{SUPPORT_KATEGORIEN.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+          <button style={knopf} disabled={neu.titel.trim().length < 3 || neu.inhalt.trim().length < 10} onClick={async () => {
+            const r = neu.quelle === "manuell"
+              ? await supportWissenSpeichern({ titel: neu.titel, inhalt: neu.inhalt, kategorie: neu.kategorie, freigegeben: false })
+              : await supportWissenEinreichen({ titel: neu.titel, inhalt: neu.inhalt, kategorie: neu.kategorie, quelle: neu.quelle, url: neu.url || null });
+            if (!r.fehler) setNeu({ titel: "", inhalt: "", kategorie: "", quelle: "manuell", url: "" });
+            fertig(r, "Als Entwurf gespeichert.");
+          }}>Als Entwurf speichern</button>
         </div>
       </div>
       {meldung && <p role="status" style={{ ...sys, fontSize: 13, color: C.ink, margin: 0 }}>{meldung}</p>}

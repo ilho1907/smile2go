@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   supabase, supportTicketErstellen, supportAnhangHochladen, supportAnhangLink,
-  meineSupportTickets, meinSupportTicket, supportAntworten, neuerSchluessel,
+  meineSupportTickets, meinSupportTicket, supportAntworten, neuerSchluessel, supportHilfeVorschlaege,
   SUPPORT_ANHANG_TYPEN, SUPPORT_ANHANG_MAX,
 } from "./supabase";
 import { SUPPORT_KATEGORIEN, KATEGORIE_LABEL, STATUS_LABEL, STATUS_TON, zeitpunkt } from "./supportTexte";
@@ -146,6 +146,15 @@ function NeueAnfrage({ C, onFertig, onZurueck }) {
   const schluessel = useRef(neuerSchluessel());
 
   const bereit = kategorie && betreff.trim().length >= 3 && beschreibung.trim().length >= 10;
+  // Selbsthilfe: freigegebene Einträge der Wissensbasis passend zum Text (Volltextsuche, ohne KI)
+  const [vorschlaege, setVorschlaege] = useState([]);
+  const [offenerTipp, setOffenerTipp] = useState(null);
+  useEffect(() => {
+    const text = `${betreff} ${beschreibung}`.trim();
+    if (text.length < 6) { setVorschlaege([]); return; }
+    const t = setTimeout(() => supportHilfeVorschlaege(text).then(setVorschlaege), 600);
+    return () => clearTimeout(t);
+  }, [betreff, beschreibung]);
   const feld = { width: "100%", boxSizing: "border-box", padding: "12px 14px", fontSize: 17, ...sys, border: `1.5px solid ${C.line}`, borderRadius: 14, background: C.card, color: C.espresso, outline: "none" };
   const label = { ...sys, display: "block", fontSize: 14.5, fontWeight: 700, color: C.espresso, margin: "16px 0 6px" };
 
@@ -187,6 +196,22 @@ function NeueAnfrage({ C, onFertig, onZurueck }) {
       <div style={{ ...sys, fontSize: 12.5, color: C.ink, textAlign: "right", marginTop: 3 }}>{beschreibung.length} / 5000</div>
 
       <ScreenshotWahl C={C} datei={datei} setDatei={setDatei} setFehler={setFehler} />
+
+      {vorschlaege.length > 0 && (
+        <div style={{ marginTop: 16, background: C.goldPale, borderRadius: 16, padding: "12px 14px" }}>
+          <div style={{ ...sys, fontSize: 14.5, fontWeight: 700, color: C.espresso, marginBottom: 6 }}>Vielleicht hilft dir das schon:</div>
+          {vorschlaege.map((v) => (
+            <div key={v.id} style={{ borderTop: `1px solid ${C.line}`, padding: "8px 0" }}>
+              <button onClick={() => setOffenerTipp(offenerTipp === v.id ? null : v.id)} aria-expanded={offenerTipp === v.id}
+                style={{ ...sys, all: "unset", cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 15.5, fontWeight: 600, color: C.plum, display: "block", width: "100%" }}>
+                {offenerTipp === v.id ? "▾" : "▸"} {v.titel}
+              </button>
+              {offenerTipp === v.id && <p style={{ ...sys, fontSize: 15, lineHeight: 1.55, color: C.espresso, margin: "6px 0 0", whiteSpace: "pre-wrap" }}>{v.inhalt}</p>}
+            </div>
+          ))}
+          <div style={{ ...sys, fontSize: 13, color: C.ink, marginTop: 4 }}>Nicht gelöst? Sende deine Anfrage einfach ab.</div>
+        </div>
+      )}
 
       {fehler && <p role="alert" style={{ ...sys, fontSize: 15, color: "#B0492F", margin: "12px 0 0" }}>{fehler}</p>}
       <Knopf C={C} onClick={absenden} disabled={!bereit || sendet} style={{ width: "100%", marginTop: 18 }}>{sendet ? "Wird gesendet …" : "Anfrage senden"}</Knopf>

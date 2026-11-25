@@ -205,5 +205,27 @@ SET ROLE authenticated;
 SELECT count(*) AS _ FROM generate_series(1, 10) i, LATERAL support_ticket_anlegen('Testfrage ' || i, 'Eine ausreichend lange Beschreibung.', 'sonstiges', 'limit-schl-' || i) \gset
 SELECT tst.scheitert($$SELECT support_ticket_anlegen('Elfte Frage', 'Eine ausreichend lange Beschreibung.', 'sonstiges', 'limit-schl-11')$$, '11. Ticket in 24 h');
 
+\echo '── 12 · Wissensbasis: lernt aus gelösten Tickets, Ar-Ge-Eingang, Selbsthilfe'
+RESET ROLE;
+SELECT tst.ok((SELECT count(*) FROM support_wissen WHERE ticket_id = :'t1' AND quelle = 'ticket' AND NOT freigegeben) = 1, 'gelöstes Ticket → Entwurf in der Wissensbasis');
+SELECT tst.ok((SELECT inhalt LIKE '%Welche iOS-Version%' AND inhalt NOT LIKE '%INTERN%' FROM support_wissen WHERE ticket_id = :'t1'), 'Entwurf enthält öffentliche Antwort, keine interne Notiz');
+SET ROLE service_role;
+SELECT support_wissen_einreichen('Push-Benachrichtigungen auf dem iPhone', 'Auf dem iPhone kommen Push-Nachrichten nur, wenn die App zum Home-Bildschirm hinzugefügt wurde (iOS 16.4+).', 'technik', 'arge') AS w1 \gset
+SELECT support_wissen_einreichen('Push-Benachrichtigungen auf dem iPhone', 'Auf dem iPhone kommen Push-Nachrichten nur, wenn die App zum Home-Bildschirm hinzugefügt wurde (iOS 16.4+).', 'technik', 'arge') AS w1b \gset
+SELECT tst.ok(:'w1' = :'w1b', 'Ar-Ge-Agent (Service-Key) reicht ein; Dublette → derselbe Eintrag');
+RESET ROLE; SELECT set_config('request.jwt.claims', '{"sub":"bbbbbbbb-0000-4000-8000-000000000002"}', false) AS _ \gset
+SET ROLE authenticated;
+SELECT tst.scheitert($$SELECT support_wissen_einreichen('Spam-Titel', 'Spam-Inhalt von einer Nutzerin', NULL, 'web')$$, 'Nutzerin kann nichts in die Wissensbasis schreiben');
+SELECT tst.ok((SELECT count(*) FROM support_hilfe_vorschlaege('Push kommt nicht auf iPhone')) = 0, 'Entwurf ist für Nutzerinnen unsichtbar');
+SELECT tst.ok((SELECT count(*) FROM support_wissen) = 0, 'Nutzerin liest die Tabelle nicht direkt');
+SELECT tst.scheitert($$SELECT * FROM support_wissen_suche('iPhone')$$, 'Nutzerin nutzt Team-Suche');
+RESET ROLE; SELECT set_config('request.jwt.claims', '{"sub":"eeeeeeee-0000-4000-8000-000000000005"}', false) AS _ \gset
+SET ROLE authenticated;
+SELECT tst.ok((SELECT count(*) FROM support_wissen_suche('Benachrichtigung kommt nicht')) >= 1, 'Team findet Eintrag per Volltextsuche (Stemming)');
+SELECT support_wissen_speichern(:'w1', 'Push-Benachrichtigungen auf dem iPhone', 'Auf dem iPhone kommen Push-Nachrichten nur, wenn die App zum Home-Bildschirm hinzugefügt wurde (iOS 16.4+).', 'technik', true, true) AS _ \gset
+RESET ROLE; SELECT set_config('request.jwt.claims', '{"sub":"bbbbbbbb-0000-4000-8000-000000000002"}', false) AS _ \gset
+SET ROLE authenticated;
+SELECT tst.ok((SELECT count(*) FROM support_hilfe_vorschlaege('Push kommt nicht auf iPhone')) = 1, 'freigegebener Eintrag erscheint als Selbsthilfe-Vorschlag');
+
 RESET ROLE;
 \echo '── Alle Tests bestanden'
