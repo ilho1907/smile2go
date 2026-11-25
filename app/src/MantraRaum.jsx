@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MANTRA_MEDIEN } from "./media";
+import { MANTRA_MEDIEN, MANTRA_MUSIK } from "./media";
 
 /* Mantra-Raum — Naturvideo im Hintergrund, Mantra-Musik, das Tagesmantra gross.
    Musik startet erst auf Antippen (Browser erlauben keinen Autoplay mit Ton). */
@@ -22,6 +22,7 @@ export default function MantraRaum({ mantras, startIndex = 0, addPunkte }) {
   const [i, setI] = useState(startIndex);
   const [musik, setMusik] = useState(false);
   const [gezaehlt, setGezaehlt] = useState(false);
+  const [spur, setSpur] = useState(0);
   const audio = useRef(null);
   const m = mantras[i % mantras.length];
 
@@ -31,9 +32,20 @@ export default function MantraRaum({ mantras, startIndex = 0, addPunkte }) {
     const a = audio.current;
     if (!a) return;
     if (musik) { a.pause(); setMusik(false); return; }
-    a.volume = 0.7;
+    a.volume = MANTRA_MUSIK[spur].vol ?? 0.7;
     a.play().then(() => setMusik(true)).catch(() => setMusik(false));
     if (!gezaehlt && addPunkte) { addPunkte(3, "Mantra-Moment"); setGezaehlt(true); }
+  };
+
+  // Andere Musik waehlen: laeuft gerade Musik, spielt die neue sofort weiter
+  const spurWaehlen = (n) => {
+    if (n === spur) return;
+    setSpur(n);
+    const a = audio.current;
+    if (!a) return;
+    a.src = MANTRA_MUSIK[n].src;
+    a.volume = MANTRA_MUSIK[n].vol ?? 0.7;
+    if (musik) a.play().catch(() => setMusik(false));
   };
 
   const knopf = {
@@ -52,7 +64,7 @@ export default function MantraRaum({ mantras, startIndex = 0, addPunkte }) {
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
       />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(27,20,48,.25) 0%, rgba(27,20,48,.55) 55%, rgba(27,20,48,.85) 100%)" }} />
-      <audio ref={audio} src={MANTRA_MEDIEN.musik} loop preload="none" onEnded={() => setMusik(false)} />
+      <audio ref={audio} src={MANTRA_MUSIK[spur].src} loop preload="none" onEnded={() => setMusik(false)} />
 
       <div style={{ position: "relative", padding: "40px 28px 48px", textAlign: "center", color: "#fff" }}>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, letterSpacing: 2.4, textTransform: "uppercase", opacity: .85 }}>Dein Mantra {m.s}</div>
@@ -72,6 +84,20 @@ export default function MantraRaum({ mantras, startIndex = 0, addPunkte }) {
             Vorlesen
           </button>
         </div>
+
+        {MANTRA_MUSIK.length > 1 && (
+          <div style={{ marginTop: 18 }}>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, letterSpacing: 2, textTransform: "uppercase", opacity: .75, marginBottom: 8 }}>Musik wählen</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+              {MANTRA_MUSIK.map((t, n) => (
+                <button key={t.src} onClick={() => spurWaehlen(n)} aria-pressed={n === spur}
+                  style={{ ...knopf, height: 38, padding: "0 14px", fontSize: 14.5, fontWeight: n === spur ? 700 : 500, background: n === spur ? "rgba(255,255,255,.32)" : "rgba(255,255,255,.1)" }}>
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <button onClick={() => setI((x) => x + 1)} style={{ ...knopf, marginTop: 14, background: "transparent", border: "none", fontWeight: 400, textDecoration: "underline", textUnderlineOffset: 4 }}>
           Anderes Mantra

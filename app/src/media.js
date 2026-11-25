@@ -232,6 +232,14 @@ export const MANTRA_MEDIEN = {
   musik:  `${HF}/hf_20261117_015703_202ccf5d-3ddf-4f9e-a2c0-1e94231fea85.mp3`,
   poster: `${HF}/hf_20261117_004715_61e2b7af-9804-45ba-9d73-d1ba7bb242f4.png`,
 };
+// Auswahl im Mantra-Raum. Erster Eintrag = bisherige Musik.
+export const MANTRA_MUSIK = [
+  { name: "Stille Weite", src: MANTRA_MEDIEN.musik, vol: 0.7 },
+  // ElevenLabs Music v2.5, je 3 Min, instrumental (25.11.2026); vol gleicht die Lautheit an
+  { name: "Klangschalen", src: `${HF}/hf_20261125_052751_f383d791-9386-452a-83c2-65486aee17f5.mp3`, vol: 1 },
+  { name: "Herzöffnung", src: `${HF}/hf_20261125_052750_28b38bb8-88e5-4bc4-8c26-5d6fc6952dae.mp3`, vol: 0.45 },
+  { name: "Mondabend", src: `${HF}/hf_20261125_052750_f9c7f82d-8959-44c8-ab88-d2e1c091d440.mp3`, vol: 0.65 },
+];
 
 // Tarot-Bereich mit Expertin (17.11.2026). Ivonnes Video, Foto, Text und Link hier eintragen.
 export const TAROT_MEDIEN = {
