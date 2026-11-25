@@ -1425,24 +1425,78 @@ const TILE_KATALOG = {
   mail: { icon: "📧", t: "Nachrichten", s: "Dein Postfach öffnen", mail: true },
 };
 
+/* ── Erinnerungen aufs Handy: sanftes Angebot auf Heute, bis Push an ist ──
+   Erscheint nur mit Konto (Supabase), verschwindet nach „Später“ für 14 Tage. */
+function ErinnerungAngebot({ go }) {
+  const [zustand, setZustand] = useState(null); // null = prüft, "zeigen", "fertig", "weg"
+  const [busy, setBusy] = useState(false);
+  const [hinweis, setHinweis] = useState("");
+  const iosOhneHome = typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent)
+    && !(window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone);
+  useEffect(() => {
+    if (!supabase) return;
+    let spaeter = 0;
+    try { spaeter = Number(localStorage.getItem("s2g_push_spaeter") || 0); } catch { /* egal */ }
+    if (Date.now() < spaeter) return;
+    if (!pushMoeglich() && !iosOhneHome) return;
+    pushStatus().then((st) => setZustand(st === "aktiv" || st === "blockiert" ? null : "zeigen")).catch(() => {});
+  }, []); // eslint-disable-line
+  if (!zustand || zustand === "weg") return null;
+  const spaeter = () => {
+    try { localStorage.setItem("s2g_push_spaeter", String(Date.now() + 14 * 864e5)); } catch { /* egal */ }
+    setZustand("weg");
+  };
+  const einschalten = async () => {
+    setBusy(true); setHinweis("");
+    try {
+      await pushAktivieren();
+      await speichereTageserinnerung({ aktiv: true, uhrzeit: "19:00", morgenAktiv: true, morgenUhrzeit: "08:00", challengeAktiv: true });
+      setZustand("fertig");
+    } catch (e) {
+      setHinweis(e?.message || "Das hat nicht geklappt.");
+    }
+    setBusy(false);
+  };
+  return (
+    <Card style={{ marginBottom: 28, background: "linear-gradient(150deg, #FBF6FA 0%, #F1E2EE 100%)", border: "1px solid #E6CDE0" }}>
+      {zustand === "fertig" ? (
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.espresso, lineHeight: 1.5 }}>
+          ✓ Eingeschaltet. Morgens um 8 kommt dein Impuls, montags dein neues Wochenritual.{" "}
+          <span onClick={() => go("profil")} style={{ color: C.plum, fontWeight: 700, cursor: "pointer" }}>Zeiten ändern ›</span>
+        </div>
+      ) : (
+        <>
+          <Eyebrow color={C.plum}>🔔 Erinnerungen</Eyebrow>
+          <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 23, fontWeight: 600, color: C.espresso, lineHeight: 1.25, margin: "6px 0 8px" }}>
+            Sollen wir dich sanft erinnern?
+          </div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.5 }}>
+            Morgens deine Tageskarte und dein Challenge-Tag, montags dein neues Wochenritual. Höchstens zweimal am Tag.
+          </div>
+          {iosOhneHome && !pushMoeglich() ? (
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso, lineHeight: 1.5, marginTop: 12 }}>
+              Auf dem iPhone geht das, sobald smile2go auf deinem Home-Bildschirm liegt: unten auf <b>Teilen</b> tippen, dann <b>„Zum Home-Bildschirm“</b>.
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+              <Btn onClick={einschalten} disabled={busy}>{busy ? "Einen Moment …" : "Ja, gern"}</Btn>
+              <button onClick={spaeter} style={{ background: "none", border: "none", fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, cursor: "pointer", padding: "10px 6px" }}>Später</button>
+            </div>
+          )}
+          {iosOhneHome && !pushMoeglich() && (
+            <button onClick={spaeter} style={{ background: "none", border: "none", fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink, cursor: "pointer", padding: "10px 0 0" }}>Später</button>
+          )}
+          {hinweis && <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: "#A8552F", marginTop: 10 }}>{hinweis}</div>}
+        </>
+      )}
+    </Card>
+  );
+}
+
 function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermine, prefs, setPrefs, ch369, meinZeichen, openPunkte, drawn, horo, entries, setJournalSec, twinTon = "" }) {
   // Nur eine heute gezogene Karte gilt als gezogen — sonst wartet sie wieder.
   const heutigeKarte = drawn && (!drawn.tag || drawn.tag === new Date().toDateString()) ? drawn : null;
-  /* Morning notification: 7-8am ilho prep alert */
-  useEffect(() => {
-    const now = new Date();
-    const hour = now.getHours();
-    const lastNotif = localStorage.getItem("ilho_notif_date");
-    const today = now.toDateString();
-
-    if (hour >= 7 && hour < 9 && lastNotif !== today && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      new Notification("Dein Tag ist vorbereitet", {
-        body: "ilho hat deine Tageskarte, Mantra & Atemritual bereit. Komm in smile2go!",
-        icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23FFD700'/></svg>",
-      });
-      localStorage.setItem("ilho_notif_date", today);
-    }
-  }, []);
+  // Morgen-Impuls kommt als echter Web-Push vom Server (Edge Function "erinnerungen").
   const di = dayIndex();
   const mot = MOTIVATION[di % MOTIVATION.length];
   const hour = new Date().getHours();
@@ -1467,6 +1521,8 @@ function Heute({ name, go, metime, streak, punkte, addPunkte, termine, setTermin
       {/* Block 2 — erhoben: was ilho vorbereitet hat. Jede Zeile hat dieselbe
           Form; was man antippen kann, fuehrt an seinen Ort. */}
       <Entdecken go={go} setJournalSec={setJournalSec} />
+
+      <ErinnerungAngebot go={go} />
 
       <AbschnittTitel>Für dich vorbereitet</AbschnittTitel>
       <Card style={{ marginBottom: 32, background: "linear-gradient(150deg, #FBEFF7 0%, #F4DDEC 100%)", border: "1px solid #EACBDF" }}>
@@ -4991,7 +5047,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
       setFotoHinweis("Dieses Foto konnte nicht geladen werden — bitte ein anderes (JPG oder PNG) versuchen.");
     }
   };
-  const [erinnerung, setErinnerung] = useState({ aktiv: true, uhrzeit: "19:00" });
+  const [erinnerung, setErinnerung] = useState({ aktiv: true, uhrzeit: "19:00", morgenAktiv: true, morgenUhrzeit: "08:00", challengeAktiv: true });
   const [erinnerungInfo, setErinnerungInfo] = useState("");
   const [push, setPush] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -5012,7 +5068,12 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
     setErinnerung(e);
     if (!supabase) return;
     const ok = await speichereTageserinnerung(e);
-    setErinnerungInfo(ok ? (e.aktiv ? `✓ Täglich um ${e.uhrzeit} — nur wenn heute noch etwas offen ist.` : "Tägliche Erinnerung ist aus.") : "Konnte nicht gespeichert werden.");
+    const was = "morgenAktiv" in neu || "morgenUhrzeit" in neu
+      ? (e.morgenAktiv ? `✓ Morgen-Impuls um ${e.morgenUhrzeit}.` : "Morgen-Impuls ist aus.")
+      : "challengeAktiv" in neu
+        ? (e.challengeAktiv ? "✓ Du bekommst Bescheid, wenn ein neues Wochenritual da ist." : "Challenge-Hinweise sind aus.")
+        : (e.aktiv ? `✓ Abends um ${e.uhrzeit} — nur wenn heute noch etwas offen ist.` : "Abend-Erinnerung ist aus.");
+    setErinnerungInfo(ok ? was : "Konnte nicht gespeichert werden.");
     setTimeout(() => setErinnerungInfo(""), 3500);
   };
 
@@ -5182,20 +5243,31 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
           {pushHinweis && (
             <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#A8552F", lineHeight: 1.5, padding: "0 0 12px" }}>{pushHinweis}</div>
           )}
-          <Row>
-            <Label>Tägliche Erinnerung</Label>
-            <button onClick={() => erinnerungSetzen({ aktiv: !erinnerung.aktiv })} style={{ width: 52, height: 30, borderRadius: 20, border: "none", cursor: "pointer", position: "relative", background: erinnerung.aktiv ? C.rose : C.line }}>
-              <span style={{ position: "absolute", top: 3, left: erinnerung.aktiv ? 25 : 3, width: 24, height: 24, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
-            </button>
-          </Row>
-          {erinnerung.aktiv && (
-            <Row>
-              <Label>Um</Label>
-              <input type="time" value={erinnerung.uhrzeit} onChange={(e) => e.target.value && erinnerungSetzen({ uhrzeit: e.target.value })} style={{ fontFamily: "system-ui, sans-serif", fontSize: 18, padding: "8px 12px", border: `1.5px solid ${C.line}`, borderRadius: 10, background: C.card, color: C.espresso }} />
-            </Row>
-          )}
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: erinnerungInfo ? C.sage : C.ink, lineHeight: 1.5, padding: "0 0 12px" }}>
-            {erinnerungInfo || (push ? "Einmal am Tag, sanft: was heute noch offen ist (Tagebuch, Stille, Dankbarkeit). Hast du schon alles gemacht, bleibt dein Handy still." : "Schalte oben Push ein, damit die Erinnerung auf dein Handy kommt.")}
+          {[
+            { k: "morgenAktiv", z: "morgenUhrzeit", t: "Morgen-Impuls", s: "Tageskarte & dein Challenge-Tag, persönlich für dich" },
+            { k: "challengeAktiv", t: "Neue Challenge", s: "Montags, wenn dein neues Wochenritual freigeschaltet ist" },
+            { k: "aktiv", z: "uhrzeit", t: "Abend-Erinnerung", s: "Nur wenn heute noch etwas offen ist" },
+          ].map((x) => (
+            <div key={x.k}>
+              <Row>
+                <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
+                  <Label>{x.t}</Label>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, lineHeight: 1.4, marginTop: 2 }}>{x.s}</div>
+                </div>
+                <button aria-label={`${x.t} ${erinnerung[x.k] ? "ausschalten" : "einschalten"}`} onClick={() => erinnerungSetzen({ [x.k]: !erinnerung[x.k] })} style={{ flexShrink: 0, width: 52, height: 30, borderRadius: 20, border: "none", cursor: "pointer", position: "relative", background: erinnerung[x.k] ? C.rose : C.line }}>
+                  <span style={{ position: "absolute", top: 3, left: erinnerung[x.k] ? 25 : 3, width: 24, height: 24, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+                </button>
+              </Row>
+              {x.z && erinnerung[x.k] && (
+                <Row>
+                  <Label>Um</Label>
+                  <input type="time" value={erinnerung[x.z]} onChange={(e) => e.target.value && erinnerungSetzen({ [x.z]: e.target.value })} style={{ fontFamily: "system-ui, sans-serif", fontSize: 18, padding: "8px 12px", border: `1.5px solid ${C.line}`, borderRadius: 10, background: C.card, color: C.espresso }} />
+                </Row>
+              )}
+            </div>
+          ))}
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: erinnerungInfo ? C.sage : C.ink, lineHeight: 1.5, padding: "12px 0" }}>
+            {erinnerungInfo || (push ? "Höchstens eine Nachricht am Morgen und eine am Abend. Hast du schon alles gemacht, bleibt dein Handy still." : "Schalte oben Push ein, damit die Erinnerungen auf dein Handy kommen.")}
           </div>
         </Card>
 
