@@ -11,9 +11,10 @@ Kullanıcıyla iletişim Türkçe, kod ve arayüz Almanca (bkz. `CLAUDE.md`).
 
 ## ★ Lichtpunkte & Challenges  ·  24.11.2026  ·  DEVAM EDİYOR
 
-**Konsept:** Claude Docs → "smile2go Puan & Challenge Sistemi — Konsept"
-(https://claude.ai/artifact/G1eMpH4nrjvEbWbxiWd6MV). Ad "Lichtpunkte" kalır,
-konseptteki sistem uygulanır (ilho, 24.11.2026).
+**Tek kaynak:** `challenge-punkte-system/` klasörü (README'den başla).
+Kararlar ve açık sorular: `challenge-punkte-system/10-entscheidungen.md`.
+İlk taslak Claude Docs'ta (https://claude.ai/artifact/G1eMpH4nrjvEbWbxiWd6MV).
+Ad "Lichtpunkte" kalır, konseptteki sistem uygulanır (ilho, 24.11.2026).
 
 **Adım 1 — Datenschicht (dal `claude/lichtpunkte-datenschicht`, PR açık):**
 - `backend/supabase/migrations/20261124_lichtpunkte.sql`: `punkte_log`
@@ -26,6 +27,8 @@ konseptteki sistem uygulanır (ilho, 24.11.2026).
 - `App.jsx`: `addPunkte` sunucuya yazar; rastgele bonus kaldırıldı; ilk
   girişte eski stand bir kez sunucuya aktarılır; Einlösen sunucuda kontrol edilir.
 - **Migration Supabase'de henüz çalıştırılmadı** — ilho onayıyla çalıştır.
+  Aynı gün `challenge-punkte-system/02-punkte-regeln.md` içindeki SQL'i de
+  çalıştır; yoksa 20'den büyük puanlar (Ziel erreicht 50 vb.) 20'ye düşer.
 
 **Sıradaki adımlar (konsept, bölüm "Uygulamaya kurulum"):**
 2. Gerçek seri hesabı + Pause-Tag, seviyeler (Samen → Wald), başlangıç 120 puan
