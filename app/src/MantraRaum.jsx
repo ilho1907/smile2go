@@ -32,7 +32,7 @@ export default function MantraRaum({ mantras, startIndex = 0, addPunkte }) {
     const a = audio.current;
     if (!a) return;
     if (musik) { a.pause(); setMusik(false); return; }
-    a.volume = 0.7;
+    a.volume = MANTRA_MUSIK[spur].vol ?? 0.7;
     a.play().then(() => setMusik(true)).catch(() => setMusik(false));
     if (!gezaehlt && addPunkte) { addPunkte(3, "Mantra-Moment"); setGezaehlt(true); }
   };
@@ -44,6 +44,7 @@ export default function MantraRaum({ mantras, startIndex = 0, addPunkte }) {
     const a = audio.current;
     if (!a) return;
     a.src = MANTRA_MUSIK[n].src;
+    a.volume = MANTRA_MUSIK[n].vol ?? 0.7;
     if (musik) a.play().catch(() => setMusik(false));
   };
 
