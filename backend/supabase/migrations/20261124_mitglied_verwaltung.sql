@@ -23,8 +23,11 @@ CREATE TABLE IF NOT EXISTS mitglied_status (
   aktualisiert       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE mitglied_status ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Eigenen Status lesen" ON mitglied_status;
-CREATE POLICY "Eigenen Status lesen" ON mitglied_status FOR SELECT USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'mitglied_status' AND policyname = 'Eigenen Status lesen') THEN
+    CREATE POLICY "Eigenen Status lesen" ON mitglied_status FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+END $$;
 -- Schreiben nur über die SECURITY-DEFINER-Funktionen unten bzw. den Service-Key.
 
 -- Bestand: alle heutigen Konten sind freigeschaltet
@@ -41,8 +44,11 @@ CREATE TABLE IF NOT EXISTS admin_protokoll (
   details   JSONB
 );
 ALTER TABLE admin_protokoll ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins lesen Protokoll" ON admin_protokoll;
-CREATE POLICY "Admins lesen Protokoll" ON admin_protokoll FOR SELECT USING (ist_admin());
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'admin_protokoll' AND policyname = 'Admins lesen Protokoll') THEN
+    CREATE POLICY "Admins lesen Protokoll" ON admin_protokoll FOR SELECT USING (ist_admin());
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS admin_protokoll_user ON admin_protokoll (user_id, zeit DESC);
 
 -- ── Für die App: darf ich rein? ─────────────────────────────────────────────
@@ -64,8 +70,8 @@ END $$;
 GRANT EXECUTE ON FUNCTION mein_konto_status() TO authenticated;
 
 -- ── Mitgliederliste: Status und Name dazu ───────────────────────────────────
-DROP FUNCTION IF EXISTS admin_mitglieder(TEXT, INTEGER);
-CREATE OR REPLACE FUNCTION admin_mitglieder(p_suche TEXT DEFAULT '', p_limit INTEGER DEFAULT 50)
+-- Neuer Name statt DROP der alten Funktion: die alte bleibt für ältere App-Stände.
+CREATE OR REPLACE FUNCTION admin_mitglieder_v2(p_suche TEXT DEFAULT '', p_limit INTEGER DEFAULT 50)
 RETURNS TABLE (id UUID, email TEXT, seit TIMESTAMPTZ, letzter_login TIMESTAMPTZ, ist_coach BOOLEAN, hat_coach BOOLEAN,
                punkte NUMERIC, name TEXT, freigeschaltet BOOLEAN, gesperrt BOOLEAN)
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, auth AS $$
@@ -89,7 +95,7 @@ BEGIN
      ORDER BY u.created_at DESC
      LIMIT least(greatest(p_limit, 1), 500);
 END $$;
-GRANT EXECUTE ON FUNCTION admin_mitglieder(TEXT, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION admin_mitglieder_v2(TEXT, INTEGER) TO authenticated;
 
 -- ── Profil einer Nutzerin ───────────────────────────────────────────────────
 -- Bewusst keine Inhalte (Journal, Chats mit ilho oder der Coachin) — nur

@@ -6,7 +6,7 @@ import {
   adminKennzahlen, adminWachstum, adminMitglieder, adminSessions, adminMeldungen, adminMeldungErledigen, adminSystem, cloudErreichbar,
   adminCoachCodes, adminCoachCodeErzeugen, adminCoachCodeUmschalten,
   adminTeamPostfach, adminTeamVerlauf, adminTeamSenden, adminTeamRundnachricht,
-  adminMitgliedDetail, adminMitgliedFreischalten, adminMitgliedNotiz, adminCoachRolle, adminMitgliedSperren, adminWartendeAnzahl,
+  adminMitgliedDetail, adminMitgliedFreischalten, adminMitgliedNotiz, adminCoachRolle, adminMitgliedSperren, adminWartendeAnzahl, adminKonto, adminBestaetigungErneut, adminCoachCodeSenden,
 } from "./supabase";
 import { brauchtZweitenFaktor, zweiFaktorStatus, passwortZuruecksetzen, neuesPasswortSetzen } from "./supabase";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
@@ -373,7 +373,7 @@ function Mitglieder({ onNachricht, startFilter = "Alle", onGeaendert }) {
           <button onClick={(e) => { e.stopPropagation(); onNachricht(m); }} title="Nachricht schreiben" style={{ ...sys, fontSize: 12.5, fontWeight: 700, padding: "7px 11px", borderRadius: 14, cursor: "pointer", border: `1.5px solid ${C.line}`, background: C.card, color: C.plum }}>💬 Nachricht</button>
         </div>
       ))}
-      <Hinweis>Auf einen Namen tippen öffnet das Profil. Angezeigt werden bis zu 200 Konten. Löschen einer Nutzerin bitte über ihren eigenen „Konto löschen“-Weg oder das Supabase-Dashboard (DSGVO-Protokoll).</Hinweis>
+      <Hinweis>Auf einen Namen tippen öffnet das Profil — dort freischalten, sperren, Passwort-Link, Coach-Code, Zwei-Faktor und Löschen. Angezeigt werden bis zu 200 Konten.</Hinweis>
       {offen && <MitgliedProfil userId={offen} onZu={() => setOffen(null)} onNachricht={(m) => { setOffen(null); onNachricht(m); }}
         onGeaendert={() => { setNeu((n) => n + 1); onGeaendert && onGeaendert(); }} />}
     </Card>
@@ -383,6 +383,7 @@ function Mitglieder({ onNachricht, startFilter = "Alle", onGeaendert }) {
 const AKTION_LABEL = {
   freigeschaltet: "Freigeschaltet", freischaltung_zurueck: "Freischaltung zurückgenommen", gesperrt: "Gesperrt", entsperrt: "Sperre aufgehoben",
   notiz: "Notiz geändert", coach_rolle_an: "Coach-Rolle vergeben", coach_rolle_aus: "Coach-Rolle entzogen",
+  zwei_faktor_reset: "Zwei-Faktor zurückgesetzt", geloescht: "Konto gelöscht",
 };
 
 function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
@@ -392,6 +393,8 @@ function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
   const [busy, setBusy] = useState("");
   const [info, setInfo] = useState("");
   const [fehler, setFehler] = useState("");
+  const [loeschText, setLoeschText] = useState("");
+  const [loeschOffen, setLoeschOffen] = useState(false);
 
   const laden = () => adminMitgliedDetail(userId)
     .then((d) => { setP(d || null); setNotiz(d?.admin_notiz || ""); })
@@ -477,6 +480,20 @@ function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
                     tun("pw", () => passwortZuruecksetzen(p.email, "/"), `Link zum Zurücksetzen an ${p.email} gesendet. Sie vergibt das neue Passwort selbst.`)}
                     style={btn(C.card, C.line)}>{busy === "pw" ? "…" : "🔑 Passwort-Link senden"}</button>
                 )}
+                {!p.email_bestaetigt && (
+                  <button disabled={!!busy} onClick={() => tun("bestaetigung", () => adminBestaetigungErneut(p.email), `Bestätigungsmail erneut an ${p.email} gesendet.`)}
+                    style={btn(C.card, C.line)}>{busy === "bestaetigung" ? "…" : "📧 Bestätigungsmail erneut"}</button>
+                )}
+                {p.zwei_faktor && !p.ist_admin && (
+                  <button disabled={!!busy} onClick={() => window.confirm("Zwei-Faktor zurücksetzen? Sie meldet sich danach nur mit Passwort an und kann 2FA neu einrichten. Nur machen, wenn du sicher bist, dass sie es selbst ist (z. B. Handy verloren).") &&
+                    tun("2fa", () => adminKonto(p.id, "zwei_faktor_reset"), "Zwei-Faktor zurückgesetzt.")}
+                    style={btn(C.card, C.line)}>{busy === "2fa" ? "…" : "🔐 Zwei-Faktor zurücksetzen"}</button>
+                )}
+                {!p.ist_coach && !p.ist_admin && (
+                  <button disabled={!!busy} onClick={() => window.confirm(`Persönlichen Coach-Code erzeugen und an ${p.email} schicken (gilt 30 Tage, einmal)?`) &&
+                    tun("code", async () => { const c = await adminCoachCodeSenden(p.id, p.email); setInfo(`Code ${c} geschickt.`); }, "Coach-Code geschickt (Team-Nachricht + Push).")}
+                    style={btn(C.card, C.line)}>{busy === "code" ? "…" : "🎟 Coach-Code schicken"}</button>
+                )}
               </div>
 
               {!p.ist_admin && (
@@ -492,8 +509,35 @@ function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
                   )}
                 </div>
               )}
+              {!p.ist_admin && (
+                <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
+                  {!loeschOffen ? (
+                    <button onClick={() => setLoeschOffen(true)} style={{ ...sys, fontSize: 13, color: C.rot, background: "none", border: "none", padding: 0, cursor: "pointer" }}>🗑 Konto endgültig löschen …</button>
+                  ) : (
+                    <>
+                      <p style={{ ...sys, fontSize: 13.5, color: C.espresso, margin: "0 0 8px", lineHeight: 1.5 }}>
+                        Löscht das Konto <b>mit allen Daten</b> (Journal, Nachrichten, Termine, Community, Dateien) — nicht rückgängig zu machen.
+                        Für eine Pause lieber <b>sperren</b>. Zum Bestätigen ihre E-Mail eintippen:
+                      </p>
+                      <input value={loeschText} onChange={(e) => setLoeschText(e.target.value)} placeholder={p.email} autoComplete="off"
+                        style={{ ...sys, width: "100%", boxSizing: "border-box", fontSize: 14.5, padding: "10px 12px", borderRadius: 10, border: `1.5px solid ${C.rot}`, background: "#fff", color: C.espresso, marginBottom: 8 }} />
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button disabled={!!busy || loeschText.trim().toLowerCase() !== (p.email || "").toLowerCase()}
+                          onClick={async () => {
+                            setBusy("loeschen"); setFehler("");
+                            try { await adminKonto(p.id, "loeschen", { bestaetigung: loeschText.trim(), grund }); onGeaendert(); onZu(); }
+                            catch (e) { setFehler(String(e.message || e)); }
+                            setBusy("");
+                          }}
+                          style={{ ...btn(C.rot), opacity: loeschText.trim().toLowerCase() === (p.email || "").toLowerCase() ? 1 : 0.4 }}>{busy === "loeschen" ? "…" : "Endgültig löschen"}</button>
+                        <button onClick={() => { setLoeschOffen(false); setLoeschText(""); }} style={btn(C.card, C.line)}>Abbrechen</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
               {info && <p style={{ ...sys, fontSize: 14, color: C.sage, margin: "12px 0 0" }}>{info}</p>}
-              {fehler && <p style={{ ...sys, fontSize: 14, color: C.rot, margin: "12px 0 0" }}>{/admin-sperren|Failed to fetch|NetworkError/i.test(fehler) ? "Die Sperr-Funktion auf dem Server ist noch nicht eingerichtet (Edge Function „admin-sperren“)." : fehler}</p>}
+              {fehler && <p style={{ ...sys, fontSize: 14, color: C.rot, margin: "12px 0 0" }}>{/admin-konto|Failed to fetch|NetworkError/i.test(fehler) ? "Die Konto-Funktion auf dem Server ist noch nicht eingerichtet (Edge Function „admin-konto“)." : fehler}</p>}
             </Card>
 
             <Card style={{ marginTop: 14 }}>
