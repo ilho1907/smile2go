@@ -249,7 +249,9 @@ export const TAROT_MEDIEN = {
     rolle: "Tarot-Expertin",
     video: "",   // z. B. "/media/video/ivonne_tarot.mp4"
     foto: "",
-    text: "",
+    text: "",    // Vorstellung in Ivonnes Worten
     link: "",
+    angebot: "", // Ablauf, Dauer, Preis ihrer Legungen
+    termin: "",  // Buchungslink
   },
 };

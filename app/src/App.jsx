@@ -417,23 +417,23 @@ async function ladeWetter(setWetter) {
 }
 
 /* Mondphase — lokal berechnet (synodischer Monat 29,53 Tage) */
+const MONDPHASEN = [
+  { e: "🌑", n: "Neumond", imp: "Zeit für Neuanfänge — setze heute eine Intention." },
+  { e: "🌒", n: "Zunehmende Sichel", imp: "Erste Schritte wagen. Dein Vorhaben nimmt Form an." },
+  { e: "🌓", n: "Erstes Viertel", imp: "Dranbleiben — Hindernisse sind Wegweiser, keine Stoppschilder." },
+  { e: "🌔", n: "Zunehmender Mond", imp: "Deine Energie wächst. Nutze den Schwung." },
+  { e: "🌕", n: "Vollmond", imp: "Zeit der Fülle und Klarheit. Was darfst du loslassen?" },
+  { e: "🌖", n: "Abnehmender Mond", imp: "Dankbarkeit & Ernte. Würdige, was du geschafft hast." },
+  { e: "🌗", n: "Letztes Viertel", imp: "Loslassen und vergeben — mach Raum für Neues." },
+  { e: "🌘", n: "Abnehmende Sichel", imp: "Ruhe & Rückzug. Tanke Kraft für den nächsten Zyklus." },
+];
 const mondphase = () => {
   const synodic = 29.53058867;
   const ref = Date.UTC(2000, 0, 6, 18, 14); // Neumond 06.01.2000
   const days = (Date.now() - ref) / 864e5;
   const p = ((days % synodic) + synodic) % synodic;
   const idx = Math.floor((p / synodic) * 8 + 0.5) % 8;
-  const phasen = [
-    { e: "🌑", n: "Neumond", imp: "Zeit für Neuanfänge — setze heute eine Intention." },
-    { e: "🌒", n: "Zunehmende Sichel", imp: "Erste Schritte wagen. Dein Vorhaben nimmt Form an." },
-    { e: "🌓", n: "Erstes Viertel", imp: "Dranbleiben — Hindernisse sind Wegweiser, keine Stoppschilder." },
-    { e: "🌔", n: "Zunehmender Mond", imp: "Deine Energie wächst. Nutze den Schwung." },
-    { e: "🌕", n: "Vollmond", imp: "Zeit der Fülle und Klarheit. Was darfst du loslassen?" },
-    { e: "🌖", n: "Abnehmender Mond", imp: "Dankbarkeit & Ernte. Würdige, was du geschafft hast." },
-    { e: "🌗", n: "Letztes Viertel", imp: "Loslassen und vergeben — mach Raum für Neues." },
-    { e: "🌘", n: "Abnehmende Sichel", imp: "Ruhe & Rückzug. Tanke Kraft für den nächsten Zyklus." },
-  ];
-  return phasen[idx];
+  return { ...MONDPHASEN[idx], i: idx };
 };
 
 /* Claude-KI-Anbindung (im Prototyp live) */
@@ -9243,6 +9243,22 @@ const WOCHEN_BONUS = 20;
 // damit sich die Reihenfolge der übrigen Wochen-Türen nicht verschiebt.
 const IMMER_OFFEN = ["schatten"];
 
+/* Freischaltung der Seelen-Rituale — ein Schalter für alle Sperren.
+   "alle"   = alles offen (Stand 25.11.2026, Wunsch ilho: erst alles füllen und zeigen)
+   "punkte" = jedes Ritual öffnet sich ab seiner Lichtpunkte-Schwelle (RITUAL_SCHWELLEN)
+   "woche"  = die alte Wochentür: pro Woche genau eine offene Übung
+   Die Wochentür mit ihrem +20-Bonus bleibt in jedem Modus als Hervorhebung erhalten. */
+const RITUAL_FREISCHALTUNG = "alle";
+// Lichtpunkte, ab denen ein Ritual im Modus "punkte" offen ist. Start-Guthaben: 120.
+const RITUAL_SCHWELLEN = {
+  schatten: 0, archetyp: 0, flamme: 0, wochenorakel: 0,
+  mondrituale: 150, intuition: 150,
+  zukunftsich: 200, reisen: 200,
+  jahreskreis: 300, tarot: 300,
+  leere: 400, rueckblick: 500,
+};
+const ritualSchwelle = (tab) => RITUAL_SCHWELLEN[tab] ?? 0;
+
 /* Die Wochentür: eine Übung pro Woche, für alle gleich. Sie wird an drei
    Stellen gebraucht — oben auf "Heute", im Menü und in der Gruppe selbst. */
 function wochenTuer() {
@@ -9370,7 +9386,7 @@ function CommunityLink({ go, text = "In der Community" }) {
   );
 }
 
-function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
+function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin, punkte = 0 }) {
   const [auf, setAuf] = useState("Seele & Rituale");
   // Coach-Chat erst zeigen, wenn sie mit einer Coachin verbunden ist.
   const gruppen = MEHR_GRUPPEN
@@ -9402,7 +9418,20 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
     return d.toLocaleDateString("de-DE", { day: "numeric", month: "long" });
   };
 
+  // Ist diese Übung gerade zu? Hängt allein am Schalter RITUAL_FREISCHALTUNG.
+  const istGesperrt = (tab, offen) => {
+    if (offen || IMMER_OFFEN.includes(tab)) return false;
+    if (RITUAL_FREISCHALTUNG === "punkte") return punkte < ritualSchwelle(tab);
+    if (RITUAL_FREISCHALTUNG === "woche") return true;
+    return false;
+  };
+
   const antippen = (x, gesperrt, offen) => {
+    if (gesperrt && RITUAL_FREISCHALTUNG === "punkte") {
+      const fehlt = ritualSchwelle(x.tab) - punkte;
+      setHinweis({ tab: x.tab, text: `„${x.t}" öffnet sich ab ${ritualSchwelle(x.tab)} Lichtpunkten — dir fehlen noch ${fehlt}. Sammle sie mit deinen Ritualen und Challenges.` });
+      return;
+    }
     if (gesperrt) {
       const w = wartetWochen(x.tab);
       setHinweis({
@@ -9479,7 +9508,7 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
               background: C.goldPale, border: `1px solid ${C.line}`,
             }}>
               <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5 }}>
-                Jede Woche öffnet sich <b>eine</b> Tür. Diese Woche: <b style={{ color: C.plum }}>{wochenPool[offenIdx]?.t}</b>
+                {RITUAL_FREISCHALTUNG === "woche" ? <>Jede Woche öffnet sich <b>eine</b> Tür.</> : <>Alle Rituale sind offen. Ritual der Woche mit Bonus:</>} {RITUAL_FREISCHALTUNG === "woche" && "Diese Woche: "}<b style={{ color: C.plum }}>{wochenPool[offenIdx]?.t}</b>
               </span>
               <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 14.5, color: C.gold, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                 {countdown}
@@ -9489,7 +9518,7 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
           <div style={{ marginTop: 8 }}>
             {gr.items.map((x) => {
               const offen = rhythmus && x.tab === offenTab;
-              const gesperrt = rhythmus && !offen && !IMMER_OFFEN.includes(x.tab);
+              const gesperrt = rhythmus && istGesperrt(x.tab, offen);
               return (
               <div key={x.t}>
                 <Card
@@ -9529,7 +9558,8 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontSize: 18 }}><Sym e="🔒" size={15} /></div>
                       <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12, color: C.ink, whiteSpace: "nowrap" }}>
-                        {wartetWochen(x.tab) === 1 ? "nächste Woche" : `in ${wartetWochen(x.tab)} Wochen`}
+                        {RITUAL_FREISCHALTUNG === "punkte" ? `ab ${ritualSchwelle(x.tab)} ✨`
+                          : wartetWochen(x.tab) === 1 ? "nächste Woche" : `in ${wartetWochen(x.tab)} Wochen`}
                       </div>
                     </div>
                   ) : (
@@ -9958,6 +9988,35 @@ Regeln: Erfinde keine konkreten Fakten über ihr Leben, die oben nicht stehen. S
           </div>
         </Card>
       )}
+      {msgs.length === 0 && (
+        <>
+          <Card style={{ marginBottom: 12 }}>
+            <Eyebrow color={C.espresso}>So kommst du in Kontakt</Eyebrow>
+            {[
+              "Setz dich ruhig hin und atme dreimal langsam aus.",
+              "Stell dir vor, du öffnest eine Tür, und dahinter sitzt du selbst, zehn Jahre älter, entspannt und freundlich.",
+              "Stell ihr eine Frage, die dich gerade wirklich beschäftigt. Es gibt keine falsche Frage.",
+            ].map((s, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, padding: "5px 0", fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.55 }}>
+                <span style={{ color: C.gold, fontWeight: 700 }}>{i + 1}.</span><span>{s}</span>
+              </div>
+            ))}
+          </Card>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, fontWeight: 700, margin: "4px 0 8px" }}>Fragen zum Antippen</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+            {[
+              "Worauf bist du am meisten stolz?",
+              "Was hätte ich mir früher erlauben sollen?",
+              "Welche Sorge von heute war am Ende unwichtig?",
+              "Wie fühlt sich ein ganz normaler Tag bei dir an?",
+              "Was soll ich diese Woche anders machen?",
+              "Wer ist dir wirklich wichtig geblieben?",
+            ].map((f) => (
+              <button key={f} onClick={() => setInput(f)} style={{ padding: "8px 13px", borderRadius: 18, border: `1.5px solid ${C.line}`, background: C.card, cursor: "pointer", fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso, textAlign: "left" }}>{f}</button>
+            ))}
+          </div>
+        </>
+      )}
       {msgs.map((m, i) => (
         <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
           <div style={{
@@ -9983,6 +10042,9 @@ Regeln: Erfinde keine konkreten Fakten über ihr Leben, die oben nicht stehen. S
         />
         <Mikro size={44} onText={(t) => setInput((prev) => (prev ? prev + " " : "") + t)} />
         <Btn onClick={senden} disabled={busy || !input.trim()}>➤</Btn>
+      </div>
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 12.5, color: C.ink, opacity: 0.7, marginTop: 10, lineHeight: 1.5 }}>
+        Dein Zukunfts-Ich ist eine KI-Begleitung zur Selbstreflexion. Es kennt nur, was du in der App geschrieben hast, und ersetzt kein Gespräch mit deiner Coachin.
       </div>
     </div>
   );
@@ -10274,6 +10336,21 @@ const ARCHETYPEN = {
   entdeckerin: { name: "Die Entdeckerin", icon: "🧭", farbe: "#8E4A63", satz: "Ich folge meiner Neugier, wohin sie auch führt.", text: "Enge macht dich unruhig, Weite macht dich lebendig. Deine Kraft ist Unabhängigkeit. Dein Wachstum: Bindung als Abenteuer begreifen, nicht als Käfig." },
   weise: { name: "Die Weise", icon: "🦉", farbe: "#5C7A99", satz: "Ich vertraue dem, was ich erkenne.", text: "Du suchst Tiefe statt Lärm und siehst Zusammenhänge, wo andere nur Chaos sehen. Deine Kraft ist Klarheit. Dein Wachstum: dem Herzen so viel Stimme geben wie dem Kopf." },
 };
+/* Vertiefung je Archetyp: Gaben, Schattenseite, ein kleines Ritual und eine Journal-Frage. */
+const ARCHETYP_TIEFE = {
+  herrscherin: { gaben: ["Überblick", "Verantwortung", "Entscheidungskraft"], schatten: "Wenn alles an dir hängt, wird Kontrolle zur Last. Dann fällt es schwer, um Hilfe zu bitten.", ritual: "Gib heute bewusst eine Aufgabe ab, ohne sie zu kontrollieren. Beobachte, was in dir passiert.", frage: "Wo halte ich fest, weil ich Angst habe, dass es sonst zerbricht?" },
+  schoepferin: { gaben: ["Fantasie", "Ausdruck", "Mut zum Neuen"], schatten: "Der innere Anspruch an Perfektion lässt Ideen unfertig in der Schublade liegen.", ritual: "Mach heute zehn Minuten etwas mit den Händen: zeichnen, kochen, schreiben. Ohne Ziel, ohne Bewertung.", frage: "Welche Idee wartet schon lange darauf, dass ich sie zeige?" },
+  fuersorgliche: { gaben: ["Wärme", "Geduld", "Halt geben"], schatten: "Du gibst, bis nichts mehr übrig ist, und merkst deine eigene Erschöpfung zuletzt.", ritual: "Bevor du heute jemandem hilfst, frag dich: Was brauche ich gerade selbst? Gib dir das zuerst.", frage: "Wer kümmert sich eigentlich um mich, und lasse ich es zu?" },
+  bodenstaendige: { gaben: ["Echtheit", "Verlässlichkeit", "Gemeinschaftssinn"], schatten: "Aus Angst, nicht mehr dazuzugehören, machst du dich kleiner, als du bist.", ritual: "Sag heute einmal laut, was du wirklich denkst, auch wenn es nicht der Mehrheit entspricht.", frage: "Wo passe ich mich an, obwohl ich eigentlich anders fühle?" },
+  liebende: { gaben: ["Empathie", "Hingabe", "Verbindung"], schatten: "Du spürst die Gefühle anderer so stark, dass deine eigenen darin verschwinden.", ritual: "Leg eine Hand aufs Herz und sag dir drei Dinge, die du an dir liebst.", frage: "Wo sage ich Ja, obwohl mein Herz Nein sagt?" },
+  frohnatur: { gaben: ["Humor", "Leichtigkeit", "Gegenwart"], schatten: "Ein Witz kommt schneller als die Träne. Schwere Gefühle bleiben so unbesucht.", ritual: "Nimm dir heute fünf Minuten, in denen du nichts aufheitern musst. Spür einfach, was da ist.", frage: "Welches Gefühl lache ich gerade weg?" },
+  heldin: { gaben: ["Mut", "Ausdauer", "Gerechtigkeitssinn"], schatten: "Du kämpfst auch dort, wo Ruhe klüger wäre, und trägst zu viel allein.", ritual: "Leg heute eine Pause ein, bevor du müde bist. Ruhe ist keine Niederlage.", frage: "Welchen Kampf darf ich heute ruhen lassen?" },
+  rebellin: { gaben: ["Freiheitsdrang", "Klarheit", "Veränderungskraft"], schatten: "Widerstand wird zur Gewohnheit, auch gegen das, was dir eigentlich guttut.", ritual: "Brich heute eine kleine Routine, die dir nicht mehr dient, und setz etwas Eigenes an ihre Stelle.", frage: "Wogegen kämpfe ich, und wofür will ich eigentlich stehen?" },
+  magierin: { gaben: ["Intuition", "Vision", "Wandlung"], schatten: "Die Vision ist so groß, dass der erste kleine Schritt unsichtbar bleibt.", ritual: "Schreib deine Vision in einem Satz auf und darunter den kleinsten Schritt, den du heute gehen kannst.", frage: "Was will durch mich in die Welt kommen?" },
+  unschuldige: { gaben: ["Vertrauen", "Optimismus", "Reinheit des Herzens"], schatten: "Um die Harmonie zu schützen, übersiehst du, was dich verletzt.", ritual: "Schreib eine Enttäuschung auf und daneben, was du trotzdem weiter glaubst.", frage: "Wo schaue ich weg, um mir mein heiles Bild zu bewahren?" },
+  entdeckerin: { gaben: ["Neugier", "Unabhängigkeit", "Weitblick"], schatten: "Wenn es eng wird, gehst du, bevor du herausfindest, was Bleiben dir schenken könnte.", ritual: "Geh heute einen Weg, den du noch nie gegangen bist, und nimm dir Zeit zum Schauen.", frage: "Wovor laufe ich weg, und wohin laufe ich wirklich?" },
+  weise: { gaben: ["Klarheit", "Wissen", "Besonnenheit"], schatten: "Du denkst Gefühle durch, statt sie zu fühlen, und wartest auf die perfekte Gewissheit.", ritual: "Triff heute eine kleine Entscheidung nur aus dem Bauch heraus.", frage: "Was weiß mein Herz längst, das mein Kopf noch prüft?" },
+};
 const ARCHETYP_BLOCKS = ["Sicherheit & Stabilität", "Zugehörigkeit & Verbindung", "Veränderung & Risiko", "Unabhängigkeit & Erkenntnis"];
 const ARCHETYP_FRAGEN = [
   // Block 1: Sicherheit & Stabilität
@@ -10326,8 +10403,9 @@ function ArchetypTest({ archetyp, setArchetyp, addPunkte }) {
     const neu = { ...punkteMap, [key]: (punkteMap[key] || 0) + wert };
     setPunkteMap(neu);
     if (schritt + 1 < ARCHETYP_FRAGEN.length) { setSchritt(schritt + 1); return; }
-    const best = Object.entries(neu).sort((a, b) => b[1] - a[1])[0][0];
-    setArchetyp({ key: best, name: ARCHETYPEN[best].name, datum: new Date().toLocaleDateString("de-DE") });
+    const rang = Object.entries(neu).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+    const best = rang[0];
+    setArchetyp({ key: best, name: ARCHETYPEN[best].name, neben: rang.slice(1, 3), datum: new Date().toLocaleDateString("de-DE") });
     setSchritt(-1);
     addPunkte(15, "Archetyp entdeckt");
   };
@@ -10344,6 +10422,41 @@ function ArchetypTest({ archetyp, setArchetyp, addPunkte }) {
           <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 17, color: C.ink, lineHeight: 1.7 }}>{a.text}</p>
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink, opacity: 0.7, marginTop: 10 }}>Entdeckt am {archetyp.datum}</div>
         </Card>
+        {ARCHETYP_TIEFE[archetyp.key] && (() => {
+          const t = ARCHETYP_TIEFE[archetyp.key];
+          return (<>
+            <Card style={{ marginTop: 14 }}>
+              <Eyebrow color={C.espresso}>Deine Gaben</Eyebrow>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+                {t.gaben.map((g) => (
+                  <span key={g} style={{ padding: "6px 12px", borderRadius: 20, background: C.goldPale, border: `1px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.espresso }}>{g}</span>
+                ))}
+              </div>
+              <div style={{ marginTop: 16 }}><Eyebrow color={C.espresso}>Deine Schattenseite</Eyebrow></div>
+              <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.65, margin: "4px 0 0" }}>{t.schatten}</p>
+            </Card>
+            <Card style={{ marginTop: 12, background: C.goldPale }}>
+              <Eyebrow color={C.espresso}>Dein Ritual für heute</Eyebrow>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: 17.5, color: C.espresso, lineHeight: 1.6, margin: "4px 0 12px" }}>{t.ritual}</p>
+              <Eyebrow color={C.espresso}>Frage fürs Journal</Eyebrow>
+              <p style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17.5, color: C.espresso, lineHeight: 1.6, margin: "4px 0 0" }}>„{t.frage}“</p>
+            </Card>
+          </>);
+        })()}
+        {(archetyp.neben || []).length > 0 && (
+          <Card style={{ marginTop: 12 }}>
+            <Eyebrow color={C.espresso}>Deine Nebenkräfte</Eyebrow>
+            {archetyp.neben.map((k) => ARCHETYPEN[k] && (
+              <div key={k} style={{ display: "flex", gap: 12, alignItems: "center", padding: "8px 0" }}>
+                <Sym e={ARCHETYPEN[k].icon} size={24} />
+                <div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 16.5, color: ARCHETYPEN[k].farbe }}>{ARCHETYPEN[k].name}</div>
+                  <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink }}>{ARCHETYPEN[k].satz}</div>
+                </div>
+              </div>
+            ))}
+          </Card>
+        )}
         <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.7, margin: "14px 0" }}>
           Dein Archetyp begleitet dich ab jetzt: Dein Zukunfts-Ich kennt ihn, und deine Reflexionen dürfen in seiner Sprache zu dir sprechen.
         </p>
@@ -10385,42 +10498,122 @@ function ArchetypTest({ archetyp, setArchetyp, addPunkte }) {
 }
 
 /* ── Gemeinsame Flamme — kollektives Streak-Ritual (Community-Vorschau) ── */
+const FLAMMEN_SAETZE = [
+  "Ich bin nicht allein auf meinem Weg.",
+  "Mein Licht muss nicht groß sein, um zu wärmen.",
+  "Heute halte ich die Flamme für eine Frau, die es gerade schwer hat.",
+  "Was ich in mir pflege, wächst auch zwischen uns.",
+  "Ich darf leuchten, ohne mich zu erklären.",
+  "Jede von uns trägt einen Funken, zusammen sind wir ein Feuer.",
+  "Ich gebe weiter, was mich gestärkt hat.",
+  "Auch an dunklen Tagen bleibt ein Rest Glut.",
+  "Ich vertraue darauf, dass mein kleiner Beitrag zählt.",
+  "Heute schenke ich mir selbst ein bisschen Wärme.",
+  "Wir halten einander, auch ohne uns zu kennen.",
+  "Mein Licht ist willkommen, so wie es heute ist.",
+  "Ich lasse mich wärmen, statt immer nur zu wärmen.",
+  "Zusammen brennt es sich ruhiger.",
+];
+const FLAMMEN_STUFEN = [
+  { ab: 1, icon: "🕯️", t: "Erster Funke" },
+  { ab: 7, icon: "✨", t: "Eine Woche Licht" },
+  { ab: 21, icon: "🌟", t: "21 Tage Glut" },
+  { ab: 40, icon: "🔥", t: "40 Tage Feuer" },
+  { ab: 108, icon: "☀️", t: "108 Tage Sonne" },
+];
 function Flamme({ flamme, setFlamme, addPunkte }) {
   const heute = new Date().toDateString();
   const beigetragen = flamme?.letzterTag === heute;
   const tage = flamme?.tage || 0;
+  const [widmung, setWidmung] = useState("");
+  const [schritt, setSchritt] = useState(0); // 0 Ankommen · 1 Atmen · 2 Licht-Satz
+  const tagIdx = Math.floor(Date.now() / 864e5);
+  const satz = FLAMMEN_SAETZE[tagIdx % FLAMMEN_SAETZE.length];
   const beitragen = () => {
     if (beigetragen) return;
-    setFlamme({ letzterTag: heute, tage: tage + 1 });
+    const w = widmung.trim();
+    setFlamme({ ...(flamme || {}), letzterTag: heute, tage: tage + 1, widmungen: [...(w ? [{ text: w, datum: new Date().toLocaleDateString("de-DE") }] : []), ...(flamme?.widmungen || [])].slice(0, 30) });
+    setWidmung("");
     addPunkte(3, "Dein Licht brennt mit");
   };
+  const schritte = [
+    { t: "Ankommen", text: "Setz dich bequem hin. Wenn du magst, zünde eine echte Kerze an, oder schau einfach auf die Flamme hier." },
+    { t: "Atmen", text: "Atme dreimal langsam ein und noch langsamer aus. Mit jedem Ausatmen sinken deine Schultern ein Stück." },
+    { t: "Licht-Satz", text: `Sprich leise mit: „${satz}"` },
+  ];
+  const naechsteStufe = FLAMMEN_STUFEN.find((s) => s.ab > tage);
   return (
     <div style={{ padding: "26px 20px" }}>
       <style>{`@keyframes flicker { 0%,100% { transform: scale(1) rotate(-1deg); opacity: 1; } 30% { transform: scale(1.08) rotate(1.5deg); opacity: .92; } 60% { transform: scale(.96) rotate(-.5deg); opacity: .97; } }`}</style>
       <Eyebrow color={C.plum}>Gemeinsame Flamme</Eyebrow>
       <H size={25}>Ein Licht, das uns allen gehört</H>
       <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.7, margin: "10px 0 18px" }}>
-        Die Flamme brennt, solange jeden Tag genug von uns ihr Ritual vollenden. Dein Beitrag zählt — für alle.
+        Die Flamme brennt, solange jeden Tag genug von uns ihr Ritual vollenden. Ein Moment am Tag reicht. Dein Beitrag zählt, für dich und für alle.
       </p>
       <Card style={{ textAlign: "center", background: "#2E2320", border: "1px solid #4A3A30" }}>
         <div style={{ fontSize: 74, animation: "flicker 2.2s ease-in-out infinite", display: "inline-block", filter: "drop-shadow(0 0 18px rgba(230,190,108,.65))" }}><Sym e="🕯️" size={56} /></div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: "#F0E4D6", marginTop: 10 }}>Die Flamme brennt</div>
-        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: "#C9A98C", marginTop: 6 }}>
-          {beigetragen ? "Dein Licht brennt heute mit. 🤍" : "Gib heute dein Licht dazu."}
+        <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: "#E6CFA4", marginTop: 10, lineHeight: 1.55 }}>„{satz}“</div>
+        <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: "#C9A98C", marginTop: 8 }}>
+          {beigetragen ? "Dein Licht brennt heute mit. 🤍" : "Licht-Satz des Tages"}
         </div>
       </Card>
-      <div style={{ marginTop: 14 }}>
-        <Btn full onClick={beitragen} disabled={beigetragen}>
-          {beigetragen ? "Dein Licht brennt heute schon 🤍" : "🕯️ Mein Licht dazugeben"}
-        </Btn>
-      </div>
-      <Card style={{ marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Deine Beiträge zur Flamme</div>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: C.espresso }}>{tage} Tage</div>
+
+      {!beigetragen && (
+        <Card style={{ marginTop: 14 }}>
+          <Eyebrow color={C.espresso}>Das Flammen-Ritual · Schritt {schritt + 1} von 3</Eyebrow>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, margin: "4px 0 6px" }}>{schritte[schritt].t}</div>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.65, margin: "0 0 12px" }}>{schritte[schritt].text}</p>
+          {schritt < 2 ? (
+            <Btn full ghost onClick={() => setSchritt(schritt + 1)}>Weiter</Btn>
+          ) : (
+            <>
+              <input value={widmung} onChange={(e) => setWidmung(e.target.value)} placeholder="Wem widmest du dein Licht heute? (optional)"
+                style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 12, border: `1.5px solid ${C.line}`, fontFamily: "system-ui, sans-serif", fontSize: 16.5, outline: "none", background: C.cream, color: C.espresso, marginBottom: 10 }} />
+              <Btn full onClick={beitragen}>🕯️ Mein Licht dazugeben</Btn>
+            </>
+          )}
+        </Card>
+      )}
+      {beigetragen && (
+        <div style={{ marginTop: 14 }}>
+          <Btn full disabled>Dein Licht brennt heute schon 🤍</Btn>
         </div>
-        <div style={{ fontSize: 30 }}>{tage >= 21 ? "🌟" : tage >= 7 ? "✨" : "🕯️"}</div>
+      )}
+
+      <Card style={{ marginTop: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 15, color: C.ink }}>Deine Beiträge zur Flamme</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: C.espresso }}>{tage} Tage</div>
+          </div>
+          <div style={{ fontSize: 30 }}>{tage >= 21 ? "🌟" : tage >= 7 ? "✨" : "🕯️"}</div>
+        </div>
+        <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+          {FLAMMEN_STUFEN.map((s) => (
+            <div key={s.ab} title={s.t} style={{ flex: "1 1 50px", textAlign: "center", padding: "8px 4px", borderRadius: 12, background: tage >= s.ab ? C.goldPale : C.beige, opacity: tage >= s.ab ? 1 : 0.55 }}>
+              <div style={{ fontSize: 20 }}><Sym e={s.icon} size={20} /></div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 11.5, color: C.espresso, marginTop: 2 }}>{s.ab} T</div>
+            </div>
+          ))}
+        </div>
+        {naechsteStufe && (
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14, color: C.ink, marginTop: 10 }}>
+            Noch {naechsteStufe.ab - tage} {naechsteStufe.ab - tage === 1 ? "Tag" : "Tage"} bis „{naechsteStufe.t}“.
+          </div>
+        )}
       </Card>
+
+      {(flamme?.widmungen || []).length > 0 && (
+        <Card style={{ marginTop: 14 }}>
+          <Eyebrow color={C.espresso}>Wem dein Licht galt</Eyebrow>
+          {flamme.widmungen.slice(0, 5).map((w, i) => (
+            <div key={i} style={{ fontFamily: "Georgia, serif", fontSize: 17, color: C.espresso, padding: "5px 0" }}>
+              {w.text} <span style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, color: C.ink }}>· {w.datum}</span>
+            </div>
+          ))}
+        </Card>
+      )}
     </div>
   );
 }
@@ -10515,6 +10708,30 @@ function FreundinnenKreis({ kreis, setKreis, streak, addPunkte }) {
 }
 
 /* ── Mondkalender — Rituale zu Voll- und Neumond ── */
+/* Tage bis zum nächsten Neu- bzw. Vollmond (gleiche Rechnung wie mondphase). */
+const mondTageBis = () => {
+  const synodic = 29.53058867;
+  const days = (Date.now() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5;
+  const p = ((days % synodic) + synodic) % synodic;
+  const voll = synodic / 2;
+  return { neu: Math.round(synodic - p) % 30, voll: Math.round(p <= voll ? voll - p : synodic - p + voll) };
+};
+const MOND_RITUALE = {
+  neu: { icon: "🌑", t: "Neumond-Ritual: säen", schritte: [
+    "Räume einen kleinen Platz frei und zünde, wenn du magst, eine Kerze an.",
+    "Frag dich: Was will in den nächsten vier Wochen in mein Leben kommen?",
+    "Schreib eine Intention in der Gegenwart, als wäre sie schon wahr: „Ich …“",
+    "Lies sie dir dreimal laut vor. Spür, wo sie sich im Körper zeigt.",
+    "Speichere sie unten. In 14 Tagen, zum Vollmond, erinnere ich dich daran.",
+  ] },
+  voll: { icon: "🌕", t: "Vollmond-Ritual: loslassen", schritte: [
+    "Geh, wenn möglich, kurz ans Fenster oder nach draußen und schau in den Mond.",
+    "Frag dich: Was hat sich in den letzten Wochen gezeigt, das ich nicht mehr tragen will?",
+    "Schreib es ehrlich auf. Niemand liest mit, es wird nicht gespeichert.",
+    "Tipp auf „Loslassen“ und sieh zu, wie die Worte verglühen.",
+    "Danke dir selbst für etwas, das in diesem Zyklus gewachsen ist.",
+  ] },
+};
 function Mondrituale({ mondrit, setMondrit, addPunkte }) {
   const m = mondphase();
   const istVoll = m.n === "Vollmond";
@@ -10535,6 +10752,8 @@ function Mondrituale({ mondrit, setMondrit, addPunkte }) {
     addPunkte(10, "Neumond-Intention");
   };
   const faellige = intentionen.filter((i) => i.erinnerungTs && i.erinnerungTs <= Date.now());
+  const bis = mondTageBis();
+  const [anleitung, setAnleitung] = useState(m.i >= 2 && m.i <= 5 ? "voll" : "neu");
   return (
     <div style={{ padding: "26px 20px" }}>
       <style>{`@keyframes moonBurn { 0% { opacity: 1; } 100% { opacity: 0; transform: translateY(-20px); filter: blur(5px); } }`}</style>
@@ -10544,6 +10763,10 @@ function Mondrituale({ mondrit, setMondrit, addPunkte }) {
         <div style={{ fontSize: 54 }}><Sym e={m.e} size={54} /></div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: C.espresso, marginTop: 6 }}>{m.n}</div>
         <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.ink, lineHeight: 1.6, marginTop: 8 }}>{m.imp}</div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 12, fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.espresso }}>
+          <span>🌑 Neumond {m.i === 0 || bis.neu === 0 ? "jetzt" : `in ${bis.neu} T`}</span>
+          <span>🌕 Vollmond {m.i === 4 || bis.voll === 0 ? "jetzt" : `in ${bis.voll} T`}</span>
+        </div>
       </Card>
       {faellige.length > 0 && (
         <Card style={{ marginBottom: 14, border: `2px solid ${C.gold}` }}>
@@ -10568,6 +10791,33 @@ function Mondrituale({ mondrit, setMondrit, addPunkte }) {
           <Btn full onClick={losRitual} disabled={!text.trim() || burning}>🔥 Loslassen</Btn>
           <Btn full ghost onClick={intentionSetzen} disabled={!text.trim() || burning}>🌱 Intention setzen</Btn>
         </div>
+      </Card>
+      <Card style={{ marginTop: 14 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          {["neu", "voll"].map((k) => (
+            <button key={k} onClick={() => setAnleitung(k)} style={{ flex: 1, padding: "10px 0", borderRadius: 12, cursor: "pointer", border: `1.5px solid ${anleitung === k ? C.gold : C.line}`, background: anleitung === k ? C.goldPale : C.card, fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: C.espresso }}>
+              {MOND_RITUALE[k].icon} {k === "neu" ? "Neumond" : "Vollmond"}
+            </button>
+          ))}
+        </div>
+        <Eyebrow color={C.espresso}>{MOND_RITUALE[anleitung].t}</Eyebrow>
+        {MOND_RITUALE[anleitung].schritte.map((st, i) => (
+          <div key={i} style={{ display: "flex", gap: 10, padding: "6px 0", fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.55 }}>
+            <span style={{ color: C.gold, fontWeight: 700, minWidth: 16 }}>{i + 1}.</span><span>{st}</span>
+          </div>
+        ))}
+      </Card>
+      <Card style={{ marginTop: 14 }}>
+        <Eyebrow color={C.espresso}>Die acht Mondphasen</Eyebrow>
+        {MONDPHASEN.map((ph, i) => (
+          <div key={ph.n} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "8px 8px", margin: "0 -8px", borderRadius: 10, background: i === m.i ? C.goldPale : "transparent" }}>
+            <Sym e={ph.e} size={22} />
+            <div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 15.5, color: C.espresso }}>{ph.n}{i === m.i ? " · jetzt" : ""}</div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, lineHeight: 1.5 }}>{ph.imp}</div>
+            </div>
+          </div>
+        ))}
       </Card>
       {intentionen.length > 0 && (
         <Card style={{ marginTop: 14 }}>
@@ -10745,7 +10995,19 @@ const JAHRESFESTE = [
   { n: "Samhain", d: "31. Oktober", md: [9, 31], icon: "🌑", was: "Schleier & Ahninnen", ritual: "Schreib einen Brief an eine Frau vor dir, die dich geprägt hat." },
   { n: "Wintersonnenwende", d: "21. Dezember", md: [11, 21], icon: "❄️", was: "Stille & Neubeginn", ritual: "In der längsten Nacht: Was willst du im neuen Jahr nicht mehr mitnehmen?" },
 ];
+/* Vertiefung je Fest: worum es geht, ein Ritual in Schritten, eine Journal-Frage. */
+const JAHRESFESTE_TIEFE = {
+  "Imbolc": { bedeutung: "Mitten im Winter werden die Tage spürbar länger. Imbolc ist das Fest der ersten Regung unter der Erde: noch nichts ist zu sehen, aber etwas bereitet sich vor.", schritte: ["Lüfte einen Raum gründlich und räume eine kleine Ecke auf.", "Zünde eine weiße Kerze an.", "Schreib drei Dinge auf, die in diesem Jahr in dir erwachen dürfen."], frage: "Was in mir ist bereit, langsam aufzuwachen?" },
+  "Frühlings-Tagundnachtgleiche": { bedeutung: "Tag und Nacht sind gleich lang. Das Licht gewinnt ab jetzt. Ein Fest der Balance und des Aufbruchs.", schritte: ["Säe Samen in einen Topf, Kresse reicht.", "Leg zu jedem Samen still einen Wunsch.", "Stell den Topf ans Fenster und gieß ihn jeden Tag bewusst."], frage: "Wo in meinem Leben fehlt gerade Gleichgewicht?" },
+  "Beltane": { bedeutung: "Die Natur steht in voller Blüte. Beltane feiert Lebensfreude, Sinnlichkeit und die Kraft, die aus Freude entsteht.", schritte: ["Pflück oder kauf ein paar Blumen nur für dich.", "Tanz zu einem Lied, das dich glücklich macht.", "Iss etwas langsam und mit allen Sinnen."], frage: "Was macht mich lebendig, und wann habe ich es zuletzt getan?" },
+  "Sommersonnenwende": { bedeutung: "Der längste Tag des Jahres. Die Sonne steht am höchsten. Ein Fest der Fülle und des Feierns, bevor die Tage wieder kürzer werden.", schritte: ["Steh früh auf oder bleib lange draußen und schau ins Licht.", "Schreib deine drei größten Erfolge dieses Halbjahres auf.", "Feiere einen davon mit etwas Kleinem, das dir Freude macht."], frage: "Worauf bin ich in diesem Jahr stolz?" },
+  "Lughnasadh": { bedeutung: "Das erste Korn wird geerntet. Lughnasadh fragt: Was trägt schon Früchte, und wofür bin ich dankbar?", schritte: ["Back oder kauf ein Brot und teile es mit jemandem.", "Sag dabei laut, wofür du dankbar bist.", "Notiere, was du dieses Jahr schon geerntet hast."], frage: "Welche Früchte meiner Arbeit übersehe ich gerade?" },
+  "Herbst-Tagundnachtgleiche": { bedeutung: "Wieder sind Tag und Nacht gleich lang. Jetzt gewinnt die Dunkelheit. Zeit, die Ernte einzubringen und loszulassen, was nicht mehr trägt.", schritte: ["Sammle ein paar Herbstblätter.", "Schreib auf jedes ein Wort für etwas, das du loslassen willst.", "Gib die Blätter der Erde oder dem Wind zurück."], frage: "Was darf jetzt ruhen, damit ich Kraft sammle?" },
+  "Samhain": { bedeutung: "Das alte keltische Neujahr. Die Nächte sind lang. Samhain ehrt die, die vor uns waren, und alles, was zu Ende gegangen ist.", schritte: ["Stell ein Foto oder einen Gegenstand einer Frau auf, die dich geprägt hat.", "Zünde eine Kerze daneben an.", "Schreib ihr einen kurzen Brief: Was hast du von ihr mitgenommen?"], frage: "Welches Erbe der Frauen vor mir will ich weitertragen, und welches nicht?" },
+  "Wintersonnenwende": { bedeutung: "Die längste Nacht. Ab morgen kehrt das Licht zurück. Ein Fest der Stille, der Innenschau und der Hoffnung.", schritte: ["Mach am Abend alle Lichter aus und sitz eine Weile im Dunkeln.", "Zünde dann eine einzige Kerze an.", "Schreib auf, was du nicht ins neue Jahr mitnehmen willst, und was du dir wünschst."], frage: "Welches Licht will ich ins neue Jahr tragen?" },
+};
 function Jahreskreis({ feste, setFeste, addPunkte }) {
+  const [auf, setAuf] = useState(null);
   const jetzt = new Date();
   const jahr = jetzt.getFullYear();
   const mitDatum = JAHRESFESTE.map((f) => {
@@ -10779,8 +11041,22 @@ function Jahreskreis({ feste, setFeste, addPunkte }) {
           </div>
         )}
       </Card>
-      {mitDatum.slice(1).map((f) => (
-        <Card key={f.n} style={{ marginBottom: 10, display: "flex", gap: 14, alignItems: "center" }}>
+      {JAHRESFESTE_TIEFE[naechstes.n] && (
+        <Card style={{ marginBottom: 14 }}>
+          <Eyebrow color={C.espresso}>Worum es geht</Eyebrow>
+          <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 16, color: C.ink, lineHeight: 1.65, margin: "4px 0 12px" }}>{JAHRESFESTE_TIEFE[naechstes.n].bedeutung}</p>
+          <Eyebrow color={C.espresso}>Dein Ritual</Eyebrow>
+          {JAHRESFESTE_TIEFE[naechstes.n].schritte.map((st, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, padding: "4px 0", fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.55 }}>
+              <span style={{ color: C.gold, fontWeight: 700 }}>{i + 1}.</span><span>{st}</span>
+            </div>
+          ))}
+          <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 17, color: C.espresso, lineHeight: 1.6, marginTop: 10 }}>„{JAHRESFESTE_TIEFE[naechstes.n].frage}“</div>
+        </Card>
+      )}
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, fontWeight: 700, margin: "4px 0 10px" }}>Das ganze Jahr · zum Aufklappen</div>
+      {mitDatum.slice(1).map((f) => (<div key={f.n}>
+        <Card onClick={() => setAuf(auf === f.n ? null : f.n)} style={{ marginBottom: auf === f.n ? 0 : 10, display: "flex", gap: 14, alignItems: "center", cursor: "pointer" }}>
           <div style={{ width: 46, height: 46, borderRadius: 14, background: C.beige, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}><Sym e={f.icon} size={22} /></div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>{f.n} {gefeiert.includes(f.n) ? "🤍" : ""}</div>
@@ -10788,7 +11064,14 @@ function Jahreskreis({ feste, setFeste, addPunkte }) {
           </div>
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.gold, fontWeight: 700 }}>{f.tage} T</div>
         </Card>
-      ))}
+        {auf === f.n && JAHRESFESTE_TIEFE[f.n] && (
+          <div style={{ padding: "12px 16px 14px", margin: "0 0 10px", background: C.goldPale, borderRadius: "0 0 16px 16px", border: `1px solid ${C.line}`, borderTop: "none" }}>
+            <p style={{ fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink, lineHeight: 1.6, margin: "0 0 8px" }}>{JAHRESFESTE_TIEFE[f.n].bedeutung}</p>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: 16.5, color: C.espresso, lineHeight: 1.55 }}>{f.ritual}</div>
+            <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.espresso, marginTop: 8 }}>„{JAHRESFESTE_TIEFE[f.n].frage}“</div>
+          </div>
+        )}
+      </div>))}
     </div>
   );
 }
@@ -10842,6 +11125,25 @@ function RitualDerLeere({ leere, setLeere, addPunkte }) {
             </div>
             <Btn full onClick={starten}>Stille beginnen</Btn>
           </Card>
+          <Card style={{ marginTop: 14 }}>
+            <Eyebrow color={C.espresso}>Ideen für deinen stillen Tag</Eyebrow>
+            {[
+              ["🚶‍♀️", "Ein langer Spaziergang ohne Kopfhörer"],
+              ["📓", "Auf Papier schreiben statt tippen"],
+              ["🍵", "Eine Mahlzeit ganz in Ruhe, ohne Bildschirm"],
+              ["📚", "Ein Buch, das schon lange wartet"],
+              ["🛁", "Ein warmes Bad oder eine lange Dusche"],
+              ["☎️", "Eine Freundin anrufen statt schreiben"],
+              ["😴", "Früher schlafen gehen, ohne schlechtes Gewissen"],
+            ].map(([i, t]) => (
+              <div key={t} style={{ display: "flex", gap: 10, alignItems: "center", padding: "5px 0", fontFamily: "system-ui, sans-serif", fontSize: 15.5, color: C.ink }}>
+                <Sym e={i} size={18} /><span>{t}</span>
+              </div>
+            ))}
+            <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 13.5, color: C.ink, opacity: 0.75, marginTop: 8, lineHeight: 1.5 }}>
+              Tipp: Sag deinen Liebsten vorher Bescheid, dann musst du dich nicht erklären.
+            </div>
+          </Card>
           {(leere?.meilensteine || 0) > 0 && (
             <Card style={{ marginTop: 14, background: C.goldPale }}>
               <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 16.5, color: C.espresso }}>
@@ -10863,6 +11165,14 @@ const WOCHEN_ORAKEL = [
   { karte: "Die klare Stimme", icon: "🗣️", text: "Sprich diese Woche einmal aus, was du sonst schluckst. Ruhig, klar, ohne Rechtfertigung.", coach: "Ein Satz reicht. Du musst niemanden überzeugen, nur dich selbst hören." },
   { karte: "Der stille Garten", icon: "🌿", text: "Nicht alles muss wachsen. Manches darf einfach ruhen und Wurzeln schlagen.", coach: "Wenn du dich gerade unproduktiv fühlst: Wurzeln sieht man nicht. Sie zählen trotzdem." },
   { karte: "Das offene Fenster", icon: "🪟", text: "Eine Möglichkeit steht offen — kleiner, als du erwartet hast. Schau genau hin.", coach: "Die großen Türen sind selten. Die kleinen Fenster übersehen wir dauernd." },
+  { karte: "Die Wurzel", icon: "🌳", text: "Woher kommst du, und was davon trägt dich heute noch? Diese Woche geht es um deine Kraftquellen.", coach: "Wenn alles wackelt, schau nicht nach oben, schau nach unten. Was hält dich?" },
+  { karte: "Der Spiegel", icon: "🪞", text: "Was dich an anderen stört, erzählt oft etwas über dich. Schau diese Woche freundlich hin.", coach: "Nicht urteilen, nur bemerken. Das reicht schon für eine ganze Woche." },
+  { karte: "Die Pause", icon: "⏸️", text: "Bevor du antwortest, atme einmal. Diese Woche gehört dem Moment dazwischen.", coach: "Ein Atemzug Abstand verändert mehr Gespräche, als du denkst." },
+  { karte: "Das Netz", icon: "🕸️", text: "Du musst es nicht allein schaffen. Bitte diese Woche bewusst um eine Kleinigkeit.", coach: "Hilfe annehmen ist auch eine Fähigkeit. Übe sie im Kleinen." },
+  { karte: "Die Ernte", icon: "🌾", text: "Schau zurück: Was hast du in den letzten Monaten geschafft, ohne es zu feiern?", coach: "Ihr seid so schnell beim nächsten Ziel. Bleibt diese Woche einmal beim Erreichten stehen." },
+  { karte: "Der Kompass", icon: "🧭", text: "Eine Entscheidung wartet. Frag nicht, was richtig ist, frag, was zu dir passt.", coach: "Es gibt selten den einen richtigen Weg. Es gibt deinen." },
+  { karte: "Die Welle", icon: "🌊", text: "Gefühle kommen und gehen. Diese Woche lässt du sie da sein, ohne sie festzuhalten.", coach: "Eine Welle bricht immer. Du musst nur nicht gegen sie anschwimmen." },
+  { karte: "Der Funke", icon: "✨", text: "Etwas will dich begeistern. Folge diese Woche einer kleinen Neugier, ohne Zweck.", coach: "Freude braucht keinen Nutzen. Sie ist der Nutzen." },
 ];
 function WochenOrakel({ wo, setWo, addPunkte }) {
   const kw = kalenderwoche();
@@ -12277,7 +12587,7 @@ export default function IlhoApp() {
               {tab === "impressum" && <Impressum />}
               {tab === "datenschutz" && <Datenschutz />}
               {tab === "tagebuch" && <Journal entries={entries} setEntries={setEntries} ritual={ritual} setRitual={setRitual} ch369={ch369} setCh369={setCh369} mm={mm} setMm={setMm} briefe={briefe} setBriefe={setBriefe} briefPost={briefPost} setBriefPost={setBriefPost} akarte={akarte} setAkarte={setAkarte} addPunkte={addPunkte} streak={streak} punkte={punkte} initialSec={journalSec} />}
-              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} bindung={bindung} openPunkte={() => setPkModal(true)} openThema={(id) => { setThemaId(id); go("thema"); }} openExpertin={openExpertin} /></>}
+              {tab === "mehr" && <><MediaBanner video={S2GVID.mehr} poster={S2GIMG.mehr} title="Mehr" subtitle="Entdecke alle Bereiche" height={190} /><Mehr go={go} addPunkte={addPunkte} punkte={punkte} bindung={bindung} openPunkte={() => setPkModal(true)} openThema={(id) => { setThemaId(id); go("thema"); }} openExpertin={openExpertin} /></>}
               {tab === "thema" && <ThemaScreen id={themaId} go={go} bindung={bindung} />}
               {tab === "ziele" && <><MediaBanner video={S2GVID.ziele} poster={S2GIMG.ziele} title="Ziele" subtitle="Deine Richtung, dein Nordstern" height={190} /><Ziele ziele={ziele} setZiele={setZiele} addPunkte={addPunkte} /></>}
               {tab === "aufgaben" && <><MediaBanner video={S2GVID.aufgaben} poster={S2GIMG.aufgaben} title="Aufgaben" subtitle="Schritt für Schritt" height={190} /><Aufgaben aufgaben={aufgaben} setAufgaben={setAufgaben} addPunkte={addPunkte} go={go} ch369={ch369} setCh369={setCh369} akarte={akarte} setAkarte={setAkarte} /></>}
