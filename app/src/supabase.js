@@ -578,16 +578,24 @@ export function tagesAktivitaet(tag) {
 export async function ladeTageserinnerung() {
   const user = await nutzerin();
   if (!user) return null;
-  const { data } = await supabase.from("tageserinnerung").select("aktiv, uhrzeit").eq("user_id", user.id).maybeSingle();
-  return data ? { aktiv: data.aktiv, uhrzeit: String(data.uhrzeit).slice(0, 5) } : null;
+  const { data } = await supabase.from("tageserinnerung")
+    .select("aktiv, uhrzeit, morgen_aktiv, morgen_uhrzeit, challenge_aktiv").eq("user_id", user.id).maybeSingle();
+  return data ? {
+    aktiv: data.aktiv, uhrzeit: String(data.uhrzeit).slice(0, 5),
+    morgenAktiv: data.morgen_aktiv ?? true, morgenUhrzeit: String(data.morgen_uhrzeit ?? "08:00").slice(0, 5),
+    challengeAktiv: data.challenge_aktiv ?? true,
+  } : null;
 }
 
-export async function speichereTageserinnerung({ aktiv, uhrzeit }) {
+// Abend-Erinnerung (aktiv/uhrzeit), Morgen-Impuls (morgenAktiv/morgenUhrzeit)
+// und Challenge-Push (challengeAktiv) — alles in einer Zeile pro Nutzerin.
+export async function speichereTageserinnerung({ aktiv, uhrzeit, morgenAktiv = true, morgenUhrzeit = "08:00", challengeAktiv = true }) {
   const user = await nutzerin();
   if (!user) return false;
   const zeitzone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Berlin";
   const { error } = await supabase.from("tageserinnerung").upsert(
-    { user_id: user.id, aktiv, uhrzeit, zeitzone, updated_at: new Date().toISOString() },
+    { user_id: user.id, aktiv, uhrzeit, zeitzone, morgen_aktiv: morgenAktiv, morgen_uhrzeit: morgenUhrzeit,
+      challenge_aktiv: challengeAktiv, updated_at: new Date().toISOString() },
     { onConflict: "user_id" },
   );
   if (error) console.warn("speichereTageserinnerung:", error.message);

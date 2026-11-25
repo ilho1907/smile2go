@@ -2,7 +2,8 @@
 // smile2go · Supabase Edge Function "erinnerungen"
 // Termin-Erinnerungen per Web-Push: 24 h und 1 h vor Beginn,
 // an Klientin UND Coachin — plus die tägliche Erinnerung zur Wunschzeit
-// ("Heute noch offen: Tagebuch …"). Aufgerufen von pg_cron alle 15 Min.
+// ("Heute noch offen: Tagebuch …"), der Morgen-Impuls (Tageskarte, Challenge-Tag)
+// und montags der Hinweis aufs neue Wochenritual. Aufgerufen von pg_cron alle 15 Min.
 // Idempotent: jeder Termin wird vor dem Senden atomar markiert,
 // daher ist der Aufruf ohne JWT unkritisch (es wird nur Fälliges gesendet).
 // Deploy:  supabase functions deploy erinnerungen --use-api --no-verify-jwt
@@ -26,7 +27,7 @@ const SPALTEN = "id, beginn, kanal, video_url, coach_id, klientinnen(user_id, an
 const uhrzeit = (iso: string) =>
   new Date(iso).toLocaleString("de-DE", { timeZone: "Europe/Berlin", weekday: "long", hour: "2-digit", minute: "2-digit" });
 
-async function pushAn(userId: string | null, titel: string, text: string, url: string) {
+async function pushAn(userId: string | null, titel: string, text: string, url: string, tag = "termin") {
   if (!userId) return 0;
   const { data: abos } = await admin.from("push_abos").select("endpoint, p256dh, auth_key").eq("user_id", userId);
   let n = 0;
@@ -35,7 +36,7 @@ async function pushAn(userId: string | null, titel: string, text: string, url: s
     try {
       await webpush.sendNotification(
         { endpoint: a.endpoint, keys: { p256dh: a.p256dh, auth: a.auth_key } },
-        JSON.stringify({ titel, text, url, tag: "termin" }),
+        JSON.stringify({ titel, text, url, tag }),
       );
       n++;
     } catch (e) {
@@ -79,7 +80,44 @@ async function tagesErinnerungen() {
     if (!offen.length) continue; // alles gemacht — dann schweigt die App
     const liste = offen.length === 1 ? offen[0] : `${offen.slice(0, -1).join(", ")} und ${offen.at(-1)}`;
     const titel = TITEL[new Date().getDate() % TITEL.length];
-    n += await pushAn(z.user_id, titel, `Heute noch offen: ${liste}. Schon fünf Minuten tun dir gut.`, "/");
+    n += await pushAn(z.user_id, titel, `Heute noch offen: ${liste}. Schon fünf Minuten tun dir gut.`, "/", "abend");
+  }
+  return n;
+}
+
+// ── Morgen-Impuls + Wochenritual: persönlich, höchstens ein Push pro Morgen ──
+type Morgen = {
+  user_id: string; vorname: string | null; challenge_tag: number | null; challenge_heute: boolean;
+  karte_gezogen: boolean; morgen: boolean; montag: boolean;
+};
+const MORGEN_SAETZE = [
+  "Deine Tageskarte wartet auf dich",
+  "Eine neue Karte liegt für dich bereit",
+  "Dein Tag beginnt mit einer Karte für dich",
+];
+
+export function morgenText(z: Morgen, wochentag = new Date().getDay()) {
+  const hallo = z.vorname ? `Guten Morgen, ${z.vorname}` : "Guten Morgen";
+  const challenge = z.challenge_tag && z.challenge_tag >= 1 && z.challenge_tag <= 21 && !z.challenge_heute
+    ? `Tag ${z.challenge_tag} von 21 deiner Dankbarkeits-Challenge` : "";
+  if (z.montag) {
+    const rest = challenge ? ` Heute ist außerdem ${challenge}.` : "";
+    return { titel: `${hallo} 🌙`, text: `Neue Woche, neues Ritual: dein Wochenritual ist freigeschaltet.${rest}`, url: "/" };
+  }
+  const karte = z.karte_gezogen ? "" : MORGEN_SAETZE[wochentag % MORGEN_SAETZE.length];
+  const saetze = [karte, challenge ? `Heute ist ${challenge}` : ""].filter(Boolean);
+  if (!saetze.length) return null; // Karte schon gezogen, keine Challenge offen — dann still bleiben
+  return { titel: `${hallo} ✨`, text: `${saetze.join(". ")}. Ein paar Minuten nur für dich.`, url: "/" };
+}
+
+async function morgenErinnerungen() {
+  const { data, error } = await admin.rpc("faellige_morgenerinnerungen");
+  if (error) throw error;
+  let n = 0;
+  for (const z of (data ?? []) as Morgen[]) {
+    if (!z.morgen && !z.montag) continue;
+    const m = morgenText(z.morgen ? z : { ...z, karte_gezogen: true, challenge_tag: null });
+    if (m) n += await pushAn(z.user_id, m.titel, m.text, m.url, z.montag ? "woche" : "morgen");
   }
   return n;
 }
@@ -103,6 +141,7 @@ Deno.serve(async () => {
         `${t.klientinnen?.anzeigename ?? "Klientin"} · ${t.kanal}${t.video_url ? "" : " · noch kein Videolink hinterlegt"}`, "/#coach");
     }
     gesendet += await tagesErinnerungen();
+    gesendet += await morgenErinnerungen();
     return new Response(JSON.stringify({ gesendet }), { headers: { "content-type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { "content-type": "application/json" } });
