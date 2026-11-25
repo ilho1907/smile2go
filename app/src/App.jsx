@@ -10991,7 +10991,7 @@ function Qigong({ qigong, setQigong, addPunkte }) {
         </p>
         {abend
           ? <Btn small ghost onClick={() => { setAbend(false); setAktiv(null); }}>Alle acht zeigen</Btn>
-          : <Btn small onClick={() => { setAbend(true); setLaufend(true); setSek(0); setAktiv(5); }}>Abendritual starten</Btn>}
+          : <Btn small onClick={() => { setAbend(true); if (!laufend) { setLaufend(true); setSek(0); } setAktiv(5); }}>Abendritual starten</Btn>}
       </Card>
 
       {liste.map((b) => {
