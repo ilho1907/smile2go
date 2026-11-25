@@ -18,7 +18,7 @@ import MediaBanner from "./MediaBanner";
 import BookOpen from "./BookOpen";
 import Federkiel from "./Federkiel";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, BRIEF_UMSCHLAG, FUELLE_VIDEO, QIGONG_VIDEOS, GEFUEHRTE_MEDITATIONEN } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, BRIEF_UMSCHLAG, FUELLE_VIDEO, QIGONG_VIDEOS, GEFUEHRTE_MEDITATIONEN, KARTEN_RUECKSEITE } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { meinKontoStatus } from "./supabase";
@@ -2180,20 +2180,14 @@ function Orakel({ drawn, setDrawn, energie, horo, setHoro, addPunkte, setMeinZei
               cursor: "pointer",
             }}
           >
-            {/* Rückseite */}
+            {/* Rückseite: Pflaume mit Lotus und Mondphasen (media.js › KARTEN_RUECKSEITE) */}
             <div style={{
-              position: "absolute", inset: 0, backfaceVisibility: "hidden",
-              borderRadius: 18, background: "linear-gradient(165deg, #2A2E6E 0%, #15163A 100%)",
+              position: "absolute", inset: 0, backfaceVisibility: "hidden", overflow: "hidden",
+              borderRadius: 18, background: `#5A2550 url(${KARTEN_RUECKSEITE}) center / cover no-repeat`,
               border: "2px solid #D9B56A", boxShadow: "0 22px 50px rgba(0,0,0,.55), 0 0 40px rgba(217,181,106,.18)",
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18,
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end",
             }}>
-              <div style={{ position: "absolute", inset: 9, borderRadius: 12, border: "1px solid rgba(217,181,106,.55)" }} />
-              <svg width="120" height="120" viewBox="0 0 120 120" fill="none" stroke="#D9B56A" strokeWidth="1" style={{ animation: "floaty 3s ease-in-out infinite" }}>
-                <circle cx="60" cy="60" r="22" /><circle cx="60" cy="60" r="34" strokeDasharray="2 4" />
-                {Array.from({ length: 16 }).map((_, i) => { const w = (i * Math.PI) / 8; return <line key={i} x1={60 + Math.cos(w) * 40} y1={60 + Math.sin(w) * 40} x2={60 + Math.cos(w) * (i % 2 ? 50 : 58)} y2={60 + Math.sin(w) * (i % 2 ? 50 : 58)} />; })}
-                <path d="M66 46a15 15 0 1 0 0 28a12 12 0 1 1 0-28z" fill="#D9B56A" stroke="none" />
-              </svg>
-              <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", color: "#F3E6C4", fontSize: 18 }}>Tippe zum Ziehen</div>
+              <div style={{ width: "100%", padding: "34px 0 22px", textAlign: "center", background: "linear-gradient(180deg, rgba(58,20,52,0) 0%, rgba(58,20,52,.82) 100%)", fontFamily: "Georgia, serif", fontStyle: "italic", color: "#F3E6C4", fontSize: 18, textShadow: "0 1px 6px rgba(0,0,0,.5)" }}>Tippe zum Ziehen</div>
             </div>
             {/* Vorderseite */}
             <div style={{

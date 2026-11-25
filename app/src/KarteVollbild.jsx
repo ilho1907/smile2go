@@ -15,6 +15,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { KARTEN_RUECKSEITE } from "./media";
 
 const GOLD = "#D9B56A";
 const CREME = "#F6EBCF";
@@ -216,14 +217,7 @@ export default function KarteVollbild({ karte, bild, fallback, quelle, modus = "
         <div className="s2gVb-drehbuehne" aria-hidden="true" style={{ opacity: dreht ? 1 : 0 }}>
           <div className="s2gVb-burst" />
           <div ref={drehRef} className="s2gVb-dreh">
-            <div className="s2gVb-seite s2gVb-ruecken">
-              <div className="s2gVb-rahmen" />
-              <svg width="110" height="110" viewBox="0 0 120 120" fill="none" stroke={GOLD} strokeWidth="1">
-                <circle cx="60" cy="60" r="22" /><circle cx="60" cy="60" r="34" strokeDasharray="2 4" />
-                {Array.from({ length: 16 }).map((_, i) => { const w = (i * Math.PI) / 8; return <line key={i} x1={60 + Math.cos(w) * 40} y1={60 + Math.sin(w) * 40} x2={60 + Math.cos(w) * (i % 2 ? 50 : 58)} y2={60 + Math.sin(w) * (i % 2 ? 50 : 58)} />; })}
-                <path d="M66 46a15 15 0 1 0 0 28a12 12 0 1 1 0-28z" fill={GOLD} stroke="none" />
-              </svg>
-            </div>
+            <div className="s2gVb-seite s2gVb-ruecken" style={{ backgroundImage: `url(${KARTEN_RUECKSEITE})` }} />
             <div className="s2gVb-seite s2gVb-front">
               {bild ? <img src={bild} alt="" draggable="false" /> : <div className="s2gVb-ersatz">{fallback}</div>}
             </div>
@@ -317,8 +311,7 @@ const CSS = `
 .s2gVb-dreh { position: relative; width: min(268px, 66vw); aspect-ratio: 268 / 418; transform-style: preserve-3d; opacity: 0; }
 .s2gVb-seite { position: absolute; inset: 0; border-radius: 18px; backface-visibility: hidden; -webkit-backface-visibility: hidden;
   overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.6), 0 0 60px rgba(217,181,106,.35); }
-.s2gVb-ruecken { background: linear-gradient(165deg, #2A2E6E 0%, #15163A 100%); border: 2px solid ${GOLD};
-  display: flex; align-items: center; justify-content: center; }
+.s2gVb-ruecken { background: #5A2550 center / cover no-repeat; border: 2px solid ${GOLD}; }
 .s2gVb-rahmen { position: absolute; inset: 9px; border-radius: 12px; border: 1px solid rgba(217,181,106,.55); }
 .s2gVb-front { transform: rotateY(180deg); background: #FBF6EC; padding: 7px; box-sizing: border-box; }
 .s2gVb-front img, .s2gVb-front .s2gVb-ersatz { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; display: block; }
