@@ -18,7 +18,7 @@ import MediaBanner from "./MediaBanner";
 import BookOpen from "./BookOpen";
 import Federkiel from "./Federkiel";
 import { Ikon, Sym } from "./Ikon";
-import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, FUELLE_VIDEO, QIGONG_VIDEOS, GEFUEHRTE_MEDITATIONEN } from "./media";
+import { VIDEO as S2GVID, IMG as S2GIMG, KARTEN as S2GKARTEN, FEUER_VIDEO, FEUER_VIDEO_ERSATZ, AUDIO as S2GAUDIO, THEMEN_BILDER, ENTDECKEN_BILDER, FUF_LOGO, FUF_PLAKATE, DANKBARKEIT_VIDEO, DANKBARKEIT_POSTER, RITUAL_VIDEOS, BRIEF_VIDEO, BRIEF_UMSCHLAG, FUELLE_VIDEO, QIGONG_VIDEOS, GEFUEHRTE_MEDITATIONEN } from "./media";
 import { sprich, stoppSprache, spracheMoeglich, stimmeAn, stimmeSetzen,
   hoereZu, zuhoerenMoeglich, sperrbildschirm } from "./sprache";
 import { meinKontoStatus } from "./supabase";
@@ -3334,65 +3334,42 @@ const isoTag = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,
 const deDatum = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 function BriefUmschlag({ onOffen }) {
+  // Echter Umschlag (Foto) — beim Tippen spielt ein kurzer Clip: Siegel bricht, Klappe geht auf, Brief gleitet heraus.
   const [auf, setAuf] = useState(false);
+  const [clipBereit, setClipBereit] = useState(false);
+  const vidRef = useRef(null);
+  const fertigRef = useRef(false);
+  const weiter = () => { if (fertigRef.current) return; fertigRef.current = true; onOffen(); };
   const oeffnen = () => {
     if (auf) return;
     setAuf(true);
-    setTimeout(onOffen, 1700);
+    const v = vidRef.current;
+    // Notfall: falls der Clip nicht laeuft, trotzdem weiter
+    const notfall = setTimeout(weiter, 6500);
+    if (!v) { clearTimeout(notfall); setTimeout(weiter, 900); return; }
+    v.currentTime = 0;
+    v.play().catch(() => { clearTimeout(notfall); setTimeout(weiter, 900); });
   };
-  const funken = [
-    { l: "8%", t: "18%", d: 0 }, { l: "88%", t: "12%", d: 0.6 }, { l: "18%", t: "82%", d: 1.1 },
-    { l: "80%", t: "78%", d: 0.3 }, { l: "50%", t: "4%", d: 0.9 }, { l: "94%", t: "48%", d: 1.4 }, { l: "3%", t: "50%", d: 0.5 },
-  ];
   return (
-    <div style={{ textAlign: "center", padding: "10px 0 6px" }}>
+    <div style={{ textAlign: "center", padding: "4px 0 6px" }}>
       <style>{`
-        @keyframes s2gFunke { 0%,100% { opacity: 0; transform: scale(.4) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(25deg); } }
-        @keyframes s2gSchweben { 0%,100% { transform: translateY(0) rotateX(8deg) rotateY(-10deg); } 50% { transform: translateY(-8px) rotateX(4deg) rotateY(8deg); } }
-        @keyframes s2gSiegel { to { opacity: 0; transform: translate(-50%, -50%) scale(1.8); } }
-        @keyframes s2gAura { 0%,100% { opacity: .45; transform: scale(.92); } 50% { opacity: .85; transform: scale(1.05); } }
+        @keyframes s2gUmschlagAtmen { 0%,100% { transform: scale(1); } 50% { transform: scale(1.015); } }
+        @keyframes s2gTippHinweis { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
       `}</style>
       <div onClick={oeffnen} role="button" aria-label="Zukunftsbrief öffnen"
-        style={{ position: "relative", width: 260, height: 190, margin: "70px auto 18px", perspective: 900, cursor: auf ? "default" : "pointer" }}>
-        {/* Feen-Aura */}
-        <div style={{ position: "absolute", inset: -30, borderRadius: "50%", background: `radial-gradient(circle, rgba(246,234,211,.95), rgba(194,82,110,.18) 55%, transparent 72%)`, animation: "s2gAura 3.2s ease-in-out infinite" }} />
-        {funken.map((f, i) => (
-          <div key={i} style={{ position: "absolute", left: f.l, top: f.t, fontSize: i % 2 ? 13 : 18, color: C.gold, animation: `s2gFunke 2.4s ${f.d}s ease-in-out infinite`, pointerEvents: "none", zIndex: 6 }}>✦</div>
-        ))}
-        <div style={{ position: "absolute", inset: 0, animation: auf ? "none" : "s2gSchweben 4s ease-in-out infinite", transform: auf ? "rotateX(10deg)" : undefined, transition: "transform .6s" }}>
-          {/* Rückseite */}
-          <div style={{ position: "absolute", inset: 0, borderRadius: 14, background: `linear-gradient(160deg, ${C.plum}, ${C.rose})`, boxShadow: "0 26px 40px -18px rgba(138,63,90,.6)", zIndex: 1 }} />
-          {/* Briefpapier */}
-          <div style={{
-            position: "absolute", left: "9%", width: "82%", height: "80%", bottom: "8%", borderRadius: 8,
-            background: `linear-gradient(180deg, #FFFFFF, ${C.card})`, boxShadow: "0 4px 14px rgba(0,0,0,.12)",
-            transform: auf ? "translateY(-50%)" : "translateY(0)", transition: "transform 1s .55s cubic-bezier(.2,.8,.2,1)", zIndex: 2,
-            padding: "16px 14px", textAlign: "left", fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 16, color: C.plum,
-          }}>
-            Liebe Ich, …
-            <div style={{ marginTop: 10, height: 1, background: C.line }} />
-            <div style={{ marginTop: 10, height: 1, background: C.line }} />
-            <div style={{ marginTop: 10, height: 1, background: C.line, width: "70%" }} />
-          </div>
-          {/* Vordertasche */}
-          <div style={{ position: "absolute", inset: 0, borderRadius: 14, zIndex: 3, clipPath: "polygon(0 0, 50% 56%, 100% 0, 100% 100%, 0 100%)", background: `linear-gradient(200deg, ${C.goldSoft}, ${C.rose} 85%)` }} />
-          {/* Klappe */}
-          <div style={{
-            position: "absolute", left: 0, top: 0, width: "100%", height: "60%", transformOrigin: "top center",
-            clipPath: "polygon(0 0, 100% 0, 50% 100%)", background: `linear-gradient(180deg, ${C.gold}, ${C.goldSoft})`,
-            transform: auf ? "perspective(600px) rotateX(180deg)" : "perspective(600px) rotateX(0deg)", zIndex: auf ? 1 : 4, filter: auf ? "brightness(.85)" : "none",
-            transition: "transform .8s cubic-bezier(.4,.1,.2,1), z-index 0s .4s", borderRadius: "14px 14px 0 0",
-          }} />
-          {/* Siegel */}
-          <div style={{
-            position: "absolute", left: "50%", top: "58%", transform: "translate(-50%, -50%)", zIndex: 5,
-            width: 46, height: 46, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, #E07A93, ${C.plum})`,
-            boxShadow: "0 4px 10px rgba(0,0,0,.25), inset 0 2px 3px rgba(255,255,255,.35)", display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#FFF3F0", fontSize: 20, animation: auf ? "s2gSiegel .5s forwards" : "none",
-          }}>♡</div>
-        </div>
+        style={{
+          position: "relative", width: "100%", maxWidth: 340, aspectRatio: "1 / 1", margin: "0 auto 14px",
+          borderRadius: 18, overflow: "hidden", cursor: auf ? "default" : "pointer", background: "#EFD9DF",
+          boxShadow: "0 22px 40px -20px rgba(138,63,90,.55)",
+          animation: auf ? "none" : "s2gUmschlagAtmen 4.5s ease-in-out infinite",
+        }}>
+        <img src={BRIEF_UMSCHLAG.bild} alt="Versiegelter Umschlag" draggable={false}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+        <video ref={vidRef} src={BRIEF_UMSCHLAG.video} muted playsInline preload="auto"
+          onCanPlay={() => setClipBereit(true)} onEnded={() => setTimeout(weiter, 700)}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: auf && clipBereit ? 1 : 0, transition: "opacity .25s" }} />
       </div>
-      <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum }}>
+      <div style={{ fontFamily: "Georgia, serif", fontStyle: "italic", fontSize: 18, color: C.plum, animation: auf ? "none" : "s2gTippHinweis 2.6s ease-in-out infinite" }}>
         {auf ? "Dein Brief öffnet sich …" : "Tippe auf den Umschlag, um deinen Brief zu öffnen"}
       </div>
     </div>

@@ -41,6 +41,8 @@ export const QIGONG_VIDEOS = {
 // Die Schritte stehen als Text im Video; Musik ist im Code erzeugt.
 const HFC = "https://d2ol7oe51mr4n9.cloudfront.net/user_38M7vUEZt4QSLH4tMycofRwoTS7";
 export const BRIEF_VIDEO = { video: `${HFC}/34adafa4-1006-4c86-8afd-7779f415891a.mp4`, poster: `${HFC}/04c6503a-a146-43e7-9010-07a464ca5b9c.jpg` };
+// Zukunftsbrief-Umschlag: Foto (= erstes Bild des Clips) + Oeffnen-Clip (Kling, Start- und Endbild, 25.11.2026)
+export const BRIEF_UMSCHLAG = { bild: `${HFC}/a94dd43e-d98f-4be1-9f67-2bf2d9014e79.jpg`, video: `${HFC}/c2502355-182f-4e07-b87e-f86ea4b78c56.mp4` };
 export const FUELLE_VIDEO = { video: `${HFC}/89740c91-2613-4ff5-b440-1191e52eac28.mp4`, poster: `${HFC}/aea88864-8f64-4079-8e44-86a4eb5f5c74.jpg` };
 
 // Orakel-Kartenbilder (Higgsfield · nano_banana_pro, 4K, 3:4) — 44-Karten-Göttinnen-Deck, einheitlicher 8K-3D-HD-Kartenstil
