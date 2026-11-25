@@ -70,6 +70,7 @@ export function ExpertinProfil({ e, go }) {
         {e.buchungslink
           ? <a href={webUrl(e.buchungslink)} target="_blank" rel="noopener noreferrer" style={{ ...knopf, background: "linear-gradient(90deg,#8E4C85,#C2418F)", color: "#fff" }}>Kennenlernen buchen</a>
           : <button onClick={() => go("buchen")} style={{ ...knopf, border: "none", background: "linear-gradient(90deg,#8E4C85,#C2418F)", color: "#fff" }}>Kennenlernen buchen</button>}
+        <button onClick={() => go("community")} style={{ ...knopf, border: "1.5px solid #EFDFEC", color: "#6E3568", background: "#F9EAF4" }}>In der Community</button>
         {e.website && <a href={webUrl(e.website)} target="_blank" rel="noopener noreferrer" style={{ ...knopf, border: "1.5px solid #EFDFEC", color: "#2E2430", background: "#FFFDFE" }}>Website</a>}
         {e.instagram && <a href={instaUrl(e.instagram)} target="_blank" rel="noopener noreferrer" style={{ ...knopf, border: "1.5px solid #EFDFEC", color: "#2E2430", background: "#FFFDFE" }}>Instagram</a>}
       </div>

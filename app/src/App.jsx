@@ -2617,6 +2617,7 @@ function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, 
 
   const chips = [
     { k: "heute", t: "📔 Journaling" },
+    { k: "meditation", t: "🧘 Meditation" },
     { k: "rituale", t: "🔮 Rituale" },
     { k: "brief", t: "💌 Zukunftsbrief" },
     { k: "money", t: "💰 Fülle" },
@@ -2658,6 +2659,10 @@ function Journal({ entries, setEntries, ritual, setRitual, ch369, setCh369, mm, 
           </Federkiel>
         </BookOpen>
       )}
+      {sec === "meditation" && <>
+        <MeditationCine addPunkte={(n, l) => addPunkte(n, l || "Meditation abgeschlossen")} />
+        <GefuehrteMeditationen addPunkte={addPunkte} />
+      </>}
       {sec === "rituale" && <Rituale ritual={ritual} setRitual={setRitual} addPunkte={addPunkte} />}
       {sec === "brief" && <Brief briefe={briefe} setBriefe={setBriefe} briefPost={briefPost} setBriefPost={setBriefPost} addPunkte={addPunkte} />}
       {sec === "money" && <MoneyMind mm={mm} setMm={setMm} addPunkte={addPunkte} />}
@@ -8611,9 +8616,11 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
     ? alle.filter((x) => [x.titel, x.einleitung, x.coach_name, BED[x.beduerfnis]?.t].some((t) => (t || "").toLowerCase().includes(wort))).slice(0, 30)
     : [];
   const APP_TOENE = ["unruhig", "neuanfang", "schlaflos", "kraftlos", "einsam", "selbstzweifel", "trennung", "angst", "koerper"];
-  const appRegale = MEHR_GRUPPEN.filter((g) => ["Üben & Ankommen", "Seele & Rituale", "Wachsen & Spielen"].includes(g.g));
+  // „Üben & Ankommen" steht jetzt im Themen-Karussell unter „Mehr" — hier
+  // nur noch die Rituale; in der Suche bleiben die Übungen auffindbar.
+  const appRegale = MEHR_GRUPPEN.filter((g) => ["Seele & Rituale", "Wachsen & Spielen"].includes(g.g));
   const appTreffer = wort
-    ? appRegale.flatMap((g) => g.items).filter((x) => [x.t, x.s].some((t) => (t || "").toLowerCase().includes(wort)))
+    ? [...UEBEN_ANKOMMEN, ...appRegale.flatMap((g) => g.items)].filter((x) => [x.t, x.s].some((t) => (t || "").toLowerCase().includes(wort)))
     : [];
   const AppKarte = ({ x, kopie }) => (
     <button onClick={() => go(x.tab)} aria-hidden={kopie || undefined} tabIndex={kopie ? -1 : undefined} style={{ flex: "0 0 auto", width: 132, padding: 0, border: "none", background: "none", textAlign: "left", cursor: "pointer", scrollSnapAlign: "start" }}>
@@ -8803,8 +8810,8 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
       ) : vorhanden.length === 0 ? (
         <>
           <ThemenRegal />
-          <MehrKarte />
           <AppRegale />
+          <MehrKarte />
           <Card style={{ background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})` }}>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.espresso, marginBottom: 7, lineHeight: 1.25 }}>
               Kennst du eine Coachin?
@@ -8842,9 +8849,10 @@ function Gemeinschaft({ go, bindung, openExpertin }) {
             );
           })}
 
-          <MehrKarte />
-
           <AppRegale />
+
+          {/* Die Community-Karte bleibt ganz unten. */}
+          <MehrKarte />
 
           <MiniLeiste />
 
@@ -9201,6 +9209,7 @@ function ThemaScreen({ id, go, bindung }) {
           </Card>
         ))}
       </div>
+      <CommunityLink go={go} text={`„${th.t}" in der Community`} />
 
       {th.hilfen && (
         <>
@@ -9315,28 +9324,20 @@ function useSekundenTakt(aktiv = true) {
   return jetzt;
 }
 
+/* „Üben & Ankommen" ist keine Menü-Gruppe mehr: die Übungen stehen als
+   Bildkarten im Themen-Karussell unter „Mehr" (Wunsch ilho, 25.11.2026). */
+const UEBEN_ANKOMMEN = [
+  { icon: "🧘", t: "Meditation", s: "Geführt & still · für jeden Tag", tab: "meditation", bild: ENTDECKEN_BILDER.meditation },
+  { icon: "🌿", t: "Qigong", s: "Die Acht Brokate · zehn ruhige Minuten", tab: "qigong", bild: ENTDECKEN_BILDER.qigong },
+  { icon: "🖐️", t: "Achtsamkeit", s: "Atem, Sinne & Körperreise für zwischendurch", tab: "achtsamkeit", bild: ENTDECKEN_BILDER.achtsamkeit },
+  { icon: "🤍", t: "Dankbarkeit", s: "Drei Dinge am Tag · dein Rückblick", tab: "dankbarkeit", bild: DANKBARKEIT_POSTER },
+  { icon: "🕊️", t: "Loslassen", s: "Was darf gehen? · ablegen & freigeben", tab: "loslassen", bild: ENTDECKEN_BILDER.loslassen },
+];
+
+/* Reihenfolge: „Seele & Rituale" ist die Hauptgruppe und steht oben.
+   Coaching und Termin buchen sind raus — Termine bucht sie im Profil der
+   Coachin/Expertin. Mediathek wohnt jetzt bei „Deine Vorlagen". */
 const MEHR_GRUPPEN = [
-    { g: "Deine Coachin", items: [
-      { icon: "🌸", t: "Coaching", s: "Deine Begleitung, Pakete & Fortschritt", tab: "coaching" },
-      { icon: "💬", t: "Coach-Chat", s: "Schreib ihr, wenn dich etwas bewegt", tab: "coach" },
-      { icon: "📅", t: "Termin buchen", s: "Zeit für dich", tab: "buchen" },
-      { icon: "📁", t: "Mediathek", s: "Materialien deiner Coachin & deine Dateien", tab: "media" },
-    ] },
-    { g: "Deine Vorlagen", items: [
-      { icon: "🎓", t: "Deine Kurse", s: "Kurse, die du gewählt hast", tab: "kurse" },
-      { icon: "📓", t: "Tagebuch & Vorlagen", s: "Deine Schreib-Vorlagen an einem Ort", tab: "tagebuch" },
-    ] },
-    { g: "Fortschritt & Challenge", items: [
-      { icon: "🏆", t: "Challenges & Ziele", s: "Aufgaben, Meilensteine & deine Ziele", tab: "aufgaben" },
-      { icon: "✨", t: "Abzeichen & Statistiken", s: "Lichtpunkte, Abzeichen und deine Zahlen", tab: "__punkte" },
-      { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index & Trend", tab: "fortschritt" },
-    ] },
-    { g: "Üben & Ankommen", items: [
-      { icon: "🌿", t: "Qigong", s: "Die Acht Brokate · zehn ruhige Minuten", tab: "qigong" },
-      { icon: "🖐️", t: "Achtsamkeit", s: "Atem, Sinne & Körperreise für zwischendurch", tab: "achtsamkeit" },
-      { icon: "🤍", t: "Dankbarkeit", s: "Drei Dinge am Tag · dein Rückblick", tab: "dankbarkeit" },
-      { icon: "🕊️", t: "Loslassen", s: "Was darf gehen? · ablegen & freigeben", tab: "loslassen" },
-    ] },
     { g: "Seele & Rituale", items: [
       { icon: "🦋", t: "Archetypen-Test", s: "Welche innere Kraft leitet dich?", tab: "archetyp" },
       { icon: "🕰️", t: "Zukunfts-Ich", s: "Sprich mit dir in 10 Jahren", tab: "zukunftsich" },
@@ -9347,6 +9348,19 @@ const MEHR_GRUPPEN = [
       { icon: "🎡", t: "Jahreskreis", s: "Die acht Feste des Jahres", tab: "jahreskreis" },
       { icon: "🃏", t: "Wochen-Orakel", s: "Die Karte deiner Coachin · jede Woche neu", tab: "wochenorakel" },
       { icon: "🕊️", t: "Ritual der Leere", s: "24 Stunden ohne App — bewusst", tab: "leere" },
+    ] },
+    { g: "Deine Coachin", items: [
+      { icon: "💬", t: "Coach-Chat", s: "Schreib ihr, wenn dich etwas bewegt", tab: "coach" },
+    ] },
+    { g: "Deine Vorlagen & Mediathek", items: [
+      { icon: "📁", t: "Mediathek", s: "Materialien deiner Coachin & deine Dateien", tab: "media" },
+      { icon: "🎓", t: "Deine Kurse", s: "Kurse, die du gewählt hast", tab: "kurse" },
+      { icon: "📓", t: "Tagebuch & Vorlagen", s: "Deine Schreib-Vorlagen an einem Ort", tab: "tagebuch" },
+    ] },
+    { g: "Fortschritt & Challenge", items: [
+      { icon: "🏆", t: "Challenges & Ziele", s: "Aufgaben, Meilensteine & deine Ziele", tab: "aufgaben" },
+      { icon: "✨", t: "Abzeichen & Statistiken", s: "Lichtpunkte, Abzeichen und deine Zahlen", tab: "__punkte" },
+      { icon: "📊", t: "Mein Fortschritt", s: "Wohlbefindens-Index & Trend", tab: "fortschritt" },
     ] },
     { g: "Wachsen & Spielen", items: [
       { icon: "🛤️", t: "Transformations-Reisen", s: "21 & 40 Tage zu einem Thema", tab: "reisen" },
@@ -9364,8 +9378,23 @@ const MEHR_GRUPPEN = [
     ] },
 ];
 
+/* Kleiner Weg in die Community — unter Themen- und Expertinnen-Bildern. */
+function CommunityLink({ go, text = "In der Community" }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+      <button onClick={() => go("community")} style={{
+        display: "inline-flex", alignItems: "center", gap: 7, minHeight: 42, padding: "0 16px", borderRadius: 999,
+        border: `1.5px solid ${C.line}`, background: C.card, cursor: "pointer",
+        fontFamily: "system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: C.plum,
+      }}>
+        <Ikon n="sprechblase" size={15} />{text} ›
+      </button>
+    </div>
+  );
+}
+
 function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
-  const [auf, setAuf] = useState("Deine Coachin");
+  const [auf, setAuf] = useState("Seele & Rituale");
   // Coach-Chat erst zeigen, wenn sie mit einer Coachin verbunden ist.
   const gruppen = MEHR_GRUPPEN
     .map((gr) => ({ ...gr, items: gr.items.filter((it) => it.tab !== "coach" || bindung?.coach_id) }))
@@ -9421,34 +9450,21 @@ function Mehr({ go, addPunkte, openThema, bindung, openPunkte, openExpertin }) {
       <style>{`@keyframes wocheGlanz { 0%,100% { box-shadow: 0 4px 16px rgba(193,145,60,.22); } 50% { box-shadow: 0 6px 26px rgba(193,145,60,.5); } }`}</style>
       <Eyebrow>Mehr</Eyebrow>
 
-      {/* Was die Coachinnen anbieten steht vor dem eigenen Werkzeugkasten —
-          das ist der Grund, warum es die Plattform gibt. */}
-      <H size={25} style={{ marginBottom: 10 }}>Was unsere Coachinnen anbieten</H>
-      <Card onClick={() => go("kurse")} style={{ marginBottom: 24, display: "flex", gap: 13, alignItems: "center", background: `linear-gradient(135deg, ${C.card}, ${C.goldPale})`, border: `1px solid ${C.goldSoft}` }}>
-        <div style={{ width: 46, height: 46, borderRadius: 13, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}><Sym e="🎓" size={22} /></div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontWeight: 700, fontSize: 17.5, color: C.espresso }}>
-            {bindung?.coach_name || "Kurse, Pakete & Retreats"}
-          </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: 14.5, color: C.ink, marginTop: 2 }}>
-            {bindung?.coach_name
-              ? "Kurse, Pakete und Retreats deiner Coachin"
-              : "Verbinde dich mit einer Coachin, dann steht hier ihr Angebot"}
-          </div>
-        </div>
-        <span style={{ color: C.gold, fontSize: 20 }}>›</span>
-      </Card>
-
       {/* Themen: nach dem sortiert, was gerade los ist — nicht nach Funktion.
-          Wischbar wie „Entdecken" auf Heute. */}
+          Dazwischen die Übungen aus „Üben & Ankommen" als eigene Bildkarten. */}
       <Karussell
         titel="Themen & Bereiche"
         unter="Was beschäftigt dich gerade?"
-        karten={THEMEN.map((th) => ({ key: th.id, titel: th.t, unter: th.was, bild: THEMEN_BILDER[th.id] }))}
-        onOeffnen={(k) => openThema?.(k.key)}
-        stil={{ marginBottom: 22 }}
+        karten={[
+          ...THEMEN.map((th) => ({ key: th.id, titel: th.t, unter: th.was, bild: THEMEN_BILDER[th.id], art: "Thema" })),
+          ...UEBEN_ANKOMMEN.map((x) => ({ key: "ueben:" + x.tab, titel: x.t, unter: x.s, bild: x.bild, art: "Üben" })),
+        ]}
+        onOeffnen={(k) => (k.key.startsWith("ueben:") ? go(k.key.slice(6)) : openThema?.(k.key))}
+        stil={{ marginBottom: 8 }}
       />
-      <ExpertinnenKarussell onOeffnen={openExpertin} stil={{ marginBottom: 22 }} />
+      <CommunityLink go={go} text="Zu den Themen in der Community" />
+      <ExpertinnenKarussell onOeffnen={openExpertin} stil={{ marginBottom: 8 }} />
+      <CommunityLink go={go} text="Expertinnen in der Community" />
       {gruppen.map((gr) => {
         const rhythmus = WOCHEN_GRUPPEN.includes(gr.g);
         const ersterBlock = rhythmus && gr.g === gruppen.find((g) => WOCHEN_GRUPPEN.includes(g.g))?.g;
