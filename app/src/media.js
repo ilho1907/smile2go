@@ -230,6 +230,10 @@ export const MANTRA_MEDIEN = {
   musik:  `${HF}/hf_20261117_015703_202ccf5d-3ddf-4f9e-a2c0-1e94231fea85.mp3`,
   poster: `${HF}/hf_20261117_004715_61e2b7af-9804-45ba-9d73-d1ba7bb242f4.png`,
 };
+// Auswahl im Mantra-Raum. Erster Eintrag = bisherige Musik.
+export const MANTRA_MUSIK = [
+  { name: "Stille Weite", src: MANTRA_MEDIEN.musik },
+];
 
 // Tarot-Bereich mit Expertin (17.11.2026). Ivonnes Video, Foto, Text und Link hier eintragen.
 export const TAROT_MEDIEN = {
