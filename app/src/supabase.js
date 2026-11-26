@@ -772,6 +772,48 @@ export async function adminKonto(userId, aktion, extra = {}) {
 }
 export const adminMitgliedSperren = (userId, sperren, grund = "") => adminKonto(userId, sperren ? "sperren" : "entsperren", { grund });
 
+export const adminMitgliedAktivitaet = (userId) => adminRpc("admin_mitglied_aktivitaet", { p_user: userId });
+export const adminDateiLink = (userId, bucket, pfad) => adminKonto(userId, "datei_link", { bucket, pfad }).then((d) => d.url);
+
+// ilho im Admin-Bereich: bekommt nur Konto-Metadaten und Zähler (keine Inhalte)
+// und schlägt Schritte vor. Ausführen tut immer die Admin per Klick.
+export const ILHO_ADMIN_AKTIONEN = ["freischalten", "passwort_link", "bestaetigung", "zwei_faktor_reset", "coach_code", "nachricht", "sperren"];
+const ILHO_ADMIN_SYSTEM = `Du bist ilho, die KI-Assistenz im Admin-Bereich von smile2go (Frauen-Coaching-App, DACH).
+Die Admin fragt dich zu EINEM Konto. Du siehst nur Konto-Metadaten, Zähler und Status – keine privaten Inhalte (Journal, Gespräche).
+Antworte auf Deutsch, knapp: höchstens 6 kurze Stichpunkte. Benenne Auffälligkeiten (z. B. nie angemeldet, Punkte gesunken,
+Sync-Problem, unbestätigte E-Mail) und schlage konkrete nächste Schritte vor. Erfinde nichts, was nicht in den Daten steht.
+Wenn der Nutzerin eine Nachricht helfen würde, schreibe einen kurzen, warmen Entwurf in Du-Form (max. 3 Sätze)
+in eine eigene Zeile, beginnend mit "ENTWURF:".
+Ganz am Ende, in einer eigenen Zeile, "AKTIONEN:" gefolgt von passenden IDs, kommagetrennt, nur aus:
+${ILHO_ADMIN_AKTIONEN.join(", ")}. Sperren nur bei klaren Hinweisen (z. B. gemeldete Beiträge). Löschen schlägst du nie vor.
+Wenn nichts zu tun ist: "AKTIONEN: keine".`;
+
+export async function adminIlho(kontext, frage = "") {
+  const basis = import.meta.env?.VITE_AI_FUNCTION_URL;
+  if (!supabase || !basis) throw new Error("Keine Verbindung");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Nicht angemeldet");
+  const res = await fetch(basis, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: import.meta.env?.VITE_SUPABASE_ANON_KEY || "" },
+    body: JSON.stringify({
+      system: ILHO_ADMIN_SYSTEM,
+      max_tokens: 600,
+      messages: [{ role: "user", content: `Konto-Daten (JSON):\n${JSON.stringify(kontext)}\n\n${frage || "Was fällt dir auf und was soll ich tun?"}` }],
+    }),
+  });
+  let d = {};
+  try { d = await res.json(); } catch { /* leer */ }
+  if (!res.ok) throw new Error(d?.error || "ilho ist gerade nicht erreichbar");
+  const text = d?.content?.[0]?.text || d?.text || d?.antwort || "";
+  const zeilen = text.split("\n");
+  const aktZeile = zeilen.find((z) => /^\s*AKTIONEN:/i.test(z)) || "";
+  const entZeile = zeilen.find((z) => /^\s*ENTWURF:/i.test(z)) || "";
+  const aktionen = aktZeile.replace(/^\s*AKTIONEN:/i, "").split(",").map((x) => x.trim().toLowerCase()).filter((x) => ILHO_ADMIN_AKTIONEN.includes(x));
+  const antwort = zeilen.filter((z) => z !== aktZeile && z !== entZeile).join("\n").trim();
+  return { antwort, aktionen, entwurf: entZeile.replace(/^\s*ENTWURF:/i, "").trim() };
+}
+
 // Bestätigungsmail erneut senden (E-Mail noch nicht bestätigt)
 export async function adminBestaetigungErneut(email) {
   if (!supabase) throw new Error("Keine Verbindung");

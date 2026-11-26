@@ -4,6 +4,7 @@
 //   aktion "sperren"            Supabase-Bann + mitglied_status.gesperrt (+ Grund)
 //   aktion "entsperren"         Bann aufheben
 //   aktion "zwei_faktor_reset"  alle 2FA-Faktoren löschen (Handy verloren)
+//   aktion "datei_link"         5-Minuten-Link zu einer Datei der Nutzerin (protokolliert)
 //   aktion "loeschen"           Konto + alle Daten löschen (Art. 17 DSGVO);
 //                               nur mit bestaetigung = E-Mail der Nutzerin
 // Jede Aktion landet in admin_protokoll. Admin-Konten sind ausgenommen.
@@ -22,7 +23,8 @@ const URL_ = Deno.env.get("SUPABASE_URL")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ZEHN_JAHRE = "87600h";
-const AKTIONEN = ["sperren", "entsperren", "zwei_faktor_reset", "loeschen"];
+const AKTIONEN = ["sperren", "entsperren", "zwei_faktor_reset", "datei_link", "loeschen"];
+const BUCKETS = ["klientin-dateien", "gemeinschaft"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -37,7 +39,7 @@ Deno.serve(async (req) => {
   const { data: istAdmin } = await alsAdmin.rpc("ist_admin");
   if (istAdmin !== true) return json({ error: "Nur für Admins" }, 403);
 
-  let body: { user_id?: string; aktion?: string; grund?: string; bestaetigung?: string } = {};
+  let body: { user_id?: string; aktion?: string; grund?: string; bestaetigung?: string; bucket?: string; pfad?: string } = {};
   try { body = await req.json(); } catch { /* leer */ }
   const ziel = body.user_id;
   const aktion = body.aktion || "";
@@ -67,6 +69,18 @@ Deno.serve(async (req) => {
     if (stErr) return json({ error: stErr.message }, 500);
     await protokoll(aktion === "sperren" ? "gesperrt" : "entsperrt", grund ? { grund } : null);
     return json({ ok: true });
+  }
+
+  if (aktion === "datei_link") {
+    const bucket = body.bucket || "";
+    const pfad = body.pfad || "";
+    if (!BUCKETS.includes(bucket) || !pfad || pfad.includes("..")) return json({ error: "Datei ungültig" }, 400);
+    // Nur Dateien im Ordner dieser Nutzerin (Pfad beginnt mit ihrer ID)
+    if (!pfad.startsWith(`${ziel}/`)) return json({ error: "Datei gehört nicht zu diesem Konto" }, 403);
+    const { data: link, error } = await admin.storage.from(bucket).createSignedUrl(pfad, 300);
+    if (error || !link) return json({ error: error?.message || "Kein Link" }, 500);
+    await protokoll("datei_angesehen", { bucket, pfad });
+    return json({ ok: true, url: link.signedUrl });
   }
 
   if (aktion === "zwei_faktor_reset") {

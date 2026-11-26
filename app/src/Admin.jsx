@@ -7,6 +7,7 @@ import {
   adminCoachCodes, adminCoachCodeErzeugen, adminCoachCodeUmschalten,
   adminTeamPostfach, adminTeamVerlauf, adminTeamSenden, adminTeamRundnachricht,
   adminMitgliedDetail, adminMitgliedFreischalten, adminMitgliedNotiz, adminCoachRolle, adminMitgliedSperren, adminWartendeAnzahl, adminKonto, adminBestaetigungErneut, adminCoachCodeSenden,
+  adminMitgliedAktivitaet, adminDateiLink, adminIlho,
 } from "./supabase";
 import { brauchtZweitenFaktor, zweiFaktorStatus, passwortZuruecksetzen, neuesPasswortSetzen } from "./supabase";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
@@ -383,7 +384,7 @@ function Mitglieder({ onNachricht, startFilter = "Alle", onGeaendert }) {
 const AKTION_LABEL = {
   freigeschaltet: "Freigeschaltet", freischaltung_zurueck: "Freischaltung zurückgenommen", gesperrt: "Gesperrt", entsperrt: "Sperre aufgehoben",
   notiz: "Notiz geändert", coach_rolle_an: "Coach-Rolle vergeben", coach_rolle_aus: "Coach-Rolle entzogen",
-  zwei_faktor_reset: "Zwei-Faktor zurückgesetzt", geloescht: "Konto gelöscht",
+  zwei_faktor_reset: "Zwei-Faktor zurückgesetzt", geloescht: "Konto gelöscht", datei_angesehen: "Datei angesehen",
 };
 
 function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
@@ -395,10 +396,54 @@ function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
   const [fehler, setFehler] = useState("");
   const [loeschText, setLoeschText] = useState("");
   const [loeschOffen, setLoeschOffen] = useState(false);
+  const [akt, setAkt] = useState(undefined);      // Aktivität: undefined = lädt, null = nicht verfügbar
+  const [ilho, setIlho] = useState(null);         // { antwort, aktionen, entwurf }
+  const [ilhoFrage, setIlhoFrage] = useState("");
+  const [ilhoLaedt, setIlhoLaedt] = useState(false);
+  const [entwurf, setEntwurf] = useState("");
 
-  const laden = () => adminMitgliedDetail(userId)
-    .then((d) => { setP(d || null); setNotiz(d?.admin_notiz || ""); })
-    .catch((e) => { setP(null); setFehler(String(e.message || e)); });
+  const laden = () => Promise.all([
+    adminMitgliedDetail(userId)
+      .then((d) => { setP(d || null); setNotiz(d?.admin_notiz || ""); })
+      .catch((e) => { setP(null); setFehler(String(e.message || e)); }),
+    adminMitgliedAktivitaet(userId).then((a) => setAkt(a || null)).catch(() => setAkt(null)),
+  ]);
+
+  const ilhoFragen = async () => {
+    if (!p) return;
+    setIlhoLaedt(true); setFehler("");
+    try {
+      // Nur Metadaten an die KI — keine Notiz-Inhalte anderer, keine privaten Texte
+      const { protokoll, admin_notiz, ...konto } = p;
+      const r = await adminIlho({ konto, aktivitaet: akt ? { ...akt, community: (akt.community || []).length } : null,
+        letzte_admin_aktionen: (protokoll || []).slice(0, 5).map((e) => e.aktion) }, ilhoFrage.trim());
+      setIlho(r); setEntwurf(r.entwurf || "");
+    } catch (e) { setFehler(String(e.message || e)); }
+    setIlhoLaedt(false);
+  };
+
+  // Ausführen einer von ilho vorgeschlagenen Aktion — immer mit Rückfrage
+  const ilhoAusfuehren = (id) => {
+    const map = {
+      freischalten: ["Freischalten?", () => adminMitgliedFreischalten(p.id, true), "Freigeschaltet."],
+      passwort_link: [`Passwort-Link an ${p.email} senden?`, () => passwortZuruecksetzen(p.email, "/"), "Passwort-Link gesendet."],
+      bestaetigung: [`Bestätigungsmail an ${p.email} senden?`, () => adminBestaetigungErneut(p.email), "Bestätigungsmail gesendet."],
+      zwei_faktor_reset: ["Zwei-Faktor zurücksetzen?", () => adminKonto(p.id, "zwei_faktor_reset"), "Zwei-Faktor zurückgesetzt."],
+      coach_code: [`Coach-Code an ${p.email} schicken?`, () => adminCoachCodeSenden(p.id, p.email), "Coach-Code geschickt."],
+      sperren: [`${p.name || p.email} sperren?`, () => adminMitgliedSperren(p.id, true, "Vorschlag ilho"), "Gesperrt."],
+    };
+    if (id === "nachricht") { if (entwurf.trim()) return; onNachricht({ id: p.id, email: p.email }); return; }
+    const m = map[id]; if (!m) return;
+    if (window.confirm(m[0])) tun("ilho-" + id, m[1], m[2]);
+  };
+  const ILHO_LABEL = { freischalten: "✓ Freischalten", passwort_link: "🔑 Passwort-Link", bestaetigung: "📧 Bestätigungsmail",
+    zwei_faktor_reset: "🔐 2FA zurücksetzen", coach_code: "🎟 Coach-Code", nachricht: "💬 Nachricht", sperren: "⛔ Sperren" };
+
+  const dateiOeffnen = async (d) => {
+    setFehler("");
+    try { const url = await adminDateiLink(p.id, d.bucket, d.pfad); window.open(url, "_blank", "noopener"); laden(); }
+    catch (e) { setFehler(String(e.message || e)); }
+  };
   useEffect(() => { laden(); }, [userId]);
   useEffect(() => { const esc = (e) => e.key === "Escape" && onZu(); window.addEventListener("keydown", esc); return () => window.removeEventListener("keydown", esc); }, []);
 
@@ -464,6 +509,109 @@ function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
               <Zeile l="Community-Beiträge">{zahl(p.community_beitraege)}{p.meldungen_gegen ? ` · ${p.meldungen_gegen} Meldung(en)` : ""}</Zeile>
               <Hinweis>Journal, Gespräche mit ilho und mit der Coachin bleiben privat und erscheinen hier nicht.</Hinweis>
             </Card>
+
+            <Card style={{ marginTop: 14, border: `1.5px solid ${C.gold}` }}>
+              <Eyebrow>✨ ilho fragen</Eyebrow>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <input value={ilhoFrage} onChange={(e) => setIlhoFrage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ilhoFragen()}
+                  placeholder="z. B. Warum kommt sie nicht rein? (leer = Gesamtblick)"
+                  style={{ ...sys, flex: 1, minWidth: 200, fontSize: 14.5, padding: "10px 12px", borderRadius: 10, border: `1.5px solid ${C.line}`, background: "#fff", color: C.espresso }} />
+                <button onClick={ilhoFragen} disabled={ilhoLaedt} style={btn(C.plum)}>{ilhoLaedt ? "ilho denkt …" : "Fragen"}</button>
+              </div>
+              {ilho && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ ...sys, fontSize: 14.5, color: C.espresso, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{ilho.antwort}</div>
+                  {entwurf && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ ...sys, fontSize: 12, color: C.ink, marginBottom: 4 }}>Entwurf für eine Nachricht an sie (bearbeitbar):</div>
+                      <textarea value={entwurf} onChange={(e) => setEntwurf(e.target.value)} rows={3}
+                        style={{ ...sys, width: "100%", boxSizing: "border-box", fontSize: 14, padding: "9px 11px", borderRadius: 10, border: `1.5px solid ${C.line}`, background: "#fff", color: C.espresso, resize: "vertical" }} />
+                      <button disabled={!!busy || !entwurf.trim()} onClick={() => window.confirm("Diese Nachricht jetzt an sie senden (Team-Nachricht + Push)?") &&
+                        tun("entwurf", () => adminTeamSenden(p.id, entwurf.trim()), "Nachricht gesendet.")} style={{ ...btn(C.gold), marginTop: 6 }}>{busy === "entwurf" ? "…" : "💬 Entwurf senden"}</button>
+                    </div>
+                  )}
+                  {ilho.aktionen.filter((a) => a !== "nachricht" || !entwurf).length > 0 && (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                      <span style={{ ...sys, fontSize: 12, color: C.ink, alignSelf: "center" }}>ilho schlägt vor:</span>
+                      {ilho.aktionen.filter((a) => a !== "nachricht" || !entwurf).map((a) => (
+                        <button key={a} disabled={!!busy} onClick={() => ilhoAusfuehren(a)} style={btn(C.card, C.gold)}>{ILHO_LABEL[a] || a}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <Hinweis>ilho sieht nur Konto-Daten und Zähler, keine Journal- oder Gesprächsinhalte. Ausgeführt wird nur, was du anklickst.</Hinweis>
+            </Card>
+
+            {akt === undefined ? null : akt === null ? (
+              <Card style={{ marginTop: 14 }}><Leer>Aktivität nicht verfügbar (Migration 20261125_admin_aktivitaet fehlt?).</Leer></Card>
+            ) : (
+              <>
+                {(akt.hinweise || []).length > 0 && (
+                  <Card style={{ marginTop: 14 }}>
+                    <Eyebrow>⚠️ Auffälligkeiten</Eyebrow>
+                    {akt.hinweise.map((h, i) => (
+                      <div key={i} style={{ ...sys, fontSize: 14, color: C.espresso, padding: "7px 0", borderBottom: `1px solid ${C.line}`, display: "flex", gap: 8 }}>
+                        <span>{h.stufe === "warn" ? "🟠" : "🔵"}</span><span style={{ flex: 1 }}>{h.text}</span>
+                        {h.aktion && ILHO_LABEL[h.aktion] && <button disabled={!!busy} onClick={() => ilhoAusfuehren(h.aktion)} style={{ ...btn(C.card, C.line), fontSize: 12, padding: "5px 10px", minHeight: 30 }}>{ILHO_LABEL[h.aktion]}</button>}
+                      </div>
+                    ))}
+                  </Card>
+                )}
+
+                <Card style={{ marginTop: 14 }}>
+                  <Eyebrow>Aktivität</Eyebrow>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8 }}>
+                    {Object.entries(akt.bereiche || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
+                      <div key={k} style={{ ...sys, background: v ? C.goldPale : C.card, border: `1px solid ${C.line}`, borderRadius: 10, padding: "8px 10px" }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: v ? C.espresso : C.ink }}>{zahl(v)}</div>
+                        <div style={{ fontSize: 12, color: C.ink }}>{k}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ ...sys, fontSize: 13.5, color: C.espresso, marginTop: 12, lineHeight: 1.6 }}>
+                    🏆 Challenge 369: {akt.challenge369 ? `Tag ${akt.challenge369.tag ?? "–"}${akt.challenge369.fertig ? " · abgeschlossen" : ""}` : "nicht gestartet"}<br />
+                    ✨ Lichtpunkte: <b>{akt.punkte == null ? "–" : zahl(akt.punkte)}</b>
+                    {(akt.punkte_verluste || []).length > 0 && <span style={{ color: C.rot }}> · {akt.punkte_verluste.length}× gesunken</span>}<br />
+                    💾 App-Daten zuletzt gespeichert: {akt.daten_gespeichert ? datumZeit(akt.daten_gespeichert) : "nie"}{akt.daten_kb != null ? ` · ${akt.daten_kb} KB` : ""}<br />
+                    🤍 ilho-Begleitung: {akt.ilho_aktiv ? "an" : "aus"}
+                  </div>
+                  {(akt.punkte_verluste || []).length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      {akt.punkte_verluste.map((v, i) => (
+                        <div key={i} style={{ ...sys, fontSize: 12.5, color: C.ink }}>{datumZeit(v.zeit)}: {zahl(v.alt)} → <b style={{ color: C.rot }}>{zahl(v.neu)}</b></div>
+                      ))}
+                      <Hinweis>Wird erst seit dem 25.11.2026 aufgezeichnet. Ursache meist neues Gerät oder gelöschte Browserdaten.</Hinweis>
+                    </div>
+                  )}
+                  <Hinweis>Nur Anzahl und Datum — die Inhalte (Journal, Briefe, Gespräche) bleiben privat.</Hinweis>
+                </Card>
+
+                <Card style={{ marginTop: 14 }}>
+                  <Eyebrow>📷 Fotos, Videos & Dateien</Eyebrow>
+                  {(akt.dateien || []).length === 0 ? <Leer>Keine hochgeladenen Dateien.</Leer> : akt.dateien.map((d, i) => (
+                    <div key={i} style={{ ...sys, display: "flex", gap: 10, alignItems: "center", padding: "7px 0", borderBottom: `1px solid ${C.line}`, fontSize: 13.5 }}>
+                      <span>{/^image/.test(d.typ || "") ? "🖼️" : /^video/.test(d.typ || "") ? "🎬" : "📄"}</span>
+                      <span style={{ flex: 1, wordBreak: "break-all", color: C.espresso }}>{d.pfad.split("/").pop()}
+                        <span style={{ color: C.ink, fontSize: 12 }}> · {d.bucket === "gemeinschaft" ? "Community" : "an Coachin"} · {Math.round((d.groesse || 0) / 1024)} KB · {datum(d.zeit)}</span></span>
+                      <button onClick={() => dateiOeffnen(d)} style={{ ...btn(C.card, C.line), fontSize: 12, padding: "5px 10px", minHeight: 30 }}>Öffnen</button>
+                    </div>
+                  ))}
+                  <Hinweis>Öffnen erzeugt einen 5-Minuten-Link und wird im Verlauf protokolliert.</Hinweis>
+                </Card>
+
+                {(akt.community || []).length > 0 && (
+                  <Card style={{ marginTop: 14 }}>
+                    <Eyebrow>💬 Letzte Community-Beiträge</Eyebrow>
+                    {akt.community.map((c) => (
+                      <div key={c.id} style={{ ...sys, fontSize: 13.5, padding: "7px 0", borderBottom: `1px solid ${C.line}`, color: c.sichtbar ? C.espresso : C.ink }}>
+                        {c.text}{!c.sichtbar && " (ausgeblendet)"}<div style={{ fontSize: 11.5, color: C.ink }}>{datumZeit(c.zeit)}</div>
+                      </div>
+                    ))}
+                  </Card>
+                )}
+              </>
+            )}
 
             <Card style={{ marginTop: 14 }}>
               <Eyebrow>Aktionen</Eyebrow>
