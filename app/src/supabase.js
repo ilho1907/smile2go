@@ -1591,3 +1591,120 @@ export async function ladeExpertinnen(limit = 30) {
   if (error) { console.warn("ladeExpertinnen:", error.message); return []; }
   return (data || []).filter((c) => (c.name || "").trim());
 }
+
+// ── Kennenlerngespräch, Verifizierung & Gratis-Produkt ─────────────────────
+// Formulare A–E (Migration 20261126_kennenlernen_gratis.sql). Fehler werden hier
+// als Error mit verständlichem Text geworfen, damit die Formulare sie zeigen können.
+// Ohne Supabase (lokaler Modus) speichern A und die Gratis-Wahl in localStorage.
+const LOKAL_ANFRAGE = "s2g_kennenlern_anfrage";
+const LOKAL_GRATIS = "s2g_gratis_wahl";
+const lokal = {
+  lesen: (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } },
+  schreiben: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* voll */ } },
+};
+// Ein Beispiel-Angebot nur für den lokalen Modus — damit die Auswahl ohne Datenbank testbar ist.
+const LOKALES_BEISPIEL = [{
+  id: "lokal-1", art: "workbook", titel: "Sanft durch die ersten Wochen", thema: "Trauer",
+  beschreibung: "Ein Workbook mit kleinen Übungen für die Zeit nach einem Verlust.", umfang: "16 Seiten",
+  methode: "Achtsamkeit", coach: "Beispiel-Coachin", coach_beruf: "Trauerbegleiterin", inhalte: "https://smile2go.de",
+}];
+
+async function rpcMitFehler(name, args) {
+  const { data, error } = await supabase.rpc(name, args);
+  if (error) {
+    const m = error.message || "";
+    // Datenbank-Regeln in Klartext übersetzen
+    if (/check constraint/i.test(m)) throw new Error("Bitte prüfe deine Angaben — ein Pflichtfeld fehlt oder ist zu lang.");
+    if (/function .* does not exist|Could not find the function/i.test(m)) throw new Error("Diese Funktion ist noch nicht eingerichtet (Datenbank-Update fehlt).");
+    throw new Error(m.replace(/^.*?ERROR:\s*/, ""));
+  }
+  return data;
+}
+
+// Formular A — eigene Anfrage lesen / speichern
+export async function ladeKennenlernAnfrage() {
+  if (!supabase) return lokal.lesen(LOKAL_ANFRAGE);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase.from("kennenlern_anfragen").select("*").eq("user_id", user.id).maybeSingle();
+  if (error) { console.warn("ladeKennenlernAnfrage:", error.message); return null; }
+  return data;
+}
+export async function speichereKennenlernAnfrage(werte) {
+  if (!supabase) { const z = { ...werte, erstellt: new Date().toISOString() }; lokal.schreiben(LOKAL_ANFRAGE, z); return z; }
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Bitte melde dich zuerst an.");
+  const { data, error } = await supabase.from("kennenlern_anfragen")
+    .upsert({ ...werte, user_id: user.id, aktualisiert: new Date().toISOString() }, { onConflict: "user_id" })
+    .select().single();
+  if (error) {
+    if (/check constraint/i.test(error.message)) throw new Error("Bitte fülle alle Pflichtfelder aus und hake die Zustimmungen an.");
+    if (/relation .* does not exist/i.test(error.message)) throw new Error("Die Anmeldung ist noch nicht eingerichtet — schreib uns bitte unten eine Nachricht.");
+    throw new Error("Das hat nicht geklappt — bitte versuche es noch einmal.");
+  }
+  return data;
+}
+
+// Gratis-Produkt — Liste (ohne Links), Einlösen, meine Wahl, Rückmeldung
+export async function ladeGratisAngebote() {
+  if (!supabase) return LOKALES_BEISPIEL.map(({ inhalte, ...rest }) => rest);
+  const { data, error } = await supabase.rpc("gratis_angebote");
+  if (error) { console.warn("ladeGratisAngebote:", error.message); return []; }
+  return data || [];
+}
+export async function gratisEinloesen(produktId) {
+  if (!supabase) {
+    const p = LOKALES_BEISPIEL.find((x) => x.id === produktId);
+    if (!p) throw new Error("Dieses Angebot ist nicht verfügbar");
+    const z = { ...p, eingeloest_am: new Date().toISOString() }; lokal.schreiben(LOKAL_GRATIS, z); return z;
+  }
+  return rpcMitFehler("gratis_produkt_einloesen", { p_produkt: produktId });
+}
+export async function meinGratisProdukt() {
+  if (!supabase) return lokal.lesen(LOKAL_GRATIS);
+  const { data, error } = await supabase.rpc("mein_gratis_produkt");
+  if (error) { console.warn("meinGratisProdukt:", error.message); return null; }
+  return data;
+}
+export async function gratisRueckmeldung(werte) {
+  if (!supabase) { const z = lokal.lesen(LOKAL_GRATIS); if (z) lokal.schreiben(LOKAL_GRATIS, { ...z, feedback: { ...werte, am: new Date().toISOString() } }); return true; }
+  await rpcMitFehler("gratis_feedback", { p: werte });
+  return true;
+}
+
+// Formular C + D — Coachin
+export async function ladeMeineVerifizierung() {
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase.from("coach_verifizierung").select("*").eq("coach_id", user.id).maybeSingle();
+  if (error) { console.warn("ladeMeineVerifizierung:", error.message); return null; }
+  return data;
+}
+export const verifizierungEinreichen = (werte) => {
+  if (!supabase) throw new Error("Nur mit Verbindung zur Datenbank möglich.");
+  return rpcMitFehler("coach_verifizierung_einreichen", { p: werte });
+};
+export async function ladeMeinGratisProduktCoach() {
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase.from("gratis_produkte").select("*").eq("coach_id", user.id)
+    .neq("status", "abgelehnt").maybeSingle();
+  if (error) { console.warn("ladeMeinGratisProduktCoach:", error.message); return null; }
+  return data;
+}
+export const gratisProduktEinreichen = (werte) => {
+  if (!supabase) throw new Error("Nur mit Verbindung zur Datenbank möglich.");
+  return rpcMitFehler("gratis_produkt_einreichen", { p: werte });
+};
+
+// Formular B + E — Admin
+export const adminKennenlernen = (userId) => adminRpc("admin_kennenlernen", { p_user: userId });
+export const adminKennenlernProtokoll = (userId, werte) => rpcMitFehler("admin_kennenlern_protokoll", { p_user: userId, p: werte });
+export const adminCoachVerifizierungen = () => adminRpc("admin_coach_verifizierungen").then((d) => d || []);
+export const adminCoachVerifizieren = (coachId, status, pruefung, kommentar) =>
+  rpcMitFehler("admin_coach_verifizieren", { p_coach: coachId, p_status: status, p_pruefung: pruefung, p_kommentar: kommentar || null });
+export const adminGratisProdukte = () => adminRpc("admin_gratis_produkte").then((d) => d || []);
+export const adminGratisPruefen = (id, status, pruefung, kommentar) =>
+  rpcMitFehler("admin_gratis_pruefen", { p_id: id, p_status: status, p_pruefung: pruefung, p_kommentar: kommentar || null });
