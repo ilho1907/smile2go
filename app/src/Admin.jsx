@@ -12,6 +12,7 @@ import { brauchtZweitenFaktor, zweiFaktorStatus, passwortZuruecksetzen, neuesPas
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import { ILHO_SYSTEM } from "./ilho";
 import { alsCsv } from "./export";
+import { KennenlernKarte, PruefungTab } from "./onboarding/AdminOnboarding";
 
 /* ─────────────────────────────────────────────
    smile2go — ADMIN DASHBOARD · echte Daten aus Supabase
@@ -152,7 +153,7 @@ export default function AdminDashboard() {
 
   const TABS = [
     ["uebersicht", "📊 Übersicht"], ["mitglieder", `👥 Mitglieder${wartend ? ` (${wartend} warten)` : ""}`],
-    ["nachrichten", `💬 Nachrichten${teamOffen ? ` (${teamOffen})` : ""}`], ["coachcodes", "🔑 Coach-Codes"], ["sessions", "📅 Sessions"],
+    ["nachrichten", `💬 Nachrichten${teamOffen ? ` (${teamOffen})` : ""}`], ["coachcodes", "🔑 Coach-Codes"], ["pruefung", "✅ Prüfung"], ["sessions", "📅 Sessions"],
     ["moderation", `🛡️ Moderation${k?.meldungen_offen ? ` (${k.meldungen_offen})` : ""}`],
     ["fairness", "⚖️ KI & Fairness"], ["system", "🛠️ System"],
   ];
@@ -195,6 +196,7 @@ export default function AdminDashboard() {
         {tab === "mitglieder" && <Mitglieder startFilter={wartend ? "Warten" : "Alle"} onGeaendert={() => adminWartendeAnzahl().then(setWartend)} onNachricht={(m) => { setTeamZiel({ user_id: m.id, email: m.email }); setTab("nachrichten"); }} />}
         {tab === "nachrichten" && <TeamNachrichten ziel={teamZiel} setZiel={setTeamZiel} setOffen={setTeamOffen} />}
         {tab === "coachcodes" && <CoachCodes />}
+        {tab === "pruefung" && <PruefungTab C={C} />}
         {tab === "sessions" && <Sessions />}
         {tab === "moderation" && <Moderation />}
         {tab === "fairness" && <KiFairness />}
@@ -381,7 +383,7 @@ function Mitglieder({ onNachricht, startFilter = "Alle", onGeaendert }) {
 }
 
 const AKTION_LABEL = {
-  freigeschaltet: "Freigeschaltet", freischaltung_zurueck: "Freischaltung zurückgenommen", gesperrt: "Gesperrt", entsperrt: "Sperre aufgehoben",
+  freigeschaltet: "Freigeschaltet", kennenlern_protokoll: "Gesprächsprotokoll", coach_verifizierung: "Coach-Verifizierung", gratis_pruefung: "Gratis-Produkt geprüft", freischaltung_zurueck: "Freischaltung zurückgenommen", gesperrt: "Gesperrt", entsperrt: "Sperre aufgehoben",
   notiz: "Notiz geändert", coach_rolle_an: "Coach-Rolle vergeben", coach_rolle_aus: "Coach-Rolle entzogen",
   zwei_faktor_reset: "Zwei-Faktor zurückgesetzt", geloescht: "Konto gelöscht",
 };
@@ -447,6 +449,11 @@ function MitgliedProfil({ userId, onZu, onNachricht, onGeaendert }) {
                 {p.zwei_faktor && <Badge tone="ok">2FA</Badge>}
               </div>
             </Card>
+
+            {!p.ist_admin && !p.ist_coach && (
+              <KennenlernKarte C={C} userId={p.id} freigeschaltet={p.freigeschaltet}
+                onFreischalten={() => tun("frei", () => adminMitgliedFreischalten(p.id, true), "Freigeschaltet — sie bekommt eine Willkommensnachricht.")} />
+            )}
 
             <Card style={{ marginTop: 14 }}>
               <Eyebrow>Konto</Eyebrow>
