@@ -8,6 +8,7 @@
 // über den ganzen Bildschirm — darauf stehen die Schreibseiten (children).
 // Oben rechts schließt ein Kreuz das Buch wieder.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { FARBEN } from "./themen";
 import { createPortal } from "react-dom";
 import { AUDIO } from "./media";
 
@@ -57,7 +58,7 @@ export default function BookOpen({ children, title = "Mein Tagebuch", subtitle =
         </div>
       </button>
 
-      <div style={S.hint}>Tippe aufs Buch, um es zu öffnen</div>
+      <div style={{ ...S.hint, color: FARBEN.ink || S.hint.color }}>Tippe aufs Buch, um es zu öffnen</div>
 
       {offen && (
         <BuchVollbild quelle={quelleRef} title={title} subtitle={subtitle} onClose={() => setOffen(false)}>
