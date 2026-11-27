@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
 import { brauchtZweitenFaktor, terminStatus, ladeKursFortschritt, istCoachin, meinKontoStatus } from "./supabase";
 import { alsPdf, alsCsv } from "./export";
+import KlientinAnalyse from "./coach/KlientinAnalyse";
 import {
   supabase,
   ladeCoachProfilSelbst, coachProfilSpeichern, coachProfilSichern,
@@ -119,6 +120,7 @@ function Anmeldung({ onFertig }) {
 
 function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
   const [codes, setCodes] = useState([]);
+  const [analyseFuer, setAnalyseFuer] = useState(null);
   const [neuerCode, setNeuerCode] = useState("");
   const [err, setErr] = useState("");
 
@@ -209,7 +211,8 @@ function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
         <Leer>Noch niemand verbunden. Sobald jemand deinen Code einlöst, erscheint sie hier.</Leer>
       ) : (
         klientinnen.map((k) => (
-          <Card key={k.id} style={{ marginBottom: 10, display: "flex", gap: 14, alignItems: "center" }}>
+          <div key={k.id}>
+          <Card style={{ marginBottom: 10, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
             <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${C.gold}, ${C.rose})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", fontSize: 19, flexShrink: 0 }}>
               {(k.anzeigename || "K").charAt(0).toUpperCase()}
             </div>
@@ -227,11 +230,14 @@ function Klientinnen({ klientinnen, neuLaden, ungelesen, oeffneChat }) {
               </div>
             </div>
             <Btn small ghost onClick={() => oeffneChat(k)}>Chat</Btn>
+            <Btn small ghost onClick={() => setAnalyseFuer(analyseFuer === k.id ? null : k.id)}>Analyse</Btn>
             <Btn small ghost onClick={() => berichtPdf(k)}>Bericht</Btn>
             <Btn small ghost onClick={async () => { await klientinStatus(k.id, k.status === "aktiv" ? "pausiert" : "aktiv"); neuLaden(); }}>
               {k.status === "aktiv" ? "pausieren" : "aktivieren"}
             </Btn>
           </Card>
+          {analyseFuer === k.id && <KlientinAnalyse klientin={k} C={C} onSchliessen={() => setAnalyseFuer(null)} />}
+          </div>
         ))
       )}
     </>

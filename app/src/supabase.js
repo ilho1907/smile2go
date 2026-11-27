@@ -1756,3 +1756,62 @@ Keine Rechtsberatung; bei Verträgen nur Struktur und Platzhalter. Gib nur den D
   if (!res.ok) throw new Error(d?.error || "ilho ist gerade nicht erreichbar");
   return (d?.content?.[0]?.text || d?.text || "").trim();
 }
+
+// ── ilho mit Mistral (Edge Function "ilho-chat") ───────────────────────────
+// Läuft mit dem JWT der angemeldeten Nutzerin (Tageslimit + Freigaben greifen pro Person).
+// Liefert null, wenn die Function nicht erreichbar ist — dann fällt die App auf "ai" zurück.
+export const ILHO_MISTRAL_AN = import.meta.env?.VITE_ILHO_MISTRAL === "1";
+
+export async function ilhoChat(messages, system) {
+  if (!supabase || !ILHO_MISTRAL_AN) return null;
+  try {
+    const { data: s } = await supabase.auth.getSession();
+    if (!s?.session) return null;
+    const { data, error } = await supabase.functions.invoke("ilho-chat", { body: { messages, system } });
+    if (error) { console.warn("ilhoChat:", error.message); return null; }
+    return (data?.text || "").trim() || null;
+  } catch (e) {
+    console.warn("ilhoChat:", e);
+    return null;
+  }
+}
+
+// ── Freigaben (consent) ────────────────────────────────────────────────────
+// Was die Klientin mit ihrer Coachin teilt — pro Bereich, jederzeit widerrufbar.
+export const FREIGABE_BEREICHE = [
+  { id: "stimmung", titel: "Stimmungsverlauf", text: "Wie es dir laut deinen ilho-Gesprächen geht (1–5).", fuer: "coachin" },
+  { id: "themen", titel: "Themen", text: "Neutrale Schlagworte wie „Grenzen“ oder „Beruf“.", fuer: "coachin" },
+  { id: "ziele", titel: "Ziele", text: "Vorhaben, die du selbst aussprichst.", fuer: "coachin" },
+  { id: "fortschritt", titel: "Kurzfassung", text: "Ein bis zwei sachliche Sätze pro Gespräch.", fuer: "coachin" },
+  { id: "ilho_lernen", titel: "ilho lernt mit", text: "Anonym und ohne deinen Namen fließt es in ilhos Wochenauswertung ein, damit ilho besser begleitet.", fuer: "ilho" },
+];
+export const FREIGABE_TEXT_VERSION = "2026-11-27";
+
+export async function ladeFreigaben() {
+  const user = await nutzerin();
+  if (!user) return {};
+  const { data, error } = await supabase.from("consent").select("bereich, aktiv").eq("user_id", user.id);
+  if (error) { console.warn("ladeFreigaben:", error.message); return {}; }
+  return Object.fromEntries((data || []).map((c) => [c.bereich, c.aktiv]));
+}
+
+export async function freigabeSetzen(bereich, an) {
+  if (!supabase) return false;
+  const { error } = await supabase.rpc("freigabe_setzen", { p_bereich: bereich, p_an: !!an });
+  if (error) { console.warn("freigabeSetzen:", error.message); return false; }
+  return true;
+}
+
+// Coachin: Freigaben + gefilterte Erkenntnisse einer Klientin.
+export async function ladeKlientinAnalyse(klientinId, userId, tage = 90) {
+  if (!supabase) return { freigaben: {}, eintraege: [] };
+  const [f, a] = await Promise.all([
+    supabase.from("consent").select("bereich, aktiv").eq("user_id", userId),
+    supabase.rpc("coach_klientin_analyse", { p_klientin: klientinId, p_tage: tage }),
+  ]);
+  if (a.error) console.warn("ladeKlientinAnalyse:", a.error.message);
+  return {
+    freigaben: Object.fromEntries((f.data || []).map((c) => [c.bereich, c.aktiv])),
+    eintraege: a.data || [],
+  };
+}
