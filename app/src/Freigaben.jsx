@@ -18,7 +18,7 @@ export default function Freigaben({ C, coachName, hatCoachin }) {
     setBusy(id);
     const neu = !stand[id];
     const ok = await freigabeSetzen(id, neu);
-    if (ok) setStand({ ...stand, [id]: neu });
+    if (ok) setStand((bisher) => ({ ...bisher, [id]: neu }));
     else setFehler("Das hat gerade nicht geklappt — versuch es gleich noch einmal.");
     setBusy("");
   };
@@ -39,7 +39,7 @@ export default function Freigaben({ C, coachName, hatCoachin }) {
           <input
             type="checkbox"
             checked={!!stand[b.id]}
-            disabled={busy === b.id}
+            disabled={Boolean(busy)}
             onChange={() => umschalten(b.id)}
             style={{ width: 20, height: 20, marginTop: 2, accentColor: C.plum, flexShrink: 0 }}
           />
@@ -50,8 +50,10 @@ export default function Freigaben({ C, coachName, hatCoachin }) {
         </label>
       ))}
       <p style={{ ...text, fontSize: 12.5, lineHeight: 1.5, margin: "10px 0 0", opacity: 0.85 }}>
-        Du kannst jede Freigabe hier jederzeit wieder ausschalten. Krisen-Gespräche werden nie zusammengefasst.
-        Verarbeitet wird über Mistral AI (EU), ohne Nutzung deiner Daten zum Training.
+        Du kannst jede Freigabe hier jederzeit wieder ausschalten. Erkennt ilho eine mögliche akute Krise, überspringt es die Auswertung.
+        Für Chatantworten erhält Mistral AI den aktuellen Gesprächsverlauf. Die Modelltraining-Freigabe ist deaktiviert.
+        Bei einem technischen Ausfall kann der Chat auf Anthropic wechseln. Die freiwillige Wochenauswertung erhält
+        ausschließlich Gruppenstatistiken aus freigegebenen Nachrichten.
       </p>
       {fehler && <div style={{ ...text, fontSize: 13.5, color: C.rot || "#b3261e", marginTop: 8 }}>{fehler}</div>}
     </div>

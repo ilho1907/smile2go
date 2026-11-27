@@ -1,127 +1,79 @@
-// ─────────────────────────────────────────────────────────────
-// smile2go · Supabase Edge Function "ilho-lernen"
-// Wöchentlicher Lernlauf (pg_cron, montags): Mistral Large liest die
-// anonymisierten Erkenntnisse der Vorwoche — nur von Nutzerinnen mit
-// Freigabe "ilho_lernen" — und schreibt Muster + Verbesserungsvorschläge
-// für ilho in die Tabelle ilho_lernen.
-//
-// Sicherheitsgrenzen:
-//   – keine User-IDs, Namen oder Zeitstempel gehen an das Modell
-//   – unter MIN_GESPRAECHE kein Lauf (sonst wären Einzelne erkennbar)
-//   – ein Lauf pro Woche (Primärschlüssel woche) → Aufruf ohne JWT ist kostenseitig begrenzt
-//   – Vorschläge werden NIE automatisch übernommen; ein Mensch prüft sie
-//
-// Deploy:  supabase functions deploy ilho-lernen --use-api --no-verify-jwt
-// Secrets: MISTRAL_API_KEY, optional MISTRAL_LERN_MODELL (Standard mistral-large-4)
-// ─────────────────────────────────────────────────────────────
-
+// Supabase pg_cron ruft diesen Endpunkt montags mit einem umgebungsspezifischen Token auf.
+// Auswertung ausschließlich auf Basis gruppierter Zahlen, nie aus einzelnen Gesprächstexten.
 import { createClient } from "jsr:@supabase/supabase-js@2";
-
-const MISTRAL_API_KEY = Deno.env.get("MISTRAL_API_KEY")!;
-const LERN_MODELL = Deno.env.get("MISTRAL_LERN_MODELL") ?? "mistral-large-4";
-const ERSATZ_MODELL = "mistral-large-latest"; // falls Large 4 (Preview) nicht verfügbar ist
-const MIN_GESPRAECHE = 10;
+import { timingSafeEqual } from "node:crypto";
 
 const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+const LERN_MODELL = Deno.env.get("MISTRAL_LERN_MODELL") ?? "mistral-large-4";
+const ERSATZ_MODELL = "mistral-large-latest";
+const SYSTEM = `Du hilfst der Redaktion von smile2go. Du erhältst ausschließlich aggregierte Zahlen
+der letzten Woche. Beschreibe nur belegbare Gruppenmuster, keine Einzelfälle oder Diagnosen.
+Kennzeichne Vorschläge als Ideen. Leite keine Ursachen, Wirksamkeit oder Bedürfnisse ab, die die
+Zahlen nicht zeigen. Ändere keine Regeln zu Krisenhilfe und KI-Transparenz.
+Antworte mit JSON und höchstens fünf Einträgen je Liste:
+{"haeufige_themen":[],"stimmung_durchschnitt":null,"muster":[],"was_hilft":[],"luecken":[],
+"prompt_vorschlaege":[],"inhalts_ideen":[]}.`;
 
-const LERN_SYSTEM = `Du bist das Lern-Modul von ilho, dem KI-Begleiter der App smile2go (Frauen 30–50, Persönlichkeitsentwicklung, Spiritualität).
-Du bekommst anonymisierte Kurz-Zusammenfassungen von Gesprächen einer Woche (Stimmung 1–5, Themen, Ziele, ein Satz). Leite daraus ab, wie ilho besser begleiten kann.
-Antworte NUR mit JSON:
-{
- "haeufige_themen": [{"thema": "…", "anteil_prozent": 0}],
- "stimmung_durchschnitt": 0.0 oder null,
- "muster": ["…"],
- "was_hilft": ["…"],
- "luecken": ["Themen oder Fragen, bei denen die App noch kein passendes Angebot hat"],
- "prompt_vorschlaege": [{"vorschlag": "…", "begruendung": "…"}],
- "inhalts_ideen": ["Ideen für Rituale, Meditationen oder Kurse"]
-}
-Regeln: Beschreibe nur Gruppenmuster, nie Einzelfälle. Keine Diagnosen, keine klinischen Begriffe. prompt_vorschlaege dürfen die Regeln zu psychischer Belastung, KI-Transparenz und Notrufnummern niemals abschwächen oder entfernen. Höchstens 5 Einträge pro Liste. Deutsch.`;
-
-function wochenstart(d = new Date()): string {
-  const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  const tag = (x.getUTCDay() + 6) % 7; // Montag = 0
-  x.setUTCDate(x.getUTCDate() - tag - 7); // Montag der VORWOCHE
-  return x.toISOString().slice(0, 10);
+function wochenstart() {
+  const jetzt = new Date();
+  const tag = new Date(Date.UTC(jetzt.getUTCFullYear(), jetzt.getUTCMonth(), jetzt.getUTCDate()));
+  tag.setUTCDate(tag.getUTCDate() - (tag.getUTCDay() + 6) % 7 - 7);
+  return tag.toISOString().slice(0, 10);
 }
 
-async function mistral(modell: string, inhalt: string) {
-  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+function erlaubt(req: Request) {
+  const token = Deno.env.get("ILHO_CRON_TOKEN");
+  if (!token || token.length < 32) return false;
+  const encoder = new TextEncoder();
+  const a = encoder.encode(token);
+  const b = encoder.encode(req.headers.get("X-Ilho-Cron") ?? "");
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+async function modellAntwort(modell: string, zahlen: unknown) {
+  return await fetch("https://api.mistral.ai/v1/chat/completions", {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${MISTRAL_API_KEY}` },
-    body: JSON.stringify({
-      model: modell,
-      temperature: 0.3,
-      max_tokens: 2500,
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + Deno.env.get("MISTRAL_API_KEY") },
+    signal: AbortSignal.timeout(60000),
+    body: JSON.stringify({ model: modell, temperature: 0.3, max_tokens: 2500,
       response_format: { type: "json_object" },
-      messages: [{ role: "system", content: LERN_SYSTEM }, { role: "user", content: inhalt }],
-    }),
+      messages: [{ role: "system", content: SYSTEM }, { role: "user", content: JSON.stringify(zahlen) }] }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || `Mistral ${res.status}`);
-  return String(data.choices?.[0]?.message?.content ?? "");
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  if (req.method !== "POST") return Response.json({ error: "POST erforderlich" }, { status: 405 });
+  if (!erlaubt(req)) return Response.json({ error: "Nicht autorisiert" }, { status: 401 });
+  const woche = wochenstart();
+  let reserviert = false;
   try {
-    const woche = wochenstart();
-    const bis = new Date(new Date(woche).getTime() + 7 * 86400_000).toISOString();
+    const { data: zahlen, error: leseFehler } = await admin.rpc("ilho_wochenzahlen", { p_von: woche });
+    if (leseFehler || !zahlen) throw new Error("Wochenzahlen fehlen");
+    const { error: sperre } = await admin.from("ilho_lernen").insert({ woche, status: "offen" });
+    if (sperre?.code === "23505") return Response.json({ ok: true, hinweis: "Woche bereits bearbeitet" });
+    if (sperre) throw new Error("Wochenlauf nicht reserviert");
+    reserviert = true;
 
-    // Idempotenz: Woche zuerst belegen; existiert sie schon, sofort aufhören.
-    const { error: belegt } = await admin.from("ilho_lernen").insert({ woche, status: "offen" });
-    if (belegt) return json({ ok: true, hinweis: `Woche ${woche} wurde bereits ausgewertet` });
-
-    const { data: erlaubt } = await admin.from("consent").select("user_id").eq("bereich", "ilho_lernen").eq("aktiv", true);
-    const ids = (erlaubt ?? []).map((c) => c.user_id);
-
-    const { data: zeilen } = ids.length
-      ? await admin.from("insights")
-          .select("stimmung, themen, ziele, zusammenfassung")
-          .in("user_id", ids)
-          .gte("created_at", woche)
-          .lt("created_at", bis)
-          .limit(2000)
-      : { data: [] as any[] };
-
-    const anzahl = zeilen?.length ?? 0;
-    if (anzahl < MIN_GESPRAECHE) {
-      await admin.from("ilho_lernen").update({ anzahl_gespraeche: anzahl, ergebnis: { hinweis: "zu wenige Gespräche — kein Lauf" } }).eq("woche", woche);
-      return json({ ok: true, woche, anzahl, hinweis: "zu wenige Gespräche" });
-    }
-
-    // Zufällig mischen, damit die Reihenfolge nichts über Personen verrät.
-    const zufall = [...zeilen!].sort(() => Math.random() - 0.5);
-    const inhalt = zufall
-      .map((z, i) => `${i + 1}. Stimmung ${z.stimmung ?? "–"} | Themen: ${(z.themen || []).join(", ")} | Ziele: ${(z.ziele || []).join("; ")} | ${z.zusammenfassung ?? ""}`)
-      .join("\n");
-
-    let modell = LERN_MODELL;
-    let roh: string;
-    try {
-      roh = await mistral(modell, inhalt);
-    } catch (e) {
-      console.warn("ilho-lernen: Ersatzmodell, weil", String(e));
-      modell = ERSATZ_MODELL;
-      try {
-        roh = await mistral(modell, inhalt);
-      } catch (e2) {
-        // Woche wieder freigeben, damit der nächste Cron-Lauf es erneut versucht.
-        await admin.from("ilho_lernen").delete().eq("woche", woche);
-        throw e2;
+    let modell: string | null = null;
+    let ergebnis: Record<string, unknown> = { hinweis: "Zu wenige freigegebene Gespräche oder Personen" };
+    if (zahlen.auswertbar === true) {
+      modell = LERN_MODELL;
+      let res = await modellAntwort(modell, zahlen);
+      if (res.status === 404 && modell !== ERSATZ_MODELL) {
+        modell = ERSATZ_MODELL;
+        res = await modellAntwort(modell, zahlen);
       }
+      if (!res.ok) throw new Error("Modellanfrage fehlgeschlagen: " + res.status);
+      const data = await res.json();
+      ergebnis = JSON.parse(data.choices?.[0]?.message?.content ?? "");
+      if (!ergebnis || typeof ergebnis !== "object" || Array.isArray(ergebnis)) throw new Error("Ungültiges Ergebnis");
     }
-
-    let ergebnis: unknown;
-    try { ergebnis = JSON.parse(roh); } catch { ergebnis = { roh: roh.slice(0, 8000) }; }
-
-    await admin.from("ilho_lernen").update({ anzahl_gespraeche: anzahl, ergebnis, modell }).eq("woche", woche);
-    return json({ ok: true, woche, anzahl, modell });
-  } catch (e) {
-    console.error("ilho-lernen:", e);
-    return json({ error: String(e) }, 500);
+    const { error } = await admin.from("ilho_lernen")
+      .update({ anzahl_gespraeche: zahlen.gespraeche, ergebnis, modell }).eq("woche", woche);
+    if (error) throw new Error("Speichern fehlgeschlagen");
+    return Response.json({ ok: true, woche, anzahl: zahlen.gespraeche, modell });
+  } catch {
+    if (reserviert) await admin.from("ilho_lernen").delete().eq("woche", woche).is("ergebnis", null);
+    return Response.json({ error: "Wochenlauf fehlgeschlagen" }, { status: 500 });
   }
 });
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-}

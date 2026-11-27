@@ -1,0 +1,26 @@
+name: ilho preview tests
+on:
+  pull_request:
+    paths:
+      - 'backend/supabase/functions/ilho-*/**'
+      - 'backend/supabase/migrations/2026112*_*.sql'
+      - 'backend/tests/ilho*'
+      - '.github/workflows/ilho-preview-tests.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test backend/tests/ilho-functions.test.mjs
+      - name: Check consent revocation and cron on local PostgreSQL
+        run: |
+          sudo systemctl start postgresql
+          sudo -u postgres createuser --superuser "$(id -un)"
+          createdb ilho_regression
+          PGDATABASE=ilho_regression bash backend/tests/ilho-postgres.sh

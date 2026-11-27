@@ -6,14 +6,14 @@
 // freigegeben hat (Tabelle consent). Ohne Freigabe wird nichts gespeichert.
 //
 // Deploy:  supabase functions deploy ilho-chat --use-api
-// Secrets: MISTRAL_API_KEY, optional MISTRAL_CHAT_MODELL (Standard mistral-small-latest),
+// Secrets: MISTRAL_API_KEY, optional MISTRAL_CHAT_MODELL (Standard mistral-small-2603),
 //          KI_TAGESLIMIT (Standard 30, geteilt mit der Function "ai")
 // ─────────────────────────────────────────────────────────────
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const MISTRAL_API_KEY = Deno.env.get("MISTRAL_API_KEY")!;
-const CHAT_MODELL = Deno.env.get("MISTRAL_CHAT_MODELL") ?? "mistral-small-latest";
+const CHAT_MODELL = Deno.env.get("MISTRAL_CHAT_MODELL") ?? "mistral-small-2603";
 const TAGESLIMIT = Number(Deno.env.get("KI_TAGESLIMIT") ?? "30");
 const MAX_VERLAUF = 16;          // letzte Nachrichten, die mitgeschickt werden
 const MAX_ZEICHEN = 4000;        // pro Nachricht
@@ -27,26 +27,16 @@ const CORS = {
 };
 
 // Zusammenfassung: bewusst ohne Deutung, Diagnose oder Risikoeinschätzung.
-const ZUSAMMENFASSUNG_SYSTEM = `Du fasst ein Gespräch zwischen einer Nutzerin und ihrem KI-Begleiter ilho für ihre eigene Rückschau und — nur mit ihrer Freigabe — für ihre Coachin zusammen.
+const ZUSAMMENFASSUNG_SYSTEM = `Du fasst die aktuelle Nachricht einer Nutzerin an ihren KI-Begleiter ilho für ihre eigene Rückschau und — nur mit ihrer Freigabe — für ihre Coachin zusammen.
 Antworte NUR mit JSON in dieser Form:
-{"stimmung": 1-5 oder null, "themen": ["…"], "ziele": ["…"], "zusammenfassung": "…", "krise": true|false}
+{"stimmung": 1-5 oder null, "themen": ["…"], "ziele": ["…"], "zusammenfassung": "…", "krise": true|false, "lernthema": "…"}
 Regeln:
 - stimmung: wie die Nutzerin ihre Stimmung selbst beschreibt (1 sehr schwer … 5 sehr gut). Wenn sie nichts dazu sagt: null. Nicht raten.
 - themen: höchstens 4 neutrale Schlagworte auf Deutsch (z. B. "Grenzen", "Selbstwert", "Beruf"). Keine Namen Dritter, keine Gesundheitsangaben, keine Diagnosen.
 - ziele: nur Ziele oder Vorhaben, die sie selbst ausspricht, in ihren Worten, höchstens 3.
 - zusammenfassung: 1–2 sachliche Sätze in der dritten Person ("Sie möchte …"). Keine Deutung, keine Bewertung, keine psychologischen Begriffe, keine Zitate intimer Details.
+- lernthema: genau eine Kategorie aus Alltag, Beruf, Beziehungen, Grenzen, Selbstwert, Ziele, Sonstiges.
 - krise: true, wenn Anzeichen akuter Krise, Selbstverletzung oder Suizidgedanken vorkommen.`;
-
-function userIdAus(authHeader: string | null): string | null {
-  if (!authHeader) return null;
-  const teile = authHeader.replace(/^Bearer\s+/i, "").split(".");
-  if (teile.length < 2) return null;
-  try {
-    return JSON.parse(atob(teile[1].replace(/-/g, "+").replace(/_/g, "/"))).sub ?? null;
-  } catch {
-    return null;
-  }
-}
 
 async function mistral(body: Record<string, unknown>) {
   const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
@@ -55,19 +45,15 @@ async function mistral(body: Record<string, unknown>) {
     body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || data?.error?.message || `Mistral ${res.status}`);
+  if (!res.ok) throw new Error(`Mistral ${res.status}`);
   return String(data.choices?.[0]?.message?.content ?? "").trim();
 }
 
 const kurz = (s: unknown, n: number) => String(s ?? "").trim().slice(0, n);
 
-async function zusammenfassen(userId: string, verlauf: { role: string; content: string }[], antwort: string) {
-  const { data: freigaben } = await admin.from("consent").select("bereich").eq("user_id", userId).eq("aktiv", true);
+async function zusammenfassen(userId: string, beginn: string, nachricht: string) {
+  const { data: freigaben } = await admin.from("consent").select("bereich").eq("user_id", userId).eq("aktiv", true).lte("erteilt_am", beginn);
   if (!freigaben?.length) return; // Privacy by Default
-
-  const protokoll = [...verlauf.slice(-6), { role: "assistant", content: antwort }]
-    .map((m) => `${m.role === "user" ? "Nutzerin" : "ilho"}: ${m.content}`)
-    .join("\n");
 
   const roh = await mistral({
     model: CHAT_MODELL,
@@ -76,7 +62,7 @@ async function zusammenfassen(userId: string, verlauf: { role: string; content: 
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: ZUSAMMENFASSUNG_SYSTEM },
-      { role: "user", content: protokoll },
+      { role: "user", content: nachricht },
     ],
   });
 
@@ -85,35 +71,38 @@ async function zusammenfassen(userId: string, verlauf: { role: string; content: 
 
   // In einer Krise wird kein Inhalt gespeichert: das gehört in ein echtes Gespräch,
   // nicht in ein Analyse-Fenster. ilho hat im Chat selbst bereits auf Hilfe verwiesen.
-  if (j.krise === true) return;
+  if (j?.krise !== false) return;
 
   const stimmung = Number.isInteger(j.stimmung) && j.stimmung >= 1 && j.stimmung <= 5 ? j.stimmung : null;
   const liste = (x: unknown, max: number) =>
     Array.isArray(x) ? x.map((t) => kurz(t, 60)).filter(Boolean).slice(0, max) : [];
 
-  await admin.from("insights").insert({
-    user_id: userId,
-    quelle: "ilho-chat",
-    stimmung,
-    themen: liste(j.themen, 4),
-    ziele: liste(j.ziele, 3),
-    zusammenfassung: kurz(j.zusammenfassung, 400) || null,
-    modell: CHAT_MODELL,
+  const { error } = await admin.rpc("ilho_erkenntnis_speichern", {
+    p_user: userId, p_beginn: beginn, p_modell: CHAT_MODELL, p_stimmung: stimmung,
+    p_themen: liste(j.themen, 4), p_ziele: liste(j.ziele, 3),
+    p_kurz: kurz(j.zusammenfassung, 400) || null, p_lernthema: kurz(j.lernthema, 40),
   });
+  if (error) throw new Error("Speichern der Erkenntnis fehlgeschlagen");
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
-    const userId = userIdAus(req.headers.get("authorization"));
-    if (!userId) return json({ error: "Anmeldung erforderlich" }, 401);
+    if (req.method !== "POST") return json({ error: "POST erforderlich" }, 405);
+    const beginn = new Date().toISOString();
+    const token = req.headers.get("authorization")?.match(/^Bearer (\S+)$/i)?.[1];
+    if (!token) return json({ error: "Anmeldung erforderlich" }, 401);
+    const { data, error: authFehler } = await admin.auth.getUser(token);
+    const userId = data.user?.id;
+    if (authFehler || !userId) return json({ error: "Anmeldung erforderlich" }, 401);
 
     const { messages, system } = await req.json();
     if (!Array.isArray(messages) || messages.length === 0) return json({ error: "messages[] erforderlich" }, 400);
 
     if (TAGESLIMIT > 0) {
-      const { data: stand } = await admin.rpc("ki_zaehlen", { p_user: userId });
+      const { data: stand, error: zaehlFehler } = await admin.rpc("ki_zaehlen", { p_user: userId });
+      if (zaehlFehler || stand == null) return json({ error: "Limitprüfung nicht verfügbar" }, 503);
       if (Number(stand) > TAGESLIMIT) {
         return json({
           text: "Für heute haben wir genug geschrieben 🤍 Morgen bin ich wieder für dich da — " +
@@ -132,23 +121,33 @@ Deno.serve(async (req) => {
     }
 
     // Der System-Prompt kommt aus app/src/ilho.js (eine Quelle, s. CLAUDE.md).
-    const antwort = await mistral({
+    const ausgabe = await mistral({
       model: CHAT_MODELL,
       temperature: 0.7,
       max_tokens: 500,
-      messages: [{ role: "system", content: kurz(system, 20000) }, ...verlauf],
+      response_format: { type: "json_object" },
+      messages: [{ role: "system", content: kurz(system, 20000) +
+        '\nAntworte als JSON: {"text":"Deine vollständige Antwort","krise":true oder false}. ' +
+        'Prüfe den gesamten sichtbaren Verlauf auf akute Krise, Selbstverletzung oder Suizidgedanken. ' +
+        'Setze krise bei Anzeichen oder Unsicherheit auf true. Die Hilfestellung steht in text.' }, ...verlauf],
     });
 
-    const text = antwort || "Ich bin hier. Erzähl mir mehr davon. 🤍";
+    const antwort = JSON.parse(ausgabe);
+    if (typeof antwort?.text !== "string" || !antwort.text.trim()) throw new Error("Leere Modellantwort");
+    const text = antwort.text.trim();
 
-    // Zusammenfassung blockiert die Antwort nicht.
-    const hintergrund = zusammenfassen(userId, verlauf, text).catch((e) => console.error("insights:", e));
-    // @ts-ignore EdgeRuntime existiert in Supabase Edge Functions
-    if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(hintergrund);
-
+    // Nur die neue Nachricht auswerten. Vor der Einwilligung geschriebene
+    // Nachrichten und die Antwort (die alten Kontext zitieren kann) bleiben außen vor.
+    if (antwort.krise === false) {
+      const hintergrund = zusammenfassen(userId, beginn, verlauf[verlauf.length - 1].content)
+        .catch(() => console.error("Erkenntnis konnte nicht gespeichert werden"));
+      // @ts-ignore EdgeRuntime existiert in Supabase Edge Functions
+      if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(hintergrund);
+      else await hintergrund;
+    }
     return json({ text });
   } catch (e) {
-    console.error("ilho-chat:", e);
+    console.error("ilho-chat: Anfrage fehlgeschlagen");
     return json({ error: "ilho ist gerade nicht erreichbar" }, 500);
   }
 });
