@@ -1633,3 +1633,126 @@ export async function ladeExpertinnen(limit = 30) {
   if (error) { console.warn("ladeExpertinnen:", error.message); return []; }
   return (data || []).filter((c) => (c.name || "").trim());
 }
+
+// ── Office / Dokumente (s2g.admin → Office · Mitglied → Meine Dokumente) ─────
+// Bucket „dokumente“ ist privat: Team-Dateien unter team/…, Unterlagen eines
+// Mitglieds unter <user_id>/…. Geöffnet wird nur über signierte Links.
+export const DOKUMENT_KATEGORIEN = {
+  onboarding: "Onboarding", vertrag: "Vertrag / Einwilligung", bewerbung: "Expertinnen-Bewerbung", sonstiges: "Sonstiges",
+};
+const dateiSauber = (name) => (name || "datei").replace(/[^\w.\-]+/g, "_").slice(-90);
+
+export const adminDokumente = () => adminRpc("admin_dokumente").then((d) => d || []);
+export const adminDokumenteNeu = () => adminRpc("admin_dokumente_neu").then((d) => Number(d || 0));
+
+// Team legt ein Dokument an: Datei (File/Blob) oder Link
+export async function adminDokumentAnlegen({ titel, beschreibung = "", kategorie = "onboarding", datei = null, dateiname = "", link = "", bestaetigung = false }) {
+  if (!supabase) throw new Error("Keine Verbindung");
+  if (!titel?.trim()) throw new Error("Bitte einen Titel angeben");
+  const zeile = { titel: titel.trim(), beschreibung: beschreibung.trim() || null, kategorie, quelle: "team", bestaetigung_noetig: !!bestaetigung, status: "geprueft" };
+  if (datei) {
+    const name = dateiSauber(dateiname || datei.name);
+    const pfad = `team/${Date.now()}-${name}`;
+    const { error } = await supabase.storage.from("dokumente").upload(pfad, datei, { upsert: false, contentType: datei.type || undefined });
+    if (error) throw new Error("Hochladen fehlgeschlagen: " + error.message);
+    Object.assign(zeile, { art: "datei", pfad, dateiname: name, groesse: datei.size ?? null });
+  } else {
+    let url = link.trim();
+    if (!/^https?:\/\//i.test(url)) throw new Error("Der Link muss mit https:// beginnen");
+    Object.assign(zeile, { art: "link", link: url });
+  }
+  const { data, error } = await supabase.from("dokumente").insert(zeile).select().single();
+  if (error) {
+    if (zeile.pfad) await supabase.storage.from("dokumente").remove([zeile.pfad]);
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+export async function adminDokumentLoeschen(dok) {
+  if (!supabase) return false;
+  if (dok.pfad) await supabase.storage.from("dokumente").remove([dok.pfad]);
+  const { error } = await supabase.from("dokumente").delete().eq("id", dok.id);
+  return !error;
+}
+
+export async function adminDokumentStatus(id, status) {
+  const { error } = await supabase.from("dokumente").update({ status }).eq("id", id);
+  return !error;
+}
+
+// Link zum Öffnen: Datei → signierter Link (Standard 5 Min.), Link-Dokument → Link selbst
+export async function dokumentOeffnenLink(dok, sekunden = 300) {
+  if (dok.art === "link") return dok.link;
+  return dateiLink(dok.pfad, "dokumente", sekunden);
+}
+
+// An ein Mitglied in der App freigeben (+ Team-Nachricht mit Push)
+export async function adminDokumentAnMitglied(dok, userId) {
+  const { error } = await supabase.from("dokument_freigaben").insert({ dokument_id: dok.id, user_id: userId });
+  if (error) throw new Error(error.message);
+  await adminTeamSenden(userId, `📄 Neues Dokument vom smile2go-Team: „${dok.titel}“\nDu findest es unter Profil → Meine Dokumente.${dok.bestaetigung_noetig ? "\nBitte lies es und bestätige es dort." : ""}`);
+}
+
+// Für eine Person außerhalb der App: Freigabe merken + Link mit Ablaufdatum
+export async function adminDokumentExtern(dok, email, tage = 7) {
+  const link = dok.art === "link" ? dok.link : await dateiLink(dok.pfad, "dokumente", tage * 86400);
+  if (!link) throw new Error("Link konnte nicht erzeugt werden");
+  const { error } = await supabase.from("dokument_freigaben").insert({ dokument_id: dok.id, email: email.trim() });
+  if (error) throw new Error(error.message);
+  return link;
+}
+
+// ── Mitglied ──
+export async function meineDokumente() {
+  const user = await nutzerin();
+  if (!user) return { erhalten: [], eigene: [] };
+  const [{ data: fr, error: e1 }, { data: eig, error: e2 }] = await Promise.all([
+    supabase.from("dokument_freigaben").select("id, gesendet, geoeffnet, bestaetigt, dokumente(*)").eq("user_id", user.id).order("gesendet", { ascending: false }),
+    supabase.from("dokumente").select("*").eq("user_id", user.id).eq("quelle", "mitglied").order("erstellt", { ascending: false }),
+  ]);
+  if (e1 || e2) { console.warn("meineDokumente:", (e1 || e2).message); return null; }
+  return { erhalten: (fr || []).filter((f) => f.dokumente), eigene: eig || [] };
+}
+
+export async function dokumentHochladen(datei, kategorie = "sonstiges", titel = "") {
+  const user = await nutzerin();
+  if (!user || !datei) throw new Error("Nicht angemeldet");
+  if (datei.size > 20 * 1024 * 1024) throw new Error("Die Datei ist größer als 20 MB");
+  const name = dateiSauber(datei.name);
+  const pfad = `${user.id}/${Date.now()}-${name}`;
+  const { error } = await supabase.storage.from("dokumente").upload(pfad, datei, { upsert: false, contentType: datei.type || undefined });
+  if (error) throw new Error("Hochladen fehlgeschlagen: " + error.message);
+  const { error: e2 } = await supabase.from("dokumente").insert({
+    titel: titel.trim() || name, kategorie, art: "datei", pfad, dateiname: name, groesse: datei.size, quelle: "mitglied", user_id: user.id, status: "neu",
+  });
+  if (e2) { await supabase.storage.from("dokumente").remove([pfad]); throw new Error(e2.message); }
+}
+
+export const dokumentMarkieren = (freigabeId, bestaetigen = false) =>
+  supabase?.rpc("dokument_markieren", { p_freigabe: freigabeId, p_bestaetigen: bestaetigen });
+
+// ilho schreibt einen Dokument-Entwurf (Onboarding, Willkommen, Regeln …)
+export async function adminIlhoDokument(auftrag) {
+  const basis = import.meta.env?.VITE_AI_FUNCTION_URL;
+  if (!supabase || !basis) throw new Error("Keine Verbindung");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Nicht angemeldet");
+  const res = await fetch(basis, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: import.meta.env?.VITE_SUPABASE_ANON_KEY || "" },
+    body: JSON.stringify({
+      system: `Du bist ilho und schreibst für das smile2go-Team (Coaching-Plattform für Frauen) interne und externe Dokumente:
+Onboarding-Unterlagen, Willkommensbriefe, Abläufe, Checklisten. Deutsch, Du-Form, warm und klar, keine Floskeln.
+Gliederung mit kurzen Überschriften in eigenen Zeilen (ohne #) und Aufzählungen mit "- ".
+Erfinde keine Fakten (keine Preise, Daten, Namen, Adressen, Rechtsaussagen) — setze stattdessen [BITTE ERGÄNZEN].
+Keine Rechtsberatung; bei Verträgen nur Struktur und Platzhalter. Gib nur den Dokumenttext zurück.`,
+      max_tokens: 1500,
+      messages: [{ role: "user", content: auftrag }],
+    }),
+  });
+  let d = {};
+  try { d = await res.json(); } catch { /* leer */ }
+  if (!res.ok) throw new Error(d?.error || "ilho ist gerade nicht erreichbar");
+  return (d?.content?.[0]?.text || d?.text || "").trim();
+}
