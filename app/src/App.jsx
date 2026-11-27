@@ -8,6 +8,7 @@ import { THEMEN as FARBTHEMEN, wendeThemaAn as wendeThemaAnRoh, gespeichertesThe
 import Tarot from "./Tarot";
 import KarteVollbild from "./KarteVollbild";
 import TeamNachrichten from "./TeamNachrichten";
+import Freigaben from "./Freigaben";
 import MeineDokumente from "./MeineDokumente";
 import { ExpertinnenKarussell, ExpertinProfil } from "./Expertinnen";
 import { alsPdf } from "./export";
@@ -36,7 +37,7 @@ import { supabase, ladeAppState, speichereAppState, speichereDossierEntwurf, gib
   rolleWunschMerken, rolleAbgleichen, coachRolleSetzen, coachCodePruefen, coachCodeEinloesen,
   ladeGemeinschaft, zaehleGemeinschaft, gemeinschaftDateiUrl, gemeinschaftGesehen,
   gemeinschaftHerz, ladeMeineHerzen, beduerfnisMerken, beduerfnisVergessen,
-  meineBeduerfnisse, istAdmin } from "./supabase";
+  meineBeduerfnisse, istAdmin, ilhoChat } from "./supabase";
 
 /* ─────────────────────────────────────────────
    smile2go · v2 — Coaching & Persönlichkeitsentwicklung
@@ -1688,7 +1689,10 @@ function Luma({ name, energie, msgs, setMsgs, twin, twinTon = "", entries = [], 
       const ctx = energie ? `\n(Kontext: Die Nutzerin heißt ${name}, ihre heutige Energie: ${energie.t} ${energie.v}/10.)` : `\n(Kontext: Die Nutzerin heißt ${name}.)`;
       // Nur role/content an die KI — lokale Felder wie "bewertung" bleiben in der App.
       const gedaechtnis = prefs.ilhoJournal ? journalKontext(entries) : "";
-      const roh = await askLuma(next.map(({ role, content }) => ({ role, content })), ILHO_SYSTEM + ctx + gedaechtnis + twinTon + agentKontext(profil, BEDUERFNISSE, passend));
+      const verlauf = next.map(({ role, content }) => ({ role, content }));
+      const systemText = ILHO_SYSTEM + ctx + gedaechtnis + twinTon + agentKontext(profil, BEDUERFNISSE, passend);
+      // Mistral (ilho-chat) wenn eingeschaltet, sonst / bei Ausfall wie bisher über "ai".
+      const roh = (await ilhoChat(verlauf, systemText)) ?? (await askLuma(verlauf, systemText));
       const { text: reply, oeffne, merke } = verarbeiteAntwort(roh);
       const gemerkt = merke && profil.fertig && profil.merken ? merke : null;
       if (gemerkt) setProfil(notizDazu(profil, gemerkt));
@@ -5287,6 +5291,7 @@ function Profil({ email, onLogout, go, alias, setAlias, anon, setAnon, bindung, 
         ) : (
           <div style={{ marginTop: 8 }}><CoachVerbinden onVerbunden={aufBindung} /></div>
         )}
+        <Freigaben C={C} coachName={bindung?.coach_name} hatCoachin={!!bindung?.coach_id} />
 
         {/* Coach-Bereich — nur fuer Nutzerinnen, die selbst begleiten */}
         <Eyebrow color={C.plum}>Als Coachin arbeiten</Eyebrow>
