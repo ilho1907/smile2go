@@ -151,6 +151,11 @@ CREATE TABLE IF NOT EXISTS ilho_lernen (
 ALTER TABLE ilho_lernen ENABLE ROW LEVEL SECURITY;
 -- bewusst keine Policy: nur Service-Role
 
+-- Explizite Rechte (neue Tabellen werden nicht mehr automatisch freigegeben).
+GRANT SELECT ON consent TO authenticated;
+GRANT SELECT, DELETE ON insights TO authenticated;
+GRANT ALL ON consent, insights, ilho_lernen TO service_role;
+
 -- Montags 04:17 (UTC) den Lernlauf anstoßen. Die Function ist pro Woche idempotent.
 CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
 CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
