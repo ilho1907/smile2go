@@ -8,6 +8,8 @@ import {
   adminTeamPostfach, adminTeamVerlauf, adminTeamSenden, adminTeamRundnachricht,
   adminMitgliedDetail, adminMitgliedFreischalten, adminMitgliedNotiz, adminCoachRolle, adminMitgliedSperren, adminWartendeAnzahl, adminKonto, adminBestaetigungErneut, adminCoachCodeSenden,
   adminMitgliedAktivitaet, adminDateiLink, adminIlho,
+  adminDokumente, adminDokumenteNeu, adminDokumentAnlegen, adminDokumentLoeschen, adminDokumentStatus, dokumentOeffnenLink,
+  adminDokumentAnMitglied, adminDokumentExtern, adminIlhoDokument, DOKUMENT_KATEGORIEN,
 } from "./supabase";
 import { brauchtZweitenFaktor, zweiFaktorStatus, passwortZuruecksetzen, neuesPasswortSetzen } from "./supabase";
 import { ZweiFaktorAbfrage, ZweiFaktorEinstellung } from "./ZweiFaktor";
@@ -69,6 +71,7 @@ export default function AdminDashboard() {
   const [teamOffen, setTeamOffen] = useState(0);
   const [zweiFaktorAktiv, setZweiFaktorAktiv] = useState(true);
   const [wartend, setWartend] = useState(0);
+  const [dokNeu, setDokNeu] = useState(0);   // neue Unterlagen von Mitgliedern
   // Link aus der „Passwort vergessen“-Mail: erst neues Passwort, dann Dashboard
   const [pwNeu, setPwNeu] = useState(() => new URLSearchParams(window.location.search).get("pw") === "neu");
 
@@ -90,6 +93,7 @@ export default function AdminDashboard() {
     if (!ok) return;
     zweiFaktorStatus().then((z) => setZweiFaktorAktiv(!!z.aktiv)).catch(() => {});
     adminWartendeAnzahl().then(setWartend);
+    adminDokumenteNeu().then(setDokNeu).catch(() => {});
     const [kz, w] = await Promise.all([adminKennzahlen(), adminWachstum()]);
     adminTeamPostfach().then((p) => setTeamOffen((p || []).reduce((n, x) => n + Number(x.ungelesen || 0), 0)));
     setK(kz); setWachstum(w.map((z) => ({ m: new Date(z.monat).toLocaleDateString("de-DE", { month: "short" }), neu: Number(z.neu) })));
@@ -112,7 +116,7 @@ export default function AdminDashboard() {
   }, [admin]);
 
   // Fenstertitel + Zahl am Dock-Icon: ungelesene Team-Nachrichten + offene Meldungen
-  const offenGesamt = teamOffen + Number(k?.meldungen_offen || 0) + wartend;
+  const offenGesamt = teamOffen + Number(k?.meldungen_offen || 0) + wartend + dokNeu;
   useEffect(() => {
     document.title = offenGesamt ? `(${offenGesamt}) s2g.admin` : "s2g.admin";
     try {
@@ -153,7 +157,7 @@ export default function AdminDashboard() {
 
   const TABS = [
     ["uebersicht", "📊 Übersicht"], ["mitglieder", `👥 Mitglieder${wartend ? ` (${wartend} warten)` : ""}`],
-    ["nachrichten", `💬 Nachrichten${teamOffen ? ` (${teamOffen})` : ""}`], ["coachcodes", "🔑 Coach-Codes"], ["sessions", "📅 Sessions"],
+    ["nachrichten", `💬 Nachrichten${teamOffen ? ` (${teamOffen})` : ""}`], ["office", `🗂️ Office${dokNeu ? ` (${dokNeu} neu)` : ""}`], ["coachcodes", "🔑 Coach-Codes"], ["sessions", "📅 Sessions"],
     ["moderation", `🛡️ Moderation${k?.meldungen_offen ? ` (${k.meldungen_offen})` : ""}`],
     ["fairness", "⚖️ KI & Fairness"], ["system", "🛠️ System"],
   ];
@@ -195,6 +199,7 @@ export default function AdminDashboard() {
         {tab === "uebersicht" && <Uebersicht k={k} wachstum={wachstum} />}
         {tab === "mitglieder" && <Mitglieder startFilter={wartend ? "Warten" : "Alle"} onGeaendert={() => adminWartendeAnzahl().then(setWartend)} onNachricht={(m) => { setTeamZiel({ user_id: m.id, email: m.email }); setTab("nachrichten"); }} />}
         {tab === "nachrichten" && <TeamNachrichten ziel={teamZiel} setZiel={setTeamZiel} setOffen={setTeamOffen} />}
+        {tab === "office" && <Office onNeu={setDokNeu} />}
         {tab === "coachcodes" && <CoachCodes />}
         {tab === "sessions" && <Sessions />}
         {tab === "moderation" && <Moderation />}
@@ -814,6 +819,339 @@ function TeamNachrichten({ ziel, setZiel, setOffen }) {
         </Card>
       </div>
     </div>
+  );
+}
+
+/* ── Office: Dokumente anlegen, freigeben, Unterlagen der Mitglieder ── */
+const KAT_TON = { onboarding: "gold", vertrag: "rose", bewerbung: "ok", sonstiges: "warn" };
+const groesseText = (b) => (!b ? "" : b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+
+function Office({ onNeu }) {
+  const [docs, setDocs] = useState(undefined);       // undefined = lädt, null = Tabelle fehlt
+  const [ansicht, setAnsicht] = useState("bibliothek");
+  const [neu, setNeu] = useState(null);              // null | "datei" | "link" | "schreiben"
+  const [senden, setSenden] = useState(null);        // Dokument im Senden-Dialog
+  const [meldung, setMeldung] = useState("");
+
+  const laden = () => adminDokumente().then((d) => {
+    if (d === null) { setDocs(null); return; }
+    setDocs(d);
+    onNeu?.(d.filter((x) => x.quelle === "mitglied" && x.status === "neu").length);
+  }).catch(() => setDocs(null));
+  useEffect(() => { laden(); }, []);
+
+  // Fenster sofort öffnen (sonst blockt Safari das Popup nach dem await)
+  const oeffnen = async (d) => {
+    const fenster = window.open("", "_blank");
+    const url = await dokumentOeffnenLink(d);
+    if (url && fenster) { fenster.opener = null; fenster.location.href = url; }
+    else { fenster?.close(); setMeldung("Konnte nicht geöffnet werden."); }
+  };
+  const loeschen = async (d) => {
+    if (!window.confirm(`„${d.titel}“ endgültig löschen? Auch freigegebene Links funktionieren dann nicht mehr.`)) return;
+    if (await adminDokumentLoeschen(d)) laden(); else setMeldung("Löschen fehlgeschlagen.");
+  };
+  const geprueft = async (d) => { await adminDokumentStatus(d.id, d.status === "neu" ? "geprueft" : "neu"); laden(); };
+
+  if (docs === null)
+    return <Card><Leer>Das Office ist noch nicht eingerichtet. Bitte die Migration <code>20261127_dokumente.sql</code> ausführen.</Leer></Card>;
+
+  const team = (docs || []).filter((d) => d.quelle === "team");
+  const eingang = (docs || []).filter((d) => d.quelle === "mitglied");
+  const neuImEingang = eingang.filter((d) => d.status === "neu").length;
+  const knopf = { ...sys, fontSize: 13.5, fontWeight: 700, padding: "9px 14px", borderRadius: 14, cursor: "pointer", border: `1.5px solid ${C.line}`, background: C.card, color: C.espresso };
+  const klein = { ...knopf, fontSize: 12.5, padding: "6px 11px" };
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        {[["bibliothek", `📚 Meine Dokumente (${team.length})`], ["eingang", `📥 Von Mitgliedern${neuImEingang ? ` · ${neuImEingang} neu` : ` (${eingang.length})`}`]].map(([key, label]) => (
+          <button key={key} onClick={() => setAnsicht(key)} style={{ ...knopf, background: ansicht === key ? C.goldPale : C.card, borderColor: ansicht === key ? C.gold : C.line }}>{label}</button>
+        ))}
+        <div style={{ flex: 1 }} />
+        {meldung && <span style={{ ...sys, fontSize: 13, color: C.ink }}>{meldung}</span>}
+      </div>
+
+      {ansicht === "bibliothek" && (
+        <>
+          <Card>
+            <Eyebrow color={C.plum}>➕ Neues Dokument</Eyebrow>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[["datei", "📎 Datei hochladen (PDF …)"], ["link", "🔗 Link hinzufügen"], ["schreiben", "✍️ Neu schreiben → PDF"]].map(([key, label]) => (
+                <button key={key} onClick={() => setNeu(neu === key ? null : key)} style={{ ...knopf, background: neu === key ? C.goldPale : C.card, borderColor: neu === key ? C.gold : C.line }}>{label}</button>
+              ))}
+            </div>
+            {neu && <NeuesDokument art={neu} onFertig={(d) => { setNeu(null); laden(); if (d) setSenden(d); }} />}
+          </Card>
+
+          <Card>
+            <Eyebrow color={C.plum}>📚 Meine Dokumente</Eyebrow>
+            {docs === undefined ? <Leer>Lade …</Leer> : team.length === 0 ? <Leer>Noch keine Dokumente. Lege oben dein erstes an — z. B. eine Onboarding-Mappe für neue Mitarbeitende.</Leer> :
+              team.map((d) => {
+                const fr = d.freigaben || [];
+                const offen = d.bestaetigung_noetig ? fr.filter((f) => f.user_id && !f.bestaetigt).length : 0;
+                return (
+                  <div key={d.id} style={{ padding: "11px 4px", borderBottom: `1px solid ${C.line}`, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 20 }}>{d.art === "link" ? "🔗" : "📄"}</span>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ ...sys, fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{d.titel}</div>
+                      <div style={{ ...sys, fontSize: 12, color: C.ink, marginTop: 3, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                        <Badge tone={KAT_TON[d.kategorie]}>{DOKUMENT_KATEGORIEN[d.kategorie]}</Badge>
+                        {d.bestaetigung_noetig && <Badge tone="rose">Bestätigung nötig</Badge>}
+                        <span>{datum(d.erstellt)}{d.groesse ? ` · ${groesseText(d.groesse)}` : ""}</span>
+                        <span>· {fr.length ? `an ${fr.length} gesendet` : "noch nicht gesendet"}{offen ? ` · ${offen} unbestätigt` : ""}</span>
+                      </div>
+                    </div>
+                    <button onClick={() => oeffnen(d)} style={klein}>Öffnen</button>
+                    <button onClick={() => setSenden(d)} style={{ ...klein, background: C.gold, color: "#fff", border: "none" }}>Senden</button>
+                    <button onClick={() => loeschen(d)} style={{ ...klein, color: C.rot }}>Löschen</button>
+                  </div>
+                );
+              })}
+            <Hinweis>Dateien liegen privat. Mitglieder öffnen sie in der App unter Profil → Meine Dokumente; Personen außerhalb bekommen einen Link mit Ablaufdatum.</Hinweis>
+          </Card>
+        </>
+      )}
+
+      {ansicht === "eingang" && (
+        <Card>
+          <Eyebrow color={C.plum}>📥 Unterlagen von Mitgliedern</Eyebrow>
+          {docs === undefined ? <Leer>Lade …</Leer> : eingang.length === 0 ? <Leer>Noch nichts eingegangen. Mitglieder laden Unterlagen nach der Registrierung (Warteseite) oder unter Profil → Meine Dokumente hoch.</Leer> :
+            eingang.map((d) => (
+              <div key={d.id} style={{ padding: "11px 4px", borderBottom: `1px solid ${C.line}`, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ fontSize: 20 }}>📄</span>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ ...sys, fontWeight: 700, fontSize: 14.5, color: C.espresso }}>{d.titel}</div>
+                  <div style={{ ...sys, fontSize: 12, color: C.ink, marginTop: 3, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                    {d.status === "neu" ? <Badge tone="rose">neu</Badge> : <Badge tone="ok">geprüft</Badge>}
+                    <Badge tone={KAT_TON[d.kategorie]}>{DOKUMENT_KATEGORIEN[d.kategorie]}</Badge>
+                    <span style={{ wordBreak: "break-all" }}>{d.von_email} · {datum(d.erstellt)}{d.groesse ? ` · ${groesseText(d.groesse)}` : ""}</span>
+                  </div>
+                </div>
+                <button onClick={() => oeffnen(d)} style={klein}>Öffnen</button>
+                <button onClick={() => geprueft(d)} style={klein}>{d.status === "neu" ? "✓ Geprüft" : "Wieder neu"}</button>
+                <button onClick={() => loeschen(d)} style={{ ...klein, color: C.rot }}>Löschen</button>
+              </div>
+            ))}
+          <Hinweis>Expertinnen-Bewerbungen: nach dem Prüfen im Tab „Mitglieder“ freischalten und ggf. die Coach-Rolle vergeben.</Hinweis>
+        </Card>
+      )}
+
+      {senden && <DokumentSenden dok={senden} onZu={() => { setSenden(null); laden(); }} />}
+    </div>
+  );
+}
+
+function NeuesDokument({ art, onFertig }) {
+  const [titel, setTitel] = useState("");
+  const [beschreibung, setBeschreibung] = useState("");
+  const [kategorie, setKategorie] = useState("onboarding");
+  const [bestaetigung, setBestaetigung] = useState(false);
+  const [datei, setDatei] = useState(null);
+  const [link, setLink] = useState("");
+  const [text, setText] = useState("");
+  const [auftrag, setAuftrag] = useState("");
+  const [laeuft, setLaeuft] = useState("");
+  const [fehler, setFehler] = useState("");
+
+  const feld = { width: "100%", boxSizing: "border-box", padding: "10px 13px", fontSize: 15, ...sys, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.cream, color: C.espresso, outline: "none" };
+  const knopf = { ...sys, fontSize: 13.5, fontWeight: 700, padding: "10px 16px", borderRadius: 14, cursor: "pointer", border: "none", background: C.gold, color: "#fff" };
+  const zweit = { ...knopf, background: C.card, color: C.espresso, border: `1.5px solid ${C.line}` };
+
+  const ilhoEntwurf = async () => {
+    const was = auftrag.trim() || titel.trim();
+    if (!was) { setFehler("Schreib kurz, worum es gehen soll (oder einen Titel)."); return; }
+    setLaeuft("ilho schreibt …"); setFehler("");
+    try { setText(await adminIlhoDokument(`Titel: ${titel || "(noch offen)"}\nArt: ${DOKUMENT_KATEGORIEN[kategorie]}\nAuftrag: ${was}`)); }
+    catch (e) { setFehler(e.message); }
+    setLaeuft("");
+  };
+  const vorschau = async () => {
+    setLaeuft("PDF wird erstellt …");
+    const fenster = window.open("", "_blank");
+    try {
+      const { textAlsPdf } = await import("./dokumentPdf");
+      const blob = await textAlsPdf({ titel: titel || "Entwurf", text });
+      if (fenster) fenster.location.href = URL.createObjectURL(blob);
+    } catch (e) { fenster?.close(); setFehler("PDF fehlgeschlagen: " + e.message); }
+    setLaeuft("");
+  };
+  const speichern = async () => {
+    setFehler(""); setLaeuft("Speichere …");
+    try {
+      let d;
+      if (art === "schreiben") {
+        if (!text.trim()) throw new Error("Der Text ist noch leer");
+        const { textAlsPdf } = await import("./dokumentPdf");
+        const blob = await textAlsPdf({ titel: titel.trim(), text });
+        d = await adminDokumentAnlegen({ titel, beschreibung, kategorie, bestaetigung, datei: blob, dateiname: `${titel.trim() || "dokument"}.pdf` });
+      } else if (art === "datei") {
+        if (!datei) throw new Error("Bitte eine Datei auswählen");
+        if (datei.size > 20 * 1024 * 1024) throw new Error("Die Datei ist größer als 20 MB");
+        d = await adminDokumentAnlegen({ titel: titel || datei.name.replace(/\.[^.]+$/, ""), beschreibung, kategorie, bestaetigung, datei });
+      } else {
+        d = await adminDokumentAnlegen({ titel, beschreibung, kategorie, bestaetigung, link });
+      }
+      setLaeuft("");
+      onFertig(d);
+    } catch (e) { setFehler(e.message); setLaeuft(""); }
+  };
+
+  return (
+    <div style={{ display: "grid", gap: 10, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.line}` }}>
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <input value={titel} onChange={(e) => setTitel(e.target.value)} placeholder={art === "datei" ? "Titel (sonst Dateiname)" : "Titel, z. B. Willkommen im Team"} style={feld} />
+        <select value={kategorie} onChange={(e) => setKategorie(e.target.value)} style={feld}>
+          {Object.entries(DOKUMENT_KATEGORIEN).filter(([k]) => k !== "bewerbung").map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+      </div>
+      <input value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="Kurze Beschreibung (optional)" style={feld} />
+
+      {art === "datei" && (
+        <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip" onChange={(e) => setDatei(e.target.files?.[0] || null)} style={{ ...sys, fontSize: 14 }} />
+      )}
+      {art === "link" && <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://… (z. B. Google Drive, Loom, Notion)" style={feld} />}
+      {art === "schreiben" && (
+        <>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input value={auftrag} onChange={(e) => setAuftrag(e.target.value)} placeholder="✨ ilho: worum soll es gehen? z. B. Onboarding für eine neue Assistentin, erste Woche" style={{ ...feld, flex: 1, minWidth: 240 }} />
+            <button onClick={ilhoEntwurf} disabled={!!laeuft} style={zweit}>✨ ilho schreibt Entwurf</button>
+          </div>
+          <textarea rows={14} value={text} onChange={(e) => setText(e.target.value)}
+            placeholder={"Schreib hier deinen Text.\n\nÜberschriften: eigene kurze Zeile ohne Punkt am Ende\n- Aufzählungen mit Bindestrich"} style={{ ...feld, resize: "vertical", lineHeight: 1.5 }} />
+          <Hinweis>ilho setzt [BITTE ERGÄNZEN], wo Fakten fehlen — bitte vor dem Speichern ersetzen. Verträge bitte rechtlich prüfen lassen.</Hinweis>
+        </>
+      )}
+
+      <label style={{ ...sys, fontSize: 13.5, color: C.espresso, display: "flex", gap: 8, alignItems: "center" }}>
+        <input type="checkbox" checked={bestaetigung} onChange={(e) => setBestaetigung(e.target.checked)} />
+        Mitglieder sollen bestätigen „Gelesen & einverstanden“
+      </label>
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <button onClick={speichern} disabled={!!laeuft} style={knopf}>Speichern</button>
+        {art === "schreiben" && <button onClick={vorschau} disabled={!!laeuft || !text.trim()} style={zweit}>PDF-Vorschau</button>}
+        {laeuft && <span style={{ ...sys, fontSize: 13, color: C.ink }}>{laeuft}</span>}
+        {fehler && <span style={{ ...sys, fontSize: 13, color: C.rot }}>{fehler}</span>}
+      </div>
+    </div>
+  );
+}
+
+function DokumentSenden({ dok, onZu }) {
+  const [weg, setWeg] = useState("mitglied");
+  const [suche, setSuche] = useState("");
+  const [liste, setListe] = useState([]);
+  const [email, setEmail] = useState("");
+  const [tage, setTage] = useState(7);
+  const [link, setLink] = useState("");
+  const [meldung, setMeldung] = useState("");
+  const [laeuft, setLaeuft] = useState(false);
+
+  useEffect(() => {
+    if (weg !== "mitglied") return;
+    const t = setTimeout(() => adminMitglieder(suche.trim(), 30).then(setListe), 250);
+    return () => clearTimeout(t);
+  }, [suche, weg]);
+
+  const [schonGesendet, setSchonGesendet] = useState(() => new Set((dok.freigaben || []).map((f) => f.user_id).filter(Boolean)));
+  const anMitglied = async (m) => {
+    setLaeuft(true); setMeldung("");
+    try { await adminDokumentAnMitglied(dok, m.id); setMeldung(`✓ An ${m.email} gesendet — sie bekommt eine Mitteilung.`); setSchonGesendet((alt) => new Set([...alt, m.id])); }
+    catch (e) { setMeldung("Fehler: " + e.message); }
+    setLaeuft(false);
+  };
+  const extern = async () => {
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setMeldung("Bitte eine gültige E-Mail-Adresse."); return; }
+    setLaeuft(true); setMeldung("");
+    try { setLink(await adminDokumentExtern(dok, email, tage)); }
+    catch (e) { setMeldung("Fehler: " + e.message); }
+    setLaeuft(false);
+  };
+  const mailBody = () => {
+    const bis = dok.art === "link" ? "" : `\n(Der Link gilt ${tage} Tage, bis ${new Date(Date.now() + tage * 86400000).toLocaleDateString("de-DE")}.)`;
+    return `Hallo,\n\nhier ist „${dok.titel}“ von smile2go:\n${link}${bis}\n\nHerzliche Grüße\nIlham · smile2go`;
+  };
+  const kopieren = () => navigator.clipboard?.writeText(link).then(() => setMeldung("✓ Link kopiert."), () => setMeldung("Kopieren nicht möglich — Link markieren und kopieren."));
+
+  const feld = { width: "100%", boxSizing: "border-box", padding: "10px 13px", fontSize: 15, ...sys, border: `1.5px solid ${C.line}`, borderRadius: 12, background: C.cream, color: C.espresso, outline: "none" };
+  const knopf = { ...sys, fontSize: 13.5, fontWeight: 700, padding: "9px 14px", borderRadius: 14, cursor: "pointer", border: `1.5px solid ${C.line}`, background: C.card, color: C.espresso };
+  const fr = dok.freigaben || [];
+
+  return createPortal(
+    <div onClick={onZu} style={{ position: "fixed", inset: 0, background: "rgba(46,36,48,.45)", zIndex: 1000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6vh 16px", overflowY: "auto" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 560 }}>
+        <Card>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Eyebrow color={C.plum}>Senden · {dok.titel}</Eyebrow>
+            <div style={{ flex: 1 }} />
+            <button onClick={onZu} style={{ ...knopf, padding: "4px 10px" }}>✕</button>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {[["mitglied", "👥 An Mitglied in der App"], ["extern", "✉️ An jemanden außerhalb"]].map(([key, label]) => (
+              <button key={key} onClick={() => { setWeg(key); setMeldung(""); setLink(""); }} style={{ ...knopf, background: weg === key ? C.goldPale : C.card, borderColor: weg === key ? C.gold : C.line }}>{label}</button>
+            ))}
+          </div>
+
+          {weg === "mitglied" && (
+            <>
+              <input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Name oder E-Mail suchen …" style={feld} autoFocus />
+              <div style={{ maxHeight: 260, overflowY: "auto", marginTop: 8 }}>
+                {liste.length === 0 && <Leer>Keine Treffer.</Leer>}
+                {liste.map((m) => (
+                  <div key={m.id} style={{ display: "flex", gap: 8, alignItems: "center", padding: "7px 2px", borderBottom: `1px solid ${C.line}` }}>
+                    <div style={{ flex: 1, ...sys, fontSize: 14, color: C.espresso, wordBreak: "break-all" }}>{m.name ? <b>{m.name} </b> : null}{m.email}</div>
+                    {schonGesendet.has(m.id) ? <Badge tone="ok">gesendet</Badge> :
+                      <button onClick={() => anMitglied(m)} disabled={laeuft} style={{ ...knopf, padding: "6px 11px", fontSize: 12.5, background: C.gold, color: "#fff", border: "none" }}>Senden</button>}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {weg === "extern" && (
+            <div style={{ display: "grid", gap: 10 }}>
+              <input value={email} onChange={(e) => { setEmail(e.target.value); setLink(""); }} placeholder="E-Mail, z. B. neue.mitarbeiterin@…" style={feld} />
+              {dok.art !== "link" && (
+                <label style={{ ...sys, fontSize: 13.5, color: C.espresso, display: "flex", gap: 8, alignItems: "center" }}>
+                  Link gültig für
+                  <select value={tage} onChange={(e) => { setTage(Number(e.target.value)); setLink(""); }} style={{ ...feld, width: "auto", padding: "6px 10px" }}>
+                    {[1, 3, 7, 14, 30].map((t) => <option key={t} value={t}>{t} {t === 1 ? "Tag" : "Tage"}</option>)}
+                  </select>
+                </label>
+              )}
+              {!link ? <button onClick={extern} disabled={laeuft} style={{ ...knopf, background: C.gold, color: "#fff", border: "none", justifySelf: "start" }}>Link erstellen</button> : (
+                <>
+                  <input readOnly value={link} onFocus={(e) => e.target.select()} style={{ ...feld, fontSize: 12.5 }} />
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <a href={`mailto:${encodeURIComponent(email.trim())}?subject=${encodeURIComponent(`smile2go · ${dok.titel}`)}&body=${encodeURIComponent(mailBody())}`}
+                      style={{ ...knopf, background: C.gold, color: "#fff", border: "none", textDecoration: "none" }}>✉️ In Mail öffnen</a>
+                    <button onClick={kopieren} style={knopf}>Link kopieren</button>
+                  </div>
+                </>
+              )}
+              <Hinweis>„In Mail öffnen“ startet dein Mailprogramm mit fertigem Text — du schickst selbst ab. Wer den Link hat, kann die Datei bis zum Ablauf öffnen.</Hinweis>
+            </div>
+          )}
+
+          {meldung && <p style={{ ...sys, fontSize: 13.5, color: meldung.startsWith("Fehler") ? C.rot : C.sage, margin: "10px 0 0" }}>{meldung}</p>}
+
+          {fr.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <Eyebrow>Bisher gesendet</Eyebrow>
+              {fr.map((f) => (
+                <div key={f.id} style={{ ...sys, fontSize: 12.5, color: C.ink, padding: "4px 0", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                  <span style={{ color: C.espresso, wordBreak: "break-all" }}>{f.email}</span>
+                  <span>· {datum(f.gesendet)}</span>
+                  {!f.user_id ? <Badge tone="warn">extern</Badge> : f.bestaetigt ? <Badge tone="ok">bestätigt</Badge> : f.geoeffnet ? <Badge tone="gold">geöffnet</Badge> : <Badge tone="rose">ungeöffnet</Badge>}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>,
+    document.body
   );
 }
 
